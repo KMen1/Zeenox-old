@@ -49,7 +49,7 @@ namespace KBot.Services
                     Description = $"Már csatlakozva vagyok ide: `{_lavaNode.GetPlayer(guild).VoiceChannel.Name}`",
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -69,7 +69,7 @@ namespace KBot.Services
                     Description = $"Nem vagy hangcsatornában",
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -87,7 +87,7 @@ namespace KBot.Services
                 Description = $"A következő csatornába: `{vChannel.Name}`",
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"{user.Username} | KBot 2021",
+                    Text = $"{user.Username} | KBot {DateTime.UtcNow.Year}",
                     IconUrl = user.GetAvatarUrl()
                 }
             };
@@ -108,7 +108,7 @@ namespace KBot.Services
                 Description = $"`{vChannel.Name}`",
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"{user.Username} | KBot 2021",
+                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                     IconUrl = user.GetAvatarUrl()
                 }
             };
@@ -130,7 +130,7 @@ namespace KBot.Services
                 Description = $"Innen : `{player.VoiceChannel.Name}` \n Ide: `{vChannel.Name}`",
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"{user.Username} | KBot 2021",
+                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                     IconUrl = user.GetAvatarUrl()
                 }
             };
@@ -158,7 +158,7 @@ namespace KBot.Services
                     Url = track.Url,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -183,7 +183,7 @@ namespace KBot.Services
                     Url = track.Url,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -204,7 +204,7 @@ namespace KBot.Services
                     Url = track.Url,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -228,7 +228,7 @@ namespace KBot.Services
                     Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}` \n Jelenleg nem játszok le semmit",
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -250,7 +250,7 @@ namespace KBot.Services
                 Url = player.Track.Url,
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"{user.Username} | KBot 2021",
+                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                     IconUrl = user.GetAvatarUrl()
                 }
             };
@@ -274,7 +274,7 @@ namespace KBot.Services
                     Url = player.Track.Url,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -295,7 +295,7 @@ namespace KBot.Services
                 Url = player.Track.Url,
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"{user.Username} | KBot 2021",
+                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                     IconUrl = user.GetAvatarUrl()
                 }
             };
@@ -319,7 +319,7 @@ namespace KBot.Services
                     Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}` \n Jelenleg nem játszok le semmit",
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -341,7 +341,7 @@ namespace KBot.Services
                     Url = player.Track.Url,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -363,7 +363,7 @@ namespace KBot.Services
                     Url = player.Track.Url,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -388,7 +388,7 @@ namespace KBot.Services
                     Description = $"Jelenleg nem játszok le zenét`",
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -411,7 +411,7 @@ namespace KBot.Services
                         Url = player.Track.Url,
                         Footer = new EmbedFooterBuilder
                         {
-                            Text = $"{user.Username} | KBot 2021",
+                            Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                             IconUrl = user.GetAvatarUrl()
                         }
                     };
@@ -433,7 +433,7 @@ namespace KBot.Services
                         Url = player.Track.Url,
                         Footer = new EmbedFooterBuilder
                         {
-                            Text = $"{user.Username} | KBot 2021",
+                            Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                             IconUrl = user.GetAvatarUrl()
                         }
                     };
@@ -455,7 +455,7 @@ namespace KBot.Services
                     Url = player.Track.Url,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -497,7 +497,7 @@ namespace KBot.Services
                 Url = player.Track.Url,
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"{user.Username} | KBot 2021",
+                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                     IconUrl = user.GetAvatarUrl()
                 }
             };
@@ -529,7 +529,7 @@ namespace KBot.Services
                     Description = $"Jelenleg nem játszok le zenét`",
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -550,7 +550,7 @@ namespace KBot.Services
                     Url = player.Track.Url,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | KBot 2021",
+                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
                         IconUrl = user.GetAvatarUrl()
                     }
                 };
@@ -587,7 +587,7 @@ namespace KBot.Services
                 Url = nextTrack.Url,
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = "KBot 2021",
+                    Text = "KBot {DateTime.UtcNow}",
                     IconUrl = _client.CurrentUser.GetAvatarUrl()
                 }
             };

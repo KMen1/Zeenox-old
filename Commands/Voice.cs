@@ -58,14 +58,14 @@ namespace KBot.Commands
             await ReplyAsync(embed: await _service.SkipAsync(Context.Guild, Context.User));
         }
 
-        [Command("pause"), Alias("ps"), Summary("Zenelejátszás szüneteltetése")]
+        [Command("pause"), Alias("p"), Summary("Zenelejátszás szüneteltetése")]
         public async Task PauseAsync()
         {
             await Context.Message.DeleteAsync();
             await ReplyAsync(embed: await _service.PauseOrResumeAsync(Context.Guild, Context.User));
         }
 
-        [Command("resume"), Alias("r", "res"), Summary("Zenelejátszás folytatása")]
+        [Command("resume"), Alias("r"), Summary("Zenelejátszás folytatása")]
         public async Task ResumeAsync()
         {
             await Context.Message.DeleteAsync();

@@ -24,7 +24,7 @@ namespace KBot
 
         public Bot()
         {
-            Console.Title = "KBot - 2021";
+            Console.Title = $"KBot - {DateTime.UtcNow.Year}";
             var _builder = new ConfigurationBuilder()
                .SetBasePath(AppContext.BaseDirectory)
                .AddJsonFile(path: "config.json");
