@@ -16,7 +16,7 @@ namespace KBot.Services
     {
         private readonly LavaNode _lavaNode;
         private readonly DiscordSocketClient _client;
-
+        
         public AudioService(DiscordSocketClient client, LavaNode lavaNode)
         {
             _lavaNode = lavaNode;
@@ -25,7 +25,7 @@ namespace KBot.Services
         public Task InitializeAsync()
         {
             _client.Ready += OnReadyAsync; 
-            _lavaNode.OnTrackEnded += OnTrackFinished;
+            _lavaNode.OnTrackEnded += OnTrackEnded;
             _lavaNode.OnTrackException += _lavaNode_OnTrackException;
             
             return Task.CompletedTask;
@@ -565,8 +565,56 @@ namespace KBot.Services
             await _lavaNode.ConnectAsync();
         }
 
-        private async Task OnTrackFinished(TrackEndedEventArgs arg)
+        public static bool ShouldPlayNext(TrackEndReason trackEndReason)
         {
+            return trackEndReason == TrackEndReason.Finished || trackEndReason == TrackEndReason.LoadFailed;
+        }
+        private async Task OnTrackEnded(TrackEndedEventArgs args)
+        {
+            if (!ShouldPlayNext(args.Reason))
+            {
+                return;
+            }
+
+            var player = args.Player;
+            if (!player.Queue.TryDequeue(out var queueable))
+            {
+                //await player.TextChannel.SendMessageAsync("Queue completed! Please add more tracks to rock n' roll!");
+                return;
+            }
+
+            if (!(queueable is LavaTrack track))
+            {
+                //await player.TextChannel.SendMessageAsync("Next item in queue is not a track.");
+                return;
+            }
+
+            await args.Player.PlayAsync(track);
+            var eb = new EmbedBuilder
+            {
+                Author = new EmbedAuthorBuilder
+                {
+                    Name = "Most Játszott",
+                    IconUrl = _client.CurrentUser.GetAvatarUrl()
+                },
+                Color = Color.Green,
+                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Title = track.Title,
+                Url = track.Url,
+                Footer = new EmbedFooterBuilder
+                {
+                    Text = "KBot {DateTime.UtcNow}",
+                    IconUrl = _client.CurrentUser.GetAvatarUrl()
+                }
+            };
+            //await args.Player.TextChannel.SendMessageAsync($"{args.Reason}: {args.Track.Title}\nNow playing: {track.Title}");
+            await player.TextChannel.SendMessageAsync(string.Empty, false, eb.Build());
+
+        }
+        /*private async Task OnTrackFinished(TrackEndedEventArgs arg)
+        {
+
+
             //TrackEndReason reason = arg.Reason;
             LavaPlayer player = arg.Player;
 
@@ -593,6 +641,6 @@ namespace KBot.Services
             };
             await player.PlayAsync(nextTrack);
             await player.TextChannel.SendMessageAsync(string.Empty, false, eb.Build());
-        }
+        }*/
     }
 }
