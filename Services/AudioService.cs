@@ -9,6 +9,7 @@ using Victoria.Enums;
 using Victoria.EventArgs;
 using Victoria.Filters;
 using Victoria.Responses.Search;
+using KBot.Helpers;
 
 namespace KBot.Services
 {
@@ -16,7 +17,7 @@ namespace KBot.Services
     {
         private readonly LavaNode _lavaNode;
         private readonly DiscordSocketClient _client;
-        
+
         public AudioService(DiscordSocketClient client, LavaNode lavaNode)
         {
             _lavaNode = lavaNode;
@@ -38,103 +39,28 @@ namespace KBot.Services
         {
             if (_lavaNode.HasPlayer(guild))
             {
-                var heb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Hiba a csatlakozáskor",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Red,
-                    Description = $"Már csatlakozva vagyok ide: `{_lavaNode.GetPlayer(guild).VoiceChannel.Name}`",
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
-                return heb.Build();
+                return await EmbedHelper.MakeEmbed(_client, null, user, $"Hiba a csatlakozáskor", $"Már csatlakozva vagyok ide: `{_lavaNode.GetPlayer(guild).VoiceChannel.Name}`", Color.Green);
             }
 
             if (vChannel is null)
             {
-                var neb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Hiba a csatlakozáskor",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Red,
-                    Description = $"Nem vagy hangcsatornában",
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
-                return neb.Build();
+                return await EmbedHelper.MakeEmbed(_client, null, user, $"Hiba a csatlakozáskor", $"Nem vagy hangcsatornában", Color.Green);
             }
             await _lavaNode.JoinAsync(vChannel, tChannel);
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "Sikeres csatlakozás",
-                    IconUrl = _client.CurrentUser.GetAvatarUrl()
-                },
-                Color = Color.Red,
-                Description = $"A következő csatornába: `{vChannel.Name}`",
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"{user.Username} | KBot {DateTime.UtcNow.Year}",
-                    IconUrl = user.GetAvatarUrl()
-                }
-            };
-            return eb.Build();
+            return await EmbedHelper.MakeEmbed(_client, null, user, $"Sikeres csatlakozás", $"A következő csatornába: `{vChannel.Name}`", Color.Red);
         }
 
         public async Task<Embed> LeaveAsync(IVoiceChannel vChannel, SocketUser user)
         {
             await _lavaNode.LeaveAsync(vChannel);
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "Hangcsatorna elhagyva",
-                    IconUrl = _client.CurrentUser.GetAvatarUrl()
-                },
-                Color = Color.Red,
-                Description = $"`{vChannel.Name}`",
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                    IconUrl = user.GetAvatarUrl()
-                }
-            };
-            return eb.Build();
+            return await EmbedHelper.MakeEmbed(_client, null, user, $"Hangcsatorna elhagyva", $"`{vChannel.Name}`", Color.Green);
         }
 
         public async Task<Embed> MoveAsync(IGuild guild, IVoiceChannel vChannel, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             await _lavaNode.MoveChannelAsync(vChannel);
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "Átlépve másik hangcsatornába",
-                    IconUrl = _client.CurrentUser.GetAvatarUrl()
-                },
-                Color = Color.Blue,
-                Description = $"Innen : `{player.VoiceChannel.Name}` \n Ide: `{vChannel.Name}`",
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                    IconUrl = user.GetAvatarUrl()
-                }
-            };
-            return eb.Build();
+            return await EmbedHelper.MakeEmbed(_client, player, user, $"Átlépve másik hangcsatornába", $"Innen : `{player.VoiceChannel.Name}` \n Ide: `{vChannel.Name}`", Color.Red);
         }
         
         public async Task<Embed> PlayAsync([Remainder] string query, IGuild guild, IVoiceChannel vChannel, ITextChannel tChannel, SocketUser user)
@@ -143,73 +69,22 @@ namespace KBot.Services
             var search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
                     await _lavaNode.SearchAsync(SearchType.Direct, query) : await _lavaNode.SearchYouTubeAsync(query);
             track = search.Tracks.FirstOrDefault();
+            var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(vChannel, tChannel);
+
             if (search.Status == SearchStatus.NoMatches)
             {
-                var eb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Hiba a kereséskor",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Red,
-                    Description = $"Nincs találat a következőre: `{query}`",
-                    Title = track.Title,
-                    Url = track.Url,
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
-                return eb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a kereséskor", $"Nincs találat a következőre: `{query}`", Color.Green);
             }
-
-            var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(vChannel, tChannel);
 
             if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
             {
                 player.Queue.Enqueue(track);
-                var eb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Hozzáadva a várolistához",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Orange,
-                    Description = $"Ebben a csatornában: `{vChannel.Name}`",
-                    Title = track.Title,
-                    Url = track.Url,
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
-                return eb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hozzáadva a várolistához", $"Ebben a csatornában: `{vChannel.Name}`", Color.Red);
             }
             else
             {
-                var eb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Most Játszott",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Green,
-                    Description = $"Ebben a csatornában: `{vChannel.Name}`",
-                    Title = track.Title,
-                    Url = track.Url,
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
                 await player.PlayAsync(track);
-                return eb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Most Játszott", $"Ebben a csatornában: `{vChannel.Name}`", Color.Red);
             }
         }
         public async Task<Embed> StopAsync(IGuild guild, SocketUser user)
@@ -217,89 +92,21 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                var eeb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Hiba a lejátszás megállításakor",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Red,
-                    Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}` \n Jelenleg nem játszok le semmit",
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
-                return eeb.Build();
-
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a lejátszás megállításakor", $"Jelenleg nem játszok le semmit", Color.Green);
             }
 
             await player.StopAsync();
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "Lejátszás megállítva",
-                    IconUrl = _client.CurrentUser.GetAvatarUrl()
-                },
-                Color = Color.Red,
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Title = player.Track.Title,
-                Url = player.Track.Url,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                    IconUrl = user.GetAvatarUrl()
-                }
-            };
-            return eb.Build();
+            return await EmbedHelper.MakeEmbed(_client, player, user, $"Lejátszás megállítva", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
         }
         public async Task<Embed> SkipAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player == null || player.Queue.Count() == 0)
             {
-                var gb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Hiba az átugrás során",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Red,
-                    Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}` \n A várolista üres",
-                    Title = player.Track.Title,
-                    Url = player.Track.Url,
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
-                return gb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba az átugrás során", $"Ebben a csatornában: `{player.VoiceChannel.Name}` \n A várolista üres", Color.Green);
             }  
-
             await player.SkipAsync();
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "Most Játszott",
-                    IconUrl = _client.CurrentUser.GetAvatarUrl()
-                },
-                Color = Color.Green,
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Title = player.Track.Title,
-                Url = player.Track.Url,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                    IconUrl = user.GetAvatarUrl()
-                }
-            };
-            return eb.Build();
+            return await EmbedHelper.MakeEmbed(_client, player, user, $"Most Játszott", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
         }
 
         public async Task<Embed> PauseOrResumeAsync(IGuild guild, SocketUser user)
@@ -308,67 +115,18 @@ namespace KBot.Services
 
             if (player == null)
             {
-                var eeb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Hiba a lejátszás megállításakor",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Red,
-                    Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}` \n Jelenleg nem játszok le semmit",
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
-                return eeb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a lejátszás megállításakor", $"Jelenleg nem játszok le semmit", Color.Green);
             }
 
             if (player.PlayerState == PlayerState.Playing)
             {
-                var eb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Lejátszás szüneteltetve",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Red,
-                    Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                    Title = player.Track.Title,
-                    Url = player.Track.Url,
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
                 await player.PauseAsync();
-                return eb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Lejátszás szüneteltetve", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
             }
             else
             {
-                var eb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = "Lejátszás folytatása",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Green,
-                    Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                    Title = player.Track.Title,
-                    Url = player.Track.Url,
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
                 await player.ResumeAsync();
-                return eb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Lejátszás folytatása", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
             }
         }
 
@@ -377,186 +135,66 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                var eb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = $"Hiba a hangerő állításakor",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Red,
-                    Description = $"Jelenleg nem játszok le zenét`",
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
-                return eb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a hangerő állításakor", $"`Jelenleg nem játszok le zenét`", Color.Green);
             }
             if (uid != 132797923049209856)
             {
                 if (volume >= 0 & volume <= 100)
                 {
-                    var eb = new EmbedBuilder
-                    {
-                        Author = new EmbedAuthorBuilder
-                        {
-                            Name = $"Hangerő {volume}%-ra állítva",
-                            IconUrl = _client.CurrentUser.GetAvatarUrl()
-                        },
-                        Color = Color.Green,
-                        Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                        Title = player.Track.Title,
-                        Url = player.Track.Url,
-                        Footer = new EmbedFooterBuilder
-                        {
-                            Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                            IconUrl = user.GetAvatarUrl()
-                        }
-                    };
                     await player.UpdateVolumeAsync(volume);
-                    return eb.Build();
+                    return await EmbedHelper.MakeEmbed(_client, player, user, $"Hangerő {volume}%-ra állítva", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
                 }
                 else
                 {
-                    var eb = new EmbedBuilder
-                    {
-                        Author = new EmbedAuthorBuilder
-                        {
-                            Name = $"Hiba a hangerő állításakor",
-                            IconUrl = _client.CurrentUser.GetAvatarUrl()
-                        },
-                        Color = Color.Red,
-                        Description = $"A hangerőnek 0 és 100 között kell lennie \n Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                        Title = player.Track.Title,
-                        Url = player.Track.Url,
-                        Footer = new EmbedFooterBuilder
-                        {
-                            Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                            IconUrl = user.GetAvatarUrl()
-                        }
-                    };
-                    return eb.Build();
+                    return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a hangerő állításakor", $"A hangerőnek 0 és 100 között kell lennie \n Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Green);
                 }
             }
             else
             {
-                var eb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = $"Hangerő {volume}%-ra állítva",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Green,
-                    Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                    Title = player.Track.Title,
-                    Url = player.Track.Url,
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
                 await player.UpdateVolumeAsync(volume);
-                return eb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hangerő {volume}%-ra állítva", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
             }
         }
 
         public async Task<Embed> SetBassBoost(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
-            EqualizerBand[] eq = {
-                new EqualizerBand(0, 0.6),
-                new EqualizerBand(1, 0.7),
-                new EqualizerBand(2, 0.8),
-                new EqualizerBand(3, 0.55),
-                new EqualizerBand(4, 0.25),
-                new EqualizerBand(5, 0),
-                new EqualizerBand(6, -0.25),
-                new EqualizerBand(7, -0.45),
-                new EqualizerBand(8, -0.55),
-                new EqualizerBand(9, -0.7),
-                new EqualizerBand(10, -0.3),
-                new EqualizerBand(11, -0.25),
-                new EqualizerBand(12, 0),
-                new EqualizerBand(13, 0),
-                new EqualizerBand(14, 0)
-                };
-            var eb = new EmbedBuilder
+
+            EqualizerBand[] eq = 
             {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "Filter aktiválva: Bass Boost",
-                    IconUrl = _client.CurrentUser.GetAvatarUrl()
-                },
-                Color = Color.Green,
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Title = player.Track.Title,
-                Url = player.Track.Url,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                    IconUrl = user.GetAvatarUrl()
-                }
+                new EqualizerBand(0, -0.075),
+                new EqualizerBand(1, .125),
+                new EqualizerBand(2, .125),
+                new EqualizerBand(3, .1),
+                new EqualizerBand(4, .1),
+                //new EqualizerBand(5, .05),
+                //new EqualizerBand(6, 0.075),
+                //new EqualizerBand(7, .001),
+                //new EqualizerBand(8, .001),
+                //new EqualizerBand(9, .001),
+                //new EqualizerBand(10, .001),
+                //new EqualizerBand(11, .001),
+                //new EqualizerBand(12, .125),
+                //new EqualizerBand(13, .15),
+                //new EqualizerBand(14, .05),
+
             };
             await player.EqualizerAsync(eq);
-            return eb.Build();
+            return await EmbedHelper.MakeEmbed(_client, player, user, $"Filter aktiválva: Bass Boost", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
         }
-
-        /*public async Task<string> SetFilter(IGuild guild, double boostAmount, Int64 uid)
-        {
-            var player = _lavaNode.GetPlayer(guild);
-            var z = new TimescaleFilter();
-            z.Pitch = 1;
-            await player.ApplyFilterAsync(z);
-        }*/
 
         public async Task<Embed> FastForward(TimeSpan time, IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                var eb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = $"Hiba a zene előretekerésekor",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Red,
-                    Description = $"Jelenleg nem játszok le zenét`",
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
-                return eb.Build();
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a zene előretekerésekor", $"`Jelenleg nem játszok le zenét`", Color.Green);
             }
             else
             {
-                var eb = new EmbedBuilder
-                {
-                    Author = new EmbedAuthorBuilder
-                    {
-                        Name = $"Zene előretekerve ide {time}",
-                        IconUrl = _client.CurrentUser.GetAvatarUrl()
-                    },
-                    Color = Color.Green,
-                    Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                    Title = player.Track.Title,
-                    Url = player.Track.Url,
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = $"{user.Username} | KBot {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
-                    }
-                };
                 await player.SeekAsync(time);
-                return eb.Build();
-                
+                return await EmbedHelper.MakeEmbed(_client, player, user, $"Zene előretekerve ide {time}", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
+
             }
         }
 
@@ -603,44 +241,12 @@ namespace KBot.Services
                 Url = track.Url,
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = "KBot {DateTime.UtcNow}",
+                    Text = $"KBot {DateTime.UtcNow}",
                     IconUrl = _client.CurrentUser.GetAvatarUrl()
                 }
             };
-            //await args.Player.TextChannel.SendMessageAsync($"{args.Reason}: {args.Track.Title}\nNow playing: {track.Title}");
             await player.TextChannel.SendMessageAsync(string.Empty, false, eb.Build());
 
         }
-        /*private async Task OnTrackFinished(TrackEndedEventArgs arg)
-        {
-
-
-            //TrackEndReason reason = arg.Reason;
-            LavaPlayer player = arg.Player;
-
-            if (!player.Queue.TryDequeue(out var item) || !(item is LavaTrack nextTrack))
-            {
-                return;
-            }
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "Most Játszott",
-                    IconUrl = _client.CurrentUser.GetAvatarUrl()
-                },
-                Color = Color.Green,
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Title = nextTrack.Title,
-                Url = nextTrack.Url,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = "KBot {DateTime.UtcNow}",
-                    IconUrl = _client.CurrentUser.GetAvatarUrl()
-                }
-            };
-            await player.PlayAsync(nextTrack);
-            await player.TextChannel.SendMessageAsync(string.Empty, false, eb.Build());
-        }*/
     }
 }

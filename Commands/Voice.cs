@@ -76,9 +76,9 @@ namespace KBot.Commands
         public async Task SetVolumeAsync(ushort volume)
         {
             await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.SetVolume(volume, Context.Guild, ((int)Context.User.Id), Context.User));
+            await ReplyAsync(embed: await _service.SetVolume(volume, Context.Guild, (long)Context.User.Id, Context.User));
         }
-        [Command("bass"), Alias("v", "vol"), Summary("Basszus erősítése")]
+        [Command("bass"), Alias("bb"), Summary("Basszus erősítése")]
         public async Task BassBoostAsync()
         {
             await Context.Message.DeleteAsync();
