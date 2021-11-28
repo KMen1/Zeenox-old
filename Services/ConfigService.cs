@@ -15,8 +15,7 @@ namespace KBot.Services
             var clientConfig = new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Debug,
-                AlwaysDownloadUsers = true,
-                ExclusiveBulkDelete = true,
+                AlwaysDownloadUsers = true
             };
             return clientConfig;
         }

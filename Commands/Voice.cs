@@ -1,21 +1,135 @@
 ﻿using Discord;
-using Discord.Commands;
+using Discord.Net;
+using Discord.WebSocket;
 using KBot.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace KBot.Commands
 {
-    public class Voice : ModuleBase<SocketCommandContext>
+    public class VoiceCommands
+    {
+        private readonly AudioService _audioService;
+        private readonly DiscordSocketClient _client;
+        public VoiceCommands(IServiceProvider services)
+        {
+            _audioService = services.GetRequiredService<AudioService>();
+            _client = services.GetRequiredService<DiscordSocketClient>();
+        }
+
+        public async Task MakeVoiceCommands()
+        {
+            var newCommands = new[] {
+                new SlashCommandBuilder()
+                    .WithName("join")
+                    .WithDescription("Csatlakozik ahhoz a hangcsatornához, amelyben tartózkodsz"),
+                new SlashCommandBuilder()
+                    .WithName("leave")
+                    .WithDescription("Elhagyja azt a hangcsatornát, amelyben a bot jelenleg tartózkodik"),
+                new SlashCommandBuilder()
+                    .WithName("play")
+                    .WithDescription("Lejátssza a kívánt zenét")
+                    .AddOption("query", ApplicationCommandOptionType.String, "Zene linkje vagy címe", isRequired: true),
+                new SlashCommandBuilder()
+                    .WithName("stop")
+                    .WithDescription("Zenelejátszás megállítása"),
+                new SlashCommandBuilder()
+                    .WithName("move")
+                    .WithDescription("Átlép abba a hangcsatornába, amelyben tartózkodsz"),
+                new SlashCommandBuilder()
+                    .WithName("skip")
+                    .WithDescription("Lejátsza a következő zenét a sorban"),
+                new SlashCommandBuilder()
+                    .WithName("pause")
+                    .WithDescription("Zenelejátszás szüneteltetése"),
+                new SlashCommandBuilder()
+                    .WithName("resume")
+                    .WithDescription("Zenelejátszás folytatása"),
+                new SlashCommandBuilder()
+                .WithName("volume")
+                .WithDescription("Hangerő beállítása")
+            };
+
+            //var guild = _client.GetGuild(863751874922676234);
+            var globalCommands = await _client.GetGlobalApplicationCommandsAsync();
+
+            List<string> existingCommandsName = new List<string>();
+            foreach (var command in globalCommands)
+            {
+                existingCommandsName.Add(command.Name);
+            }
+
+            foreach (SlashCommandBuilder newCommand in newCommands)
+            {
+                try
+                {
+                    if (!existingCommandsName.Contains(newCommand.Name))
+                        await _client.CreateGlobalApplicationCommandAsync(newCommand.Build());
+                    //await _client.(command.Build());
+                }
+                catch (HttpException exception)
+                {
+                    var json = JsonConvert.SerializeObject(exception.Errors, Formatting.Indented);
+                    Console.WriteLine(json);
+                }
+            };
+        }
+
+        public async Task HandleJoinCommand(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: await _audioService.JoinAsync((slashCommand.Channel as ITextChannel).Guild, (slashCommand.User as IVoiceState).VoiceChannel, slashCommand.Channel as ITextChannel, slashCommand.User));
+        }
+        public async Task HandleLeaveCommand(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: await _audioService.LeaveAsync((slashCommand.User as IVoiceState).VoiceChannel, slashCommand.User));
+        }
+        public async Task HandlePlayCommand(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: await _audioService.PlayAsync((string)slashCommand.Data.Options.First().Value, (slashCommand.Channel as ITextChannel).Guild, (slashCommand.User as IVoiceState).VoiceChannel, slashCommand.Channel as ITextChannel, slashCommand.User));
+        }
+
+        public async Task HandlePauseCommand(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: await _audioService.PauseOrResumeAsync((slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+        }
+
+        public async Task HandleResumeCommand(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: await _audioService.PauseOrResumeAsync((slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+        }
+
+        public async Task HandleSkipCommand(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: await _audioService.SkipAsync((slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+        }
+
+        public async Task HandleStopCommand(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: await _audioService.StopAsync((slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+        }
+        public async Task HandleMoveCommand(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: await _audioService.MoveAsync((slashCommand.Channel as ITextChannel).Guild, (slashCommand.User as IVoiceState).VoiceChannel, slashCommand.User));
+        }
+        public async Task HandleVolumeCommand(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: await _audioService.SetVolumeAsync((ushort)slashCommand.Data.Options.First().Value, (slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+        }
+
+    }
+
+    /*public class Voice : ModuleBase<SocketCommandContext>
     {
         private readonly AudioService _service;
+
         public Voice(IServiceProvider services)
         {
             _service = services.GetRequiredService<AudioService>();
         }
-
         [Command("join"), Alias("j"), Summary("Csatlakozik ahhoz a hangcsatornához, amelyben tartózkodsz")]
         public async Task JoinChannel()
         {
@@ -104,5 +218,5 @@ namespace KBot.Commands
             }
             await ReplyAsync("Kész!");
         }
-    }
+    }*/
 }

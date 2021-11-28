@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using KBot.Commands;
 using KBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +13,7 @@ namespace KBot
     public class Bot
     {
         public DiscordSocketClient _client { get; private set; }
-        public CommandService _commandService { get; private set; }
+        //public CommandService _commandService { get; private set; }
         public LavaNode _lavaNode { get; private set; }
         public LogService _logService { get; private set; }
         public ConfigService _configService { get; private set; }
@@ -36,7 +35,7 @@ namespace KBot
 
             _client = new DiscordSocketClient(await _configService.GetClientConfig().ConfigureAwait(false));
 
-            _commandService = new CommandService(await _configService.GetCommandConfig().ConfigureAwait(false));
+            //_commandService = new CommandService(await _configService.GetCommandConfig().ConfigureAwait(false));
 
             _lavaNode = new LavaNode(_client, await _configService.GetLavaConfig().ConfigureAwait(false));
 
@@ -48,9 +47,11 @@ namespace KBot
             _logService = new LogService(_services);
             await _logService.InitializeAsync();
 
-            _ = new Help(_commandService);
-            var commandService = new CommandHandler(_services);
-            await commandService.InitializeAsync();
+            //var commandService = new CommandHandler(_services);
+            //await commandService.InitializeAsync();
+
+            var slashcommandService = new SlashCommandHandler(_services);
+            slashcommandService.InitializeAsync();
 
             await _client.LoginAsync(TokenType.Bot, _config["Token"]);
             await _client.StartAsync();
@@ -64,7 +65,7 @@ namespace KBot
         {
             _services = new ServiceCollection()
                .AddSingleton(_client)
-               .AddSingleton(_commandService)
+               //.AddSingleton(_commandService)
                .AddSingleton(_lavaNode)
                .AddSingleton(_audioService)
                .AddSingleton(_config)

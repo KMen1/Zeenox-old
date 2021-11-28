@@ -13,7 +13,7 @@ namespace KBot.Commands
         public async Task SendDMAsync(IUser user, [Remainder]string message)
         {
             await Context.Message.DeleteAsync();
-            IMessageChannel channel = await user.GetOrCreateDMChannelAsync();
+            IMessageChannel channel = await user.CreateDMChannelAsync();
             var eb = new EmbedBuilder()
             {
                 Description = $"Üzenetet kaptál tőle: **@{ Context.User.Username + "#" + Context.User.Discriminator}** \n ```{message}```",
