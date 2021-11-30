@@ -13,12 +13,12 @@ using KBot.Helpers;
 
 namespace KBot.Services
 {
-    public class AudioService
+    public class Audio
     {
         private readonly LavaNode _lavaNode;
         private readonly DiscordSocketClient _client;
 
-        public AudioService(DiscordSocketClient client, LavaNode lavaNode)
+        public Audio(DiscordSocketClient client, LavaNode lavaNode)
         {
             _lavaNode = lavaNode;
             _client = client;
@@ -27,11 +27,11 @@ namespace KBot.Services
         {
             _client.Ready += OnReadyAsync; 
             _lavaNode.OnTrackEnded += OnTrackEnded;
-            _lavaNode.OnTrackException += _lavaNode_OnTrackException;
+            _lavaNode.OnTrackException += OnTrackException;
             
             return Task.CompletedTask;
         }
-        private async Task _lavaNode_OnTrackException(TrackExceptionEventArgs arg)
+        private async Task OnTrackException(TrackExceptionEventArgs arg)
         {
             await arg.Player.StopAsync();        
         }
@@ -101,7 +101,7 @@ namespace KBot.Services
         public async Task<Embed> SkipAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
-            if (player == null || player.Queue.Count() == 0)
+            if (player == null || player.Queue.Count == 0)
             {
                 return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba az átugrás során", $"Ebben a csatornában: `{player.VoiceChannel.Name}` \n A várolista üres", Color.Green);
             }  
@@ -156,6 +156,51 @@ namespace KBot.Services
             }
         }
 
+        /*public async Task<Embed> ApplyFilterAsync(string filter, IGuild guild, SocketUser user)
+        {
+            var player = _lavaNode?.GetPlayer(guild);
+            switch (filter)
+            {
+                case "":
+                    //player.ApplyFilterAsync();
+                    break;
+
+            }
+            new ChannelMixFilter
+            {
+
+            };
+            new DistortionFilter
+            {
+
+            };
+            new KarokeFilter
+            {
+
+            };
+            new LowPassFilter
+            {
+
+            };
+            new RotationFilter
+            {
+
+            };
+            new TimescaleFilter
+            {
+
+            };
+            new TremoloFilter
+            {
+
+            };
+            new VibratoFilter
+            {
+                
+            };
+            return null;
+        }
+
         public async Task<Embed> SetBassBoost(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -181,7 +226,7 @@ namespace KBot.Services
             };
             await player.EqualizerAsync(eq);
             return await EmbedHelper.MakeEmbed(_client, player, user, $"Filter aktiválva: Bass Boost", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
-        }
+        }*/
 
         public async Task<Embed> FastForward(TimeSpan time, IGuild guild, SocketUser user)
         {
@@ -221,7 +266,7 @@ namespace KBot.Services
                 return;
             }
 
-            if (!(queueable is LavaTrack track))
+            if (queueable is not LavaTrack track)
             {
                 //await player.TextChannel.SendMessageAsync("Next item in queue is not a track.");
                 return;
@@ -241,7 +286,7 @@ namespace KBot.Services
                 Url = track.Url,
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"KBot {DateTime.UtcNow}",
+                    Text = $"KBot | {DateTime.UtcNow}",
                     IconUrl = _client.CurrentUser.GetAvatarUrl()
                 }
             };

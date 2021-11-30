@@ -25,10 +25,7 @@ namespace KBot.Commands
             var helpCommand = new SlashCommandBuilder()
                 .WithName("help")
                 .WithDescription("Kilistázza az összes parancsot")
-                .AddOption(new SlashCommandOptionBuilder()
-                    .WithName("")
-                    .WithDescription("")
-            );
+                .AddOption(options);
 
 
             var globalCommands = await _client.GetGlobalApplicationCommandsAsync();

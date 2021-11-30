@@ -1,11 +1,8 @@
 ﻿using Discord;
-using Discord.Net;
 using Discord.WebSocket;
 using KBot.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,113 +10,150 @@ namespace KBot.Commands
 {
     public class VoiceCommands
     {
-        private readonly AudioService _audioService;
-        private readonly DiscordSocketClient _client;
+        private readonly Audio _audioService;
+
         public VoiceCommands(IServiceProvider services)
         {
-            _audioService = services.GetRequiredService<AudioService>();
-            _client = services.GetRequiredService<DiscordSocketClient>();
+            _audioService = services.GetRequiredService<Audio>();
         }
 
-        public async Task MakeVoiceCommands()
+        public static Task<SlashCommandBuilder[]> MakeVoiceCommands()
         {
-            var newCommands = new[] {
-                new SlashCommandBuilder()
-                    .WithName("join")
-                    .WithDescription("Csatlakozik ahhoz a hangcsatornához, amelyben tartózkodsz"),
-                new SlashCommandBuilder()
-                    .WithName("leave")
-                    .WithDescription("Elhagyja azt a hangcsatornát, amelyben a bot jelenleg tartózkodik"),
-                new SlashCommandBuilder()
-                    .WithName("play")
-                    .WithDescription("Lejátssza a kívánt zenét")
-                    .AddOption("query", ApplicationCommandOptionType.String, "Zene linkje vagy címe", isRequired: true),
-                new SlashCommandBuilder()
-                    .WithName("stop")
-                    .WithDescription("Zenelejátszás megállítása"),
-                new SlashCommandBuilder()
-                    .WithName("move")
-                    .WithDescription("Átlép abba a hangcsatornába, amelyben tartózkodsz"),
-                new SlashCommandBuilder()
-                    .WithName("skip")
-                    .WithDescription("Lejátsza a következő zenét a sorban"),
-                new SlashCommandBuilder()
-                    .WithName("pause")
-                    .WithDescription("Zenelejátszás szüneteltetése"),
-                new SlashCommandBuilder()
-                    .WithName("resume")
-                    .WithDescription("Zenelejátszás folytatása"),
-                new SlashCommandBuilder()
-                .WithName("volume")
-                .WithDescription("Hangerő beállítása")
-            };
-
-            //var guild = _client.GetGuild(863751874922676234);
-            var globalCommands = await _client.GetGlobalApplicationCommandsAsync();
-
-            List<string> existingCommandsName = new List<string>();
-            foreach (var command in globalCommands)
+            return Task.Run(() =>
             {
-                existingCommandsName.Add(command.Name);
-            }
-
-            foreach (SlashCommandBuilder newCommand in newCommands)
-            {
-                try
+                var newCommands = new[] 
                 {
-                    if (!existingCommandsName.Contains(newCommand.Name))
-                        await _client.CreateGlobalApplicationCommandAsync(newCommand.Build());
-                    //await _client.(command.Build());
-                }
-                catch (HttpException exception)
-                {
-                    var json = JsonConvert.SerializeObject(exception.Errors, Formatting.Indented);
-                    Console.WriteLine(json);
-                }
-            };
+                    new SlashCommandBuilder()
+                        .WithName("join")
+                        .WithDescription("Csatlakozik ahhoz a hangcsatornához, amelyben tartózkodsz"),
+                    new SlashCommandBuilder()
+                        .WithName("leave")
+                        .WithDescription("Elhagyja azt a hangcsatornát, amelyben a bot jelenleg tartózkodik"),
+                    new SlashCommandBuilder()
+                        .WithName("play")
+                        .WithDescription("Lejátssza a kívánt zenét")
+                        .AddOption("query", ApplicationCommandOptionType.String, "Zene linkje vagy címe", isRequired: true),
+                    new SlashCommandBuilder()
+                        .WithName("stop")
+                        .WithDescription("Zenelejátszás megállítása"),
+                    new SlashCommandBuilder()
+                        .WithName("move")
+                        .WithDescription("Átlép abba a hangcsatornába, amelyben tartózkodsz"),
+                    new SlashCommandBuilder()
+                        .WithName("skip")
+                        .WithDescription("Lejátsza a következő zenét a sorban"),
+                    new SlashCommandBuilder()
+                        .WithName("pause")
+                        .WithDescription("Zenelejátszás szüneteltetése"),
+                    new SlashCommandBuilder()
+                        .WithName("resume")
+                        .WithDescription("Zenelejátszás folytatása"),
+                    new SlashCommandBuilder()
+                        .WithName("volume")
+                        .WithDescription("Hangerő beállítása")
+                        .AddOption("volume", ApplicationCommandOptionType.Integer, "Hangerő számban megadva (1-100)", isRequired: true, minValue: 1, maxValue: 100),
+                    /*new SlashCommandBuilder()
+                        .WithName("filter")
+                        .WithDescription("Filterek állítása")
+                        .AddOption(
+                        new SlashCommandOptionBuilder()
+                            .WithName("filter")
+                            .WithDescription("")
+                            .WithRequired(true)
+                            .AddChoice("ChannelMix", "ChannelMix")
+                            .AddChoice("Distortion", "Distortion")
+                            .AddChoice("Karoke", "Karoke")
+                            .AddChoice("LowPass", "LowPass")
+                            .AddChoice("Rotation", "Rotation")
+                            .AddChoice("Timescale", "Timescale")
+                            .AddChoice("Tremolo", "Tremolo")
+                            .AddChoice("Vibrato", "Vibrato")
+                            .WithType(ApplicationCommandOptionType.String)
+                        )*/
+                };
+                return newCommands;
+            });
         }
 
-        public async Task HandleJoinCommand(SocketSlashCommand slashCommand)
+        public async Task Join(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.JoinAsync((slashCommand.Channel as ITextChannel).Guild, (slashCommand.User as IVoiceState).VoiceChannel, slashCommand.Channel as ITextChannel, slashCommand.User));
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.JoinAsync(
+                    (slashCommand.Channel as ITextChannel).Guild, 
+                    (slashCommand.User as IVoiceState).VoiceChannel, 
+                    slashCommand.Channel as ITextChannel, 
+                    slashCommand.User));
         }
-        public async Task HandleLeaveCommand(SocketSlashCommand slashCommand)
+        public async Task Leave(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.LeaveAsync((slashCommand.User as IVoiceState).VoiceChannel, slashCommand.User));
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.LeaveAsync(
+                    (slashCommand.User as IVoiceState).VoiceChannel, 
+                    slashCommand.User));
         }
-        public async Task HandlePlayCommand(SocketSlashCommand slashCommand)
+        public async Task Play(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.PlayAsync((string)slashCommand.Data.Options.First().Value, (slashCommand.Channel as ITextChannel).Guild, (slashCommand.User as IVoiceState).VoiceChannel, slashCommand.Channel as ITextChannel, slashCommand.User));
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.PlayAsync(
+                    (string)slashCommand.Data.Options.First().Value, 
+                    (slashCommand.Channel as ITextChannel).Guild, 
+                    (slashCommand.User as IVoiceState).VoiceChannel, 
+                    slashCommand.Channel as ITextChannel, 
+                    slashCommand.User));
         }
 
-        public async Task HandlePauseCommand(SocketSlashCommand slashCommand)
+        public async Task Pause(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.PauseOrResumeAsync((slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.PauseOrResumeAsync(
+                    (slashCommand.Channel as ITextChannel).Guild, 
+                    slashCommand.User));
         }
 
-        public async Task HandleResumeCommand(SocketSlashCommand slashCommand)
+        public async Task Resume(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.PauseOrResumeAsync((slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.PauseOrResumeAsync(
+                    (slashCommand.Channel as ITextChannel).Guild, 
+                    slashCommand.User));
         }
 
-        public async Task HandleSkipCommand(SocketSlashCommand slashCommand)
+        public async Task Skip(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.SkipAsync((slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.SkipAsync(
+                    (slashCommand.Channel as ITextChannel).Guild, 
+                    slashCommand.User));
         }
 
-        public async Task HandleStopCommand(SocketSlashCommand slashCommand)
+        public async Task Stop(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.StopAsync((slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.StopAsync(
+                    (slashCommand.Channel as ITextChannel).Guild, 
+                    slashCommand.User));
         }
-        public async Task HandleMoveCommand(SocketSlashCommand slashCommand)
+        public async Task Move(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.MoveAsync((slashCommand.Channel as ITextChannel).Guild, (slashCommand.User as IVoiceState).VoiceChannel, slashCommand.User));
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.MoveAsync(
+                    (slashCommand.Channel as ITextChannel).Guild, 
+                    (slashCommand.User as IVoiceState).VoiceChannel, 
+                    slashCommand.User));
         }
-        public async Task HandleVolumeCommand(SocketSlashCommand slashCommand)
+        public async Task Volume(SocketSlashCommand slashCommand)
         {
             await slashCommand.RespondAsync(embed: await _audioService.SetVolumeAsync((ushort)slashCommand.Data.Options.First().Value, (slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
         }
 
+        /*public async Task Filter(string filter, SocketSlashCommand slashCommand)
+        {
+            switch (filter)
+            {
+                case "":
+                    break;
+            }
+        }*/
     }
 
     /*public class Voice : ModuleBase<SocketCommandContext>

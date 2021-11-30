@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -9,31 +8,31 @@ using Victoria;
 
 namespace KBot.Services
 {
-    public class LogService
+    public class Logging
     {
         private readonly SemaphoreSlim _semaphoreSlim;
         private readonly DiscordSocketClient _client;
-        private readonly CommandService _commandService;
+        //private readonly CommandService _commandService;
         private readonly LavaNode _lavaNode;
 
-        public LogService(IServiceProvider services)
+        public Logging(IServiceProvider services)
         {
             _semaphoreSlim = new SemaphoreSlim(1);
             _client = services.GetRequiredService<DiscordSocketClient>();
-            _commandService = services.GetRequiredService<CommandService>();
+            //_commandService = services.GetRequiredService<CommandService>();
             _lavaNode = services.GetRequiredService<LavaNode>();
         }
 
         public Task InitializeAsync()
         {
             _client.Log += _client_Log;
-            _commandService.Log += _command_Log;
+            //_commandService.Log += _command_Log;
             _lavaNode.OnLog += _lavaNode_OnLog;
             return Task.CompletedTask;
         }
 
         private Task _lavaNode_OnLog(LogMessage arg) => Log(arg);
-        private Task _command_Log(LogMessage arg) => Log(arg);
+        //private Task _command_Log(LogMessage arg) => Log(arg);
         private Task _client_Log(LogMessage arg) => Log(arg);
 
         public async Task Log(LogMessage logMessage)

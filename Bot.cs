@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
 using KBot.Services;
 using Microsoft.Extensions.Configuration;
@@ -13,11 +12,9 @@ namespace KBot
     public class Bot
     {
         public DiscordSocketClient _client { get; private set; }
-        //public CommandService _commandService { get; private set; }
         public LavaNode _lavaNode { get; private set; }
-        public LogService _logService { get; private set; }
-        public ConfigService _configService { get; private set; }
-        public AudioService _audioService { get; private set; }
+        public Logging _logService { get; private set; }
+        public Audio _audioService { get; private set; }
         public IServiceProvider _services { get; private set; }
         private readonly IConfiguration _config;
 
@@ -31,26 +28,19 @@ namespace KBot
         }
         public async Task StartAsync()
         {
-            _configService = new ConfigService();
+            _client = new DiscordSocketClient(await Config.GetClientConfig());
 
-            _client = new DiscordSocketClient(await _configService.GetClientConfig().ConfigureAwait(false));
+            _lavaNode = new LavaNode(_client, await Config.GetLavaConfig());
 
-            //_commandService = new CommandService(await _configService.GetCommandConfig().ConfigureAwait(false));
-
-            _lavaNode = new LavaNode(_client, await _configService.GetLavaConfig().ConfigureAwait(false));
-
-            _audioService = new AudioService(_client, _lavaNode);
+            _audioService = new Audio(_client, _lavaNode);
             await _audioService.InitializeAsync();
 
             await GetServices();
 
-            _logService = new LogService(_services);
+            _logService = new Logging(_services);
             await _logService.InitializeAsync();
 
-            //var commandService = new CommandHandler(_services);
-            //await commandService.InitializeAsync();
-
-            var slashcommandService = new SlashCommandHandler(_services);
+            var slashcommandService = new Command(_services);
             slashcommandService.InitializeAsync();
 
             await _client.LoginAsync(TokenType.Bot, _config["Token"]);
@@ -65,7 +55,6 @@ namespace KBot
         {
             _services = new ServiceCollection()
                .AddSingleton(_client)
-               //.AddSingleton(_commandService)
                .AddSingleton(_lavaNode)
                .AddSingleton(_audioService)
                .AddSingleton(_config)
