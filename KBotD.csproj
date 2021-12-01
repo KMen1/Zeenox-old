@@ -12,10 +12,13 @@
     <PackageId>KBot</PackageId>
     <Description>A Discord Bot</Description>
     <PackageIcon>icon.png</PackageIcon>
-    <NeutralLanguage></NeutralLanguage>
+    <NeutralLanguage>en</NeutralLanguage>
     <AssemblyName>KBot</AssemblyName>
     <RootNamespace>KBot</RootNamespace>
-    <Copyright>2021</Copyright>
+    <Copyright>2022</Copyright>
+    <RepositoryUrl>https://github.com/KMen1/KBot</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/KMen1/KBot</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

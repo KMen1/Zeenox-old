@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
 using System.Threading.Tasks;
 using Victoria;
@@ -26,8 +25,8 @@ namespace KBot.Services
             {
                 var config = new LavaConfig
                 {
-                    Hostname = "localhost",
-                    Port = 2333,
+                    Hostname = "lava.link",
+                    Port = 80,
                     Authorization = "youshallnotpass",
                 };
                 return config;

@@ -88,6 +88,7 @@ namespace KBot.Commands
         {
             await slashCommand.RespondAsync(embed: 
                 await _audioService.LeaveAsync(
+                    (slashCommand.Channel as ITextChannel).Guild,
                     (slashCommand.User as IVoiceState).VoiceChannel, 
                     slashCommand.User));
         }

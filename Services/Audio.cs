@@ -37,30 +37,32 @@ namespace KBot.Services
         }
         public async Task<Embed> JoinAsync(IGuild guild, IVoiceChannel vChannel, ITextChannel tChannel, SocketUser user)
         {
-            if (_lavaNode.HasPlayer(guild))
+            if (!_lavaNode.HasPlayer(guild) || vChannel is null)
             {
-                return await EmbedHelper.MakeEmbed(_client, null, user, $"Hiba a csatlakozáskor", $"Már csatlakozva vagyok ide: `{_lavaNode.GetPlayer(guild).VoiceChannel.Name}`", Color.Green);
-            }
-
-            if (vChannel is null)
-            {
-                return await EmbedHelper.MakeEmbed(_client, null, user, $"Hiba a csatlakozáskor", $"Nem vagy hangcsatornában", Color.Green);
+                return await EmbedHelper.MakeJoin(_client, user, vChannel, true);
             }
             await _lavaNode.JoinAsync(vChannel, tChannel);
-            return await EmbedHelper.MakeEmbed(_client, null, user, $"Sikeres csatlakozás", $"A következő csatornába: `{vChannel.Name}`", Color.Green);
+            return await EmbedHelper.MakeJoin(_client, user, vChannel, false);
         }
 
-        public async Task<Embed> LeaveAsync(IVoiceChannel vChannel, SocketUser user)
+        public async Task<Embed> LeaveAsync(IGuild guild, IVoiceChannel vChannel, SocketUser user)
         {
+            if (!_lavaNode.HasPlayer(guild) || vChannel is null)
+            {
+                return await EmbedHelper.MakeLeave(_client, user, vChannel, true);
+            }
             await _lavaNode.LeaveAsync(vChannel);
-            return await EmbedHelper.MakeEmbed(_client, null, user, $"Hangcsatorna elhagyva", $"`{vChannel.Name}`", Color.Green);
+            return await EmbedHelper.MakeLeave(_client, user, vChannel, false);
         }
 
         public async Task<Embed> MoveAsync(IGuild guild, IVoiceChannel vChannel, SocketUser user)
         {
-            var player = _lavaNode.GetPlayer(guild);
+            if (!_lavaNode.HasPlayer(guild))
+            {
+                return await EmbedHelper.MakeMove(_client, user, _lavaNode.GetPlayer(guild), vChannel, true);
+            }
             await _lavaNode.MoveChannelAsync(vChannel);
-            return await EmbedHelper.MakeEmbed(_client, player, user, $"Átlépve másik hangcsatornába", $"Innen : `{player.VoiceChannel.Name}` \n Ide: `{vChannel.Name}`", Color.Red);
+            return await EmbedHelper.MakeMove(_client, user, _lavaNode.GetPlayer(guild), vChannel, false);
         }
         
         public async Task<Embed> PlayAsync([Remainder] string query, IGuild guild, IVoiceChannel vChannel, ITextChannel tChannel, SocketUser user)
@@ -73,18 +75,18 @@ namespace KBot.Services
 
             if (search.Status == SearchStatus.NoMatches)
             {
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a kereséskor", $"Nincs találat a következőre: `{query}`", Color.Green);
+                return await EmbedHelper.MakePlay(_client, user, vChannel, track, player, true, false);
             }
 
             if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
             {
                 player.Queue.Enqueue(track);
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hozzáadva a várolistához", $"Ebben a csatornában: `{vChannel.Name}`", Color.Red);
+                return await EmbedHelper.MakePlay(_client, user, vChannel, track, player, false, true);
             }
             else
             {
                 await player.PlayAsync(track);
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Most Játszott", $"Ebben a csatornában: `{vChannel.Name}`", Color.Green);
+                return await EmbedHelper.MakePlay(_client, user, vChannel, track, player, false, false);
             }
         }
         public async Task<Embed> StopAsync(IGuild guild, SocketUser user)
@@ -92,21 +94,20 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a lejátszás megállításakor", $"Jelenleg nem játszok le semmit", Color.Green);
+                return await EmbedHelper.MakeStop(_client, user, player, true);
             }
-
             await player.StopAsync();
-            return await EmbedHelper.MakeEmbed(_client, player, user, $"Lejátszás megállítva", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
+            return await EmbedHelper.MakeStop(_client, user, player, false);
         }
         public async Task<Embed> SkipAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player == null || player.Queue.Count == 0)
             {
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba az átugrás során", $"Ebben a csatornában: `{player.VoiceChannel.Name}` \n A várolista üres", Color.Green);
-            }  
+                return await EmbedHelper.MakeSkip(_client, user, player, true);
+            }
             await player.SkipAsync();
-            return await EmbedHelper.MakeEmbed(_client, player, user, $"Most Játszott", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
+            return await EmbedHelper.MakeSkip(_client, user, player, false);
         }
 
         public async Task<Embed> PauseOrResumeAsync(IGuild guild, SocketUser user)
@@ -115,18 +116,18 @@ namespace KBot.Services
 
             if (player == null)
             {
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a lejátszás megállításakor", $"Jelenleg nem játszok le semmit", Color.Green);
+                return await EmbedHelper.MakePauseOrResume(_client, user, player, true, false);
             }
 
             if (player.PlayerState == PlayerState.Playing)
             {
                 await player.PauseAsync();
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Lejátszás szüneteltetve", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
+                return await EmbedHelper.MakePauseOrResume(_client, user, player, false, false);
             }
             else
             {
                 await player.ResumeAsync();
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Lejátszás folytatása", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
+                return await EmbedHelper.MakePauseOrResume(_client, user, player, false, true);
             }
         }
 
@@ -135,24 +136,21 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a hangerő állításakor", $"`Jelenleg nem játszok le zenét`", Color.Green);
+                return await EmbedHelper.MakeVolume(_client, user, player, volume, true);
             }
-            if (user.Id != 132797923049209856)
+            if (user.Id == 132797923049209856)
             {
-                if (volume >= 0 & volume <= 100)
-                {
-                    await player.UpdateVolumeAsync(volume);
-                    return await EmbedHelper.MakeEmbed(_client, player, user, $"Hangerő {volume}%-ra állítva", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
-                }
-                else
-                {
-                    return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a hangerő állításakor", $"A hangerőnek 0 és 100 között kell lennie \n Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Green);
-                }
+                await player.UpdateVolumeAsync(volume);
+                return await EmbedHelper.MakeVolume(_client, user, player, volume, false);
+            }
+            else if (volume >= 0 & volume <= 100)
+            {
+                await player.UpdateVolumeAsync(volume);
+                return await EmbedHelper.MakeVolume(_client, user, player, volume, false);
             }
             else
             {
-                await player.UpdateVolumeAsync(volume);
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hangerő {volume}%-ra állítva", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
+                return await EmbedHelper.MakeVolume(_client, user, player, volume, true);
             }
         }
 
@@ -233,14 +231,10 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Hiba a zene előretekerésekor", $"`Jelenleg nem játszok le zenét`", Color.Green);
+                return await EmbedHelper.MakeFastForward(_client, user, player, time, true);
             }
-            else
-            {
-                await player.SeekAsync(time);
-                return await EmbedHelper.MakeEmbed(_client, player, user, $"Zene előretekerve ide {time}", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
-
-            }
+            await player.SeekAsync(time);
+            return await EmbedHelper.MakeFastForward(_client, user, player, time, false);
         }
 
         private async Task OnReadyAsync()
