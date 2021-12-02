@@ -15,22 +15,23 @@ namespace KBot
         public LavaNode _lavaNode { get; private set; }
         public Logging _logService { get; private set; }
         public Audio _audioService { get; private set; }
+
+        public Config _configService { get; private set; }
         public IServiceProvider _services { get; private set; }
-        private readonly IConfiguration _config;
+        private IConfiguration _config;
 
         public Bot()
         {
             Console.Title = $"KBot - {DateTime.UtcNow.Year}";
-            var _builder = new ConfigurationBuilder()
-               .SetBasePath(AppContext.BaseDirectory)
-               .AddJsonFile(path: "config.json");
-            _config = _builder.Build();
         }
         public async Task StartAsync()
         {
+            _configService = new Config();
+            IConfiguration config = _configService._config;
+            _config = config;
             _client = new DiscordSocketClient(await Config.GetClientConfig());
 
-            _lavaNode = new LavaNode(_client, await Config.GetLavaConfig());
+            _lavaNode = new LavaNode(_client, await _configService.GetLavaConfig());
 
             _audioService = new Audio(_client, _lavaNode);
             await _audioService.InitializeAsync();
@@ -43,9 +44,9 @@ namespace KBot
             var slashcommandService = new Command(_services);
             slashcommandService.InitializeAsync();
 
-            await _client.LoginAsync(TokenType.Bot, _config["Token"]);
+            await _client.LoginAsync(TokenType.Bot, config["Token"]);
             await _client.StartAsync();
-            await _client.SetGameAsync(_config["Prefix"] + _config["Game"], string.Empty, ActivityType.Listening);
+            await _client.SetGameAsync(config["Prefix"] + config["Game"], string.Empty, ActivityType.Listening);
             await _client.SetStatusAsync(UserStatus.Online);
 
             await Task.Delay(-1);
