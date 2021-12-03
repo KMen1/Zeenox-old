@@ -14,16 +14,14 @@ namespace KBot.Services
     public class Command
     {
         private readonly DiscordSocketClient _client;
-        private readonly IServiceProvider _services;
         private readonly VoiceCommands _voiceCommands;
         private readonly Help _help;
 
         public Command(IServiceProvider services)
         {
-            _services = services;
             _client = services.GetRequiredService<DiscordSocketClient>();
             _help = new Help(_client);
-            _voiceCommands = new VoiceCommands(_services);
+            _voiceCommands = new VoiceCommands(services);
         }
 
         public void InitializeAsync()
@@ -55,12 +53,12 @@ namespace KBot.Services
                     var json = JsonConvert.SerializeObject(exception.Errors, Formatting.Indented);
                     Console.WriteLine(json);
                 }
-            };
+            }
         }
 
         private async Task HandleSlashCommands(SocketSlashCommand command)
         {
-            switch (command.Data.Name)
+            switch (command.Data.Name.ToLower())
             {
                 case "help":
                     await _help.HandleHelpCommand(command);
@@ -92,6 +90,33 @@ namespace KBot.Services
                 case "volume":
                     await _voiceCommands.Volume(command);
                     break;
+                case "loop":
+                    await _voiceCommands.Loop(command);
+                    break;
+                case "bassboost":
+                    await _voiceCommands.BassBoost(command);
+                    break;
+                case "nightcore":
+                    await _voiceCommands.NightCore(command);
+                    break;
+                case "8d":
+                    await _voiceCommands.EightD(command);
+                    break;
+                case "vaporwave":
+                    await _voiceCommands.VaporWave(command);
+                    break;
+                case "karaoke":
+                    await _voiceCommands.Karaoke(command);
+                    break;
+                case "clearfilters":
+                    await _voiceCommands.ClearFilters(command);
+                    break;
+                /*case "speed":
+                    await _voiceCommands.Speed(command);
+                    break;
+                case "pitch":
+                    await _voiceCommands.Pitch(command);
+                    break;*/
             }
         }
     }

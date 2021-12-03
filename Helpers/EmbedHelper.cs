@@ -71,21 +71,20 @@ namespace KBot.Helpers
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
-                if (player != null)
+                if (player == null) return eb.Build();
+                eb.AddField(x =>
                 {
-                    eb.AddField(x =>
-                    {
-                        x.Name = "Most játszott";
-                        x.Value = $"`{player.Track.Title}`";
-                        x.IsInline = true;
-                    });
-                    eb.AddField(x =>
-                    {
-                        x.Name = "Következő";
-                        x.Value = $"`{player.Queue.Peek().Title}`";
-                        x.IsInline = true;
-                    });
-                };
+                    x.Name = "Most játszott";
+                    x.Value = $"`{player.Track.Title}`";
+                    x.IsInline = true;
+                });
+                eb.AddField(x =>
+                {
+                    x.Name = "Következő";
+                    x.Value = $"`{player.Queue.Peek().Title}`";
+                    x.IsInline = true;
+                });
+
                 return eb.Build();
             });
         }
@@ -106,7 +105,7 @@ namespace KBot.Helpers
                     Color = noMatches ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {track.Duration}",
+                        Text = $"{user.Username} | `{track.Duration}`",
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
@@ -157,11 +156,10 @@ namespace KBot.Helpers
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
-                if (player != null)
-                {
-                    eb.WithTitle(player.Track.Title);
-                    eb.WithUrl(player.Track.Url);
-                };
+                if (player == null) return eb.Build();
+                eb.WithTitle(player.Track.Title);
+                eb.WithUrl(player.Track.Url);
+
                 return eb.Build();
             });
         }
@@ -184,11 +182,10 @@ namespace KBot.Helpers
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
-                if (player != null)
-                {
-                    eb.WithTitle(player.Track.Title);
-                    eb.WithUrl(player.Track.Url);
-                };
+                if (player == null) return eb.Build();
+                eb.WithTitle(player.Track.Title);
+                eb.WithUrl(player.Track.Url);
+
                 return eb.Build();
             });
         }
@@ -214,12 +211,12 @@ namespace KBot.Helpers
                 if (player != null && volume >= 0 & volume <= 100)
                 {
                     eb.WithDescription("A hangerőnek 0 és 100 között kell lennie");
-                };
-                if (player != null)
-                {
-                    eb.WithTitle(player.Track.Title);
-                    eb.WithUrl(player.Track.Url);
-                };
+                }
+
+                if (player == null) return eb.Build();
+                eb.WithTitle(player.Track.Title);
+                eb.WithUrl(player.Track.Url);
+
                 return eb.Build();
             });
         }
@@ -242,11 +239,66 @@ namespace KBot.Helpers
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
-                if (player != null)
+                if (player == null) return eb.Build();
+                eb.WithTitle(player.Track.Title);
+                eb.WithUrl(player.Track.Url);
+
+                return eb.Build();
+            });
+        }
+
+        public static Task<Embed> MakeFilter(DiscordSocketClient client, SocketUser user, LavaPlayer player,
+            string filtername, bool failed, bool enabled = false)
+        {
+            return Task.Run(() =>
+            {
+                var eb = new EmbedBuilder
                 {
-                    eb.WithTitle(player.Track.Title);
-                    eb.WithUrl(player.Track.Url);
+                    Author = new EmbedAuthorBuilder
+                    {
+                        Name = failed ? "Hiba a filter beállításakor" : 
+                            enabled ? $"Filter aktiválva: {filtername}" : $"Fiter deaktiválva: {filtername}",
+                        IconUrl = client.CurrentUser.GetAvatarUrl()
+                    },
+                    Description = failed ? "Jelenleg nincs zene lejátszás alatt" : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                    Color = failed ? Color.Red : Color.Green,
+                    Footer = new EmbedFooterBuilder
+                    {
+                        Text = $"{user.Username} | {DateTime.UtcNow}",
+                        IconUrl = user.GetAvatarUrl()
+                    },
                 };
+                if (player == null) return eb.Build();
+                eb.WithTitle(player.Track.Title);
+                eb.WithUrl(player.Track.Url);
+
+                return eb.Build();
+            });
+        }
+
+        public static Task<Embed> MakeLoop(DiscordSocketClient client, SocketUser user, LavaPlayer player, bool failed)
+        {
+            return Task.Run(() =>
+            {
+                var eb = new EmbedBuilder
+                {
+                    Author = new EmbedAuthorBuilder
+                    {
+                        Name = failed ? "Hiba a zene ismétlésekor" : $"Zene ismétlése",
+                        IconUrl = client.CurrentUser.GetAvatarUrl()
+                    },
+                    Description = failed ? "Jelenleg nincs zene lejátszás alatt" : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                    Color = failed ? Color.Red : Color.Green,
+                    Footer = new EmbedFooterBuilder
+                    {
+                        Text = $"{user.Username} | {DateTime.UtcNow}",
+                        IconUrl = user.GetAvatarUrl()
+                    },
+                };
+                if (player == null) return eb.Build();
+                eb.WithTitle(player.Track.Title);
+                eb.WithUrl(player.Track.Url);
+
                 return eb.Build();
             });
         }

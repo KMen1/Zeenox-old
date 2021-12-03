@@ -53,23 +53,41 @@ namespace KBot.Commands
                         .WithDescription("Hangerő beállítása")
                         .AddOption("volume", ApplicationCommandOptionType.Integer, "Hangerő számban megadva (1-100)", isRequired: true, minValue: 1, maxValue: 100),
                     /*new SlashCommandBuilder()
-                        .WithName("filter")
-                        .WithDescription("Filterek állítása")
-                        .AddOption(
-                        new SlashCommandOptionBuilder()
-                            .WithName("filter")
-                            .WithDescription("")
-                            .WithRequired(true)
-                            .AddChoice("ChannelMix", "ChannelMix")
-                            .AddChoice("Distortion", "Distortion")
-                            .AddChoice("Karoke", "Karoke")
-                            .AddChoice("LowPass", "LowPass")
-                            .AddChoice("Rotation", "Rotation")
-                            .AddChoice("Timescale", "Timescale")
-                            .AddChoice("Tremolo", "Tremolo")
-                            .AddChoice("Vibrato", "Vibrato")
-                            .WithType(ApplicationCommandOptionType.String)
-                        )*/
+                        .WithName("queue")
+                        .WithDescription("A sorban lévő zenék listája"),
+                    new SlashCommandBuilder()
+                        .WithName("clearqueue")
+                        .WithDescription("A sorban lévő zenék törlése"),*/
+                    new SlashCommandBuilder()
+                        .WithName("bassboost")
+                        .WithDescription("Basszus erősítés bekapcsolása / kikapcsolása"),
+                    new SlashCommandBuilder()
+                        .WithName("nightcore")
+                        .WithDescription("Nightcore mód bekapcsolása / kikapcsolása"),
+                    new SlashCommandBuilder()
+                        .WithName("8d")
+                        .WithDescription("8D mód bekapcsolása / kikapcsolása"),
+                    new SlashCommandBuilder()
+                        .WithName("vaporwave")
+                        .WithDescription("Vaporwave mód bekapcsolása / kikapcsolása"),
+                    new SlashCommandBuilder()
+                        .WithName("speed")
+                        .WithDescription("Zene sebességének beállítása"),
+                    new SlashCommandBuilder()
+                        .WithName("pitch")
+                        .WithDescription("Zene hangmagasságának beállítása"),
+                    new SlashCommandBuilder()
+                        .WithName("loop")
+                        .WithDescription("Zene ismétlésének bekapcsolása / kikapcsolása"),
+                    new SlashCommandBuilder()
+                        .WithName("karaoke")
+                        .WithDescription("Karaoke mód bekapcsolása / kikapcsolása"),
+                    new SlashCommandBuilder()
+                        .WithName("clearfilter")
+                        .WithDescription("Minden aktív szűrőt deaktivál"),
+                    /*new SlashCommandBuilder()
+                        .WithName("247")
+                        .WithDescription("24/7 mód bekapcsolása"),*/
                 };
                 return newCommands;
             });
@@ -99,7 +117,7 @@ namespace KBot.Commands
                     (string)slashCommand.Data.Options.First().Value, 
                     ((ITextChannel) slashCommand.Channel).Guild, 
                     ((IVoiceState) slashCommand.User).VoiceChannel, 
-                    slashCommand.Channel as ITextChannel, 
+                    (ITextChannel) slashCommand.Channel, 
                     slashCommand.User));
         }
 
@@ -144,46 +162,92 @@ namespace KBot.Commands
         }
         public async Task Volume(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.SetVolumeAsync((ushort)slashCommand.Data.Options.First().Value, ((ITextChannel) slashCommand.Channel).Guild, slashCommand.User));
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.SetVolumeAsync(
+                    (ushort)slashCommand.Data.Options.First().Value, 
+                    ((ITextChannel) slashCommand.Channel).Guild, 
+                    slashCommand.User));
         }
 
-        /*public async Task Filter(string filter, SocketSlashCommand slashCommand)
+        public async Task Loop(SocketSlashCommand slashCommand)
         {
-            switch (filter)
-            {
-                case "":
-                    break;
-            }
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.SetLoopAsync(
+                    ((ITextChannel) slashCommand.Channel).Guild, 
+                    slashCommand.User));
+        }
+        
+        /*public async Task TwentyFourSeven(SocketSlashCommand slashCommand)
+        {
+            await slashCommand.RespondAsync(embed: 
+                await _audioService.SetTwentyFourSevenAsync(
+                    ((ITextChannel) slashCommand.Channel).Guild, 
+                    slashCommand.User));
         }*/
+        
+        public async Task BassBoost(SocketSlashCommand command)
+        {
+            await command.RespondAsync(embed: 
+                await _audioService.SetBassBoostAsync(
+                    ((ITextChannel)command.Channel).Guild, 
+                    command.User));
+        }
+
+        public async Task NightCore(SocketSlashCommand command)
+        {
+            await command.RespondAsync(embed: 
+                await _audioService.SetNightCoreAsync(
+                    ((ITextChannel)command.Channel).Guild, 
+                    command.User));
+        }
+
+        public async Task EightD(SocketSlashCommand command)
+        {
+            await command.RespondAsync(
+                embed: await _audioService.SetEightDAsync(
+                    ((ITextChannel)command.Channel).Guild, 
+                    command.User));
+        }
+
+        public async Task VaporWave(SocketSlashCommand command)
+        {
+            await command.RespondAsync(embed: 
+                await _audioService.SetVaporWaveAsync(
+                    ((ITextChannel)command.Channel).Guild, 
+                    command.User));
+        }
+
+        /*public async Task Speed(SocketSlashCommand command)
+        {
+            await command.RespondAsync(embed: 
+                await _audioService.SetSpeedAsync(
+                    (float)command.Data.Options.First().Value, 
+                    ((ITextChannel)command.Channel).Guild, 
+                    command.User));
+        }
+        
+        public async Task Pitch(SocketSlashCommand command)
+        {
+            await command.RespondAsync(embed: 
+                await _audioService.SetPitchAsync(
+                    (float)command.Data.Options.First().Value, 
+                    ((ITextChannel)command.Channel).Guild, 
+                    command.User));
+        }*/
+        public async Task Karaoke(SocketSlashCommand command)
+        {
+            await command.RespondAsync(embed: 
+                await _audioService.SetKaraokeAsync(
+                    ((ITextChannel)command.Channel).Guild, 
+                    command.User));
+        }
+
+        public async Task ClearFilters(SocketSlashCommand command)
+        {
+            await command.RespondAsync(embed: 
+                await _audioService.ClearFiltersAsync(
+                    ((ITextChannel)command.Channel).Guild, 
+                    command.User));
+        }
     }
-
-    /*public class Voice : ModuleBase<SocketCommandContext>
-    {
-        [Command("bass"), Alias("bb"), Summary("Basszus erősítése")]
-        public async Task BassBoostAsync()
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.SetBassBoost(Context.Guild, Context.User));
-        }
-
-        [Command("forward"), Alias("fw"), Summary("Előretekeri a jelenleg játszott zenét a kívánt időre")]
-        public async Task FastForward(string newTime)
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.FastForward(TimeSpan.Parse("00:" + newTime), Context.Guild, Context.User));
-        }
-        [Command("muteall"), Alias("mute"), Summary("Lenémít/unmutol mindenkit aki a bottal együtt van hangcsatornában")]
-        [RequireOwner]
-        public async Task MuteAllMembers(bool isMuted)
-        {
-            var v = Context.Guild.VoiceChannels.First(x =>
-                x.Id.Equals((Context.User as IVoiceState).VoiceChannel.Id)).Users;
-
-            foreach (var user in v)
-            {
-                await user.ModifyAsync(x => x.Deaf = isMuted);
-            }
-            await ReplyAsync("Kész!");
-        }
-    }*/
 }

@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using Victoria;
 using Victoria.Enums;
 using Victoria.EventArgs;
-using Victoria.Filters;
 using Victoria.Responses.Search;
 using KBot.Helpers;
+using Victoria.Filters;
 
 namespace KBot.Services
 {
@@ -17,7 +17,12 @@ namespace KBot.Services
     {
         private readonly LavaNode _lavaNode;
         private readonly DiscordSocketClient _client;
-
+        private bool bassboost = false;
+        private bool nightcore = false;
+        private bool eightD = false;
+        private bool vaporwave = false;
+        private bool loop = false;
+        private bool karaoke = false;
         public Audio(DiscordSocketClient client, LavaNode lavaNode)
         {
             _lavaNode = lavaNode;
@@ -28,12 +33,12 @@ namespace KBot.Services
             _client.Ready += OnReadyAsync; 
             _lavaNode.OnTrackEnded += OnTrackEnded;
             _lavaNode.OnTrackException += OnTrackException;
-            
             return Task.CompletedTask;
         }
         private static async Task OnTrackException(TrackExceptionEventArgs arg)
         {
-            await arg.Player.StopAsync();        
+            await arg.Player.StopAsync();   
+            await arg.Player.PlayAsync(arg.Track);
         }
         public async Task<Embed> JoinAsync(IGuild guild, IVoiceChannel vChannel, ITextChannel tChannel, SocketUser user)
         {
@@ -137,12 +142,13 @@ namespace KBot.Services
             {
                 return await EmbedHelper.MakeVolume(_client, user, null, volume, true);
             }
+
             if (user.Id == 132797923049209856)
             {
                 await player.UpdateVolumeAsync(volume);
                 return await EmbedHelper.MakeVolume(_client, user, player, volume, false);
             }
-            else if (volume >= 0 & volume <= 100)
+            else if (volume <= 100)
             {
                 await player.UpdateVolumeAsync(volume);
                 return await EmbedHelper.MakeVolume(_client, user, player, volume, false);
@@ -153,51 +159,97 @@ namespace KBot.Services
             }
         }
 
-        /*public async Task<Embed> ApplyFilterAsync(string filter, IGuild guild, SocketUser user)
+        public async Task<Embed> SetBassBoostAsync(IGuild guild, SocketUser commandUser)
         {
-            var player = _lavaNode?.GetPlayer(guild);
-            switch (filter)
+            var player = _lavaNode.GetPlayer(guild);
+            if (player == null)
             {
-                case "":
-                    //player.ApplyFilterAsync();
-                    break;
-
+                return await EmbedHelper.MakeFilter(_client, commandUser, null, "Bass Boost", true);
             }
-            new ChannelMixFilter
-            {
 
-            };
-            new DistortionFilter
-            {
-
-            };
-            new KarokeFilter
-            {
-
-            };
-            new LowPassFilter
-            {
-
-            };
-            new RotationFilter
-            {
-
-            };
-            new TimescaleFilter
-            {
-
-            };
-            new TremoloFilter
-            {
-
-            };
-            new VibratoFilter
-            {
-                
-            };
-            return null;
+            await player.EqualizerAsync(bassboost ? Filter.BassBoost(true) : Filter.BassBoost(false));
+            bassboost = !bassboost;
+            return await EmbedHelper.MakeFilter(_client, commandUser, player, "Bass Boost", false, bassboost);
         }
 
+        public async Task<Embed> SetNightCoreAsync(IGuild guild, SocketUser commandUser)
+        {
+            var player = _lavaNode.GetPlayer(guild);
+            if (player == null)
+            {
+                return await EmbedHelper.MakeFilter(_client, commandUser, null, "NightCore", true);
+            }
+            await player.ApplyFilterAsync(nightcore ? Filter.NightCore(true) : Filter.NightCore(false));
+            nightcore = !nightcore;
+            return await EmbedHelper.MakeFilter(_client, commandUser, player, "NightCore", false, nightcore);
+        }
+        
+        public async Task<Embed> SetEightDAsync(IGuild guild, SocketUser commandUser)
+        {
+            var player = _lavaNode.GetPlayer(guild);
+            if (player == null)
+            {
+                return await EmbedHelper.MakeFilter(_client, commandUser, null, "8D", true);
+            }
+            await player.ApplyFilterAsync(eightD ? Filter.EightD(true) : Filter.EightD(false));
+            eightD = !eightD;
+            return await EmbedHelper.MakeFilter(_client, commandUser, player, "8D", false, eightD);
+        }
+
+        public async Task<Embed> SetVaporWaveAsync(IGuild guild, SocketUser commandUser)
+        {
+            var player = _lavaNode.GetPlayer(guild);
+            if (player == null)
+            {
+                return await EmbedHelper.MakeFilter(_client, commandUser, null, "VaporWave", true);
+            }
+            await player.ApplyFilterAsync(vaporwave ? Filter.VaporWave(true) : Filter.VaporWave(false));
+            vaporwave = !vaporwave;
+            return await EmbedHelper.MakeFilter(_client, commandUser, player, "VaporWave", false, vaporwave);
+        }
+        
+        public async Task<Embed> SetKaraokeAsync(IGuild guild, SocketUser commandUser)
+        {
+            var player = _lavaNode.GetPlayer(guild);
+            if (player == null)
+            {
+                return await EmbedHelper.MakeFilter(_client, commandUser, null, "Karaoke", true);
+            }
+            await player.ApplyFilterAsync(karaoke ? Filter.Karaoke(true) : Filter.Karaoke(false));
+            karaoke = !karaoke;
+            return await EmbedHelper.MakeFilter(_client, commandUser, player, "Karaoke", false, karaoke);
+        }
+        
+        public async Task<Embed> SetLoopAsync(IGuild guild, SocketUser user)
+        {
+            var player = _lavaNode.GetPlayer(guild);
+            if (player is not {PlayerState: PlayerState.Playing})
+            {
+                return await EmbedHelper.MakeLoop(_client, user, null, true);
+            }
+
+            loop = !loop;
+            return await EmbedHelper.MakeLoop(_client, user, player, loop);
+        }
+
+        public async Task<Embed> ClearFiltersAsync(IGuild guild, SocketUser commandUser)
+        {
+            var player = _lavaNode.GetPlayer(guild);
+            if (player is not {PlayerState: PlayerState.Playing})
+            {
+                return await EmbedHelper.MakeFilter(_client, commandUser, null, "Clear", true);
+            }
+            IFilter[] filters = 
+            { 
+                Filter.NightCore(false), 
+                Filter.EightD(false), 
+                Filter.VaporWave(false), 
+                Filter.Karaoke(false) 
+            };
+            await player.ApplyFiltersAsync(filters, 100, Filter.BassBoost(false));
+            return await EmbedHelper.MakeFilter(_client, commandUser, player, "Clear", false, false);
+        }
+/*
         public async Task<Embed> SetBassBoost(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -230,7 +282,7 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeFastForward(_client, user, player, time, true);
+                return await EmbedHelper.MakeFastForward(_client, user, null, time, true);
             }
             await player.SeekAsync(time);
             return await EmbedHelper.MakeFastForward(_client, user, player, time, false);
@@ -243,8 +295,9 @@ namespace KBot.Services
 
         private static bool ShouldPlayNext(TrackEndReason trackEndReason)
         {
-            return trackEndReason == TrackEndReason.Finished || trackEndReason == TrackEndReason.LoadFailed;
+            return trackEndReason is TrackEndReason.Finished or TrackEndReason.LoadFailed;
         }
+        
         private async Task OnTrackEnded(TrackEndedEventArgs args)
         {
             if (!ShouldPlayNext(args.Reason))
@@ -255,11 +308,13 @@ namespace KBot.Services
             var player = args.Player;
             if (!player.Queue.TryDequeue(out var queueable))
             {
+                if (loop)
+                    await player.PlayAsync(args.Track);
                 //await player.TextChannel.SendMessageAsync("Queue completed! Please add more tracks to rock n' roll!");
                 return;
             }
 
-            if (queueable is not LavaTrack track)
+            if (queueable is not { } track)
             {
                 //await player.TextChannel.SendMessageAsync("Next item in queue is not a track.");
                 return;

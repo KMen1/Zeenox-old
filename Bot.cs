@@ -11,13 +11,12 @@ namespace KBot
 {
     public class Bot
     {
-        private DiscordSocketClient _client { get; set; }
-        private LavaNode _lavaNode { get; set; }
-        private Logging _logService { get; set; }
-        private Audio _audioService { get; set; }
-
-        private Config _configService { get; set; }
-        private IServiceProvider _services { get; set; }
+        private DiscordSocketClient Client { get; set; }
+        private LavaNode LavaNode { get; set; }
+        private Logging LogService { get; set; }
+        private Audio AudioService { get; set; }
+        private Config ConfigService { get; set; }
+        private IServiceProvider Services { get; set; }
         private IConfiguration _config;
 
         public Bot()
@@ -26,38 +25,38 @@ namespace KBot
         }
         public async Task StartAsync()
         {
-            _configService = new Config();
-            var config = _configService._config;
+            ConfigService = new Config();
+            var config = ConfigService._config;
             _config = config;
-            _client = new DiscordSocketClient(await Config.GetClientConfig());
+            Client = new DiscordSocketClient(await Config.GetClientConfig());
 
-            _lavaNode = new LavaNode(_client, await _configService.GetLavaConfig());
+            LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig());
 
-            _audioService = new Audio(_client, _lavaNode);
-            await _audioService.InitializeAsync();
+            AudioService = new Audio(Client, LavaNode);
+            await AudioService.InitializeAsync();
 
             await GetServices();
 
-            _logService = new Logging(_services);
-            await _logService.InitializeAsync();
+            LogService = new Logging(Services);
+            await LogService.InitializeAsync();
 
-            var slashcommandService = new Command(_services);
+            var slashcommandService = new Command(Services);
             slashcommandService.InitializeAsync();
 
-            await _client.LoginAsync(TokenType.Bot, config["Token"]);
-            await _client.StartAsync();
-            await _client.SetGameAsync(config["Prefix"] + config["Game"], string.Empty, ActivityType.Listening);
-            await _client.SetStatusAsync(UserStatus.Online);
+            await Client.LoginAsync(TokenType.Bot, config["Token"]);
+            await Client.StartAsync();
+            await Client.SetGameAsync(config["Prefix"] + config["Game"], string.Empty, ActivityType.Listening);
+            await Client.SetStatusAsync(UserStatus.Online);
 
             await Task.Delay(-1);
         }
 
         private Task GetServices()
         {
-            _services = new ServiceCollection()
-               .AddSingleton(_client)
-               .AddSingleton(_lavaNode)
-               .AddSingleton(_audioService)
+            Services = new ServiceCollection()
+               .AddSingleton(Client)
+               .AddSingleton(LavaNode)
+               .AddSingleton(AudioService)
                .AddSingleton(_config)
                .BuildServiceProvider();
             return Task.CompletedTask;

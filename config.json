@@ -1,8 +1,8 @@
 { 
-	"Token": "",
+	"Token": "NTAxNzQ4MDY0MzAyOTIzODE2.W8XnTA.mkrCrWVfJGY1u-s7qW6WmPiVcew",
 	"Prefix": "/",
 	"Game": "help",
-	"Hostname": "localhost",
-    "Port": 2333,
+	"Hostname": "lava.link",
+    "Port": 80,
     "Password": "youshallnotpass"
 }

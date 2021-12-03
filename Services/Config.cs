@@ -12,10 +12,10 @@ namespace KBot.Services
         public readonly IConfiguration _config;
         public Config()
         {
-            var _builder = new ConfigurationBuilder()
+            var builder = new ConfigurationBuilder()
                .SetBasePath(AppContext.BaseDirectory)
                .AddJsonFile(path: "config.json");
-            _config = _builder.Build();
+            _config = builder.Build();
         }
         public static Task<DiscordSocketConfig> GetClientConfig()
         {
@@ -24,7 +24,7 @@ namespace KBot.Services
                 var config = new DiscordSocketConfig
                 {
                     LogLevel = LogSeverity.Debug,
-                    AlwaysDownloadUsers = true,
+                    AlwaysDownloadUsers = true
                 };
                 return config;
             });
