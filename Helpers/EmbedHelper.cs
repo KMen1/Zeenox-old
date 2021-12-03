@@ -88,7 +88,7 @@ namespace KBot.Helpers
                 return eb.Build();
             });
         }
-        public static Task<Embed> MakePlay(DiscordSocketClient client, SocketUser user, IVoiceChannel vChannel, LavaTrack track, LavaPlayer player, bool noMatches, bool queued)
+        public static Task<Embed> MakePlay(DiscordSocketClient client, SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl, bool noMatches, bool queued)
         {
             return Task.Run(() =>
             {
@@ -101,16 +101,17 @@ namespace KBot.Helpers
                     },
                     Title = track.Title,
                     Url = track.Url,
+                    ImageUrl = thumbnailUrl,
                     Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                     Color = noMatches ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | `{track.Duration}`",
+                        Text = $"{user.Username} | Hosszúság: {track.Duration}`",
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
                 if (!queued) return eb.Build();
-                eb.WithAuthor("Hozzáadva a várolistához");
+                eb.WithAuthor("Hozzáadva a várolistához", client.CurrentUser.GetAvatarUrl());
                 eb.WithColor(Color.Orange);
                 return eb.Build();
             });
@@ -137,7 +138,7 @@ namespace KBot.Helpers
                 return eb.Build();
             });
         }
-        public static Task<Embed> MakeSkip(DiscordSocketClient client, SocketUser user, LavaPlayer player, bool failed)
+        public static Task<Embed> MakeSkip(DiscordSocketClient client, SocketUser user, LavaPlayer player, string thumbnailUrl, bool failed)
         {
             return Task.Run(() =>
             {
@@ -152,13 +153,14 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}",
+                        Text = $"{user.Username} | Hosszúság: {player.Track.Duration}",
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
                 if (player == null) return eb.Build();
                 eb.WithTitle(player.Track.Title);
                 eb.WithUrl(player.Track.Url);
+                eb.WithImageUrl(thumbnailUrl);
 
                 return eb.Build();
             });

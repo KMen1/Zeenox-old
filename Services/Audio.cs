@@ -79,18 +79,18 @@ namespace KBot.Services
 
             if (search.Status == SearchStatus.NoMatches)
             {
-                return await EmbedHelper.MakePlay(_client, user, vChannel, track, player, true, false);
+                return await EmbedHelper.MakePlay(_client, user, track, player, null, true, false);
             }
 
             if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
             {
                 player.Queue.Enqueue(track);
-                return await EmbedHelper.MakePlay(_client, user, vChannel, track, player, false, true);
+                return await EmbedHelper.MakePlay(_client, user, track, player, await track.FetchArtworkAsync(),false, true);
             }
             else
             {
                 await player.PlayAsync(track);
-                return await EmbedHelper.MakePlay(_client, user, vChannel, track, player, false, false);
+                return await EmbedHelper.MakePlay(_client, user, track, player, await track.FetchArtworkAsync(), false, false);
             }
         }
         public async Task<Embed> StopAsync(IGuild guild, SocketUser user)
@@ -108,10 +108,10 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null || player.Queue.Count == 0)
             {
-                return await EmbedHelper.MakeSkip(_client, user, player, true);
+                return await EmbedHelper.MakeSkip(_client, user, player, null, true);
             }
             await player.SkipAsync();
-            return await EmbedHelper.MakeSkip(_client, user, player, false);
+            return await EmbedHelper.MakeSkip(_client, user, player, await player.Track.FetchArtworkAsync(), false);
         }
 
         public async Task<Embed> PauseOrResumeAsync(IGuild guild, SocketUser user)
@@ -332,6 +332,7 @@ namespace KBot.Services
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                 Title = track.Title,
                 Url = track.Url,
+                ImageUrl = await track.FetchArtworkAsync(),
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"KBot | {DateTime.UtcNow}",
