@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace KBot.Services
@@ -36,17 +37,13 @@ namespace KBot.Services
             await RegisterSlashCommands(await VoiceCommands.MakeVoiceCommands().ConfigureAwait(false));
         }
 
-        public async Task RegisterSlashCommands(SlashCommandBuilder[] newCommands)
+        private async Task RegisterSlashCommands(IEnumerable<SlashCommandBuilder> newCommands)
         {
             var globalCommands = await _client.GetGlobalApplicationCommandsAsync();
 
-            List<string> existingCommandsName = new();
-            foreach (var command in globalCommands)
-            {
-                existingCommandsName.Add(command.Name);
-            }
+            var existingCommandsName = globalCommands.Select(command => command.Name).ToList();
 
-            foreach (SlashCommandBuilder newCommand in newCommands)
+            foreach (var newCommand in newCommands)
             {
                 try
                 {
@@ -61,7 +58,7 @@ namespace KBot.Services
             };
         }
 
-        public async Task HandleSlashCommands(SocketSlashCommand command)
+        private async Task HandleSlashCommands(SocketSlashCommand command)
         {
             switch (command.Data.Name)
             {

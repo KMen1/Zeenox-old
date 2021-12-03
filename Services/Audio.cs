@@ -31,7 +31,7 @@ namespace KBot.Services
             
             return Task.CompletedTask;
         }
-        private async Task OnTrackException(TrackExceptionEventArgs arg)
+        private static async Task OnTrackException(TrackExceptionEventArgs arg)
         {
             await arg.Player.StopAsync();        
         }
@@ -67,10 +67,9 @@ namespace KBot.Services
         
         public async Task<Embed> PlayAsync([Remainder] string query, IGuild guild, IVoiceChannel vChannel, ITextChannel tChannel, SocketUser user)
         {
-            LavaTrack track;
             var search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
                     await _lavaNode.SearchAsync(SearchType.Direct, query) : await _lavaNode.SearchYouTubeAsync(query);
-            track = search.Tracks.FirstOrDefault();
+            var track = search.Tracks.FirstOrDefault();
             var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(vChannel, tChannel);
 
             if (search.Status == SearchStatus.NoMatches)
@@ -94,7 +93,7 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeStop(_client, user, player, true);
+                return await EmbedHelper.MakeStop(_client, user, null, true);
             }
             await player.StopAsync();
             return await EmbedHelper.MakeStop(_client, user, player, false);
@@ -116,7 +115,7 @@ namespace KBot.Services
 
             if (player == null)
             {
-                return await EmbedHelper.MakePauseOrResume(_client, user, player, true, false);
+                return await EmbedHelper.MakePauseOrResume(_client, user, null, true, false);
             }
 
             if (player.PlayerState == PlayerState.Playing)
@@ -136,7 +135,7 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeVolume(_client, user, player, volume, true);
+                return await EmbedHelper.MakeVolume(_client, user, null, volume, true);
             }
             if (user.Id == 132797923049209856)
             {
@@ -242,7 +241,7 @@ namespace KBot.Services
             await _lavaNode.ConnectAsync();
         }
 
-        public static bool ShouldPlayNext(TrackEndReason trackEndReason)
+        private static bool ShouldPlayNext(TrackEndReason trackEndReason)
         {
             return trackEndReason == TrackEndReason.Finished || trackEndReason == TrackEndReason.LoadFailed;
         }

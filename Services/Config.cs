@@ -9,7 +9,7 @@ namespace KBot.Services
 {
     public class Config
     {
-        public IConfiguration _config;
+        public readonly IConfiguration _config;
         public Config()
         {
             var _builder = new ConfigurationBuilder()

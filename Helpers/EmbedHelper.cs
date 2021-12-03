@@ -89,7 +89,7 @@ namespace KBot.Helpers
                 return eb.Build();
             });
         }
-        public static Task<Embed> MakePlay(DiscordSocketClient client, SocketUser user, IVoiceChannel vChannel, LavaTrack track, LavaPlayer player, bool no_matches, bool queued)
+        public static Task<Embed> MakePlay(DiscordSocketClient client, SocketUser user, IVoiceChannel vChannel, LavaTrack track, LavaPlayer player, bool noMatches, bool queued)
         {
             return Task.Run(() =>
             {
@@ -97,24 +97,22 @@ namespace KBot.Helpers
                 {
                     Author = new EmbedAuthorBuilder
                     {
-                        Name = no_matches ? "Nincs találat" : "A következő lejátszása",
+                        Name = noMatches ? "Nincs találat" : "A következő lejátszása",
                         IconUrl = client.CurrentUser.GetAvatarUrl()
                     },
                     Title = track.Title,
                     Url = track.Url,
                     Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                    Color = no_matches ? Color.Red : Color.Green,
+                    Color = noMatches ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
                         Text = $"{user.Username} | {track.Duration}",
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
-                if (queued)
-                {
-                    eb.WithAuthor("Hozzáadva a várolistához");
-                    eb.WithColor(Color.Orange);
-                }
+                if (!queued) return eb.Build();
+                eb.WithAuthor("Hozzáadva a várolistához");
+                eb.WithColor(Color.Orange);
                 return eb.Build();
             });
         }

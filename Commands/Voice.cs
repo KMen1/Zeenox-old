@@ -79,17 +79,17 @@ namespace KBot.Commands
         {
             await slashCommand.RespondAsync(embed: 
                 await _audioService.JoinAsync(
-                    (slashCommand.Channel as ITextChannel).Guild, 
-                    (slashCommand.User as IVoiceState).VoiceChannel, 
-                    slashCommand.Channel as ITextChannel, 
+                    ((ITextChannel) slashCommand.Channel).Guild, 
+                    ((IVoiceState) slashCommand.User).VoiceChannel, 
+                    (ITextChannel) slashCommand.Channel, 
                     slashCommand.User));
         }
         public async Task Leave(SocketSlashCommand slashCommand)
         {
             await slashCommand.RespondAsync(embed: 
                 await _audioService.LeaveAsync(
-                    (slashCommand.Channel as ITextChannel).Guild,
-                    (slashCommand.User as IVoiceState).VoiceChannel, 
+                    ((ITextChannel) slashCommand.Channel).Guild,
+                    ((IVoiceState) slashCommand.User).VoiceChannel, 
                     slashCommand.User));
         }
         public async Task Play(SocketSlashCommand slashCommand)
@@ -97,8 +97,8 @@ namespace KBot.Commands
             await slashCommand.RespondAsync(embed: 
                 await _audioService.PlayAsync(
                     (string)slashCommand.Data.Options.First().Value, 
-                    (slashCommand.Channel as ITextChannel).Guild, 
-                    (slashCommand.User as IVoiceState).VoiceChannel, 
+                    ((ITextChannel) slashCommand.Channel).Guild, 
+                    ((IVoiceState) slashCommand.User).VoiceChannel, 
                     slashCommand.Channel as ITextChannel, 
                     slashCommand.User));
         }
@@ -107,7 +107,7 @@ namespace KBot.Commands
         {
             await slashCommand.RespondAsync(embed: 
                 await _audioService.PauseOrResumeAsync(
-                    (slashCommand.Channel as ITextChannel).Guild, 
+                    ((ITextChannel) slashCommand.Channel).Guild, 
                     slashCommand.User));
         }
 
@@ -115,7 +115,7 @@ namespace KBot.Commands
         {
             await slashCommand.RespondAsync(embed: 
                 await _audioService.PauseOrResumeAsync(
-                    (slashCommand.Channel as ITextChannel).Guild, 
+                    ((ITextChannel) slashCommand.Channel).Guild, 
                     slashCommand.User));
         }
 
@@ -123,7 +123,7 @@ namespace KBot.Commands
         {
             await slashCommand.RespondAsync(embed: 
                 await _audioService.SkipAsync(
-                    (slashCommand.Channel as ITextChannel).Guild, 
+                    ((ITextChannel) slashCommand.Channel).Guild, 
                     slashCommand.User));
         }
 
@@ -131,20 +131,20 @@ namespace KBot.Commands
         {
             await slashCommand.RespondAsync(embed: 
                 await _audioService.StopAsync(
-                    (slashCommand.Channel as ITextChannel).Guild, 
+                    ((ITextChannel) slashCommand.Channel).Guild, 
                     slashCommand.User));
         }
         public async Task Move(SocketSlashCommand slashCommand)
         {
             await slashCommand.RespondAsync(embed: 
                 await _audioService.MoveAsync(
-                    (slashCommand.Channel as ITextChannel).Guild, 
-                    (slashCommand.User as IVoiceState).VoiceChannel, 
+                    ((ITextChannel) slashCommand.Channel).Guild, 
+                    ((IVoiceState) slashCommand.User).VoiceChannel, 
                     slashCommand.User));
         }
         public async Task Volume(SocketSlashCommand slashCommand)
         {
-            await slashCommand.RespondAsync(embed: await _audioService.SetVolumeAsync((ushort)slashCommand.Data.Options.First().Value, (slashCommand.Channel as ITextChannel).Guild, slashCommand.User));
+            await slashCommand.RespondAsync(embed: await _audioService.SetVolumeAsync((ushort)slashCommand.Data.Options.First().Value, ((ITextChannel) slashCommand.Channel).Guild, slashCommand.User));
         }
 
         /*public async Task Filter(string filter, SocketSlashCommand slashCommand)
@@ -159,74 +159,6 @@ namespace KBot.Commands
 
     /*public class Voice : ModuleBase<SocketCommandContext>
     {
-        private readonly AudioService _service;
-
-        public Voice(IServiceProvider services)
-        {
-            _service = services.GetRequiredService<AudioService>();
-        }
-        [Command("join"), Alias("j"), Summary("Csatlakozik ahhoz a hangcsatornához, amelyben tartózkodsz")]
-        public async Task JoinChannel()
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.JoinAsync(Context.Guild, (Context.User as IVoiceState).VoiceChannel, Context.Channel as ITextChannel, Context.User));
-        }
-
-        [Command("leave"), Alias("l"), Summary("Elhagyja azt a hangcsatornát, amelyben a bot jelenleg tartózkodik")]
-        public async Task LeaveChannel()
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.LeaveAsync((Context.User as IVoiceState).VoiceChannel, Context.User));
-        }
-
-        [Command("play"), Alias("p"), Summary("Lejátssza a kívánt zenét")]
-        public async Task PlaySong([Remainder] string query)
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.PlayAsync(query, Context.Guild, (Context.User as IVoiceState).VoiceChannel, Context.Channel as ITextChannel, Context.User));
-        }
-
-        [Command("stop"), Alias("sp"), Summary("Zenelejátszás megállítása")]
-        public async Task StopSong()
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.StopAsync(Context.Guild, Context.User));
-        }
-
-        [Command("move"), Alias("m"), Summary("Átlép abba a hangcsatornába, amelyben tartózkodsz")]
-        public async Task MoveAsync()
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.MoveAsync(Context.Guild, (Context.User as IVoiceState).VoiceChannel, Context.User));
-        }
-
-        [Command("skip"), Alias("s"), Summary("Lejátsza a következő zenét a sorban")]
-        public async Task SkipAsync()
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.SkipAsync(Context.Guild, Context.User));
-        }
-
-        [Command("pause"), Alias("p"), Summary("Zenelejátszás szüneteltetése")]
-        public async Task PauseAsync()
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.PauseOrResumeAsync(Context.Guild, Context.User));
-        }
-
-        [Command("resume"), Alias("r"), Summary("Zenelejátszás folytatása")]
-        public async Task ResumeAsync()
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.PauseOrResumeAsync(Context.Guild, Context.User));
-        }
-
-        [Command("volume"), Alias("v", "vol"), Summary("Hangerő beállítása (óvatosan)")]
-        public async Task SetVolumeAsync(ushort volume)
-        {
-            await Context.Message.DeleteAsync();
-            await ReplyAsync(embed: await _service.SetVolume(volume, Context.Guild, (long)Context.User.Id, Context.User));
-        }
         [Command("bass"), Alias("bb"), Summary("Basszus erősítése")]
         public async Task BassBoostAsync()
         {

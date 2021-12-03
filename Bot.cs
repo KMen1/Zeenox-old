@@ -11,13 +11,13 @@ namespace KBot
 {
     public class Bot
     {
-        public DiscordSocketClient _client { get; private set; }
-        public LavaNode _lavaNode { get; private set; }
-        public Logging _logService { get; private set; }
-        public Audio _audioService { get; private set; }
+        private DiscordSocketClient _client { get; set; }
+        private LavaNode _lavaNode { get; set; }
+        private Logging _logService { get; set; }
+        private Audio _audioService { get; set; }
 
-        public Config _configService { get; private set; }
-        public IServiceProvider _services { get; private set; }
+        private Config _configService { get; set; }
+        private IServiceProvider _services { get; set; }
         private IConfiguration _config;
 
         public Bot()
@@ -27,7 +27,7 @@ namespace KBot
         public async Task StartAsync()
         {
             _configService = new Config();
-            IConfiguration config = _configService._config;
+            var config = _configService._config;
             _config = config;
             _client = new DiscordSocketClient(await Config.GetClientConfig());
 
@@ -52,7 +52,7 @@ namespace KBot
             await Task.Delay(-1);
         }
 
-        public Task GetServices()
+        private Task GetServices()
         {
             _services = new ServiceCollection()
                .AddSingleton(_client)

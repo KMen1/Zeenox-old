@@ -30,30 +30,25 @@ namespace KBot.Commands
 
             var globalCommands = await _client.GetGlobalApplicationCommandsAsync();
 
-            List<string> CommandsName = new List<string>();
+            var commandsName = new List<string>();
             foreach (var command in globalCommands)
             {
-                CommandsName.Add(command.Name);
+                commandsName.Add(command.Name);
                 options.AddChoice(command.Name, command.Name);
             }
 
-            if (!CommandsName.Contains(helpCommand.Name))
+            if (!commandsName.Contains(helpCommand.Name))
                 await _client.CreateGlobalApplicationCommandAsync(helpCommand.Build());
         }
 
         public async Task HandleHelpCommand(SocketSlashCommand slashCommand)
         {
             var globalCommands = await _client.GetGlobalApplicationCommandsAsync();
-            List<SocketApplicationCommand> commands = new List<SocketApplicationCommand>();
+            var commands = new List<SocketApplicationCommand>();
 
-            List<string> CommandsName = new List<string>();
-            foreach (var command in globalCommands)
-            {
-                CommandsName.Add(command.Name);
-            }
-            string combindedString = string.Join(", ", CommandsName.ToArray());
+            var combinedString = string.Join(", ", globalCommands.Select(command => command.Name).ToArray());
 
-            EmbedBuilder eb = new EmbedBuilder
+            var eb = new EmbedBuilder
             {
                 Title = "**Elérhető parancsok**",
                 Description = "Összes parancs listázása ( help <parancs> )-al több információt tudhatsz meg az adott parancsról!",
@@ -64,7 +59,7 @@ namespace KBot.Commands
 
             if (!slashCommand.Data.Options.First().Value.Equals(""))
             {
-                var co = globalCommands.FirstOrDefault(x => x.Name.ToLower() == slashCommand.Data.Options.First().Value.ToString().ToLower());
+                var co = globalCommands.FirstOrDefault(x => string.Equals(x.Name, slashCommand.Data.Options.First().Value.ToString(), StringComparison.CurrentCultureIgnoreCase));
 
                 if (co.Name == slashCommand.Data.Options.First().Value.ToString().ToLower())
                 {
@@ -80,7 +75,7 @@ namespace KBot.Commands
             else
             {
                 eb.WithFooter(footer => footer.WithText($"Requested by: {slashCommand.User.Username}").WithIconUrl(slashCommand.User.GetAvatarUrl(ImageFormat.Auto)));
-                eb.AddField("Parancsok", $"`{combindedString}`");
+                eb.AddField("Parancsok", $"`{combinedString}`");
             }
 
             if (slashCommand.Channel is SocketDMChannel)
