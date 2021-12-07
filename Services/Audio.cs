@@ -44,30 +44,30 @@ namespace KBot.Services
         {
             if (!_lavaNode.HasPlayer(guild) || vChannel is null)
             {
-                return await EmbedHelper.MakeJoin(_client, user, vChannel, true);
+                return await EmbedHelper.MakeJoin(user, vChannel, true);
             }
             await _lavaNode.JoinAsync(vChannel, tChannel);
-            return await EmbedHelper.MakeJoin(_client, user, vChannel, false);
+            return await EmbedHelper.MakeJoin(user, vChannel, false);
         }
 
         public async Task<Embed> LeaveAsync(IGuild guild, IVoiceChannel vChannel, SocketUser user)
         {
             if (!_lavaNode.HasPlayer(guild) || vChannel is null)
             {
-                return await EmbedHelper.MakeLeave(_client, user, vChannel, true);
+                return await EmbedHelper.MakeLeave(user, vChannel, true);
             }
             await _lavaNode.LeaveAsync(vChannel);
-            return await EmbedHelper.MakeLeave(_client, user, vChannel, false);
+            return await EmbedHelper.MakeLeave(user, vChannel, false);
         }
 
         public async Task<Embed> MoveAsync(IGuild guild, IVoiceChannel vChannel, SocketUser user)
         {
             if (!_lavaNode.HasPlayer(guild))
             {
-                return await EmbedHelper.MakeMove(_client, user, _lavaNode.GetPlayer(guild), vChannel, true);
+                return await EmbedHelper.MakeMove(user, _lavaNode.GetPlayer(guild), vChannel, true);
             }
             await _lavaNode.MoveChannelAsync(vChannel);
-            return await EmbedHelper.MakeMove(_client, user, _lavaNode.GetPlayer(guild), vChannel, false);
+            return await EmbedHelper.MakeMove(user, _lavaNode.GetPlayer(guild), vChannel, false);
         }
         
         public async Task<Embed> PlayAsync([Remainder] string query, IGuild guild, IVoiceChannel vChannel, ITextChannel tChannel, SocketUser user)
@@ -79,18 +79,18 @@ namespace KBot.Services
 
             if (search.Status == SearchStatus.NoMatches)
             {
-                return await EmbedHelper.MakePlay(_client, user, track, player, null, true, false);
+                return await EmbedHelper.MakePlay(user, track, player, null, true, false);
             }
 
             if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
             {
                 player.Queue.Enqueue(track);
-                return await EmbedHelper.MakePlay(_client, user, track, player, await track.FetchArtworkAsync(),false, true);
+                return await EmbedHelper.MakePlay(user, track, player, await track.FetchArtworkAsync(),false, true);
             }
             else
             {
                 await player.PlayAsync(track);
-                return await EmbedHelper.MakePlay(_client, user, track, player, await track.FetchArtworkAsync(), false, false);
+                return await EmbedHelper.MakePlay(user, track, player, await track.FetchArtworkAsync(), false, false);
             }
         }
         public async Task<Embed> StopAsync(IGuild guild, SocketUser user)
@@ -98,20 +98,20 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeStop(_client, user, null, true);
+                return await EmbedHelper.MakeStop(user, null, true);
             }
             await player.StopAsync();
-            return await EmbedHelper.MakeStop(_client, user, player, false);
+            return await EmbedHelper.MakeStop(user, player, false);
         }
         public async Task<Embed> SkipAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player == null || player.Queue.Count == 0)
             {
-                return await EmbedHelper.MakeSkip(_client, user, player, null, true);
+                return await EmbedHelper.MakeSkip(user, player, null, true);
             }
             await player.SkipAsync();
-            return await EmbedHelper.MakeSkip(_client, user, player, await player.Track.FetchArtworkAsync(), false);
+            return await EmbedHelper.MakeSkip(user, player, await player.Track.FetchArtworkAsync(), false);
         }
 
         public async Task<Embed> PauseOrResumeAsync(IGuild guild, SocketUser user)
@@ -120,18 +120,18 @@ namespace KBot.Services
 
             if (player == null)
             {
-                return await EmbedHelper.MakePauseOrResume(_client, user, null, true, false);
+                return await EmbedHelper.MakePauseOrResume(user, null, true, false);
             }
 
             if (player.PlayerState == PlayerState.Playing)
             {
                 await player.PauseAsync();
-                return await EmbedHelper.MakePauseOrResume(_client, user, player, false, false);
+                return await EmbedHelper.MakePauseOrResume(user, player, false, false);
             }
             else
             {
                 await player.ResumeAsync();
-                return await EmbedHelper.MakePauseOrResume(_client, user, player, false, true);
+                return await EmbedHelper.MakePauseOrResume(user, player, false, true);
             }
         }
 
@@ -140,84 +140,84 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeVolume(_client, user, null, volume, true);
+                return await EmbedHelper.MakeVolume(user, null, volume, true);
             }
 
             if (user.Id == 132797923049209856)
             {
                 await player.UpdateVolumeAsync(volume);
-                return await EmbedHelper.MakeVolume(_client, user, player, volume, false);
+                return await EmbedHelper.MakeVolume(user, player, volume, false);
             }
             else if (volume <= 100)
             {
                 await player.UpdateVolumeAsync(volume);
-                return await EmbedHelper.MakeVolume(_client, user, player, volume, false);
+                return await EmbedHelper.MakeVolume(user, player, volume, false);
             }
             else
             {
-                return await EmbedHelper.MakeVolume(_client, user, player, volume, true);
+                return await EmbedHelper.MakeVolume(user, player, volume, true);
             }
         }
 
-        public async Task<Embed> SetBassBoostAsync(IGuild guild, SocketUser commandUser)
+        public async Task<Embed> SetBassBoostAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeFilter(_client, commandUser, null, "Bass Boost", true);
+                return await EmbedHelper.MakeFilter(user, null, "Bass Boost", true);
             }
 
             await player.EqualizerAsync(bassboost ? Filter.BassBoost(true) : Filter.BassBoost(false));
             bassboost = !bassboost;
-            return await EmbedHelper.MakeFilter(_client, commandUser, player, "Bass Boost", false, bassboost);
+            return await EmbedHelper.MakeFilter(user, player, "Bass Boost", false, bassboost);
         }
 
-        public async Task<Embed> SetNightCoreAsync(IGuild guild, SocketUser commandUser)
+        public async Task<Embed> SetNightCoreAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeFilter(_client, commandUser, null, "NightCore", true);
+                return await EmbedHelper.MakeFilter(user, null, "NightCore", true);
             }
             await player.ApplyFilterAsync(nightcore ? Filter.NightCore(true) : Filter.NightCore(false));
             nightcore = !nightcore;
-            return await EmbedHelper.MakeFilter(_client, commandUser, player, "NightCore", false, nightcore);
+            return await EmbedHelper.MakeFilter(user, player, "NightCore", false, nightcore);
         }
         
-        public async Task<Embed> SetEightDAsync(IGuild guild, SocketUser commandUser)
+        public async Task<Embed> SetEightDAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeFilter(_client, commandUser, null, "8D", true);
+                return await EmbedHelper.MakeFilter(user, null, "8D", true);
             }
             await player.ApplyFilterAsync(eightD ? Filter.EightD(true) : Filter.EightD(false));
             eightD = !eightD;
-            return await EmbedHelper.MakeFilter(_client, commandUser, player, "8D", false, eightD);
+            return await EmbedHelper.MakeFilter(user, player, "8D", false, eightD);
         }
 
-        public async Task<Embed> SetVaporWaveAsync(IGuild guild, SocketUser commandUser)
+        public async Task<Embed> SetVaporWaveAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeFilter(_client, commandUser, null, "VaporWave", true);
+                return await EmbedHelper.MakeFilter(user, null, "VaporWave", true);
             }
             await player.ApplyFilterAsync(vaporwave ? Filter.VaporWave(true) : Filter.VaporWave(false));
             vaporwave = !vaporwave;
-            return await EmbedHelper.MakeFilter(_client, commandUser, player, "VaporWave", false, vaporwave);
+            return await EmbedHelper.MakeFilter(user, player, "VaporWave", false, vaporwave);
         }
         
-        public async Task<Embed> SetKaraokeAsync(IGuild guild, SocketUser commandUser)
+        public async Task<Embed> SetKaraokeAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeFilter(_client, commandUser, null, "Karaoke", true);
+                return await EmbedHelper.MakeFilter(user, null, "Karaoke", true);
             }
             await player.ApplyFilterAsync(karaoke ? Filter.Karaoke(true) : Filter.Karaoke(false));
             karaoke = !karaoke;
-            return await EmbedHelper.MakeFilter(_client, commandUser, player, "Karaoke", false, karaoke);
+            return await EmbedHelper.MakeFilter(user, player, "Karaoke", false, karaoke);
         }
         
         public async Task<Embed> SetLoopAsync(IGuild guild, SocketUser user)
@@ -225,19 +225,19 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player is not {PlayerState: PlayerState.Playing})
             {
-                return await EmbedHelper.MakeLoop(_client, user, null, true);
+                return await EmbedHelper.MakeLoop(user, null, true);
             }
 
             loop = !loop;
-            return await EmbedHelper.MakeLoop(_client, user, player, loop);
+            return await EmbedHelper.MakeLoop(user, player, loop);
         }
 
-        public async Task<Embed> ClearFiltersAsync(IGuild guild, SocketUser commandUser)
+        public async Task<Embed> ClearFiltersAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
             if (player is not {PlayerState: PlayerState.Playing})
             {
-                return await EmbedHelper.MakeFilter(_client, commandUser, null, "Clear", true);
+                return await EmbedHelper.MakeFilter(user, null, "Clear", true);
             }
             IFilter[] filters = 
             { 
@@ -247,7 +247,7 @@ namespace KBot.Services
                 Filter.Karaoke(false) 
             };
             await player.ApplyFiltersAsync(filters, 100, Filter.BassBoost(false));
-            return await EmbedHelper.MakeFilter(_client, commandUser, player, "Clear", false, false);
+            return await EmbedHelper.MakeFilter(user, player, "Clear", false);
         }
 /*
         public async Task<Embed> SetBassBoost(IGuild guild, SocketUser user)
@@ -282,10 +282,10 @@ namespace KBot.Services
             var player = _lavaNode.GetPlayer(guild);
             if (player == null)
             {
-                return await EmbedHelper.MakeFastForward(_client, user, null, time, true);
+                return await EmbedHelper.MakeFastForward(user, null, time, true);
             }
             await player.SeekAsync(time);
-            return await EmbedHelper.MakeFastForward(_client, user, player, time, false);
+            return await EmbedHelper.MakeFastForward(user, player, time, false);
         }
 
         private async Task OnReadyAsync()
@@ -319,7 +319,7 @@ namespace KBot.Services
                 //await player.TextChannel.SendMessageAsync("Next item in queue is not a track.");
                 return;
             }
-
+            
             await args.Player.PlayAsync(track);
             var eb = new EmbedBuilder
             {
@@ -335,8 +335,7 @@ namespace KBot.Services
                 ImageUrl = await track.FetchArtworkAsync(),
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"KBot | {DateTime.UtcNow}",
-                    IconUrl = _client.CurrentUser.GetAvatarUrl()
+                    Text = $"Hossz: ({track.Duration}) | Hely a várólistában: ({player.Queue.Count})"
                 }
             };
             await player.TextChannel.SendMessageAsync(string.Empty, false, eb.Build());

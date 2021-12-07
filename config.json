@@ -2,7 +2,7 @@
 	"Token": "",
 	"Prefix": "/",
 	"Game": "help",
-	"Hostname": "lava.link",
-    "Port": 80,
+	"Hostname": "localhost",
+    "Port": 2333,
     "Password": "youshallnotpass"
 }
