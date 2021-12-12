@@ -40,9 +40,10 @@ namespace KBot.Services
             var globalCommands = await _client.GetGlobalApplicationCommandsAsync();
 
             var existingCommandsName = globalCommands.Select(command => command.Name).ToList();
-
+            
             foreach (var newCommand in newCommands)
             {
+                //await _client.BulkOverwriteGlobalApplicationCommandsAsync(new ApplicationCommandProperties[] {newCommand.Build()});
                 try
                 {
                     if (!existingCommandsName.Contains(newCommand.Name))

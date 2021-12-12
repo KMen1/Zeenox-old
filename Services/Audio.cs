@@ -250,7 +250,7 @@ namespace KBot.Services
         }
         private async Task OnReadyAsync()
         {
-            await _lavaNode.ConnectAsync();
+           await _lavaNode.ConnectAsync();
         }
 
         private static bool ShouldPlayNext(TrackEndReason trackEndReason)

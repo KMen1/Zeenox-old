@@ -29,7 +29,6 @@ namespace KBot.Services
         }
 
         private Task _lavaNode_OnLog(LogMessage arg) => Log(arg);
-        //private Task _command_Log(LogMessage arg) => Log(arg);
         private Task _client_Log(LogMessage arg) => Log(arg);
 
         private async Task Log(LogMessage logMessage)
