@@ -7,15 +7,15 @@ using Victoria;
 
 namespace KBot.Services
 {
-    public class Config
+    public class ConfigService
     {
-        public readonly IConfiguration _config;
-        public Config()
+        public readonly IConfiguration Config;
+        public ConfigService()
         {
             var builder = new ConfigurationBuilder()
                .SetBasePath(AppContext.BaseDirectory)
                .AddJsonFile(path: "config.json");
-            _config = builder.Build();
+            Config = builder.Build();
         }
         public static Task<DiscordSocketConfig> GetClientConfig()
         {
@@ -35,9 +35,9 @@ namespace KBot.Services
             {
                 var config = new LavaConfig
                 {
-                    Hostname = _config["Hostname"],
-                    Port = (ushort)int.Parse(_config["Port"]),
-                    Authorization = _config["Password"]
+                    Hostname = Config["Hostname"],
+                    Port = (ushort)int.Parse(Config["Port"]),
+                    Authorization = Config["Password"]
                 };
                 return config;
             });

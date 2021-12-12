@@ -15,7 +15,7 @@ namespace KBot
         private LavaNode LavaNode { get; set; }
         private Logging LogService { get; set; }
         private Audio AudioService { get; set; }
-        private Config ConfigService { get; set; }
+        private ConfigService ConfigService { get; set; }
         private IServiceProvider Services { get; set; }
         private IConfiguration _config;
 
@@ -25,10 +25,10 @@ namespace KBot
         }
         public async Task StartAsync()
         {
-            ConfigService = new Config();
-            var config = ConfigService._config;
+            ConfigService = new ConfigService();
+            var config = ConfigService.Config;
             _config = config;
-            Client = new DiscordSocketClient(await Config.GetClientConfig());
+            Client = new DiscordSocketClient(await ConfigService.GetClientConfig());
 
             LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig());
 

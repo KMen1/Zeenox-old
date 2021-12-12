@@ -10,6 +10,7 @@ using Victoria.EventArgs;
 using Victoria.Responses.Search;
 using KBot.Helpers;
 using Victoria.Filters;
+// ReSharper disable InconsistentNaming
 
 namespace KBot.Services
 {
@@ -17,12 +18,12 @@ namespace KBot.Services
     {
         private readonly LavaNode _lavaNode;
         private readonly DiscordSocketClient _client;
-        private bool bassboost = false;
-        private bool nightcore = false;
-        private bool eightD = false;
-        private bool vaporwave = false;
-        private bool loop = false;
-        private bool karaoke = false;
+        private bool bassboost;
+        private bool nightcore;
+        private bool eightD;
+        private bool vaporwave;
+        private bool loop;
+        private bool karaoke;
         public Audio(DiscordSocketClient client, LavaNode lavaNode)
         {
             _lavaNode = lavaNode;
@@ -49,7 +50,6 @@ namespace KBot.Services
             await _lavaNode.JoinAsync(vChannel, tChannel);
             return await EmbedHelper.MakeJoin(user, vChannel, false);
         }
-
         public async Task<Embed> LeaveAsync(IGuild guild, IVoiceChannel vChannel, SocketUser user)
         {
             if (!_lavaNode.HasPlayer(guild) || vChannel is null)
@@ -59,7 +59,6 @@ namespace KBot.Services
             await _lavaNode.LeaveAsync(vChannel);
             return await EmbedHelper.MakeLeave(user, vChannel, false);
         }
-
         public async Task<Embed> MoveAsync(IGuild guild, IVoiceChannel vChannel, SocketUser user)
         {
             if (!_lavaNode.HasPlayer(guild))
@@ -69,7 +68,6 @@ namespace KBot.Services
             await _lavaNode.MoveChannelAsync(vChannel);
             return await EmbedHelper.MakeMove(user, _lavaNode.GetPlayer(guild), vChannel, false);
         }
-        
         public async Task<Embed> PlayAsync([Remainder] string query, IGuild guild, IVoiceChannel vChannel, ITextChannel tChannel, SocketUser user)
         {
             var search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
@@ -113,7 +111,6 @@ namespace KBot.Services
             await player.SkipAsync();
             return await EmbedHelper.MakeSkip(user, player, await player.Track.FetchArtworkAsync(), false);
         }
-
         public async Task<Embed> PauseOrResumeAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -134,7 +131,6 @@ namespace KBot.Services
                 return await EmbedHelper.MakePauseOrResume(user, player, false, true);
             }
         }
-
         public async Task<Embed> SetVolumeAsync(ushort volume, IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -158,7 +154,6 @@ namespace KBot.Services
                 return await EmbedHelper.MakeVolume(user, player, volume, true);
             }
         }
-
         public async Task<Embed> SetBassBoostAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -171,7 +166,6 @@ namespace KBot.Services
             bassboost = !bassboost;
             return await EmbedHelper.MakeFilter(user, player, "Bass Boost", false, bassboost);
         }
-
         public async Task<Embed> SetNightCoreAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -183,7 +177,6 @@ namespace KBot.Services
             nightcore = !nightcore;
             return await EmbedHelper.MakeFilter(user, player, "NightCore", false, nightcore);
         }
-        
         public async Task<Embed> SetEightDAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -195,7 +188,6 @@ namespace KBot.Services
             eightD = !eightD;
             return await EmbedHelper.MakeFilter(user, player, "8D", false, eightD);
         }
-
         public async Task<Embed> SetVaporWaveAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -207,7 +199,6 @@ namespace KBot.Services
             vaporwave = !vaporwave;
             return await EmbedHelper.MakeFilter(user, player, "VaporWave", false, vaporwave);
         }
-        
         public async Task<Embed> SetKaraokeAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -219,7 +210,6 @@ namespace KBot.Services
             karaoke = !karaoke;
             return await EmbedHelper.MakeFilter(user, player, "Karaoke", false, karaoke);
         }
-        
         public async Task<Embed> SetLoopAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -231,7 +221,6 @@ namespace KBot.Services
             loop = !loop;
             return await EmbedHelper.MakeLoop(user, player, loop);
         }
-
         public async Task<Embed> ClearFiltersAsync(IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -249,34 +238,6 @@ namespace KBot.Services
             await player.ApplyFiltersAsync(filters, 100, Filter.BassBoost(false));
             return await EmbedHelper.MakeFilter(user, player, "Clear", false);
         }
-/*
-        public async Task<Embed> SetBassBoost(IGuild guild, SocketUser user)
-        {
-            var player = _lavaNode.GetPlayer(guild);
-
-            EqualizerBand[] eq = 
-            {
-                new EqualizerBand(0, -0.075),
-                new EqualizerBand(1, .125),
-                new EqualizerBand(2, .125),
-                new EqualizerBand(3, .1),
-                new EqualizerBand(4, .1),
-                //new EqualizerBand(5, .05),
-                //new EqualizerBand(6, 0.075),
-                //new EqualizerBand(7, .001),
-                //new EqualizerBand(8, .001),
-                //new EqualizerBand(9, .001),
-                //new EqualizerBand(10, .001),
-                //new EqualizerBand(11, .001),
-                //new EqualizerBand(12, .125),
-                //new EqualizerBand(13, .15),
-                //new EqualizerBand(14, .05),
-
-            };
-            await player.EqualizerAsync(eq);
-            return await EmbedHelper.MakeEmbed(_client, player, user, $"Filter aktiválva: Bass Boost", $"Ebben a csatornában: `{player.VoiceChannel.Name}`", Color.Red);
-        }*/
-
         public async Task<Embed> FastForward(TimeSpan time, IGuild guild, SocketUser user)
         {
             var player = _lavaNode.GetPlayer(guild);
@@ -287,7 +248,6 @@ namespace KBot.Services
             await player.SeekAsync(time);
             return await EmbedHelper.MakeFastForward(user, player, time, false);
         }
-
         private async Task OnReadyAsync()
         {
             await _lavaNode.ConnectAsync();
@@ -335,7 +295,7 @@ namespace KBot.Services
                 ImageUrl = await track.FetchArtworkAsync(),
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"Hossz: ({track.Duration}) | Hely a várólistában: ({player.Queue.Count})"
+                    Text = $"Hossz -> {player.Track.Duration:hh\\:mm\\:ss}"
                 }
             };
             await player.TextChannel.SendMessageAsync(string.Empty, false, eb.Build());

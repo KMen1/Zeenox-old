@@ -1,9 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Victoria;
+using Victoria.Enums;
 
 namespace KBot.Helpers
 {
@@ -24,7 +24,7 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}",
+                        Text = $"Kérte -> {user.Username}",
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
@@ -46,7 +46,7 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}",
+                        Text = $"Kérte -> {user.Username}",
                         IconUrl = user.GetAvatarUrl()
                     },
                 };
@@ -68,28 +68,34 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
+                        Text = $"Kérte -> {user.Username}",
                     },
                 };
-                if (player == null) return eb.Build();
+                if (player.PlayerState != PlayerState.Playing) return eb.Build();
                 eb.AddField(x =>
                 {
-                    x.Name = "Most játszott";
+                    x.Name = "MOST JÁTSZOTT";
                     x.Value = $"`{player.Track.Title}`";
                     x.IsInline = true;
                 });
+                eb.WithFooter(
+                    text: $"Kérte -> {user.Username} | " +
+                    $"Hossz -> {player.Track.Duration:hh\\:mm\\:ss} | " +
+                    "Hely a ");
+                if (player.Queue.Count < 1) return eb.Build();
                 eb.AddField(x =>
                 {
-                    x.Name = "Következő";
+                    x.Name = "KÖVETKEZŐ";
                     x.Value = $"`{player.Queue.Peek().Title}`";
                     x.IsInline = true;
                 });
-
+                eb.WithFooter(
+                    text: $"Kérte -> {user.Username} | Hossz -> {player.Track.Duration:hh\\:mm\\:ss}");
                 return eb.Build();
             });
         }
-        public static Task<Embed> MakePlay(SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl, bool noMatches, bool queued)
+        public static Task<Embed> MakePlay(SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl, 
+            bool noMatches, bool queued)
         {
             return Task.Run(() =>
             {
@@ -107,11 +113,11 @@ namespace KBot.Helpers
                     Color = noMatches ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"Hosszúság: {track.Duration}` | Hely a várólistán: ({player.Queue.Count})"
+                        Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}",
                     },
                 };
                 if (!queued) return eb.Build();
-                eb.WithAuthor("HOZZÁADVA A VÁRLISTÁHOZ", user.GetAvatarUrl());
+                eb.WithAuthor("HOZZÁADVA A VÁRÓLISTÁHOZ", user.GetAvatarUrl());
                 eb.WithColor(Color.Orange);
                 return eb.Build();
             });
@@ -131,7 +137,7 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}"
+                        Text = $"Kérte -> {user.Username}"
                     },
                 };
                 return eb.Build();
@@ -152,7 +158,7 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"Hossz: ({player.Track.Duration})"
+                        Text = $"Kérte -> {user.Username} | Hossz -> {player.Track.Duration:hh\\:mm\\:ss}"
                     },
                 };
                 if (player == null) return eb.Build();
@@ -178,8 +184,7 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
+                        Text = $"Kérte -> {user.Username}"
                     },
                 };
                 if (player == null) return eb.Build();
@@ -197,15 +202,14 @@ namespace KBot.Helpers
                 {
                     Author = new EmbedAuthorBuilder
                     {
-                        Name = failed ? "SIKERTELEN HANGERŐÁLLÍTÁS" : $"Hangerő {volume}%-ra állítva beállítva",
+                        Name = failed ? "SIKERTELEN HANGERŐÁLLÍTÁS" : $"HANGERŐ {volume}%-RA ÁLLÍTVA",
                         IconUrl = user.GetAvatarUrl()
                     },
                     Description = failed ? "Jelenleg nincs zene lejátszás alatt" : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
+                        Text = $"Kérte -> {user.Username}",
                     },
                 };
                 if (player != null && volume >= 0 & volume <= 100)
@@ -235,14 +239,12 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
+                        Text = $"Kérte -> {user.Username}",
                     },
                 };
                 if (player == null) return eb.Build();
                 eb.WithTitle(player.Track.Title);
                 eb.WithUrl(player.Track.Url);
-
                 return eb.Build();
             });
         }
@@ -264,14 +266,12 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
+                        Text = $"Kérte -> {user.Username}",
                     },
                 };
                 if (player == null) return eb.Build();
                 eb.WithTitle(player.Track.Title);
                 eb.WithUrl(player.Track.Url);
-
                 return eb.Build();
             });
         }
@@ -291,14 +291,12 @@ namespace KBot.Helpers
                     Color = failed ? Color.Red : Color.Green,
                     Footer = new EmbedFooterBuilder
                     {
-                        Text = $"{user.Username} | {DateTime.UtcNow}",
-                        IconUrl = user.GetAvatarUrl()
+                        Text = $"Kérte -> {user.Username}",
                     },
                 };
                 if (player == null) return eb.Build();
                 eb.WithTitle(player.Track.Title);
                 eb.WithUrl(player.Track.Url);
-
                 return eb.Build();
             });
         }
