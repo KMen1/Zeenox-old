@@ -1,7 +1,5 @@
-﻿namespace KBot.Commands
+﻿namespace KBot.Commands;
+
+public class Moderation
 {
-    public class Moderation
-    {
-        
-    }
 }

@@ -1,61 +1,61 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
-    <Platforms>x64</Platforms>
-    <Authors>KMen</Authors>
-    <Company>KINC</Company>
-    <Product>KBot</Product>
-    <StartupObject>KBot.Program</StartupObject>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
-    <PackageId>KBot</PackageId>
-    <Description>A Discord Bot</Description>
-    <PackageIcon>icon.png</PackageIcon>
-    <NeutralLanguage>en</NeutralLanguage>
-    <AssemblyName>KBot</AssemblyName>
-    <RootNamespace>KBot</RootNamespace>
-    <Copyright>2022</Copyright>
-    <RepositoryUrl>https://github.com/KMen1/KBot</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageProjectUrl>https://github.com/KMen1/KBot</PackageProjectUrl>
-    <Configurations>Debug;Release</Configurations>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0-windows</TargetFramework>
+        <Platforms>x64</Platforms>
+        <Authors>KMen</Authors>
+        <Company>KINC</Company>
+        <Product>KBot</Product>
+        <StartupObject>KBot.Program</StartupObject>
+        <ApplicationIcon>icon.ico</ApplicationIcon>
+        <PackageId>KBot</PackageId>
+        <Description>A Discord Bot</Description>
+        <PackageIcon>icon.png</PackageIcon>
+        <NeutralLanguage>en</NeutralLanguage>
+        <AssemblyName>KBot</AssemblyName>
+        <RootNamespace>KBot</RootNamespace>
+        <Copyright>2022</Copyright>
+        <RepositoryUrl>https://github.com/KMen1/KBot</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/KMen1/KBot</PackageProjectUrl>
+        <Configurations>Debug;Release</Configurations>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <DebugType>pdbonly</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <DebugType>pdbonly</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Optimize>False</Optimize>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <Optimize>False</Optimize>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="3.0.0-dev-20211126.8" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-    <PackageReference Include="Victoria" Version="5.2.4" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Discord.Net" Version="3.0.0-dev-20211126.8"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0"/>
+        <PackageReference Include="Victoria" Version="5.2.4"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Update="application.yml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="config.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Lavalink.jar">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="libsodium.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Start Lavalink.bat">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup>
+        <None Update="application.yml">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="config.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Lavalink.jar">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="libsodium.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Start Lavalink.bat">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 </Project>

@@ -1,10 +1,9 @@
-﻿namespace KBot
+﻿namespace KBot;
+
+public static class Program
 {
-    public static class Program
+    private static void Main()
     {
-        private static void Main()
-        {
-            new Bot().StartAsync().GetAwaiter().GetResult();
-        }
+        new Bot().StartAsync().GetAwaiter().GetResult();
     }
 }
