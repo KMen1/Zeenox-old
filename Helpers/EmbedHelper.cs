@@ -340,13 +340,17 @@ public static class EmbedHelper
                 }
             };
             if (cleared) return eb.Build();
-            var test = new StringBuilder();
+            if (player.Queue.Count == 0)
+            {
+                eb.WithDescription("`Nincs zene a lejátszási listában`");
+            }
+            var desc = new StringBuilder();
             foreach (var track in player.Queue)
             {
-                test.AppendLine($":{(player.Queue.TakeWhile(n => n != track).Count()+1).ToWords()}: [`{track.Title}`]({track.Url}) | Hossz: {track.Duration:hh\\:mm\\:ss}" + "\n");
+                desc.AppendLine($":{(player.Queue.TakeWhile(n => n != track).Count()+1).ToWords()}: [`{track.Title}`]({track.Url}) | Hossz: {track.Duration:hh\\:mm\\:ss}" + "\n");
             }
-
-            eb.WithDescription(test.ToString());
+            
+            eb.WithDescription(desc.ToString());
             return eb.Build();
         });
     }
