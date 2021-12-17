@@ -7,11 +7,11 @@ using Discord.WebSocket;
 
 namespace KBot.Commands;
 
-public class Help
+public class HelpCommand
 {
     private readonly DiscordSocketClient _client;
 
-    public Help(DiscordSocketClient client)
+    public HelpCommand(DiscordSocketClient client)
     {
         _client = client;
     }

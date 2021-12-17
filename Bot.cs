@@ -20,8 +20,8 @@ public class Bot
 
     private DiscordSocketClient Client { get; set; }
     private LavaNode LavaNode { get; set; }
-    private Logging LogService { get; set; }
-    private Audio AudioService { get; set; }
+    private LogService LogService { get; set; }
+    private AudioService AudioService { get; set; }
     private ConfigService ConfigService { get; set; }
     private IServiceProvider Services { get; set; }
 
@@ -34,20 +34,20 @@ public class Bot
 
         LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig());
 
-        AudioService = new Audio(Client, LavaNode);
-        await AudioService.InitializeAsync();
+        AudioService = new AudioService(Client, LavaNode);
+        AudioService.InitializeAsync();
 
         await GetServices();
 
-        LogService = new Logging(Services);
-        await LogService.InitializeAsync();
+        LogService = new LogService(Services);
+        LogService.InitializeAsync();
 
-        var slashcommandService = new Command(Services);
+        var slashcommandService = new CommandService(Services);
         slashcommandService.InitializeAsync();
 
         await Client.LoginAsync(TokenType.Bot, config["Token"]);
         await Client.StartAsync();
-        await Client.SetGameAsync(config["Prefix"] + config["Game"], string.Empty, ActivityType.Listening);
+        await Client.SetGameAsync("/" + config["Game"], string.Empty, ActivityType.Listening);
         await Client.SetStatusAsync(UserStatus.Online);
 
         await Task.Delay(-1);

@@ -8,9 +8,9 @@ public static class Filter
     {
         var equalizer = new EqualizerBand[]
         {
-            new(0, enabled ? 0 : -0.075),
-            new(1, enabled ? 0 : .125),
-            new(2, enabled ? 0 : .125)
+            new(0, enabled ? 0.6 : 0.01),
+            new(1, enabled ? 0.67 : 0.01),
+            new(2, enabled ? 0.67 : 0.01)
         };
         return equalizer;
     }
@@ -19,9 +19,9 @@ public static class Filter
     {
         var timescaleFilter = new TimescaleFilter
         {
-            Speed = enabled ? 0 : 1.1999999523162842,
-            Pitch = enabled ? 0 : 1.2999999523163953,
-            Rate = enabled ? 0 : 1.0
+            Speed = enabled ? 1.1999999523162842 : 1.0,
+            Pitch = enabled ? 1.2999999523163953 : 1.0,
+            Rate = 1.0
         };
         return timescaleFilter;
     }
@@ -30,7 +30,7 @@ public static class Filter
     {
         var rotationFilter = new RotationFilter
         {
-            Hertz = enabled ? 0 : 0.2999999523162842
+            Hertz = enabled ? 0.3999999523162842 : 0
         };
         return rotationFilter;
     }
@@ -39,21 +39,11 @@ public static class Filter
     {
         var timescaleFilter = new TimescaleFilter
         {
-            Speed = enabled ? 0 : 0.8500000238418579,
-            Pitch = enabled ? 0 : 0.800000011920929,
-            Rate = enabled ? 0 : 1.0
+            Speed = enabled ? 0.8500000238418579 : 1.0,
+            Pitch = enabled ? 0.800000011920929 : 1.0,
+            Rate = 1.0
         };
         return timescaleFilter;
-    }
-
-    public static KarokeFilter Karaoke(bool enabled)
-    {
-        var karaokeFilter = new KarokeFilter
-        {
-            FilterBand = enabled ? 0 : 0.5,
-            FilterWidth = 5
-        };
-        return karaokeFilter;
     }
 
     public static TimescaleFilter Speed(bool enabled, double speed)
@@ -61,8 +51,8 @@ public static class Filter
         var timescaleFilter = new TimescaleFilter
         {
             Speed = enabled ? speed : 1.0,
-            Pitch = enabled ? 0 : 1.0,
-            Rate = enabled ? 0 : 1.0
+            Pitch = 1.0,
+            Rate = 1.0
         };
         return timescaleFilter;
     }
@@ -71,9 +61,9 @@ public static class Filter
     {
         var timescaleFilter = new TimescaleFilter
         {
-            Speed = enabled ? 0 : 1.0,
+            Speed = 1.0,
             Pitch = enabled ? pitch : 1.0,
-            Rate = enabled ? 0 : 1.0
+            Rate = 1.0
         };
         return timescaleFilter;
     }

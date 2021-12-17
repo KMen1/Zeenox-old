@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using Humanizer;
 using Victoria;
 using Victoria.Enums;
 
 namespace KBot.Helpers;
-
 public static class EmbedHelper
 {
     public static Task<Embed> MakeJoin(SocketUser user, IVoiceChannel vChannel, bool failed)
@@ -24,8 +26,7 @@ public static class EmbedHelper
                 Color = failed ? Color.Red : Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"Kérte -> {user.Username}",
-                    IconUrl = user.GetAvatarUrl()
+                    Text = $"Kérte -> {user.Username}"
                 }
             };
             return eb.Build();
@@ -47,8 +48,7 @@ public static class EmbedHelper
                 Color = failed ? Color.Red : Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"Kérte -> {user.Username}",
-                    IconUrl = user.GetAvatarUrl()
+                    Text = $"Kérte -> {user.Username}"
                 }
             };
             return eb.Build();
@@ -264,7 +264,7 @@ public static class EmbedHelper
     }
 
     public static Task<Embed> MakeFilter(SocketUser user, LavaPlayer player,
-        string filtername, bool failed, bool enabled = false)
+        string filtername, bool failed)
     {
         return Task.Run(() =>
         {
@@ -272,8 +272,7 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "HIBA A FILTER BEÁLLÍTÁSAKOR" :
-                        enabled ? $"FILTER AKTIVÁLVA: {filtername}" : $"FILTER DEAKTIVÁLVA: {filtername}",
+                    Name = failed ? "HIBA A FILTER BEÁLLÍTÁSAKOR" : $"FILTER AKTIVÁLVA: {filtername}",
                     IconUrl = user.GetAvatarUrl()
                 },
                 Description = failed
@@ -316,6 +315,38 @@ public static class EmbedHelper
             if (player == null) return eb.Build();
             eb.WithTitle(player.Track.Title);
             eb.WithUrl(player.Track.Url);
+            return eb.Build();
+        });
+    }
+
+    public static Task<Embed> MakeQueue(SocketUser user, LavaPlayer player, bool failed, bool cleared = false)
+    {
+        return Task.Run(() =>
+        {
+            var eb = new EmbedBuilder
+            {
+                Author = new EmbedAuthorBuilder
+                {
+                    Name = failed ? "SIKERTELEN LEKÉRÉS" : cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE",
+                    IconUrl = user.GetAvatarUrl()
+                },
+                Description = failed
+                    ? "Jelenleg nincs zene lejátszás alatt"
+                    : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Color = failed ? Color.Red : Color.Green,
+                Footer = new EmbedFooterBuilder
+                {
+                    Text = $"Kérte -> {user.Username}"
+                }
+            };
+            if (cleared) return eb.Build();
+            var test = new StringBuilder();
+            foreach (var track in player.Queue)
+            {
+                test.AppendLine($":{(player.Queue.TakeWhile(n => n != track).Count()+1).ToWords()}: [`{track.Title}`]({track.Url}) | Hossz: {track.Duration:hh\\:mm\\:ss}" + "\n");
+            }
+
+            eb.WithDescription(test.ToString());
             return eb.Build();
         });
     }

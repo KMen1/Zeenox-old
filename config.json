@@ -1,8 +1,7 @@
-{ 
-	"Token": "",
-	"Prefix": "/",
-	"Game": "help",
-	"Hostname": "localhost",
-    "Port": 2333,
-    "Password": "youshallnotpass"
+{
+  "Token": "NTAxNzQ4MDY0MzAyOTIzODE2.W8XnTA.-ogDpz-ISNRDXaxdRK7UrYDkIHg",
+  "Game": "play",
+  "LavaLinkHost": "localhost",
+  "LavaLinkPort": 2333,
+  "LavaLinkPassword": "youshallnotpass"
 }

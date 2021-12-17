@@ -1,31 +1,32 @@
 ﻿using System;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using KBot.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Victoria;
 
 namespace KBot.Services;
 
-public class Logging
+public class LogService
 {
     private readonly DiscordSocketClient _client;
     private readonly LavaNode _lavaNode;
     private readonly SemaphoreSlim _semaphoreSlim;
 
-    public Logging(IServiceProvider services)
+    public LogService(IServiceProvider services)
     {
         _semaphoreSlim = new SemaphoreSlim(1);
         _client = services.GetRequiredService<DiscordSocketClient>();
         _lavaNode = services.GetRequiredService<LavaNode>();
     }
 
-    public Task InitializeAsync()
+    public void InitializeAsync()
     {
         _client.Log += _client_Log;
         _lavaNode.OnLog += _lavaNode_OnLog;
-        return Task.CompletedTask;
     }
 
     private Task _lavaNode_OnLog(LogMessage arg)
@@ -53,7 +54,7 @@ public class Logging
             _ => Console.ForegroundColor
         };
 
-        var time = DateTime.Now.ToString();
+        var time = DateTime.Now.ToString(CultureInfo.CurrentCulture);
         if (logMessage.Exception == null)
         {
             Console.WriteLine($"[{time}] [{logMessage.Severity,7}] : ({logMessage.Source,7}) : {logMessage.Message}");

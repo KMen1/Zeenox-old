@@ -9,7 +9,7 @@ namespace KBot.Services;
 
 public class ConfigService
 {
-    public readonly IConfiguration Config;
+    public static IConfiguration Config;
 
     public ConfigService()
     {
@@ -18,7 +18,6 @@ public class ConfigService
             .AddJsonFile("config.json");
         Config = builder.Build();
     }
-
     public static Task<DiscordSocketConfig> GetClientConfig()
     {
         return Task.Run(() =>
@@ -26,21 +25,20 @@ public class ConfigService
             var config = new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Debug,
-                AlwaysDownloadUsers = true
             };
             return config;
         });
     }
 
-    public Task<LavaConfig> GetLavaConfig()
+    public static Task<LavaConfig> GetLavaConfig()
     {
         return Task.Run(() =>
         {
             var config = new LavaConfig
             {
-                Hostname = Config["Hostname"],
-                Port = (ushort) int.Parse(Config["Port"]),
-                Authorization = Config["Password"]
+                Hostname = Config["LavaLinkHost"],
+                Port = (ushort) int.Parse(Config["LavaLinkPort"]),
+                Authorization = Config["LavaLinkPassword"]
             };
             return config;
         });
