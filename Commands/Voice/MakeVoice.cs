@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 
-namespace KBot.Commands.Voice;
+//namespace KBot.Commands.Voice;
 
 public static class MakeVoice
 {

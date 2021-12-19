@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -97,8 +98,8 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakePlay(SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl,
-        bool noMatches, bool queued)
+    public static Task<Embed> MakeNowPlaying(SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl,
+        bool noMatches, bool loop, int volume)
     {
         return Task.Run(() =>
         {
@@ -106,7 +107,7 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = noMatches ? "NINCS TALÁLAT" : "A KÖVETKEZŐ LEJÁTSZÁSA",
+                    Name = "MOST JÁTSZOTT",
                     IconUrl = user.GetAvatarUrl()
                 },
                 Title = track.Title,
@@ -114,14 +115,38 @@ public static class EmbedHelper
                 ImageUrl = thumbnailUrl,
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                 Color = noMatches ? Color.Red : Color.Green,
-                Footer = new EmbedFooterBuilder
+                Fields = new List<EmbedFieldBuilder>()
+                {
+                  new()
+                  {
+                      Name = "😃 Kérte",
+                      Value = $"{user.Mention}",
+                      IsInline = true
+                  },
+                  new()
+                  {
+                      Name = "🕐 Hosszúság",
+                      Value = $"`{track.Duration:hh\\:mm\\:ss}`",
+                      IsInline = true
+                  },
+                  new()
+                  {
+                      Name = "🔁 Ismétlés",
+                      Value = loop ? "`Igen`" : "`Nem`",
+                      IsInline = true
+                  },
+                  new()
+                  {
+                      Name = "🔊 Hangerő",
+                      Value = $"`{volume}%`",
+                      IsInline = true
+                  },
+                },
+                /*Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
-                }
+                }*/
             };
-            if (!queued) return eb.Build();
-            eb.WithAuthor("HOZZÁADVA A VÁRÓLISTÁHOZ", user.GetAvatarUrl());
-            eb.WithColor(Color.Orange);
             return eb.Build();
         });
     }
@@ -179,7 +204,7 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakePauseOrResume(SocketUser user, LavaPlayer player, bool failed, bool resumed)
+    public static Task<Embed> MakePauseOrResume(SocketUser user, LavaPlayer player, string thumbnailUrl, bool resumed, bool loop)
     {
         return Task.Run(() =>
         {
@@ -187,23 +212,46 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "Hiba a szünet/folytatás során" :
-                        resumed ? "LEJÁTSZÁS SZÜNETELTEÉSE" : "LEJÁTSZÁS FOLYTATÁSA",
+                    Name = "MOST JÁTSZOTT",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed
-                    ? "Jelenleg nincs zene lejátszás alatt"
-                    : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Title = player.Track.Title,
+                Url = player.Track.Url,
+                ImageUrl = thumbnailUrl,
+                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Color = Color.Green,
+                Fields = new List<EmbedFieldBuilder>()
+                {
+                    new()
+                    {
+                        Name = "Kérte",
+                        Value = $"{user.Mention}",
+                        IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "Hosszúság",
+                        Value = $"`{player.Track.Duration:hh\\:mm\\:ss}`",
+                        IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "Ismétlés",
+                        Value = loop ? "`Igen`" : "`Nem`",
+                        IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "Hangerő",
+                        Value = $"`{player.Volume}%`",
+                        IsInline = true
+                    },
+                },
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = $"Kérte -> {user.Username}"
+                    Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
                 }
             };
-            if (player == null) return eb.Build();
-            eb.WithTitle(player.Track.Title);
-            eb.WithUrl(player.Track.Url);
-
             return eb.Build();
         });
     }
@@ -351,6 +399,32 @@ public static class EmbedHelper
             }
             
             eb.WithDescription(desc.ToString());
+            return eb.Build();
+        });
+    }
+
+    public static Task<Embed> MakeAddedToQueue(SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl)
+    {
+        return Task.Run(() =>
+        {
+            var eb = new EmbedBuilder
+            {
+                Author = new EmbedAuthorBuilder
+                {
+                    Name = "HOZZÁADVA A VÁRÓLISTÁHOZ",
+                    IconUrl = user.GetAvatarUrl()
+                },
+                Title = track.Title,
+                Url = track.Url,
+                ImageUrl = thumbnailUrl,
+                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Color = Color.Green,
+                Footer = new EmbedFooterBuilder
+                {
+                    Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
+                }
+            };
+            eb.WithColor(Color.Orange);
             return eb.Build();
         });
     }

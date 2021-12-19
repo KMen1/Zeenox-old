@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Victoria;
@@ -42,5 +43,19 @@ public class ConfigService
             };
             return config;
         });
+    }
+
+    public static Task<InteractionServiceConfig> GetInteractionConfig()
+    {
+        return Task.Run((() =>
+        {
+            var config = new InteractionServiceConfig
+            {
+                DefaultRunMode = RunMode.Async,
+                LogLevel = LogSeverity.Debug,
+                UseCompiledLambda = true
+            };
+            return config; 
+        }));
     }
 }

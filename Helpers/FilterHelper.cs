@@ -2,7 +2,7 @@
 
 namespace KBot.Helpers;
 
-public static class Filter
+public static class FilterHelper
 {
     public static EqualizerBand[] BassBoost(bool enabled)
     {

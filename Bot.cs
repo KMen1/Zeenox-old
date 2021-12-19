@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Handlers;
 using KBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +22,7 @@ public class Bot
     }
 
     private DiscordSocketClient Client { get; set; }
+    private InteractionService InteractionService { get; set; }
     private LavaNode LavaNode { get; set; }
     private LogService LogService { get; set; }
     private AudioService AudioService { get; set; }
@@ -32,6 +36,8 @@ public class Bot
         _config = config;
         Client = new DiscordSocketClient(await ConfigService.GetClientConfig());
 
+        InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig());
+        
         LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig());
 
         AudioService = new AudioService(Client, LavaNode);
@@ -42,9 +48,12 @@ public class Bot
         LogService = new LogService(Services);
         LogService.InitializeAsync();
 
-        var slashcommandService = new CommandService(Services);
-        slashcommandService.InitializeAsync();
+        var slashcommandService = new CommandHandler(Services);
+        await slashcommandService.InitializeAsync();
 
+        var buttonHandler = new ButtonHandler(Services);
+        buttonHandler.InitializeAsync();
+        
         await Client.LoginAsync(TokenType.Bot, config["Token"]);
         await Client.StartAsync();
         await Client.SetGameAsync("/" + config["Game"], string.Empty, ActivityType.Listening);
@@ -57,6 +66,7 @@ public class Bot
     {
         Services = new ServiceCollection()
             .AddSingleton(Client)
+            .AddSingleton(InteractionService)
             .AddSingleton(LavaNode)
             .AddSingleton(AudioService)
             .AddSingleton(_config)
