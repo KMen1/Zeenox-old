@@ -1,52 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
 
 namespace KBot.Commands;
 
-public class HelpCommand
+public class HelpCommand : InteractionModuleBase<InteractionContext>
 {
-    private readonly DiscordSocketClient _client;
+    public DiscordSocketClient Client { get; set; }
 
-    public HelpCommand(DiscordSocketClient client)
+    [SlashCommand("help", "Kilistázza az összes parancsot")]
+    public async Task Help(
+        [Summary("command", "Egy adott parancsra vonatkozó információt ad vissza")] string optCommand = "")
     {
-        _client = client;
-    }
+        var guild = Context.Guild;
+        var guildCommands = await guild.GetApplicationCommandsAsync();
 
-    public async Task MakeHelpCommand()
-    {
-        var options = new SlashCommandOptionBuilder()
-            .WithName("command")
-            .WithType(ApplicationCommandOptionType.String)
-            .WithDescription("");
-        var helpCommand = new SlashCommandBuilder()
-            .WithName("help")
-            .WithDescription("Kilistázza az összes parancsot")
-            .AddOption(options);
-
-
-        var globalCommands = await _client.GetGlobalApplicationCommandsAsync();
-
-        var commandsName = new List<string>();
-        foreach (var command in globalCommands)
-        {
-            commandsName.Add(command.Name);
-            options.AddChoice(command.Name, command.Name);
-        }
-
-        if (!commandsName.Contains(helpCommand.Name))
-            await _client.CreateGlobalApplicationCommandAsync(helpCommand.Build());
-    }
-
-    public async Task HandleHelpCommand(SocketSlashCommand slashCommand)
-    {
-        var globalCommands = await _client.GetGlobalApplicationCommandsAsync();
-        var commands = new List<SocketApplicationCommand>();
-
-        var combinedString = string.Join(", ", globalCommands.Select(command => command.Name).ToArray());
+        var combinedString = string.Join(", ", guildCommands.Select(command => command.Name).ToArray());
 
         var eb = new EmbedBuilder
         {
@@ -55,42 +27,41 @@ public class HelpCommand
                 "Összes parancs listázása ( help <parancs> )-al több információt tudhatsz meg az adott parancsról!",
             Color = Color.Orange,
             Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1575900037337),
-            ThumbnailUrl = _client.CurrentUser.GetAvatarUrl()
+            ThumbnailUrl = Client.CurrentUser.GetAvatarUrl()
         };
 
-        if (!slashCommand.Data.Options.First().Value.Equals(""))
+        if (optCommand != "")
         {
-            var co = globalCommands.FirstOrDefault(x => string.Equals(x.Name,
-                slashCommand.Data.Options.First().Value.ToString(), StringComparison.CurrentCultureIgnoreCase));
+            var reqCommand = guildCommands.FirstOrDefault(x => string.Equals(x.Name,
+                optCommand, StringComparison.CurrentCultureIgnoreCase));
 
-            if (co.Name == slashCommand.Data.Options.First().Value.ToString().ToLower())
+            if (reqCommand?.Name == optCommand)
             {
-                eb.WithTitle($"**{co.Name.First().ToString().ToUpper() + co.Name[1..]}**");
-                eb.WithDescription($"`{co.Description}`");
+                eb.WithTitle($"**{reqCommand?.Name.First().ToString().ToUpper() + reqCommand?.Name[1..]}**");
+                eb.WithDescription($"`{reqCommand?.Description}`");
             }
             else
             {
-                await slashCommand.RespondAsync(
-                    $"Nincs ilyen parancs - `{slashCommand.Data.Options.First().Value.ToString().ToLower()}`");
+                await RespondAsync($"Nincs ilyen parancs - `{optCommand}`");
             }
         }
         else
         {
             eb.WithFooter(footer =>
-                footer.WithText($"Requested by: {slashCommand.User.Username}")
-                    .WithIconUrl(slashCommand.User.GetAvatarUrl()));
+                footer.WithText($"Requested by: {Context.User.Username}")
+                    .WithIconUrl(Context.User.GetAvatarUrl()));
             eb.AddField("Parancsok", $"`{combinedString}`");
         }
 
-        if (slashCommand.Channel is SocketDMChannel)
+        if (Context.Channel is SocketDMChannel)
         {
-            await slashCommand.RespondAsync(embed: eb.Build());
+            await RespondAsync(embed: eb.Build());
         }
         else
         {
-            await slashCommand.User.SendMessageAsync(null, false, eb.Build());
-            await slashCommand.RespondAsync(
-                $":exclamation: **{slashCommand.User.Mention}** Nézd meg a privát üzeneteidet :exclamation: ");
+            await Context.User.SendMessageAsync(embed: eb.Build());
+            await RespondAsync(
+                $":exclamation: **{Context.User.Mention}** Nézd meg a privát üzeneteidet :exclamation: ");
         }
     }
 }

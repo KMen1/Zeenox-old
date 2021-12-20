@@ -19,6 +19,7 @@ public class ConfigService
             .AddJsonFile("config.json");
         Config = builder.Build();
     }
+
     public static Task<DiscordSocketConfig> GetClientConfig()
     {
         return Task.Run(() =>
@@ -26,6 +27,7 @@ public class ConfigService
             var config = new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Debug,
+                GatewayIntents = GatewayIntents.None
             };
             return config;
         });
@@ -47,7 +49,7 @@ public class ConfigService
 
     public static Task<InteractionServiceConfig> GetInteractionConfig()
     {
-        return Task.Run((() =>
+        return Task.Run(() =>
         {
             var config = new InteractionServiceConfig
             {
@@ -55,7 +57,7 @@ public class ConfigService
                 LogLevel = LogSeverity.Debug,
                 UseCompiledLambda = true
             };
-            return config; 
-        }));
+            return config;
+        });
     }
 }

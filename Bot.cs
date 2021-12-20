@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -37,7 +36,7 @@ public class Bot
         Client = new DiscordSocketClient(await ConfigService.GetClientConfig());
 
         InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig());
-        
+
         LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig());
 
         AudioService = new AudioService(Client, LavaNode);
@@ -53,7 +52,7 @@ public class Bot
 
         var buttonHandler = new ButtonHandler(Services);
         buttonHandler.InitializeAsync();
-        
+
         await Client.LoginAsync(TokenType.Bot, config["Token"]);
         await Client.StartAsync();
         await Client.SetGameAsync("/" + config["Game"], string.Empty, ActivityType.Listening);

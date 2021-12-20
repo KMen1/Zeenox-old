@@ -20,5 +20,5 @@ public enum VoiceCommandType
     Pitch,
     Loop,
     Queue,
-    ClearQueue,
+    ClearQueue
 }

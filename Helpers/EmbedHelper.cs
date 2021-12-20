@@ -10,6 +10,7 @@ using Victoria;
 using Victoria.Enums;
 
 namespace KBot.Helpers;
+
 public static class EmbedHelper
 {
     public static Task<Embed> MakeJoin(SocketUser user, IVoiceChannel vChannel, bool failed)
@@ -98,8 +99,7 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakeNowPlaying(SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl,
-        bool noMatches, bool loop, int volume)
+    public static Task<Embed> MakeNowPlaying(SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl, bool isloopEnabled, int volume)
     {
         return Task.Run(() =>
         {
@@ -114,34 +114,34 @@ public static class EmbedHelper
                 Url = track.Url,
                 ImageUrl = thumbnailUrl,
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = noMatches ? Color.Red : Color.Green,
-                Fields = new List<EmbedFieldBuilder>()
+                Color = Color.Green,
+                Fields = new List<EmbedFieldBuilder>
                 {
-                  new()
-                  {
-                      Name = "😃 Kérte",
-                      Value = $"{user.Mention}",
-                      IsInline = true
-                  },
-                  new()
-                  {
-                      Name = "🕐 Hosszúság",
-                      Value = $"`{track.Duration:hh\\:mm\\:ss}`",
-                      IsInline = true
-                  },
-                  new()
-                  {
-                      Name = "🔁 Ismétlés",
-                      Value = loop ? "`Igen`" : "`Nem`",
-                      IsInline = true
-                  },
-                  new()
-                  {
-                      Name = "🔊 Hangerő",
-                      Value = $"`{volume}%`",
-                      IsInline = true
-                  },
-                },
+                    new()
+                    {
+                        Name = "😃 Kérte",
+                        Value = $"{user.Mention}",
+                        IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "🕐 Hosszúság",
+                        Value = $"`{track.Duration:hh\\:mm\\:ss}`",
+                        IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "🔁 Ismétlés",
+                        Value = isloopEnabled ? "`Igen`" : "`Nem`",
+                        IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "🔊 Hangerő",
+                        Value = $"`{volume}%`",
+                        IsInline = true
+                    }
+                }
                 /*Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
@@ -204,7 +204,8 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakePauseOrResume(SocketUser user, LavaPlayer player, string thumbnailUrl, bool resumed, bool loop)
+    public static Task<Embed> MakePauseOrResume(SocketUser user, LavaPlayer player, string thumbnailUrl, bool resumed,
+        bool loop)
     {
         return Task.Run(() =>
         {
@@ -220,7 +221,7 @@ public static class EmbedHelper
                 ImageUrl = thumbnailUrl,
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                 Color = Color.Green,
-                Fields = new List<EmbedFieldBuilder>()
+                Fields = new List<EmbedFieldBuilder>
                 {
                     new()
                     {
@@ -245,7 +246,7 @@ public static class EmbedHelper
                         Name = "Hangerő",
                         Value = $"`{player.Volume}%`",
                         IsInline = true
-                    },
+                    }
                 },
                 Footer = new EmbedFooterBuilder
                 {
@@ -280,33 +281,6 @@ public static class EmbedHelper
             eb.WithTitle(player.Track.Title);
             eb.WithUrl(player.Track.Url);
 
-            return eb.Build();
-        });
-    }
-
-    public static Task<Embed> MakeFastForward(SocketUser user, LavaPlayer player, TimeSpan time, bool failed)
-    {
-        return Task.Run(() =>
-        {
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = failed ? "SIKERTELEN ELŐRETEKERÉS" : $"ZENE ELŐRETEKERVE IDE: {time}",
-                    IconUrl = user.GetAvatarUrl()
-                },
-                Description = failed
-                    ? "Jelenleg nincs zene lejátszás alatt"
-                    : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"Kérte -> {user.Username}"
-                }
-            };
-            if (player == null) return eb.Build();
-            eb.WithTitle(player.Track.Title);
-            eb.WithUrl(player.Track.Url);
             return eb.Build();
         });
     }
@@ -375,7 +349,8 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "SIKERTELEN LEKÉRÉS" : cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE",
+                    Name = failed ? "SIKERTELEN LEKÉRÉS" :
+                        cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE",
                     IconUrl = user.GetAvatarUrl()
                 },
                 Description = failed
@@ -388,16 +363,13 @@ public static class EmbedHelper
                 }
             };
             if (cleared) return eb.Build();
-            if (player.Queue.Count == 0)
-            {
-                eb.WithDescription("`Nincs zene a lejátszási listában`");
-            }
+            if (player.Queue.Count == 0) eb.WithDescription("`Nincs zene a lejátszási listában`");
             var desc = new StringBuilder();
             foreach (var track in player.Queue)
-            {
-                desc.AppendLine($":{(player.Queue.TakeWhile(n => n != track).Count()+1).ToWords()}: [`{track.Title}`]({track.Url}) | Hossz: {track.Duration:hh\\:mm\\:ss}" + "\n");
-            }
-            
+                desc.AppendLine(
+                    $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Url}) | Hossz: {track.Duration:hh\\:mm\\:ss}" +
+                    "\n");
+
             eb.WithDescription(desc.ToString());
             return eb.Build();
         });

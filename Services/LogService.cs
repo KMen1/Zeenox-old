@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Victoria;
 
@@ -14,9 +13,9 @@ namespace KBot.Services;
 public class LogService
 {
     private readonly DiscordSocketClient _client;
+    private readonly InteractionService _interactionService;
     private readonly LavaNode _lavaNode;
     private readonly SemaphoreSlim _semaphoreSlim;
-    private readonly InteractionService _interactionService;
 
     public LogService(IServiceProvider services)
     {
