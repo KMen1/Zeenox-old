@@ -47,10 +47,9 @@ public class Bot
         LogService = new LogService(Services);
         LogService.InitializeAsync();
 
-        var intertactionHandler = new IntertactionHandler(Services);
-        await intertactionHandler.InitializeAsync();
+        var interactionHandler = new InteractionHandler(Services);
+        await interactionHandler.InitializeAsync();
         
-
         await Client.LoginAsync(TokenType.Bot, config["Token"]);
         await Client.StartAsync();
         await Client.SetGameAsync("/" + config["Game"], type:ActivityType.Listening);

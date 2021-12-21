@@ -10,13 +10,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace KBot.Handlers;
 
-public class IntertactionHandler
+public class InteractionHandler
 {
     private readonly DiscordSocketClient _client;
     private readonly InteractionService _interactionService;
     private readonly IServiceProvider _services;
 
-    public IntertactionHandler(IServiceProvider services)
+    public InteractionHandler(IServiceProvider services)
     {
         _services = services;
         _client = services.GetRequiredService<DiscordSocketClient>();
