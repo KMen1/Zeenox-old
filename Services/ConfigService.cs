@@ -26,8 +26,7 @@ public class ConfigService
         {
             var config = new DiscordSocketConfig
             {
-                LogLevel = LogSeverity.Debug,
-                GatewayIntents = GatewayIntents.None
+                LogLevel = LogSeverity.Debug
             };
             return config;
         });

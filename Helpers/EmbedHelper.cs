@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -13,7 +14,7 @@ namespace KBot.Helpers;
 
 public static class EmbedHelper
 {
-    public static Task<Embed> MakeJoin(SocketUser user, IVoiceChannel vChannel, bool failed)
+    public static Task<Embed> MakeJoin(SocketUser user, IVoiceChannel vChannel)
     {
         return Task.Run(() =>
         {
@@ -21,11 +22,11 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "SIKERTELEN CSATLAKOZÁS" : "SIKERES CSATLAKOZÁS",
+                    Name = "SIKERES CSATLAKOZÁS",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed ? "Nem vagy hangcsatornában" : $"A következő csatornába: `{vChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Description = $"A következő csatornába: `{vChannel.Name}`",
+                Color = Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username}"
@@ -35,7 +36,7 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakeLeave(SocketUser user, IVoiceChannel vChannel, bool failed)
+    public static Task<Embed> MakeLeave(SocketUser user, IVoiceChannel vChannel)
     {
         return Task.Run(() =>
         {
@@ -43,11 +44,11 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "SIKERTELEN ELHAGYÁS" : "SIKERES ELHAGYÁS",
+                    Name = "SIKERES ELHAGYÁS",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed ? "Nem vagy hangcsatornában" : $"A következő csatornából: `{vChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Description = $"A következő csatornából: `{vChannel.Name}`",
+                Color = Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username}"
@@ -57,7 +58,7 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakeMove(SocketUser user, LavaPlayer player, IVoiceChannel vChannel, bool failed)
+    public static Task<Embed> MakeMove(SocketUser user, LavaPlayer player, IVoiceChannel vChannel)
     {
         return Task.Run(() =>
         {
@@ -65,11 +66,11 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "SIKERTELEN MOZGATÁS" : "SIKERES MOZGATÁS",
+                    Name = "SIKERES ÁTHELYEZÉS",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed ? "Nem vagy hangcsatornában" : $"A következő csatornába: `{vChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Description = $"A következő csatornába: `{vChannel.Name}`",
+                Color = Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username}"
@@ -151,7 +152,7 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakeStop(SocketUser user, LavaPlayer player, bool failed)
+    public static Task<Embed> MakeStop(SocketUser user, LavaPlayer player)
     {
         return Task.Run(() =>
         {
@@ -159,13 +160,11 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "SIKERTELEN MEGÁLLÍTÁS" : "LEJÁTSZÁS MEGÁLLÍTVA",
+                    Name = "LEJÁTSZÁS MEGÁLLÍTVA",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed
-                    ? "Jelenleg nincs zene lejátszás alatt"
-                    : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Color = Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username}"
@@ -175,7 +174,7 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakeSkip(SocketUser user, LavaPlayer player, string thumbnailUrl, bool failed)
+    public static Task<Embed> MakeSkip(SocketUser user, LavaPlayer player, string thumbnailUrl)
     {
         return Task.Run(() =>
         {
@@ -183,23 +182,19 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "SIKERTELEN ÁTUGRÁS" : "SIKERES ÁTUGRÁS",
+                    Name = "ZENE ÁTUGORVA",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed
-                    ? "Jelenleg nincs zene lejátszás alatt vagy a várólista üres"
-                    : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Title = player.Track.Title,
+                Url = player.Track.Url,
+                ImageUrl = thumbnailUrl,
+                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Color = Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username} | Hossz -> {player.Track.Duration:hh\\:mm\\:ss}"
                 }
             };
-            if (player == null) return eb.Build();
-            eb.WithTitle(player.Track.Title);
-            eb.WithUrl(player.Track.Url);
-            eb.WithImageUrl(thumbnailUrl);
-
             return eb.Build();
         });
     }
@@ -257,7 +252,7 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakeVolume(SocketUser user, LavaPlayer player, int volume, bool failed)
+    public static Task<Embed> MakeVolume(SocketUser user, LavaPlayer player, int volume)
     {
         return Task.Run(() =>
         {
@@ -265,28 +260,24 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "SIKERTELEN HANGERŐÁLLÍTÁS" : $"HANGERŐ {volume}%-RA ÁLLÍTVA",
+                    Name = $"HANGERŐ {volume}%-RA ÁLLÍTVA",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed
-                    ? "Jelenleg nincs zene lejátszás alatt"
-                    : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Title = player.Track.Title,
+                Url = player.Track.Url,
+                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Color = Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username}"
                 }
             };
-            if (player == null) return eb.Build();
-            eb.WithTitle(player.Track.Title);
-            eb.WithUrl(player.Track.Url);
-
             return eb.Build();
         });
     }
 
     public static Task<Embed> MakeFilter(SocketUser user, LavaPlayer player,
-        string filtername, bool failed)
+        string filtername)
     {
         return Task.Run(() =>
         {
@@ -294,27 +285,23 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "HIBA A FILTER BEÁLLÍTÁSAKOR" : $"FILTER AKTIVÁLVA: {filtername}",
+                    Name = $"FILTER AKTIVÁLVA: {filtername}",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed
-                    ? "Jelenleg nincs zene lejátszás alatt"
-                    : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Title = player.Track.Title,
+                Url = player.Track.Url,
+                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Color = Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username}"
                 }
             };
-            if (player == null) return eb.Build();
-            eb.WithTitle(player.Track.Title);
-            eb.WithUrl(player.Track.Url);
-            eb.WithFooter($"Kérte -> {user.Username} | Hossz-> {player.Track.Duration:hh\\:mm\\:ss}");
             return eb.Build();
         });
     }
 
-    public static Task<Embed> MakeLoop(SocketUser user, LavaPlayer player, bool failed)
+    public static Task<Embed> MakeLoop(SocketUser user, LavaPlayer player)
     {
         return Task.Run(() =>
         {
@@ -322,26 +309,23 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "SIKERTELEN ISMÉTLÉS" : "ZENE ISMÉTLÉSE",
+                    Name = "ZENE ISMÉTLÉSE AKTIVÁLVA",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed
-                    ? "Jelenleg nincs zene lejátszás alatt"
-                    : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Title = player.Track.Title,
+                Url = player.Track.Url,
+                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Color = Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username}"
                 }
             };
-            if (player == null) return eb.Build();
-            eb.WithTitle(player.Track.Title);
-            eb.WithUrl(player.Track.Url);
             return eb.Build();
         });
     }
 
-    public static Task<Embed> MakeQueue(SocketUser user, LavaPlayer player, bool failed, bool cleared = false)
+    public static Task<Embed> MakeQueue(SocketUser user, LavaPlayer player, bool cleared = false)
     {
         return Task.Run(() =>
         {
@@ -349,14 +333,11 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = failed ? "SIKERTELEN LEKÉRÉS" :
-                        cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE",
+                    Name = cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Description = failed
-                    ? "Jelenleg nincs zene lejátszás alatt"
-                    : $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = failed ? Color.Red : Color.Green,
+                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
+                Color = Color.Green,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username}"
@@ -390,13 +371,38 @@ public static class EmbedHelper
                 Url = track.Url,
                 ImageUrl = thumbnailUrl,
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = Color.Green,
+                Color = Color.Orange,
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
                 }
             };
-            eb.WithColor(Color.Orange);
+            return eb.Build();
+        });
+    }
+
+    public static Task<Embed> MakeError(SocketUser user, string exception)
+    {
+        return Task.Run(() =>
+        {
+            var eb = new EmbedBuilder
+            {
+                Author = new EmbedAuthorBuilder
+                {
+                    Name = "HIBA",
+                    IconUrl = user.GetAvatarUrl()
+                },
+                Title = "Hiba történt a parancs végrehajtása során",
+                Description = "Kérlek próbáld meg újra! \n" +
+                              "Ha a hiba továbbra is fennáll, kérlek jelezd a <@132797923049209856>-nek! \n",
+                //$"A bot beragadása esetén használd a **/reset** parancsot!",
+                Color = Color.Red,
+                Footer = new EmbedFooterBuilder
+                {
+                    Text = "Dátum: " + DateTime.Now.ToString("yyyy.MM.dd. HH:mm:ss")
+                }
+            };
+            eb.AddField("Hibaüzenet", $"```{exception}```");
             return eb.Build();
         });
     }
