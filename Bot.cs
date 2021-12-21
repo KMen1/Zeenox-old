@@ -47,15 +47,13 @@ public class Bot
         LogService = new LogService(Services);
         LogService.InitializeAsync();
 
-        var slashcommandService = new CommandHandler(Services);
-        await slashcommandService.InitializeAsync();
-
-        var buttonHandler = new ButtonHandler(Services);
-        buttonHandler.InitializeAsync();
+        var intertactionHandler = new IntertactionHandler(Services);
+        await intertactionHandler.InitializeAsync();
+        
 
         await Client.LoginAsync(TokenType.Bot, config["Token"]);
         await Client.StartAsync();
-        await Client.SetGameAsync("/" + config["Game"], string.Empty, ActivityType.Listening);
+        await Client.SetGameAsync("/" + config["Game"], type:ActivityType.Listening);
         await Client.SetStatusAsync(UserStatus.Online);
 
         await Task.Delay(-1);

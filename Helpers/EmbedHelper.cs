@@ -120,8 +120,14 @@ public static class EmbedHelper
                 {
                     new()
                     {
-                        Name = "😃 Kérte",
+                        Name = "👨 Hozzáadta",
                         Value = $"{user.Mention}",
+                        IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "🎙️ Csatorna",
+                        Value = $"`{player.VoiceChannel.Name}`",
                         IsInline = true
                     },
                     new()
@@ -133,7 +139,7 @@ public static class EmbedHelper
                     new()
                     {
                         Name = "🔁 Ismétlés",
-                        Value = isloopEnabled ? "`Igen`" : "`Nem`",
+                        Value = isloopEnabled ? "`Bekapcsolva`" : "`Kikapcsolva`",
                         IsInline = true
                     },
                     new()
@@ -142,11 +148,11 @@ public static class EmbedHelper
                         Value = $"`{volume}%`",
                         IsInline = true
                     }
-                }
-                /*Footer = new EmbedFooterBuilder
+                },
+                Footer = new EmbedFooterBuilder
                 {
-                    Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
-                }*/
+                    Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
+                }
             };
             return eb.Build();
         });
@@ -392,7 +398,7 @@ public static class EmbedHelper
                     Name = "HIBA",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Title = "Hiba történt a parancs végrehajtása során",
+                Title = "😒 Hiba történt a parancs végrehajtása során",
                 Description = "Kérlek próbáld meg újra! \n" +
                               "Ha a hiba továbbra is fennáll, kérlek jelezd a <@132797923049209856>-nek! \n",
                 //$"A bot beragadása esetén használd a **/reset** parancsot!",

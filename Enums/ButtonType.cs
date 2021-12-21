@@ -1,6 +1,6 @@
 ﻿namespace KBot.Enums;
 
-public enum ButtonType
+public enum VoiceButtonType
 {
     Stop,
     VolumeUp,

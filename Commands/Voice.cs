@@ -9,7 +9,7 @@ namespace KBot.Commands;
 public class Voice : InteractionModuleBase<InteractionContext>
 {
     public AudioService AudioService { get; set; }
-
+    
     [SlashCommand("join", "Csatlakozik ahhoz a hangcsatornához, amelyben éppen tartózkodsz")]
     public async Task Join()
     {
