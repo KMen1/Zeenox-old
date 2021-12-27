@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Humanizer;
 using Victoria;
-using Victoria.Enums;
 
 namespace KBot.Helpers;
 
@@ -76,33 +74,13 @@ public static class EmbedHelper
                     Text = $"Kérte -> {user.Username}"
                 }
             };
-            if (player.PlayerState != PlayerState.Playing) return eb.Build();
-            eb.AddField(x =>
-            {
-                x.Name = "MOST JÁTSZOTT";
-                x.Value = $"`{player.Track.Title}`";
-                x.IsInline = true;
-            });
-            eb.WithFooter(
-                $"Kérte -> {user.Username} | " +
-                $"Hossz -> {player.Track.Duration:hh\\:mm\\:ss} | " +
-                "Hely a ");
-            if (player.Queue.Count < 1) return eb.Build();
-            eb.AddField(x =>
-            {
-                x.Name = "KÖVETKEZŐ";
-                x.Value = $"`{player.Queue.Peek().Title}`";
-                x.IsInline = true;
-            });
-            eb.WithFooter(
-                $"Kérte -> {user.Username} | Hossz -> {player.Track.Duration:hh\\:mm\\:ss}");
             return eb.Build();
         });
     }
 
-    public static Task<Embed> MakeNowPlaying(SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl, bool isloopEnabled, int volume)
+    public static Task<Embed> MakeNowPlaying(SocketUser user, LavaPlayer player, bool isloopEnabled, int volume)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             var eb = new EmbedBuilder
             {
@@ -111,9 +89,9 @@ public static class EmbedHelper
                     Name = "MOST JÁTSZOTT",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Title = track.Title,
-                Url = track.Url,
-                ImageUrl = thumbnailUrl,
+                Title = player.Track.Title,
+                Url = player.Track.Url,
+                ImageUrl = await player.Track.FetchArtworkAsync(),
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                 Color = Color.Green,
                 Fields = new List<EmbedFieldBuilder>
@@ -133,7 +111,7 @@ public static class EmbedHelper
                     new()
                     {
                         Name = "🕐 Hosszúság",
-                        Value = $"`{track.Duration:hh\\:mm\\:ss}`",
+                        Value = $"`{player.Track.Duration:hh\\:mm\\:ss}`",
                         IsInline = true
                     },
                     new()
@@ -180,9 +158,9 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakeSkip(SocketUser user, LavaPlayer player, string thumbnailUrl)
+    public static Task<Embed> MakeSkip(SocketUser user, LavaPlayer player)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             var eb = new EmbedBuilder
             {
@@ -193,7 +171,7 @@ public static class EmbedHelper
                 },
                 Title = player.Track.Title,
                 Url = player.Track.Url,
-                ImageUrl = thumbnailUrl,
+                ImageUrl = await player.Track.FetchArtworkAsync(),
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                 Color = Color.Green,
                 Footer = new EmbedFooterBuilder
@@ -205,8 +183,7 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakePauseOrResume(SocketUser user, LavaPlayer player, string thumbnailUrl, bool resumed,
-        bool loop)
+    public static Task<Embed> MakePauseOrResume(SocketUser user, LavaPlayer player, bool resumed)
     {
         return Task.Run(() =>
         {
@@ -214,41 +191,13 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = "MOST JÁTSZOTT",
+                    Name = resumed ? "LEJÁTSZÁS FOLYTATÁSA" : "LEJÁTSZÁS SZÜNETELÉSE",
                     IconUrl = user.GetAvatarUrl()
                 },
                 Title = player.Track.Title,
                 Url = player.Track.Url,
-                ImageUrl = thumbnailUrl,
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                 Color = Color.Green,
-                Fields = new List<EmbedFieldBuilder>
-                {
-                    new()
-                    {
-                        Name = "Kérte",
-                        Value = $"{user.Mention}",
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "Hosszúság",
-                        Value = $"`{player.Track.Duration:hh\\:mm\\:ss}`",
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "Ismétlés",
-                        Value = loop ? "`Igen`" : "`Nem`",
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "Hangerő",
-                        Value = $"`{player.Volume}%`",
-                        IsInline = true
-                    }
-                },
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
@@ -362,9 +311,9 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakeAddedToQueue(SocketUser user, LavaTrack track, LavaPlayer player, string thumbnailUrl)
+    public static Task<Embed> MakeAddedToQueue(SocketUser user, LavaTrack track, LavaPlayer player)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             var eb = new EmbedBuilder
             {
@@ -375,7 +324,7 @@ public static class EmbedHelper
                 },
                 Title = track.Title,
                 Url = track.Url,
-                ImageUrl = thumbnailUrl,
+                ImageUrl = await track.FetchArtworkAsync(),
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                 Color = Color.Orange,
                 Footer = new EmbedFooterBuilder

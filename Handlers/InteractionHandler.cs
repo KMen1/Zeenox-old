@@ -49,7 +49,8 @@ public class InteractionHandler
         }
     }
 
-    private async Task HandleSlashCommandResult(SlashCommandInfo commandInfo, IInteractionContext interactionContext, IResult result)
+    private static async Task HandleSlashCommandResult(SlashCommandInfo commandInfo, IInteractionContext interactionContext,
+        IResult result)
     {
         if (result.IsSuccess) return;
 

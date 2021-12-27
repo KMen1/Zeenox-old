@@ -137,7 +137,7 @@ public class Voice : InteractionModuleBase<InteractionContext>
 
     [SlashCommand("speed", "Zene sebességének növelése")]
     public async Task Speed(
-        [Summary("speed", "Sebesség számban megadva (1-10)")] [MinValue(10)] [MaxValue(10)] float speed)
+        [Summary("speed", "Sebesség számban megadva (1-10)")] [MinValue(1)] [MaxValue(10)] float speed)
     {
         await RespondAsync(embed: await AudioService.SetSpeedAsync(speed, ((ITextChannel) Context.Channel).Guild,
             (SocketUser) Context.User));
@@ -145,7 +145,7 @@ public class Voice : InteractionModuleBase<InteractionContext>
 
     [SlashCommand("pitch", "Zene hangmagasságának növelése")]
     public async Task Pitch(
-        [Summary("pitch", "Hangmagasság számban megadva (1-10)")] [MinValue(10)] [MaxValue(10)] float pitch)
+        [Summary("pitch", "Hangmagasság számban megadva (1-10)")] [MinValue(1)] [MaxValue(10)] float pitch)
     {
         await RespondAsync(embed: await AudioService.SetPitchAsync(pitch, ((ITextChannel) Context.Channel).Guild,
             (SocketUser) Context.User));

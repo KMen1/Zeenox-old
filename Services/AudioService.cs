@@ -49,27 +49,8 @@ public class AudioService
     private async Task OnTrackException(TrackExceptionEventArgs arg)
     {
         await arg.Player.StopAsync();
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                Name = "HIBA TÖRTÉNT A ZENE LEJÁTSZÁSA KÖZBEN!",
-                IconUrl = _client.CurrentUser.GetAvatarUrl()
-            },
-            Title = arg.Track.Title,
-            Url = arg.Track.Url,
-            Description = "Kérlek próbáld meg újra lejátszani a zenét! \n" +
-                          "Ha a hiba továbbra is fennáll, kérlek jelezd a <@132797923049209856>-nek! \n",
-            //$"A bot beragadása esetén használd a **/reset** parancsot!",
-            Color = Color.Red,
-            Footer = new EmbedFooterBuilder
-            {
-                Text = "Dátum: " + DateTime.Now.ToString("yyyy.MM.dd. HH:mm:ss")
-            }
-        };
-        eb.AddField("Hibaüzenet", $"```{arg.Exception.Message}```");
-        await arg.Player.TextChannel.SendMessageAsync(embed: eb.Build());
         await arg.Player.ApplyFiltersAsync(FilterHelper.DefaultFilters());
+        await arg.Player.TextChannel.SendMessageAsync(embed: await EmbedHelper.MakeError(_client.CurrentUser, arg.Exception.Message));
         await _lavaNode.LeaveAsync(arg.Player.VoiceChannel);
     }
 
@@ -105,36 +86,35 @@ public class AudioService
         var search = Uri.IsWellFormedUriString(query, UriKind.Absolute)
             ? await _lavaNode.SearchAsync(SearchType.Direct, query)
             : await _lavaNode.SearchYouTubeAsync(query);
+        if (search.Status == SearchStatus.NoMatches)
+            return (await EmbedHelper.MakeError(user, "Nincs találat!"), null);
         var track = search.Tracks.FirstOrDefault();
         var player = _lavaNode.HasPlayer(guild)
             ? _lavaNode.GetPlayer(guild)
             : await _lavaNode.JoinAsync(vChannel, tChannel);
-        if (search.Status == SearchStatus.NoMatches)
-            return (await EmbedHelper.MakeError(user, "Nincs találat!"), null);
         
         ctx.Add(context);
         
         if (player.Track != null && player.PlayerState is PlayerState.Playing ||
             player.PlayerState is PlayerState.Paused)
         {
-            var newButtons = await ButtonHelper.MakeNowPlayingButtons(false, true, isPlaying);
             player.Queue.Enqueue(track);
+            var newButtons = await ButtonHelper.MakeNowPlayingButtons(CanGoBack(), CanGoForward(player), isPlaying);
             if (nowPlayingMessage != null)
                 await nowPlayingMessage.ModifyAsync(x => x.Components = newButtons);
             else
                 await ctx[0].Interaction.ModifyOriginalResponseAsync(x => x.Components = newButtons);
             return (
-                await EmbedHelper.MakeAddedToQueue(user, track, player, await track.FetchArtworkAsync()), null);
+                await EmbedHelper.MakeAddedToQueue(user, track, player), null);
         }
 
         await player.PlayAsync(track);
-        currentTrack = track;
         await player.UpdateVolumeAsync(100);
+        currentTrack = track;
         isPlaying = true;
         return (
-            await EmbedHelper.MakeNowPlaying(user, track, player, await track.FetchArtworkAsync(), isloopEnabled,
-                player.Volume),
-            await ButtonHelper.MakeNowPlayingButtons(previousTracks.Count > 0, player.Queue.Count > 0, isPlaying));
+            await EmbedHelper.MakeNowPlaying(user, player, isloopEnabled, player.Volume),
+            await ButtonHelper.MakeNowPlayingButtons(CanGoBack(), CanGoForward(player), isPlaying));
     }
 
     public async Task<Embed> StopAsync(IGuild guild, SocketUser user)
@@ -155,12 +135,11 @@ public class AudioService
         await player.SkipAsync();
         if (button)
         {
-            return (await EmbedHelper.MakeNowPlaying(user, player.Track, player, await player.Track.FetchArtworkAsync(),
-                    isloopEnabled, player.Volume),
-                await ButtonHelper.MakeNowPlayingButtons(previousTracks.Count > 0, player.Queue.Count > 0, isPlaying));
+            return (await EmbedHelper.MakeNowPlaying(user, player, isloopEnabled, player.Volume),
+                await ButtonHelper.MakeNowPlayingButtons(CanGoBack(), CanGoForward(player), isPlaying));
         }
 
-        return (await EmbedHelper.MakeSkip(user, player, await player.Track.FetchArtworkAsync()), null);
+        return (await EmbedHelper.MakeSkip(user, player), null);
     }
 
     public async Task<(Embed, MessageComponent)> PlayPreviousTrack(IGuild guild, SocketUser user)
@@ -170,30 +149,29 @@ public class AudioService
         await player.PlayAsync(prev);
         previousTracks.Remove(prev);
         return (
-            await EmbedHelper.MakeNowPlaying(user, player.Track, player, await player.Track.FetchArtworkAsync(),
-                isloopEnabled, player.Volume),
-            await ButtonHelper.MakeNowPlayingButtons(previousTracks.Count > 0, player.Queue.Count > 0, isPlaying));
+            await EmbedHelper.MakeNowPlaying(user, player, isloopEnabled, player.Volume),
+            await ButtonHelper.MakeNowPlayingButtons(CanGoBack(), CanGoForward(player), isPlaying));
     }
 
     public async Task<(Embed, MessageComponent)> PauseOrResumeAsync(IGuild guild, SocketUser user)
     {
         var player = _lavaNode.GetPlayer(guild);
 
-        if (player == null) return (await EmbedHelper.MakePauseOrResume(user, null, string.Empty, false, isloopEnabled), null);
+        if (player == null) return (await EmbedHelper.MakePauseOrResume(user, null, false), null);
 
         if (player.PlayerState == PlayerState.Playing)
         {
             await player.PauseAsync();
             isPlaying = false;
             return (
-                await EmbedHelper.MakePauseOrResume(user, player, await player.Track.FetchArtworkAsync(), true, isloopEnabled),
-                await ButtonHelper.MakeNowPlayingButtons(previousTracks.Count > 0, player.Queue.Count > 0, isPlaying));
+                await EmbedHelper.MakePauseOrResume(user, player, true),
+                await ButtonHelper.MakeNowPlayingButtons(CanGoBack(), CanGoForward(player), isPlaying));
         }
 
         await player.ResumeAsync();
         isPlaying = true;
-        return (await EmbedHelper.MakePauseOrResume(user, player, await player.Track.FetchArtworkAsync(), false, isloopEnabled),
-            await ButtonHelper.MakeNowPlayingButtons(previousTracks.Count > 0, player.Queue.Count > 0, isPlaying));
+        return (await EmbedHelper.MakePauseOrResume(user, player, false),
+            await ButtonHelper.MakeNowPlayingButtons(CanGoBack(), CanGoForward(player), isPlaying));
     }
 
     public async Task<Embed> SetVolumeAsync(ushort volume, IGuild guild, SocketUser user, VoiceButtonType buttonType = VoiceButtonType.Next)
@@ -207,15 +185,13 @@ public class AudioService
             {
                 var newVolume = currentVolume + 10;
                 await player.UpdateVolumeAsync((ushort) newVolume);
-                return await EmbedHelper.MakeNowPlaying(user, player.Track, player, await player.Track.FetchArtworkAsync(),
-                    isloopEnabled, newVolume);
+                return await EmbedHelper.MakeNowPlaying(user, player, isloopEnabled, newVolume);
             }
             case VoiceButtonType.VolumeDown:
             {
                 var newVolume = currentVolume - 10;
                 await player.UpdateVolumeAsync((ushort) newVolume);
-                return await EmbedHelper.MakeNowPlaying(user, player.Track, player, await player.Track.FetchArtworkAsync(),
-                    isloopEnabled, newVolume);
+                return await EmbedHelper.MakeNowPlaying(user, player, isloopEnabled, newVolume);
             }
             default:
                 await player.UpdateVolumeAsync(volume);
@@ -273,8 +249,8 @@ public class AudioService
     {
         var player = _lavaNode.GetPlayer(guild);
         isloopEnabled = !isloopEnabled;
-        return (await EmbedHelper.MakeNowPlaying(user, player.Track, player, await player.Track.FetchArtworkAsync(), isloopEnabled, player.Volume), 
-            await ButtonHelper.MakeNowPlayingButtons(previousTracks.Count > 0, player.Queue.Count > 0, isPlaying));
+        return (await EmbedHelper.MakeNowPlaying(user, player, isloopEnabled, player.Volume), 
+            await ButtonHelper.MakeNowPlayingButtons(CanGoBack(), CanGoForward(player), isPlaying));
     }
 
     public async Task<Embed> ClearFiltersAsync(IGuild guild, SocketUser user)
@@ -338,28 +314,44 @@ public class AudioService
             // delete now playing message if there is no queue
             var msg = nowPlayingMessage ?? await ctx[0].Interaction.GetOriginalResponseAsync();
             await msg.DeleteAsync();
+            nowPlayingMessage = null;
             return;
         }
 
         if (queueable is not { } track)
             //await player.TextChannel.SendMessageAsync("Next item in queue is not a track.");
             return;
-        await args.Player.PlayAsync(track);
+        await player.PlayAsync(track);
         
-        await SendNewNowPlayingMessage(track, player);
+        await SendNewNowPlayingMessage(player);
     }
 
-    private async Task SendNewNowPlayingMessage(LavaTrack track, LavaPlayer player)
+    private async Task SendNewNowPlayingMessage(LavaPlayer player)
     {
-        var thumbnailUrl = await track.FetchArtworkAsync();
-        var newEmbed = await EmbedHelper.MakeNowPlaying(_client.CurrentUser, track, player, thumbnailUrl, isloopEnabled,
-            player.Volume);
+        var newEmbed = await EmbedHelper.MakeNowPlaying(_client.CurrentUser, player, isloopEnabled, player.Volume);
         var newButtons =
-            await ButtonHelper.MakeNowPlayingButtons(previousTracks.Count > 0, player.Queue.Count > 0, isPlaying);
+            await ButtonHelper.MakeNowPlayingButtons(CanGoBack(), CanGoForward(player), isPlaying);
         var msg = nowPlayingMessage ?? await ctx[0].Interaction.GetOriginalResponseAsync();
-        var channel = msg.Channel;
+        await msg.ModifyAsync(x =>
+        {
+            x.Embed = newEmbed;
+            x.Components = newButtons;
+        });
+        nowPlayingMessage = msg;
+        /*var channel = msg.Channel;
         await msg.DeleteAsync();
         ctx.Clear();
-        nowPlayingMessage = await channel.SendMessageAsync(embed: newEmbed, components: newButtons);
+        nowPlayingMessage = await channel.SendMessageAsync(embed: newEmbed, components: newButtons);*/
     }
+    
+    private bool CanGoBack()
+    {
+        return previousTracks.Count > 0;
+    }
+    
+    private static bool CanGoForward(LavaPlayer player)
+    {
+        return player.Queue.Count > 0;
+    }
+    
 }
