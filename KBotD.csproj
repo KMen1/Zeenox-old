@@ -32,20 +32,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Discord.Net" Version="3.0.0" />
+        <PackageReference Include="Discord.Net" Version="3.1.0" />
         <PackageReference Include="Humanizer" Version="2.13.14" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-        <PackageReference Include="Victoria" Version="5.2.4" />
+        <PackageReference Include="Victoria" Version="5.2.5" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="application.yml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
         <None Update="config.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
@@ -57,6 +54,9 @@
         </None>
         <None Update="LavaLink\Start Lavalink.bat">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="LavaLink\application.yml">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 </Project>

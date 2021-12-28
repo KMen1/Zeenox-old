@@ -32,7 +32,7 @@ public class InteractionHandler
         _client.Ready += GenerateSlashCommands;
     }
 
-    private async Task HandleComponentCommandResult(ComponentCommandInfo componentInfo, IInteractionContext interactionContext, IResult result)
+    private static async Task HandleComponentCommandResult(ComponentCommandInfo componentInfo, IInteractionContext interactionContext, IResult result)
     {
         if (result.IsSuccess) return;
         
@@ -42,6 +42,31 @@ public class InteractionHandler
         switch (result.Error)
         {
             case InteractionCommandError.Exception:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.ConvertFailed:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.BadArgs:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.Unsuccessful:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.UnmetPrecondition:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.ParseFailed:
             {
                 await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
                 break;
@@ -61,7 +86,32 @@ public class InteractionHandler
         {
             case InteractionCommandError.Exception:
             {
-                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.ConvertFailed:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.BadArgs:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.Unsuccessful:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.UnmetPrecondition:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                break;
+            }
+            case InteractionCommandError.ParseFailed:
+            {
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
                 break;
             }
         }

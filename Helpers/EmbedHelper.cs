@@ -92,7 +92,6 @@ public static class EmbedHelper
                 Title = player.Track.Title,
                 Url = player.Track.Url,
                 ImageUrl = await player.Track.FetchArtworkAsync(),
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                 Color = Color.Green,
                 Fields = new List<EmbedFieldBuilder>
                 {
@@ -100,6 +99,12 @@ public static class EmbedHelper
                     {
                         Name = "👨 Hozzáadta",
                         Value = $"{user.Mention}",
+                        IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "🔼 Feltöltötte",
+                        Value = $"`{player.Track.Author}`",
                         IsInline = true
                     },
                     new()
@@ -240,7 +245,7 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = $"FILTER AKTIVÁLVA: {filtername}",
+                    Name = filtername == "MINDEN" ? "SZŰRŐK KIKAPCSOLVA" : $"FILTER AKTIVÁLVA: {filtername}",
                     IconUrl = user.GetAvatarUrl()
                 },
                 Title = player.Track.Title,
