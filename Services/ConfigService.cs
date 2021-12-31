@@ -26,7 +26,10 @@ public class ConfigService
         {
             var config = new DiscordSocketConfig
             {
-                LogLevel = LogSeverity.Debug
+                LogLevel = LogSeverity.Debug,
+                AlwaysDownloadUsers = true,
+                MessageCacheSize = 100,
+                GatewayIntents = GatewayIntents.AllUnprivileged
             };
             return config;
         });

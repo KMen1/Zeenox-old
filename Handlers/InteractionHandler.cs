@@ -127,7 +127,7 @@ public class InteractionHandler
     {
         try
         {
-            var ctx = new InteractionContext(_client, arg, arg.User, arg.Channel as ITextChannel);
+            var ctx = new InteractionContext(_client, arg, arg.User, arg.Channel);
             await _interactionService.ExecuteCommandAsync(ctx, _services);
         }
         catch (Exception)

@@ -78,7 +78,7 @@ public static class EmbedHelper
         });
     }
 
-    public static Task<Embed> MakeNowPlaying(SocketUser user, LavaPlayer player, bool isloopEnabled, int volume)
+    public static Task<Embed> MakeNowPlaying(SocketUser user, LavaPlayer player, bool isloopEnabled, int volume, List<string> filters)
     {
         return Task.Run(async () =>
         {
@@ -130,82 +130,17 @@ public static class EmbedHelper
                         Name = "🔊 Hangerő",
                         Value = $"`{volume}%`",
                         IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "📝 Szűrők",
+                        Value = filters.Count > 0 ? $"`{string.Join(", ", filters)}`" : "`Nincsenek`",
+                        IsInline = true
                     }
                 },
                 Footer = new EmbedFooterBuilder
                 {
                     Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
-                }
-            };
-            return eb.Build();
-        });
-    }
-
-    public static Task<Embed> MakeStop(SocketUser user, LavaPlayer player)
-    {
-        return Task.Run(() =>
-        {
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "LEJÁTSZÁS MEGÁLLÍTVA",
-                    IconUrl = user.GetAvatarUrl()
-                },
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = Color.Green,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"Kérte -> {user.Username}"
-                }
-            };
-            return eb.Build();
-        });
-    }
-
-    public static Task<Embed> MakeSkip(SocketUser user, LavaPlayer player)
-    {
-        return Task.Run(async () =>
-        {
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "ZENE ÁTUGORVA",
-                    IconUrl = user.GetAvatarUrl()
-                },
-                Title = player.Track.Title,
-                Url = player.Track.Url,
-                ImageUrl = await player.Track.FetchArtworkAsync(),
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = Color.Green,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"Kérte -> {user.Username} | Hossz -> {player.Track.Duration:hh\\:mm\\:ss}"
-                }
-            };
-            return eb.Build();
-        });
-    }
-
-    public static Task<Embed> MakePauseOrResume(SocketUser user, LavaPlayer player, bool resumed)
-    {
-        return Task.Run(() =>
-        {
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = resumed ? "LEJÁTSZÁS FOLYTATÁSA" : "LEJÁTSZÁS SZÜNETELÉSE",
-                    IconUrl = user.GetAvatarUrl()
-                },
-                Title = player.Track.Title,
-                Url = player.Track.Url,
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = Color.Green,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
                 }
             };
             return eb.Build();
@@ -223,21 +158,14 @@ public static class EmbedHelper
                     Name = $"HANGERŐ {volume}%-RA ÁLLÍTVA",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Title = player.Track.Title,
-                Url = player.Track.Url,
                 Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
                 Color = Color.Green,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"Kérte -> {user.Username}"
-                }
             };
             return eb.Build();
         });
     }
 
-    public static Task<Embed> MakeFilter(SocketUser user, LavaPlayer player,
-        string filtername)
+    public static Task<Embed> MakeFilter(SocketUser user, string[] filters)
     {
         return Task.Run(() =>
         {
@@ -245,41 +173,11 @@ public static class EmbedHelper
             {
                 Author = new EmbedAuthorBuilder
                 {
-                    Name = filtername == "MINDEN" ? "SZŰRŐK KIKAPCSOLVA" : $"FILTER AKTIVÁLVA: {filtername}",
+                    Name = filters.Length == 0 ? "SZŰRŐK DEAKTIVÁLVA": $"SZŰRŐK AKTIVÁLVA",
                     IconUrl = user.GetAvatarUrl()
                 },
-                Title = player.Track.Title,
-                Url = player.Track.Url,
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = Color.Green,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"Kérte -> {user.Username}"
-                }
-            };
-            return eb.Build();
-        });
-    }
-
-    public static Task<Embed> MakeLoop(SocketUser user, LavaPlayer player)
-    {
-        return Task.Run(() =>
-        {
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "ZENE ISMÉTLÉSE AKTIVÁLVA",
-                    IconUrl = user.GetAvatarUrl()
-                },
-                Title = player.Track.Title,
-                Url = player.Track.Url,
-                Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-                Color = Color.Green,
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"Kérte -> {user.Username}"
-                }
+                Description = $"`{string.Join(", ", filters)}`",
+                Color = Color.Green
             };
             return eb.Build();
         });

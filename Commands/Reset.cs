@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using Discord.Interactions;
 
@@ -13,7 +12,7 @@ public class Reset : InteractionModuleBase<InteractionContext>
     {
         await RespondAsync("A bot újraindult.");
         var psi = new ProcessStartInfo("cmd.exe");
-        string path = "dotnet " + Environment.CurrentDirectory + @"\KBot.dll";
+        var path = "dotnet " + Environment.CurrentDirectory + @"\KBot.dll";
         psi.UseShellExecute = true;
         psi.Arguments = $"/k {path}";
         Process.Start(psi);

@@ -1,5 +1,4 @@
-﻿using Discord.WebSocket;
-using Victoria.Filters;
+﻿using Victoria.Filters;
 
 namespace KBot.Helpers;
 
