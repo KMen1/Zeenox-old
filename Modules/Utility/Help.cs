@@ -5,7 +5,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 
-namespace KBot.Commands;
+namespace KBot.Modules.Utility;
 
 public class HelpCommand : InteractionModuleBase<InteractionContext>
 {
