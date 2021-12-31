@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Interactions;
@@ -15,134 +16,47 @@ public class Components : InteractionModuleBase<SocketInteractionContext>
     public AudioService AudioService { get; set; }
     
     [ComponentInteraction("filterselectmenu")]
-    public async Task HandleFilterSelectMenu(params string[] selections)
+    public async Task HandleFilterSelectMenu(string[] selections)
     {
-        var number = selections.Select(int.Parse).ToList();
-        var sum = number.Sum();
-        switch (sum)
-        {
-            /*
-             * bassboost = 1
-             * nightcore = 2
-             * 8d = 8
-             * vaporwave = 4
-             * 
-             */
-            
-            case 1: //bassboost
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    Array.Empty<IFilter>(), 
-                    FilterHelper.BassBoost(),
-                    new [] {"Basszus Erősítés"}), ephemeral: true);
-                break;
-            }
-            case 2: //Nightcore
-            {
+        var filters = new List<IFilter>();
+        var equalizerBands = Array.Empty<EqualizerBand>();
+        var filtersName = new List<string>();
 
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.NightCore()}, 
-                    Array.Empty<EqualizerBand>(),
-                    new [] {"Nightcore"}), ephemeral: true);
-                break;
-            }
-            case 8: //8d
+        await DeferAsync();
+        
+        foreach (var selection in selections)
+        {
+            switch (selection)
             {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.EightD()}, 
-                    Array.Empty<EqualizerBand>(),
-                    new [] {"8D"}), ephemeral: true);
-                break;
-            }
-            case 4: //vaporwave
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.VaporWave()}, 
-                    Array.Empty<EqualizerBand>(),
-                    new [] {"Vaporwave"}), ephemeral: true);
-                break;
-            }
-            case 3: //bassboost + nightcore
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.NightCore()}, 
-                    FilterHelper.BassBoost(),
-                    new [] {"Basszus Erősítés", "Nightcore"}), ephemeral: true);
-                break;
-            }
-            case 9: //bassboost + 8d
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.EightD()}, 
-                    FilterHelper.BassBoost(),
-                    new [] {"Basszus Erősítés", "8D"}), ephemeral: true);
-                break;
-            }
-            case 5: //bassboost + vaporwave
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.VaporWave()}, 
-                    FilterHelper.BassBoost(),
-                    new [] {"Basszus Erősítés", "Vaporwave"}), ephemeral: true);
-                break;
-            }
-            case 10: //nightcore + 8d
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.EightD(), FilterHelper.NightCore()},
-                    Array.Empty<EqualizerBand>(),
-                    new [] {"Nightcore", "8D"}), ephemeral: true);
-                break;
-            }
-            case 6: //nightcore + vaporwave
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.VaporWave(), FilterHelper.NightCore()},
-                    Array.Empty<EqualizerBand>(),
-                    new [] {"Nightcore", "Vaporwave"}), ephemeral: true);
-                break;
-            }
-            case 12: //8d + vaporwave
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.EightD(), FilterHelper.VaporWave()},
-                    Array.Empty<EqualizerBand>(),
-                    new [] {"8D", "Vaporwave"}), ephemeral: true);
-                break;
-            }
-            case 7: //bassboost + nightcore + vaporwave
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.NightCore(), FilterHelper.VaporWave()},
-                    FilterHelper.BassBoost(),
-                    new [] {"Basszus Erősítés", "Nightcore", "Vaporwave"}), ephemeral: true);
-                break;
-            }
-            case 14: //8d + nightcore + vaporwave
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.EightD(), FilterHelper.NightCore(), FilterHelper.VaporWave()},
-                    Array.Empty<EqualizerBand>(),
-                    new [] {"8D", "Nightcore", "Vaporwave"}), ephemeral: true);
-                break;
-            }
-            case 13: //bassboost + 8d + vaporwave
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.EightD(), FilterHelper.VaporWave()},
-                    FilterHelper.BassBoost(),
-                    new [] {"Basszus Erősítés", "8D", "Vaporwave"}), ephemeral: true);
-                break;
-            }
-            case 15: //bassboost + nightcore + 8d + vaporwave
-            {
-                await RespondAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, 
-                    new IFilter[] {FilterHelper.EightD(), FilterHelper.NightCore(), FilterHelper.VaporWave()},
-                    FilterHelper.BassBoost(),
-                    new [] {"Basszus Erősítés", "8D", "Nightcore", "Vaporwave"}), ephemeral: true);
-                break;
+                case "bassboost":
+                {
+                    equalizerBands = FilterHelper.BassBoost();
+                    filtersName.Add("Basszus Erősítés");
+                    break;
+                }
+                case "nightcore":
+                {
+                    filters.Add(FilterHelper.NightCore());
+                    filtersName.Add("Nightcore");
+                    break;
+                }
+                case "eightd":
+                {
+                    filters.Add(FilterHelper.EightD());
+                    filtersName.Add("8D");
+                    break;
+                }
+                case "vaporwave":
+                {
+                    filters.Add(FilterHelper.VaporWave());
+                    filtersName.Add("Vaporwave");
+                    break;
+                }
+                    
             }
         }
+        
+        await FollowupAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, filters, equalizerBands, filtersName.ToArray()), ephemeral:true);
     }
     
     [ComponentInteraction("stop")]

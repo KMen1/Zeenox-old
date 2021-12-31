@@ -31,6 +31,7 @@ public class VoiceCommands : InteractionModuleBase<SocketInteractionContext>
     [SlashCommand("play", "Lejátssza a kívánt zenét")]
     public async Task Play([Summary("query", "Zene linkje vagy címe (YouTube, SoundCloud, Twitch)")] string query)
     {
+        await DeferAsync();
         var (embed, components, addedToQueue) =
             await AudioService.PlayAsync(
                 query,
@@ -38,7 +39,7 @@ public class VoiceCommands : InteractionModuleBase<SocketInteractionContext>
                 (ITextChannel) Context.Channel,
                 Context.User,
                 Context.Interaction);
-        await RespondAsync(embed: embed, components: components);
+        await FollowupAsync(embed: embed, components: components);
         if (addedToQueue)
         {
             await Task.Delay(5000);

@@ -24,10 +24,10 @@ public static class ComponentHelper
                         .WithCustomId("filterselectmenu")
                         .WithMinValues(1)
                         .WithMaxValues(4)
-                        .AddOption("Basszus Erősítés", "1")
-                        .AddOption("Nightcore hanghatás", "2")
-                        .AddOption("8D hanghatás", "8")
-                        .AddOption("Vaporwave hanghatás", "4")
+                        .AddOption("Basszus Erősítés", "bassboost")
+                        .AddOption("Nightcore hanghatás", "nightcore")
+                        .AddOption("8D hanghatás", "eightd")
+                        .AddOption("Vaporwave hanghatás", "vaporwave")
                     , 2);
             return component.Build(); 
         }));
