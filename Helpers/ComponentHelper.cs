@@ -16,18 +16,18 @@ public static class ComponentHelper
                 .WithButton("Következő", "next", emote: new Emoji("⏭"), disabled: !canGoForward, row: 0)
                 .WithButton("Hangerő Le", "volumedown", emote: new Emoji("🔉"), row: 1)
                 .WithButton("Ismétlés", "repeat", emote: new Emoji("🔁"), row: 1)
-                .WithButton("Filterek ki", "clearfilters", emote: new Emoji("🗑️"), row: 1)
+                .WithButton("Szűrők ki", "clearfilters", emote: new Emoji("🗑️"), row: 1)
                 .WithButton("Hangerő fel", "volumeup", emote: new Emoji("🔊"), row: 1)
                 .WithSelectMenu(
                     new SelectMenuBuilder()
-                        .WithPlaceholder("Filterek kiválasztása")
+                        .WithPlaceholder("Szűrők kiválasztása")
                         .WithCustomId("filterselectmenu")
                         .WithMinValues(1)
                         .WithMaxValues(4)
-                        .AddOption("Basszus Erősítés", "1", "Basszus Erősítése")
-                        .AddOption("Nightcore", "2", "Nightcore hanghatás")
-                        .AddOption("8D", "8", "8D hanghatás")
-                        .AddOption("Vaporwave", "4", "Vaporwave hanghatás")
+                        .AddOption("Basszus Erősítés", "1")
+                        .AddOption("Nightcore hanghatás", "2")
+                        .AddOption("8D hanghatás", "8")
+                        .AddOption("Vaporwave hanghatás", "4")
                     , 2);
             return component.Build(); 
         }));

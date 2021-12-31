@@ -7,7 +7,7 @@ using Discord.WebSocket;
 
 namespace KBot.Modules.Utility;
 
-public class HelpCommand : InteractionModuleBase<InteractionContext>
+public class HelpCommand : InteractionModuleBase<SocketInteractionContext>
 {
     public DiscordSocketClient Client { get; set; }
 
