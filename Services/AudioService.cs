@@ -53,6 +53,8 @@ public class AudioService
         currentTrack = null;
         currentInteraction = null;
         nowPlayingMessage = null;
+        previousTracks.Clear();
+        enabledFilters.Clear();
         await arg.Player.StopAsync();
         await arg.Player.ApplyFiltersAsync(FilterHelper.DefaultFilters());
         await arg.Player.TextChannel.SendMessageAsync(embed: await EmbedHelper.MakeError(_client.CurrentUser, arg.Exception.Message));
@@ -337,7 +339,9 @@ public class AudioService
             await msg.DeleteAsync();
             await _lavaNode.LeaveAsync(player.VoiceChannel);
             nowPlayingMessage = null;
+            currentInteraction = null;
             previousTracks.Clear();
+            enabledFilters.Clear();
             return;
         }
 

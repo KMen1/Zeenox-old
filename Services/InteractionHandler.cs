@@ -8,7 +8,7 @@ using Discord.WebSocket;
 using KBot.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace KBot.Handlers;
+namespace KBot.Services;
 
 public class InteractionHandler
 {
@@ -86,32 +86,32 @@ public class InteractionHandler
         {
             case InteractionCommandError.Exception:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
                 break;
             }
             case InteractionCommandError.ConvertFailed:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
                 break;
             }
             case InteractionCommandError.BadArgs:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
                 break;
             }
             case InteractionCommandError.Unsuccessful:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
                 break;
             }
             case InteractionCommandError.UnmetPrecondition:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
                 break;
             }
             case InteractionCommandError.ParseFailed:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
                 break;
             }
         }

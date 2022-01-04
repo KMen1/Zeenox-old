@@ -20,46 +20,37 @@ public class ConfigService
         Config = builder.Build();
     }
 
-    public static Task<DiscordSocketConfig> GetClientConfig()
+    public static ValueTask<DiscordSocketConfig> GetClientConfig()
     {
-        return Task.Run(() =>
+        var config = new DiscordSocketConfig
         {
-            var config = new DiscordSocketConfig
-            {
-                LogLevel = LogSeverity.Debug,
-                AlwaysDownloadUsers = true,
-                MessageCacheSize = 100,
-                GatewayIntents = GatewayIntents.AllUnprivileged
-            };
-            return config;
-        });
+            LogLevel = LogSeverity.Debug,
+            AlwaysDownloadUsers = true,
+            MessageCacheSize = 100,
+            GatewayIntents = GatewayIntents.AllUnprivileged,
+        };
+        return new ValueTask<DiscordSocketConfig>(config);
     }
 
-    public static Task<LavaConfig> GetLavaConfig()
+    public static ValueTask<LavaConfig> GetLavaConfig()
     {
-        return Task.Run(() =>
+        var config = new LavaConfig
         {
-            var config = new LavaConfig
-            {
-                Hostname = Config["LavaLinkHost"],
-                Port = (ushort) int.Parse(Config["LavaLinkPort"]),
-                Authorization = Config["LavaLinkPassword"]
-            };
-            return config;
-        });
+            Hostname = Config["LavaLinkHost"],
+            Port = (ushort) int.Parse(Config["LavaLinkPort"]),
+            Authorization = Config["LavaLinkPassword"]
+        };
+        return new ValueTask<LavaConfig>(config);
     }
 
-    public static Task<InteractionServiceConfig> GetInteractionConfig()
+    public static ValueTask<InteractionServiceConfig> GetInteractionConfig()
     {
-        return Task.Run(() =>
+        var config = new InteractionServiceConfig
         {
-            var config = new InteractionServiceConfig
-            {
-                DefaultRunMode = RunMode.Async,
-                LogLevel = LogSeverity.Debug,
-                UseCompiledLambda = true
-            };
-            return config;
-        });
+            DefaultRunMode = RunMode.Async,
+            LogLevel = LogSeverity.Debug,
+            UseCompiledLambda = true,
+        };
+        return new ValueTask<InteractionServiceConfig>(config);
     }
 }

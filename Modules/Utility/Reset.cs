@@ -7,6 +7,7 @@ namespace KBot.Modules.Utility;
 
 public class Reset : InteractionModuleBase<SocketInteractionContext>
 {
+    [RequireOwner]
     [SlashCommand("reset", "Újraindítja a botot")]
     public async Task ResetAsync()
     {

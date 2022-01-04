@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -16,7 +15,7 @@ public class Components : InteractionModuleBase<SocketInteractionContext>
     public AudioService AudioService { get; set; }
     
     [ComponentInteraction("filterselectmenu")]
-    public async Task HandleFilterSelectMenu(string[] selections)
+    public async Task HandleFilterSelectMenu(params string[] selections)
     {
         var filters = new List<IFilter>();
         var equalizerBands = Array.Empty<EqualizerBand>();

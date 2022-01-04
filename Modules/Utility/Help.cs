@@ -26,7 +26,7 @@ public class HelpCommand : InteractionModuleBase<SocketInteractionContext>
             Description =
                 "Összes parancs listázása ( help <parancs> )-al több információt tudhatsz meg az adott parancsról!",
             Color = Color.Orange,
-            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1575900037337),
+            Timestamp = DateTime.Today,
             ThumbnailUrl = Client.CurrentUser.GetAvatarUrl()
         };
 
@@ -47,9 +47,6 @@ public class HelpCommand : InteractionModuleBase<SocketInteractionContext>
         }
         else
         {
-            eb.WithFooter(footer =>
-                footer.WithText($"Requested by: {Context.User.Username}")
-                    .WithIconUrl(Context.User.GetAvatarUrl()));
             eb.AddField("Parancsok", $"`{combinedString}`");
         }
 
