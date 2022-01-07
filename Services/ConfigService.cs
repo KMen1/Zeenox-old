@@ -10,15 +10,16 @@ namespace KBot.Services;
 
 public class ConfigService
 {
-    public static IConfiguration Config;
-
-    public ConfigService()
+    private static IConfiguration _config;
+    public static ValueTask<IConfiguration> GetConfig()
     {
         var builder = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("config.json");
-        Config = builder.Build();
+        _config = builder.Build();
+        return new ValueTask<IConfiguration>(_config);
     }
+
 
     public static ValueTask<DiscordSocketConfig> GetClientConfig()
     {
@@ -36,9 +37,9 @@ public class ConfigService
     {
         var config = new LavaConfig
         {
-            Hostname = Config["LavaLinkHost"],
-            Port = (ushort) int.Parse(Config["LavaLinkPort"]),
-            Authorization = Config["LavaLinkPassword"]
+            Hostname = _config["LavaLinkHost"],
+            Port = (ushort) int.Parse(_config["LavaLinkPort"]),
+            Authorization = _config["LavaLinkPassword"]
         };
         return new ValueTask<LavaConfig>(config);
     }

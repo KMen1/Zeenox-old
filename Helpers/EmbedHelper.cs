@@ -12,58 +12,58 @@ namespace KBot.Helpers;
 
 public static class EmbedHelper
 {
-    public static ValueTask<Embed> MakeJoin(SocketUser user, IVoiceChannel vChannel)
+    public static ValueTask<Embed> MakeJoin(IVoiceChannel vChannel)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
                 Name = "SIKERES CSATLAKOZÁS",
-                IconUrl = user.GetAvatarUrl()
+                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
             },
             Description = $"A következő csatornába: `{vChannel.Name}`",
             Color = Color.Green,
             Footer = new EmbedFooterBuilder
             {
-                Text = $"Kérte -> {user.Username}"
+                Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
             }
         }.Build();
         return new ValueTask<Embed>(eb);
     }
 
-    public static ValueTask<Embed> MakeLeave(SocketUser user, IVoiceChannel vChannel)
+    public static ValueTask<Embed> MakeLeave(IVoiceChannel vChannel)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
                 Name = "SIKERES ELHAGYÁS",
-                IconUrl = user.GetAvatarUrl()
+                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
             },
             Description = $"A következő csatornából: `{vChannel.Name}`",
             Color = Color.Green,
             Footer = new EmbedFooterBuilder
             {
-                Text = $"Kérte -> {user.Username}"
+                Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
             }
         }.Build();
         return new ValueTask<Embed>(eb);
     }
 
-    public static ValueTask<Embed> MakeMove(SocketUser user, LavaPlayer player, IVoiceChannel vChannel)
+    public static ValueTask<Embed> MakeMove(IVoiceChannel vChannel)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
                 Name = "SIKERES ÁTHELYEZÉS",
-                IconUrl = user.GetAvatarUrl()
+                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
             },
             Description = $"A következő csatornába: `{vChannel.Name}`",
             Color = Color.Green,
             Footer = new EmbedFooterBuilder
             {
-                Text = $"Kérte -> {user.Username}"
+                Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
             }
         }.Build();
         return new ValueTask<Embed>(eb);
@@ -76,7 +76,7 @@ public static class EmbedHelper
                 Author = new EmbedAuthorBuilder
                 {
                     Name = "MOST JÁTSZOTT",
-                    IconUrl = user.GetAvatarUrl()
+                    IconUrl = "https://bestanimations.com/media/discs/895872755cd-animated-gif-9.gif"
                 },
                 Title = player.Track.Title,
                 Url = player.Track.Url,
@@ -135,14 +135,14 @@ public static class EmbedHelper
         return await new ValueTask<Embed>(eb);
     }
 
-    public static ValueTask<Embed> MakeVolume(SocketUser user, LavaPlayer player, int volume)
+    public static ValueTask<Embed> MakeVolume(LavaPlayer player, int volume)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
                 Name = $"HANGERŐ {volume}%-RA ÁLLÍTVA",
-                IconUrl = user.GetAvatarUrl()
+                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
             },
             Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
             Color = Color.Green,
@@ -150,14 +150,14 @@ public static class EmbedHelper
         return new ValueTask<Embed>(eb);
     }
 
-    public static ValueTask<Embed> MakeFilter(SocketUser user, string[] filters)
+    public static ValueTask<Embed> MakeFilter(string[] filters)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
                 Name = filters.Length == 0 ? "SZŰRŐK DEAKTIVÁLVA": $"SZŰRŐK AKTIVÁLVA",
-                IconUrl = user.GetAvatarUrl()
+                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
             },
             Description = $"`{string.Join(", ", filters)}`",
             Color = Color.Green
@@ -165,20 +165,20 @@ public static class EmbedHelper
         return new ValueTask<Embed>(eb);
     }
 
-    public static ValueTask<Embed> MakeQueue(SocketUser user, LavaPlayer player, bool cleared = false)
+    public static ValueTask<Embed> MakeQueue(LavaPlayer player, bool cleared = false)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
                 Name = cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE",
-                IconUrl = user.GetAvatarUrl()
+                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
             },
             Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
             Color = Color.Green,
             Footer = new EmbedFooterBuilder
             {
-                Text = $"Kérte -> {user.Username}"
+                Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
             }
         };
         if (cleared) return new ValueTask<Embed>(eb.Build());
@@ -193,14 +193,14 @@ public static class EmbedHelper
         return new ValueTask<Embed>(eb.Build());
     }
 
-    public static async ValueTask<Embed> MakeAddedToQueue(SocketUser user, LavaTrack track, LavaPlayer player)
+    public static async ValueTask<Embed> MakeAddedToQueue(LavaTrack track, LavaPlayer player)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
                 Name = "HOZZÁADVA A VÁRÓLISTÁHOZ",
-                IconUrl = user.GetAvatarUrl()
+                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
             },
             Title = track.Title,
             Url = track.Url,
@@ -209,20 +209,20 @@ public static class EmbedHelper
             Color = Color.Orange,
             Footer = new EmbedFooterBuilder
             {
-                Text = $"Kérte -> {user.Username} | Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
+                Text = $"Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
             }
         }.Build();
         return await new ValueTask<Embed>(eb);
     }
 
-    public static ValueTask<Embed> MakeError(SocketUser user, string exception)
+    public static ValueTask<Embed> MakeError(string exception)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
                 Name = "HIBA",
-                IconUrl = user.GetAvatarUrl()
+                IconUrl = "https://icon-library.com/images/error-icon-transparent/error-icon-transparent-23.jpg"
             },
             Title = "😒 Hiba történt a parancs végrehajtása során",
             Description = "Kérlek próbáld meg újra! \n" +
@@ -231,7 +231,7 @@ public static class EmbedHelper
             Color = Color.Red,
             Footer = new EmbedFooterBuilder
             {
-                Text = "Dátum: " + DateTime.Now.ToString("yyyy.MM.dd. HH:mm:ss")
+                Text = "Dátum: " + $"Dátum: {DateTime.Now:yyyy.MM.dd}"
             }
         };
         eb.AddField("Hibaüzenet", $"```{exception}```");

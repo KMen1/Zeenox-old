@@ -55,14 +55,14 @@ public class Components : InteractionModuleBase<SocketInteractionContext>
             }
         }
         
-        await FollowupAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, Context.User, filters, equalizerBands, filtersName.ToArray()), ephemeral:true);
+        await FollowupAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, filters, equalizerBands, filtersName.ToArray()), ephemeral:true);
     }
     
     [ComponentInteraction("stop")]
     public async Task Stop()
     {
         await AudioService.StopAsync(Context.Guild);
-        await AudioService.LeaveAsync(Context.Guild, Context.User);
+        await AudioService.LeaveAsync(Context.Guild);
         await ((SocketMessageComponent) Context.Interaction).Message.DeleteAsync();
     }
     [ComponentInteraction("volumeup")]
@@ -106,7 +106,7 @@ public class Components : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("clearfilters")]
     public async Task ClearFilters()
     {
-        await AudioService.ClearFiltersAsync(Context.Guild, Context.User);
+        await AudioService.ClearFiltersAsync(Context.Guild);
         await Context.Interaction.DeferAsync();
     }
 }

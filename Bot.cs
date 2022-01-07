@@ -30,8 +30,8 @@ public class Bot
     public async Task StartAsync()
     {
         ConfigService = new ConfigService();
-        var config = ConfigService.Config;
-        _config = config;
+        _config = await ConfigService.GetConfig();
+        
         Client = new DiscordSocketClient(await ConfigService.GetClientConfig());
 
         InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig());
@@ -49,9 +49,9 @@ public class Bot
         var interactionHandler = new InteractionHandler(Services);
         await interactionHandler.InitializeAsync();
         
-        await Client.LoginAsync(TokenType.Bot, config["Token"]);
+        await Client.LoginAsync(TokenType.Bot, _config["Token"]);
         await Client.StartAsync();
-        await Client.SetGameAsync("/" + config["Game"], type:ActivityType.Listening);
+        await Client.SetGameAsync("/" + _config["Game"], type:ActivityType.Listening);
         await Client.SetStatusAsync(UserStatus.Online);
 
         await Task.Delay(-1);

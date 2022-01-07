@@ -37,38 +37,37 @@ public class InteractionHandler
         if (result.IsSuccess) return;
         
         var interaction = interactionContext.Interaction;
-        var user = (SocketUser)interaction.User;
 
         switch (result.Error)
         {
             case InteractionCommandError.Exception:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.ConvertFailed:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.BadArgs:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.Unsuccessful:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.UnmetPrecondition:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.ParseFailed:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.FollowupAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
         }
@@ -80,38 +79,37 @@ public class InteractionHandler
         if (result.IsSuccess) return;
 
         var interaction = interactionContext.Interaction;
-        var user = (SocketUser)interaction.User;
-        
+
         switch (result.Error)
         {
             case InteractionCommandError.Exception:
             {
-                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.ConvertFailed:
             {
-                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.BadArgs:
             {
-                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.Unsuccessful:
             {
-                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.UnmetPrecondition:
             {
-                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
             case InteractionCommandError.ParseFailed:
             {
-                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(user, result.ErrorReason));
+                await interaction.RespondAsync(embed: await EmbedHelper.MakeError(result.ErrorReason));
                 break;
             }
         }

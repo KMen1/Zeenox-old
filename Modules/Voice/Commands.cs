@@ -25,7 +25,7 @@ public class VoiceCommands : InteractionModuleBase<SocketInteractionContext>
     [SlashCommand("leave", "Elhagyja azt a hangcsatornát, amelyben a bot éppen tartózkodik")]
     public async Task Leave()
     {
-        await RespondAsync(embed: await AudioService.LeaveAsync(Context.Guild, Context.User));
+        await RespondAsync(embed: await AudioService.LeaveAsync(Context.Guild));
     }
 
     [SlashCommand("play", "Lejátssza a kívánt zenét")]
@@ -50,33 +50,33 @@ public class VoiceCommands : InteractionModuleBase<SocketInteractionContext>
     [SlashCommand("volume", "Hangerő beállítása")]
     public async Task Volume([Summary("volume", "Hangerő számban megadva (1-100)"), MinValue(1), MaxValue(100)] ushort volume)
     {
-        await RespondAsync(embed: await AudioService.SetVolumeAsync(volume, Context.Guild, Context.User), ephemeral: true);
+        await RespondAsync(embed: await AudioService.SetVolumeAsync(volume, Context.Guild), ephemeral: true);
     }
 
     [SlashCommand("queue", "A sorban lévő zenék listája")]
     public async Task Queue()
     {
-        await RespondAsync(embed: await AudioService.GetQueue(Context.Guild, Context.User));
+        await RespondAsync(embed: await AudioService.GetQueue(Context.Guild));
     }
 
     [SlashCommand("speed", "Zene sebességének növelése")]
     public async Task Speed(
         [Summary("speed", "Sebesség számban megadva (1-10)"), MinValue(1), MaxValue(10)] int speed)
     {
-        await RespondAsync(embed: await AudioService.SetSpeedAsync(speed, Context.Guild, Context.User), ephemeral: true);
+        await RespondAsync(embed: await AudioService.SetSpeedAsync(speed, Context.Guild), ephemeral: true);
     }
 
     [SlashCommand("pitch", "Zene hangmagasságának növelése")]
     public async Task Pitch(
         [Summary("pitch", "Hangmagasság számban megadva (1-10)"), MinValue(1), MaxValue(10)] int pitch)
     {
-        await RespondAsync(embed: await AudioService.SetPitchAsync(pitch, Context.Guild, Context.User), ephemeral: true);
+        await RespondAsync(embed: await AudioService.SetPitchAsync(pitch, Context.Guild), ephemeral: true);
     }
     
     [SlashCommand("clearqueue", "A sorban lévő zenék törlése")]
     public async Task ClearQueue()
     {
-        await RespondAsync(embed: await AudioService.ClearQueue(Context.Guild, Context.User));
+        await RespondAsync(embed: await AudioService.ClearQueue(Context.Guild));
         await Task.Delay(5000);
         await DeleteOriginalResponseAsync();
     }
