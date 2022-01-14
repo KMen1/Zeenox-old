@@ -6,30 +6,16 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Humanizer;
+using KBot.Enums;
 using Victoria;
 
 namespace KBot.Helpers;
 
 public static class EmbedHelper
 {
-    public static ValueTask<Embed> MakeJoin(IVoiceChannel vChannel)
-    {
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                Name = "SIKERES CSATLAKOZÁS",
-                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
-            },
-            Description = $"A következő csatornába: `{vChannel.Name}`",
-            Color = Color.Green,
-            Footer = new EmbedFooterBuilder
-            {
-                Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
-            }
-        }.Build();
-        return new ValueTask<Embed>(eb);
-    }
+    private const string SuccessIcon = "https://i.ibb.co/HdqsDXh/tick.png";
+    private const string ErrorIcon = "https://i.ibb.co/SrZZggy/x.png";
+    private const string PlayingGif = "https://bestanimations.com/media/discs/895872755cd-animated-gif-9.gif";
 
     public static ValueTask<Embed> MakeLeave(IVoiceChannel vChannel)
     {
@@ -38,14 +24,10 @@ public static class EmbedHelper
             Author = new EmbedAuthorBuilder
             {
                 Name = "SIKERES ELHAGYÁS",
-                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
+                IconUrl = SuccessIcon
             },
             Description = $"A következő csatornából: `{vChannel.Name}`",
-            Color = Color.Green,
-            Footer = new EmbedFooterBuilder
-            {
-                Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
-            }
+            Color = Color.Green
         }.Build();
         return new ValueTask<Embed>(eb);
     }
@@ -57,26 +39,23 @@ public static class EmbedHelper
             Author = new EmbedAuthorBuilder
             {
                 Name = "SIKERES ÁTHELYEZÉS",
-                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
+                IconUrl = SuccessIcon
             },
             Description = $"A következő csatornába: `{vChannel.Name}`",
-            Color = Color.Green,
-            Footer = new EmbedFooterBuilder
-            {
-                Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
-            }
+            Color = Color.Green
         }.Build();
         return new ValueTask<Embed>(eb);
     }
 
-    public static async ValueTask<Embed> MakeNowPlaying(SocketUser user, LavaPlayer player, bool isloopEnabled, int volume, List<string> filters)
+    public static async ValueTask<Embed> MakeNowPlaying(SocketUser user, LavaPlayer player, bool isloopEnabled, string filter)
     {
+        
         var eb = new EmbedBuilder
             {
                 Author = new EmbedAuthorBuilder
                 {
                     Name = "MOST JÁTSZOTT",
-                    IconUrl = "https://bestanimations.com/media/discs/895872755cd-animated-gif-9.gif"
+                    IconUrl = PlayingGif
                 },
                 Title = player.Track.Title,
                 Url = player.Track.Url,
@@ -117,50 +96,37 @@ public static class EmbedHelper
                     new()
                     {
                         Name = "🔊 Hangerő",
-                        Value = $"`{volume}%`",
+                        Value = $"`{player.Volume}%`",
                         IsInline = true
                     },
                     new()
                     {
-                        Name = "📝 Szűrők",
-                        Value = filters.Count > 0 ? $"`{string.Join(", ", filters)}`" : "`Nincsenek`",
+                        Name = "🎶 Várólistán",
+                        Value = $"`{player.Queue.Count}`",
+                        IsInline = true
+                    },
+                    new()
+                    {
+                        Name = "📝 Szűrő",
+                        Value = filter is not null ? $"`{filter}`": "`Nincs`",
                         IsInline = true
                     }
-                },
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
                 }
             }.Build();
         return await new ValueTask<Embed>(eb);
     }
 
-    public static ValueTask<Embed> MakeVolume(LavaPlayer player, int volume)
+    public static ValueTask<Embed> MakeVolume(LavaPlayer player)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
-                Name = $"HANGERŐ {volume}%-RA ÁLLÍTVA",
-                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
+                Name = $"HANGERŐ {player.Volume}%-RA ÁLLÍTVA",
+                IconUrl = SuccessIcon
             },
             Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
             Color = Color.Green,
-        }.Build();
-        return new ValueTask<Embed>(eb);
-    }
-
-    public static ValueTask<Embed> MakeFilter(string[] filters)
-    {
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                Name = filters.Length == 0 ? "SZŰRŐK DEAKTIVÁLVA": $"SZŰRŐK AKTIVÁLVA",
-                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
-            },
-            Description = $"`{string.Join(", ", filters)}`",
-            Color = Color.Green
         }.Build();
         return new ValueTask<Embed>(eb);
     }
@@ -172,24 +138,30 @@ public static class EmbedHelper
             Author = new EmbedAuthorBuilder
             {
                 Name = cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE",
-                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
+                IconUrl = SuccessIcon
             },
             Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-            Color = Color.Green,
-            Footer = new EmbedFooterBuilder
-            {
-                Text = $"Dátum: {DateTime.Now:yyyy.MM.dd}"
-            }
+            Color = Color.Green
         };
-        if (cleared) return new ValueTask<Embed>(eb.Build());
-        if (player.Queue.Count == 0) eb.WithDescription("`Nincs zene a lejátszási listában`");
-        var desc = new StringBuilder();
-        foreach (var track in player.Queue)
-            desc.AppendLine(
-                $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Url}) | Hossz: {track.Duration:hh\\:mm\\:ss}" +
-                "\n");
+        if (cleared)
+        {
+            return new ValueTask<Embed>(eb.Build());
+        }
 
-        eb.WithDescription(desc.ToString());
+        if (player.Queue.Count == 0)
+        {
+            eb.WithDescription("`Nincs zene a lejátszási listában`");
+        }
+        else
+        {
+            var desc = new StringBuilder();
+            foreach (var track in player.Queue)
+                desc.AppendLine(
+                    $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Url}) | Hossz: {track.Duration:hh\\:mm\\:ss}" +
+                    "\n");
+
+            eb.WithDescription(desc.ToString());
+        }
         return new ValueTask<Embed>(eb.Build());
     }
 
@@ -200,7 +172,7 @@ public static class EmbedHelper
             Author = new EmbedAuthorBuilder
             {
                 Name = "HOZZÁADVA A VÁRÓLISTÁHOZ",
-                IconUrl = "https://cdn1.iconfinder.com/data/icons/interface-elements/32/accept-circle-512.png"
+                IconUrl = SuccessIcon
             },
             Title = track.Title,
             Url = track.Url,
@@ -222,19 +194,121 @@ public static class EmbedHelper
             Author = new EmbedAuthorBuilder
             {
                 Name = "HIBA",
-                IconUrl = "https://icon-library.com/images/error-icon-transparent/error-icon-transparent-23.jpg"
+                IconUrl = ErrorIcon
             },
-            Title = "😒 Hiba történt a parancs végrehajtása során",
+            Title = "Hiba történt a parancs végrehajtása során",
             Description = "Kérlek próbáld meg újra! \n" +
                           "Ha a hiba továbbra is fennáll, kérlek jelezd a <@132797923049209856>-nek! \n",
             //$"A bot beragadása esetén használd a **/reset** parancsot!",
-            Color = Color.Red,
-            Footer = new EmbedFooterBuilder
-            {
-                Text = "Dátum: " + $"Dátum: {DateTime.Now:yyyy.MM.dd}"
-            }
+            Color = Color.Red
         };
         eb.AddField("Hibaüzenet", $"```{exception}```");
         return new ValueTask<Embed>(eb.Build());
+    }
+
+    public static ValueTask<Embed> MovieEventEmbed(SocketGuildEvent movieEvent, EventEmbedType embedType)
+    {
+        var embed = new EmbedBuilder
+        {
+            Title = movieEvent.Name,
+            Description = movieEvent.Description,
+            Timestamp = DateTimeOffset.UtcNow,
+            Fields =
+            {
+                new EmbedFieldBuilder
+                {
+                    Name = "👨 Létrehozta",
+                    Value = movieEvent.Creator.Mention,
+                    IsInline = true
+                },
+                new EmbedFieldBuilder()
+                {
+                    Name = "🕐 Időpont",
+                    Value = movieEvent.StartTime.ToString("yyyy. MM. dd. HH:mm"),
+                    IsInline = true
+                },
+                new EmbedFieldBuilder()
+                {
+                    Name = "🎙 Csatorna",
+                    Value = movieEvent.Channel.Name,
+                    IsInline = true
+                }
+            }
+        };
+        switch (embedType)
+        {
+            case EventEmbedType.Scheduled:
+            {
+                embed.WithAuthor("ÚJ FILM ESEMÉNY ÜTEMEZVE!", SuccessIcon);
+                embed.WithColor(Color.Orange);
+                break;
+            }
+            case EventEmbedType.Started:
+            {
+                embed.WithAuthor("FILM ESEMÉNY KEZDŐDIK!", SuccessIcon);
+                embed.WithColor(Color.Green);
+                break;
+            }
+            case EventEmbedType.Cancelled:
+            {
+                embed.WithAuthor("FILM ESEMÉNY TÖRÖLVE!", ErrorIcon);
+                embed.WithColor(Color.Red);
+                break;
+            }
+        }
+        return new ValueTask<Embed>(embed.Build());
+    }
+
+    public static async Task<Embed> TourEventEmbed(SocketGuildEvent tourEvent, EventEmbedType tourEmbedType)
+    {
+        var embed = new EmbedBuilder
+        {
+            Title = tourEvent.Name,
+            Description = tourEvent.Description,
+            Timestamp = DateTimeOffset.UtcNow,
+            Fields =
+            {
+                new EmbedFieldBuilder
+                {
+                    Name = "👨 Létrehozta",
+                    Value = tourEvent.Creator.Mention,
+                    IsInline = true
+                },
+                new EmbedFieldBuilder()
+                {
+                    Name = "🕐 Időpont",
+                    Value = tourEvent.StartTime.ToString("yyyy. MM. dd. HH:mm"),
+                    IsInline = true
+                },
+                new EmbedFieldBuilder()
+                {
+                    Name = "⛺ Helyszín",
+                    Value = tourEvent.Location,
+                    IsInline = false
+                }
+            }
+        };
+        switch (tourEmbedType)
+        {
+            case EventEmbedType.Scheduled:
+            {
+                embed.WithAuthor("ÚJ TÚRA ESEMÉNY ÜTEMEZVE!", SuccessIcon);
+                embed.WithColor(Color.Orange);
+                break;
+            }
+            case EventEmbedType.Started:
+            {
+                embed.WithAuthor("TÚRA ESEMÉNY KEZDŐDIK!", SuccessIcon);
+                embed.WithColor(Color.Green);
+                break;
+            }
+            case EventEmbedType.Cancelled:
+            {
+                embed.WithAuthor("TÚRA ESEMÉNY TÖRÖLVE!", ErrorIcon);
+                embed.WithColor(Color.Red);
+                break;
+            }
+        }
+        return await new ValueTask<Embed>(embed.Build());
     }
 }

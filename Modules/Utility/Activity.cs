@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using EmbedType = KBot.Enums.EmbedType;
+using KBot.Enums;
 
 namespace KBot.Modules.Utility;
 
@@ -11,6 +11,6 @@ public class Activity : KBotModuleBase
     public async Task ActivityAsync([Summary("csatorna", "Az a csatorna amiben menjen az activity")]IVoiceChannel vChannel, DefaultApplications activity)
     {
         var invite = await vChannel.CreateInviteToApplicationAsync(activity);
-        await RespondWithEmbedAsync(EmbedType.Success, activity.ToString(), $"Kattins a címre az activity elindításához a {vChannel.Name} hangcsatornában!", invite.Url);
+        await RespondWithEmbedAsync(EmbedResult.Success, activity.ToString(), $"Kattins a címre az activity elindításához a {vChannel.Name} hangcsatornában!", invite.Url);
     }
 }

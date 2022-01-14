@@ -34,7 +34,7 @@ public static class RedditHelper
     
     public static async Task<PostObject> GetRandomPost(string subreddit)
     {
-        var url = $"https://www.reddit.com/r/{subreddit}/.json?sort=hot&limit=10";
+        var url = $"https://www.reddit.com/r/{subreddit}/.json?sort=hot&limit=30";
         using var webClient = new HttpClient();
         var jsonString = await webClient.GetStringAsync(url);
         var subredditObject = JsonConvert.DeserializeObject<SubredditObject>(jsonString);

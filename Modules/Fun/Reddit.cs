@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord.Interactions;
+using KBot.Enums;
 using KBot.Helpers;
-using EmbedType = KBot.Enums.EmbedType;
 
 namespace KBot.Modules.Fun;
 
@@ -17,7 +17,7 @@ public class Reddit : KBotModuleBase
         var imageUrl = post.Data.Url;
         var postUrl = "https://reddit.com" + post.Data.Permalink;
  
-        await FollowupWithEmbedAsync(EmbedType.Success, title, null, postUrl, imageUrl);
+        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl);
     }
 
     [SlashCommand("meme", "Küld egy random mémet az r/memes subredditről.")]
@@ -29,7 +29,7 @@ public class Reddit : KBotModuleBase
         var imageUrl = post.Data.Url;
         var postUrl = "https://reddit.com" + post.Data.Permalink;
 
-        await FollowupWithEmbedAsync(EmbedType.Success, title, null, postUrl, imageUrl);
+        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl);
 
     }
     
@@ -43,7 +43,7 @@ public class Reddit : KBotModuleBase
         var imageUrl = post.Data.Url;
         var postUrl = "https://reddit.com" + post.Data.Permalink;
 
-        await FollowupWithEmbedAsync(EmbedType.Success, title, null, postUrl, imageUrl);
+        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl);
     }
     
     [RequireNsfw]
@@ -56,7 +56,7 @@ public class Reddit : KBotModuleBase
         var imageUrl = post.Data.Url;
         var postUrl = "https://reddit.com" + post.Data.Permalink;
 
-        await FollowupWithEmbedAsync(EmbedType.Success, title, null, postUrl, imageUrl);
+        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl);
 
     }
     
@@ -70,7 +70,7 @@ public class Reddit : KBotModuleBase
         var imageUrl = post.Data.Url;
         var postUrl = "https://reddit.com" + post.Data.Permalink;
 
-        await FollowupWithEmbedAsync(EmbedType.Success, title, null, postUrl, imageUrl);
+        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl);
 
     }
     
@@ -84,6 +84,6 @@ public class Reddit : KBotModuleBase
         var imageUrl = post.Data.Url;
         var postUrl = "https://reddit.com" + post.Data.Permalink;
 
-        await FollowupWithEmbedAsync(EmbedType.Success, title, null, postUrl, imageUrl);
+        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl);
     }
 }

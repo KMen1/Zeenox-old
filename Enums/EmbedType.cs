@@ -1,7 +1,14 @@
 ﻿namespace KBot.Enums;
 
-public enum EmbedType
+public enum EmbedResult
 {
     Error,
     Success
+}
+
+public enum EventEmbedType
+{
+    Scheduled,
+    Started,
+    Cancelled
 }

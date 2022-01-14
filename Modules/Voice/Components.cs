@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -17,96 +19,65 @@ public class Components : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("filterselectmenu")]
     public async Task HandleFilterSelectMenu(params string[] selections)
     {
-        var filters = new List<IFilter>();
-        var equalizerBands = Array.Empty<EqualizerBand>();
-        var filtersName = new List<string>();
+        var selection = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(selections[0].ToLower());
 
-        await DeferAsync();
-        
-        foreach (var selection in selections)
+        var result = Enum.TryParse(selection, out FilterType filterType);
+        if (result)
         {
-            switch (selection)
-            {
-                case "bassboost":
-                {
-                    equalizerBands = FilterHelper.BassBoost();
-                    filtersName.Add("Basszus Erősítés");
-                    break;
-                }
-                case "nightcore":
-                {
-                    filters.Add(FilterHelper.NightCore());
-                    filtersName.Add("Nightcore");
-                    break;
-                }
-                case "eightd":
-                {
-                    filters.Add(FilterHelper.EightD());
-                    filtersName.Add("8D");
-                    break;
-                }
-                case "vaporwave":
-                {
-                    filters.Add(FilterHelper.VaporWave());
-                    filtersName.Add("Vaporwave");
-                    break;
-                }
-                    
-            }
+            await DeferAsync();
+            await AudioService.SetFiltersAsync(Context.Guild, filterType);
         }
-        
-        await FollowupAsync(embed: await AudioService.SetFiltersAsync(Context.Guild, filters, equalizerBands, filtersName.ToArray()), ephemeral:true);
     }
     
     [ComponentInteraction("stop")]
     public async Task Stop()
     {
         await AudioService.StopAsync(Context.Guild);
-        await AudioService.LeaveAsync(Context.Guild);
+        await AudioService.DisconnectAsync(Context.Guild);
         await ((SocketMessageComponent) Context.Interaction).Message.DeleteAsync();
     }
     [ComponentInteraction("volumeup")]
     public async Task VolumeUp()
     {
         await AudioService.SetVolumeAsync(Context.Guild, VoiceButtonType.VolumeUp);
-        await Context.Interaction.DeferAsync();
+        await DeferAsync();
     }
     [ComponentInteraction("volumedown")]
     public async Task VolumeDown()
     {
         await AudioService.SetVolumeAsync(Context.Guild, VoiceButtonType.VolumeDown);
-        await Context.Interaction.DeferAsync();
+        await DeferAsync();
     }
 
     [ComponentInteraction("pause")]
     public async Task Pause()
     {
         await AudioService.PauseOrResumeAsync(Context.Guild);
-        await Context.Interaction.DeferAsync();
+        await DeferAsync();
     }
     [ComponentInteraction("next")]
     public async Task Next()
     {
         await AudioService.PlayNextTrack(Context.Guild, Context.User);
-        await Context.Interaction.DeferAsync();
+        await DeferAsync();
     }
     [ComponentInteraction("previous")]
     public async Task Previous()
     {
         await AudioService.PlayPreviousTrack(Context.Guild, Context.User);
-        await Context.Interaction.DeferAsync();
+        await DeferAsync();
     }
     [ComponentInteraction("repeat")]
     public async Task Repeat()
     {
         await AudioService.SetRepeatAsync(Context.Guild);
-        await Context.Interaction.DeferAsync();
+        await DeferAsync();
     }
 
     [ComponentInteraction("clearfilters")]
     public async Task ClearFilters()
     {
         await AudioService.ClearFiltersAsync(Context.Guild);
-        await Context.Interaction.DeferAsync();
+        await DeferAsync();
     }
 }

@@ -4,16 +4,14 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using KBot.Services;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Victoria;
+using EventHandler = KBot.Services.EventHandler;
 
 namespace KBot;
 
 public class Bot
 {
-    private IConfiguration _config;
-
     public Bot()
     {
         Console.Title = $"KBot - {DateTime.UtcNow.Year}";
@@ -24,19 +22,18 @@ public class Bot
     private LavaNode LavaNode { get; set; }
     private LogService LogService { get; set; }
     private AudioService AudioService { get; set; }
-    private ConfigService ConfigService { get; set; }
+    private ConfigService Config { get; set; }
     private IServiceProvider Services { get; set; }
 
     public async Task StartAsync()
     {
-        ConfigService = new ConfigService();
-        _config = await ConfigService.GetConfig();
-        
+        Config = new ConfigService();
+
         Client = new DiscordSocketClient(await ConfigService.GetClientConfig());
 
         InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig());
-
-        LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig());
+        
+        LavaNode = new LavaNode(Client, await Config.GetLavaConfig());
 
         AudioService = new AudioService(Client, LavaNode);
         AudioService.InitializeAsync();
@@ -49,9 +46,12 @@ public class Bot
         var interactionHandler = new InteractionHandler(Services);
         await interactionHandler.InitializeAsync();
         
-        await Client.LoginAsync(TokenType.Bot, _config["Token"]);
+        var eventHandler = new EventHandler(Client, Config);
+        eventHandler.InitializeAsync();
+
+        await Client.LoginAsync(TokenType.Bot, Config.Token);
         await Client.StartAsync();
-        await Client.SetGameAsync("/" + _config["Game"], type:ActivityType.Listening);
+        await Client.SetGameAsync("/" + Config.Game, type:ActivityType.Listening);
         await Client.SetStatusAsync(UserStatus.Online);
 
         await Task.Delay(-1);
@@ -64,7 +64,7 @@ public class Bot
             .AddSingleton(InteractionService)
             .AddSingleton(LavaNode)
             .AddSingleton(AudioService)
-            .AddSingleton(_config)
+            .AddSingleton(Config)
             .BuildServiceProvider();
         return Task.CompletedTask;
     }
