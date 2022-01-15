@@ -25,6 +25,10 @@ public class ConfigService
     private readonly ushort LavalinkPort;
     private readonly string LavalinkPassword;
 
+    public readonly string MongoDbConnectionString;
+    public readonly string MongoDbDatabaseName;
+    public readonly string MongoDbWarnCollectionName;
+
     public ConfigService()
     {
         var config = new ConfigurationBuilder()
@@ -44,6 +48,10 @@ public class ConfigService
         LavalinkHost = config["LavalinkHost"];
         LavalinkPort = ushort.Parse(config["LavalinkPort"]);
         LavalinkPassword = config["LavalinkPassword"];
+        
+        MongoDbConnectionString = config["MongoDbConnectionString"];
+        MongoDbDatabaseName = config["MongoDbDatabaseName"];
+        MongoDbWarnCollectionName = config["MongoDbWarnCollectionName"];
     }
 
     public static ValueTask<DiscordSocketConfig> GetClientConfig()

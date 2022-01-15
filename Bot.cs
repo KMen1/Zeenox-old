@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Database;
 using KBot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Victoria;
@@ -23,12 +24,15 @@ public class Bot
     private LogService LogService { get; set; }
     private AudioService AudioService { get; set; }
     private ConfigService Config { get; set; }
+    private DatabaseService Database { get; set; }
     private IServiceProvider Services { get; set; }
 
     public async Task StartAsync()
     {
         Config = new ConfigService();
 
+        Database = new DatabaseService(Config);
+        
         Client = new DiscordSocketClient(await ConfigService.GetClientConfig());
 
         InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig());
@@ -65,6 +69,7 @@ public class Bot
             .AddSingleton(LavaNode)
             .AddSingleton(AudioService)
             .AddSingleton(Config)
+            .AddSingleton(Database)
             .BuildServiceProvider();
         return Task.CompletedTask;
     }
