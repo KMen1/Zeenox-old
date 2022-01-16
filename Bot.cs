@@ -86,9 +86,7 @@ public class Bot
 
         await Task.Delay(-1);
     }
-
     
-
     private Task GetServices()
     {
         Services = new ServiceCollection()

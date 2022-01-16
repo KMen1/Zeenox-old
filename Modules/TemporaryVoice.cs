@@ -10,13 +10,16 @@ namespace KBot.Modules;
 public class TemporaryVoiceModule
 {
     private readonly DiscordSocketClient _client;
-    private readonly ConfigModel.Config _config;
     private readonly List<(SocketUser user, ulong channelId)> Channels = new();
-
+    
+    private readonly ulong CategoryId;
+    private readonly ulong CreateChannelId;
+    
     public TemporaryVoiceModule(DiscordSocketClient client, ConfigModel.Config config)
     {
         _client = client;
-        _config = config;
+        CategoryId = config.TemporaryVoiceChannels.CategoryId;
+        CreateChannelId = config.TemporaryVoiceChannels.CreateChannelId;
     }
     
     public Task InitializeAsync()
@@ -37,7 +40,7 @@ public class TemporaryVoiceModule
             return;
         }
         
-        if (after.VoiceChannel is not null && after.VoiceChannel.Id == 863814037195063358)
+        if (after.VoiceChannel is not null && after.VoiceChannel.Id == CreateChannelId)
         {
             var userPermissions = new OverwritePermissions(manageChannel: PermValue.Allow, moveMembers: PermValue.Allow);
             var everyonePermissions = new OverwritePermissions(connect: PermValue.Deny);
@@ -45,7 +48,7 @@ public class TemporaryVoiceModule
             var voiceChannel = await guild.CreateVoiceChannelAsync($"{user.Username} Társalgója", x =>
             {
                 x.UserLimit = 2;
-                x.CategoryId = 863756209601249300;
+                x.CategoryId = CategoryId;
                 x.Bitrate = 96000;
                 x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
                 {

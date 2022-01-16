@@ -47,7 +47,7 @@ public class LevelingModule
         var pointsToGive = (int)Math.Floor(rate * 100 + msgLength / 2);
         var user = arg.Author;
 
-        var points = await Database.UpdateUserPoints(user.Id, pointsToGive);
+        var points = await Database.AddPointsByUserId(user.Id, pointsToGive);
         if (points >= PointsToLevelUp)
         {
             await HandleLevelUp(guild, user, points);
@@ -65,8 +65,8 @@ public class LevelingModule
         else if (!user.IsBot && after.VoiceChannel == null)
         {
             var userToGivePointTo = levels.FirstOrDefault(x => x.user.Id == user.Id);
-            var earnedPoints = (int) (DateTime.UtcNow - userToGivePointTo.startTime).TotalSeconds;
-            var points = await Database.UpdateUserPoints(user.Id, earnedPoints);
+            var pointsToGive = (int) (DateTime.UtcNow - userToGivePointTo.startTime).TotalSeconds;
+            var points = await Database.AddPointsByUserId(user.Id, pointsToGive);
             if (points >= PointsToLevelUp)
             {
                 await HandleLevelUp(guild, user, points);
@@ -90,8 +90,8 @@ public class LevelingModule
             newPoints = points - levelsToAdd * PointsToLevelUp;
         }
 
-        var level = await Database.UpdateUserLevel(user.Id, levelsToAdd);
-        await Database.UpdateUserPoints(user.Id, newPoints: newPoints);
+        var level = await Database.AddLevelByUserId(user.Id, levelsToAdd);
+        await Database.SetPointsByUserId(user.Id, newPoints);
             
         // give the user a corresponding role when reaching level 10, 25, 50, 75, 100
         var role = guild.Roles.FirstOrDefault(x => x.Name.Contains($"Lvl. {level}"));

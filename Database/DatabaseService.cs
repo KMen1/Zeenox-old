@@ -41,7 +41,7 @@ public class DatabaseService
         return warns;
     }
 
-    public async Task AddWarnToUser(ulong userId, ulong moderatorId, string reason)
+    public async Task AddWarnByUserId(ulong userId, ulong moderatorId, string reason)
     {
         var client = new MongoClient(_config.MongoDb.ConnectionString);
         var database = client.GetDatabase(_config.MongoDb.Database);
@@ -62,22 +62,28 @@ public class DatabaseService
         await collection.ReplaceOneAsync(x => x.Id == user.Id, user);
     }
     
-    /*public async Task RemoveWarnFromUser(ulong userId, ulong moderatorId)
+    public async Task<bool> RemoveWarnByUserId(ulong userId, ulong moderatorId, int warnId)
     {
-        var client = new MongoClient(_connectionString);
-        var database = client.GetDatabase(_databaseName);
-        var collection = database.GetCollection<UserModel>(_warnCollectionName);
+        var client = new MongoClient(_config.MongoDb.ConnectionString);
+        var database = client.GetDatabase(_config.MongoDb.Database);
+        var collection = database.GetCollection<UserModel>(_config.MongoDb.Collection);
 
         var user = (await collection.FindAsync(x => x.UserId == userId)).ToList().FirstOrDefault();
         if (user == null)
         {
-            return;
+            return false;
         }
-        user.Warns.RemoveAll(x => x.ModeratorId == moderatorId);
+        // check if warn index exists
+        if (user.Warns.Count < warnId)
+        {
+            return false;
+        }
+        user.Warns.RemoveAt(warnId - 1);
         await collection.ReplaceOneAsync(x => x.Id == user.Id, user);
-    }*/
+        return true;
+    }
     
-    public async Task<int> UpdateUserPoints(ulong userId, int pointsToAdd = 0, int newPoints = 0)
+    public async Task<int> AddPointsByUserId(ulong userId, int pointsToAdd)
     {
         var client = new MongoClient(_config.MongoDb.ConnectionString);
         var database = client.GetDatabase(_config.MongoDb.Database);
@@ -89,15 +95,23 @@ public class DatabaseService
             await RegisterUser(userId);
             user = (await collection.FindAsync(x => x.UserId == userId)).ToList().FirstOrDefault();
         }
+        user.Points += pointsToAdd;
+        await collection.ReplaceOneAsync(x => x.Id == user.Id, user);
+        return user.Points;
+    }
+    public async Task<int> SetPointsByUserId(ulong userId, int points)
+    {
+        var client = new MongoClient(_config.MongoDb.ConnectionString);
+        var database = client.GetDatabase(_config.MongoDb.Database);
+        var collection = database.GetCollection<UserModel>(_config.MongoDb.Collection);
 
-        if (newPoints is not 0)
+        var user = (await collection.FindAsync(x => x.UserId == userId)).ToList().FirstOrDefault();
+        if (user == null)
         {
-            user.Points = newPoints;
+            await RegisterUser(userId);
+            user = (await collection.FindAsync(x => x.UserId == userId)).ToList().FirstOrDefault();
         }
-        else
-        {
-            user.Points += pointsToAdd;
-        }
+        user.Points = points;
         await collection.ReplaceOneAsync(x => x.Id == user.Id, user);
         return user.Points;
     }
@@ -112,7 +126,7 @@ public class DatabaseService
         return user?.Points ?? 0;
     }
 
-    public async Task<int> UpdateUserLevel(ulong userId, int levelsToAdd)
+    public async Task<int> AddLevelByUserId(ulong userId, int levelsToAdd)
     {
         var client = new MongoClient(_config.MongoDb.ConnectionString);
         var database = client.GetDatabase(_config.MongoDb.Database);
@@ -125,6 +139,22 @@ public class DatabaseService
             user = (await collection.FindAsync(x => x.UserId == userId)).ToList().FirstOrDefault();
         }
         user.Level += levelsToAdd;
+        await collection.ReplaceOneAsync(x => x.Id == user.Id, user);
+        return user.Level;
+    }
+    public async Task<int> SetLevelByUserId(ulong userId, int level)
+    {
+        var client = new MongoClient(_config.MongoDb.ConnectionString);
+        var database = client.GetDatabase(_config.MongoDb.Database);
+        var collection = database.GetCollection<UserModel>(_config.MongoDb.Collection);
+
+        var user = (await collection.FindAsync(x => x.UserId == userId)).ToList().FirstOrDefault();
+        if (user == null)
+        {
+            await RegisterUser(userId);
+            user = (await collection.FindAsync(x => x.UserId == userId)).ToList().FirstOrDefault();
+        }
+        user.Level = level;
         await collection.ReplaceOneAsync(x => x.Id == user.Id, user);
         return user.Level;
     }
