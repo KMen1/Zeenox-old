@@ -9,6 +9,7 @@ public enum EmbedResult
 public enum EventEmbedType
 {
     Scheduled,
+    Updated,
     Started,
     Cancelled
 }

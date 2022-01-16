@@ -13,6 +13,10 @@ public class UserModel
     
     public ulong UserId { get; set; }
     
+    public int Points { get; set; }
+    
+    public int Level { get; set; }
+    
     public List<WarnObject> Warns { get; set; }
     
 }

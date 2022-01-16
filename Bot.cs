@@ -3,11 +3,12 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Config;
 using KBot.Database;
+using KBot.Modules;
 using KBot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Victoria;
-using EventHandler = KBot.Services.EventHandler;
 
 namespace KBot;
 
@@ -23,24 +24,52 @@ public class Bot
     private LavaNode LavaNode { get; set; }
     private LogService LogService { get; set; }
     private AudioService AudioService { get; set; }
-    private ConfigService Config { get; set; }
+    private ConfigModel.Config Config { get; set; }
     private DatabaseService Database { get; set; }
     private IServiceProvider Services { get; set; }
-
+    
     public async Task StartAsync()
     {
-        Config = new ConfigService();
-
+        Config = await ConfigService.InitializeAsync();
+        
         Database = new DatabaseService(Config);
         
         Client = new DiscordSocketClient(await ConfigService.GetClientConfig());
 
         InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig());
         
-        LavaNode = new LavaNode(Client, await Config.GetLavaConfig());
+        LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig());
 
         AudioService = new AudioService(Client, LavaNode);
-        AudioService.InitializeAsync();
+        if (Config.Lavalink.Enabled)
+        {
+            AudioService.InitializeAsync();
+        }
+
+        if (Config.Announcements.Enabled)
+        {
+            await new Announcements(Client, Config).InitializeAsync();
+        }
+
+        if (Config.Movie.Enabled)
+        {
+            await new MovieModule(Client, Config).InitializeAsync();
+        }
+        
+        if (Config.Tour.Enabled)
+        {
+            await new TourModule(Client, Config).InitializeAsync();
+        }
+        
+        if (Config.TemporaryVoiceChannels.Enabled)
+        {
+            await new TemporaryVoiceModule(Client, Config).InitializeAsync();
+        }
+
+        if (Config.Leveling.Enabled)
+        {
+            await new LevelingModule(Client, Config, Database).InitializeAsync();
+        }
 
         await GetServices();
 
@@ -49,17 +78,16 @@ public class Bot
 
         var interactionHandler = new InteractionHandler(Services);
         await interactionHandler.InitializeAsync();
-        
-        var eventHandler = new EventHandler(Client, Config);
-        eventHandler.InitializeAsync();
 
-        await Client.LoginAsync(TokenType.Bot, Config.Token);
+        await Client.LoginAsync(TokenType.Bot, Config.Client.Token);
         await Client.StartAsync();
-        await Client.SetGameAsync("/" + Config.Game, type:ActivityType.Listening);
+        await Client.SetGameAsync("/" + Config.Client.Game, type:ActivityType.Listening);
         await Client.SetStatusAsync(UserStatus.Online);
 
         await Task.Delay(-1);
     }
+
+    
 
     private Task GetServices()
     {

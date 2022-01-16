@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -22,6 +23,17 @@ public class WarnModule : KBotModuleBase
         await DeferAsync();
         await Database.AddWarnToUser(userId, moderatorId, reason);
         await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} sikeresen figyelmeztetve!", $"A következő indokkal: `{reason}`");
+        await user.CreateDMChannelAsync().ContinueWith(async (task) =>
+        {
+            var eb = new EmbedBuilder()
+            {
+                Title = $"Figyelmeztetve lettél {Context.Guild.Name}-ban!",
+                Description = $"{Context.User.Mention} moderátor által \n A következő indokkal: `{reason}`",
+                Timestamp = DateTimeOffset.UtcNow,
+            }.Build();
+            var dmChannel = task.Result;
+            await dmChannel.SendMessageAsync(embed: eb);
+        });
     }
     
     [SlashCommand("warns", "A felhasználó figyelmeztetéseinek listája.")]

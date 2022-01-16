@@ -26,7 +26,6 @@ public class AudioService
     private bool isLooped;
     private IUserMessage nowPlayingMessage;
     private IDiscordInteraction currentInteraction;
-    
 
     public AudioService(DiscordSocketClient client, LavaNode lavaNode)
     {

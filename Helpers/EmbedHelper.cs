@@ -243,6 +243,12 @@ public static class EmbedHelper
                 embed.WithColor(Color.Orange);
                 break;
             }
+            case EventEmbedType.Updated:
+            {
+                embed.WithAuthor("FILM ESEMÉNY FRISSÍTVE!", SuccessIcon);
+                embed.WithColor(Color.Orange);
+                break;
+            }
             case EventEmbedType.Started:
             {
                 embed.WithAuthor("FILM ESEMÉNY KEZDŐDIK!", SuccessIcon);
@@ -293,6 +299,12 @@ public static class EmbedHelper
             case EventEmbedType.Scheduled:
             {
                 embed.WithAuthor("ÚJ TÚRA ESEMÉNY ÜTEMEZVE!", SuccessIcon);
+                embed.WithColor(Color.Orange);
+                break;
+            }
+            case EventEmbedType.Updated:
+            {
+                embed.WithAuthor("TÚRA ESEMÉNY FRISSÍTVE!", SuccessIcon);
                 embed.WithColor(Color.Orange);
                 break;
             }
