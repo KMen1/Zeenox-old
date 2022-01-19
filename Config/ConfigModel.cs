@@ -88,5 +88,8 @@ public abstract class ConfigModel
         public bool Enabled { get; set; }
         
         public int PointsToLevelUp { get; set; }
+        
+        public ulong LevelUpAnnouncementChannelId { get; set; }
+        
     }
 }

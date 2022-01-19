@@ -22,10 +22,9 @@ public class TemporaryVoiceModule
         CreateChannelId = config.TemporaryVoiceChannels.CreateChannelId;
     }
     
-    public Task InitializeAsync()
+    public void Initialize()
     {
         _client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
-        return Task.CompletedTask;
     }
 
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)

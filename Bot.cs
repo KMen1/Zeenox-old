@@ -18,7 +18,7 @@ public class Bot
     {
         Console.Title = $"KBot - {DateTime.UtcNow.Year}";
     }
-
+    
     private DiscordSocketClient Client { get; set; }
     private InteractionService InteractionService { get; set; }
     private LavaNode LavaNode { get; set; }
@@ -32,10 +32,10 @@ public class Bot
     {
         Config = await ConfigService.InitializeAsync();
         
-        Database = new DatabaseService(Config);
-        
         Client = new DiscordSocketClient(await ConfigService.GetClientConfig());
-
+        
+        Database = new DatabaseService(Config, Client);
+        
         InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig());
         
         LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig());
@@ -43,32 +43,32 @@ public class Bot
         AudioService = new AudioService(Client, LavaNode);
         if (Config.Lavalink.Enabled)
         {
-            AudioService.InitializeAsync();
+            AudioService.Initialize();
         }
 
         if (Config.Announcements.Enabled)
         {
-            await new Announcements(Client, Config).InitializeAsync();
+            new AnnouncementsModule(Client, Config).Initialize();
         }
 
         if (Config.Movie.Enabled)
         {
-            await new MovieModule(Client, Config).InitializeAsync();
+            new MovieModule(Client, Config).Initialize();
         }
         
         if (Config.Tour.Enabled)
         {
-            await new TourModule(Client, Config).InitializeAsync();
+            new TourModule(Client, Config).Initialize();
         }
         
         if (Config.TemporaryVoiceChannels.Enabled)
         {
-            await new TemporaryVoiceModule(Client, Config).InitializeAsync();
+            new TemporaryVoiceModule(Client, Config).Initialize();
         }
 
         if (Config.Leveling.Enabled)
         {
-            await new LevelingModule(Client, Config, Database).InitializeAsync();
+            new LevelingModule(Client, Config, Database).Initialize();
         }
 
         await GetServices();
@@ -76,8 +76,7 @@ public class Bot
         LogService = new LogService(Services);
         LogService.InitializeAsync();
 
-        var interactionHandler = new InteractionHandler(Services);
-        await interactionHandler.InitializeAsync();
+        await new InteractionHandler(Services).InitializeAsync();
 
         await Client.LoginAsync(TokenType.Bot, Config.Client.Token);
         await Client.StartAsync();

@@ -21,7 +21,7 @@ public class WarnModule : KBotModuleBase
         var moderatorId = Context.User.Id;
         var userId = user.Id;
         await DeferAsync();
-        await Database.AddWarnByUserId(userId, moderatorId, reason);
+        await Database.AddWarnByUserId(Context.Guild.Id, userId, moderatorId, reason);
         await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} sikeresen figyelmeztetve!", $"A következő indokkal: `{reason}`");
         await user.CreateDMChannelAsync().ContinueWith(async (task) =>
         {
@@ -41,10 +41,9 @@ public class WarnModule : KBotModuleBase
     [SlashCommand("unwarn", "Figyelmeztetést ad az adott felhasználónak.")]
     public async Task RemoveWarnAsync(SocketUser user, string reason, int warnId)
     {
-        var moderatorId = Context.User.Id;
         var userId = user.Id;
         await DeferAsync();
-        var result = await Database.RemoveWarnByUserId(userId, moderatorId, warnId);
+        var result = await Database.RemoveWarnByUserId(Context.Guild.Id, userId, warnId);
         if (!result)
         {
             await FollowupWithEmbedAsync(EmbedResult.Error, "Nem sikerült a figyelmeztetés törlése!", "Ehhez a `warnid`-hez nem tartozik figyelmeztetés!");
@@ -70,7 +69,7 @@ public class WarnModule : KBotModuleBase
     {
         var userId = user.Id;
         await DeferAsync();
-        var warns = await Database.GetWarnsByUserId(userId);
+        var warns = await Database.GetWarnsByUserId(Context.Guild.Id, userId);
         if (warns.Count is 0)
         {
             await FollowupWithEmbedAsync(EmbedResult.Success, "😎 Szép munka!", $"{user.Mention} még nem rendelkezik figyelmeztetéssel. Maradjon is így!");

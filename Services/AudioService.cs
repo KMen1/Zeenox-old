@@ -33,7 +33,7 @@ public class AudioService
         _client = client;
     }
 
-    public void InitializeAsync()
+    public void Initialize()
     {
         _client.Ready += OnReadyAsync;
         _client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;

@@ -46,7 +46,7 @@ public static class RedditHelper
         var imageUrl = post.Data.Url;
         if (!imageUrl.EndsWith(".jpg") && !imageUrl.EndsWith(".png") && !imageUrl.EndsWith(".gif") && !imageUrl.EndsWith(".jpeg"))
         {
-            post = await GetRandomPost("FostTalicska");
+            post = await GetRandomPost(subreddit);
         }
         
         return post;

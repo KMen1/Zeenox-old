@@ -21,7 +21,7 @@ public class MovieModule
         _config = config;
     }
 
-    public Task InitializeAsync()
+    public void Initialize()
     {
         _client.GuildScheduledEventCreated += AnnounceScheduledEventCreated;
         _client.GuildScheduledEventUpdated += AnnounceScheduledEventUpdated;
@@ -31,8 +31,6 @@ public class MovieModule
         MovieRoleId = _config.Movie.RoleId;
         MovieStreamingChannelId = _config.Movie.StreamingChannelId;
         MovieEventAnnouncementChannelId = _config.Movie.EventAnnouncementChannelId;
-
-        return Task.CompletedTask;
     }
 
     private static async Task AnnounceScheduledEventCreated(SocketGuildEvent arg)

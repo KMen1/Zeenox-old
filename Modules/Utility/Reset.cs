@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Discord.Commands;
 using Discord.Interactions;
 
 namespace KBot.Modules.Utility;
 
 public class Reset : InteractionModuleBase<SocketInteractionContext>
 {
-    [RequireOwner]
+    [Discord.Interactions.RequireOwner]
     [SlashCommand("reset", "Újraindítja a botot")]
     public async Task ResetAsync()
     {
@@ -19,5 +20,4 @@ public class Reset : InteractionModuleBase<SocketInteractionContext>
         await RespondAsync("A bot újraindult.");
         Environment.Exit(0);
     }
-    
 }

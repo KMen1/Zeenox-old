@@ -21,7 +21,7 @@ public class TourModule
         _config = config;
     }
 
-    public Task InitializeAsync()
+    public void Initialize()
     {
         _client.GuildScheduledEventCreated += AnnounceScheduledEventCreated;
         _client.GuildScheduledEventUpdated += AnnounceScheduledEventUpdated;
@@ -30,7 +30,6 @@ public class TourModule
         
         TourRoleId = _config.Tour.RoleId;
         TourAnnouncementChannelId = _config.Tour.EventAnnouncementChannelId;
-        return Task.CompletedTask;
     }
     
     private static async Task AnnounceScheduledEventCreated(SocketGuildEvent arg)
