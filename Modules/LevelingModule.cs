@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -12,17 +11,17 @@ namespace KBot.Modules;
 public class LevelingModule
 {
     private readonly DiscordSocketClient _client;
-    private readonly DatabaseService Database;
-    private readonly List<(SocketUser user, DateTime startTime)> levels = new();
-    private readonly int PointsToLevelUp;
-    private readonly ulong LevelUpChannel;
+    private readonly DatabaseService _database;
+    //private readonly List<(SocketUser user, DateTime startTime)> levels = new();
+    private readonly int _pointsToLevelUp;
+    private readonly ulong _levelUpChannel;
 
     public LevelingModule(DiscordSocketClient client, ConfigModel.Config config, DatabaseService database)
     {
         _client = client;
-        Database = database;
-        PointsToLevelUp = config.Leveling.PointsToLevelUp;
-        LevelUpChannel = config.Leveling.LevelUpAnnouncementChannelId;
+        _database = database;
+        _pointsToLevelUp = config.Leveling.PointsToLevelUp;
+        _levelUpChannel = config.Leveling.LevelUpAnnouncementChannelId;
     }
     
     public void Initialize()
@@ -48,20 +47,16 @@ public class LevelingModule
         var pointsToGive = (int)Math.Floor(rate * 100 + msgLength / 2);
         var user = arg.Author;
 
-        var points = await Database.AddPointsByUserId(((ITextChannel) arg.Channel).GuildId, user.Id, pointsToGive);
-        if (points >= PointsToLevelUp)
+        var points = await _database.AddPointsByUserId(((ITextChannel) arg.Channel).GuildId, user.Id, pointsToGive);
+        if (points >= _pointsToLevelUp)
         {
             await HandleLevelUp(guild, user, points);
             return;
         }
-        var level = await Database.GetUserLevelById(((ITextChannel) arg.Channel).GuildId, user.Id);
-        if (level is not (10 or 25 or 50 or 75 or 100))
-        {
-            return;
-        }
+        var level = await _database.GetUserLevelById(((ITextChannel) arg.Channel).GuildId, user.Id);
         var userRoles = guild.GetUser(user.Id).Roles;
         var role = guild.Roles.FirstOrDefault(x => x.Name.Contains($"(Lvl. {level})"));
-        if (!userRoles.Contains(role))
+        if (role is not null && !userRoles.Contains(role))
         {
             await HandleLevelUpBySetLevel(user, guild);
         }
@@ -69,19 +64,26 @@ public class LevelingModule
 
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
+        if (user.IsBot)
+        {
+            return;
+        }
         var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
         
-        if (!user.IsBot && before.VoiceChannel == null)
+        if (before.VoiceChannel is null)
         {
-            levels.Add((user, DateTime.UtcNow));
+            await _database.SetUserVoiceChannelJoinDateById(guild.Id, user.Id, DateTime.Now);
+            //levels.Add((user, DateTime.UtcNow));
         }
-        else if (!user.IsBot && after.VoiceChannel == null)
+        else if (after.VoiceChannel is null)
         {
-            var userToGivePointTo = levels.FirstOrDefault(x => x.user.Id == user.Id);
-            var pointsToGive = (int) (DateTime.UtcNow - userToGivePointTo.startTime).TotalSeconds;
-            var points = await Database.AddPointsByUserId(before.VoiceChannel.Guild.Id, user.Id, pointsToGive);
-            levels.Remove(userToGivePointTo);
-            if (points >= PointsToLevelUp)
+            var joinDate = await _database.GetUserVoiceChannelJoinDateById(guild.Id, user.Id);
+            //var userToGivePointTo = levels.FirstOrDefault(x => x.user.Id == user.Id);
+            
+            var pointsToGive = (int) (DateTime.UtcNow - joinDate).TotalSeconds;
+            var points = await _database.AddPointsByUserId(guild.Id, user.Id, pointsToGive);
+            //levels.Remove(userToGivePointTo);
+            if (points >= _pointsToLevelUp)
             {
                 await HandleLevelUp(guild, user, points);
             }
@@ -92,23 +94,28 @@ public class LevelingModule
     {
         var levelsToAdd = 0;
         var newPoints = 0;
-        if (points % PointsToLevelUp == 0)
+        switch (points % _pointsToLevelUp)
         {
-            levelsToAdd = points / PointsToLevelUp;
-            newPoints = 0;
-        }
-        else if (points % PointsToLevelUp > 0)
-        {
-            levelsToAdd = points / PointsToLevelUp;
-            newPoints = points - levelsToAdd * PointsToLevelUp;
+            case 0:
+            {
+                levelsToAdd = points / _pointsToLevelUp;
+                newPoints = 0;
+                break;
+            }
+            case > 0:
+            {
+                levelsToAdd = points / _pointsToLevelUp;
+                newPoints = points - levelsToAdd * _pointsToLevelUp;
+                break;
+            }
         }
 
-        var level = await Database.AddLevelByUserId(guild.Id, user.Id, levelsToAdd);
-        await Database.SetPointsByUserId(guild.Id, user.Id, newPoints);
+        var level = await _database.AddLevelByUserId(guild.Id, user.Id, levelsToAdd);
+        await _database.SetPointsByUserId(guild.Id, user.Id, newPoints);
             
         // give the user a corresponding role when reaching level 10, 25, 50, 75, 100
         var role = guild.Roles.FirstOrDefault(x => x.Name.Contains($"(Lvl. {level})"));
-        if (role != null)
+        if (role is not null)
         {
             await guild.GetUser(user.Id).AddRoleAsync(role);
             var roles = guild.GetUser(user.Id).Roles;
@@ -133,17 +140,17 @@ public class LevelingModule
             await dmchannel.SendMessageAsync(embed: embed);
         }
 
-        if (guild.GetChannel(LevelUpChannel) is SocketTextChannel channel)
+        if (guild.GetChannel(_levelUpChannel) is SocketTextChannel channel)
         {
             await channel.SendMessageAsync($"🥳 Gratulálok {user.Mention}, elérted a **{level}** szintet!");
         }
     }
     
-    private async Task HandleLevelUpBySetLevel(SocketUser user, SocketGuild guild)
+    private async Task HandleLevelUpBySetLevel(IUser user, SocketGuild guild)
     {
-        var level = await Database.GetUserLevelById(guild.Id, user.Id);
-        var role = guild?.Roles.FirstOrDefault(x => x.Name.Contains($"(Lvl. {level})"));
-        if (role != null && !guild.GetUser(user.Id).Roles.Contains(role))
+        var level = await _database.GetUserLevelById(guild.Id, user.Id);
+        var role = guild.Roles.FirstOrDefault(x => x.Name.Contains($"(Lvl. {level})"));
+        if (role is not null && !guild.GetUser(user.Id).Roles.Contains(role))
         {
             await guild.GetUser(user.Id).AddRoleAsync(role);
             var roles = guild.GetUser(user.Id).Roles;
@@ -168,7 +175,7 @@ public class LevelingModule
             await dmchannel.SendMessageAsync(embed: embed);
         }
         
-        if (guild.GetChannel(LevelUpChannel) is SocketTextChannel channel)
+        if (guild.GetChannel(_levelUpChannel) is SocketTextChannel channel)
         {
             await channel.SendMessageAsync($"🥳 Gratulálok {user.Mention}, elérted a **{level}** szintet!");
         }

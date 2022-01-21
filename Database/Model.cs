@@ -26,6 +26,8 @@ public class UserModel
     
     public DateTime LastDailyClaim { get; set; }
     
+    public DateTime LastVoiceChannelJoin { get; set; }
+    
     public List<WarnObject> Warns { get; set; }
     
 }
