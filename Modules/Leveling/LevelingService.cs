@@ -6,13 +6,12 @@ using Discord.WebSocket;
 using KBot.Config;
 using KBot.Database;
 
-namespace KBot.Modules;
+namespace KBot.Modules.Leveling;
 
 public class LevelingModule
 {
     private readonly DiscordSocketClient _client;
     private readonly DatabaseService _database;
-    //private readonly List<(SocketUser user, DateTime startTime)> levels = new();
     private readonly int _pointsToLevelUp;
     private readonly ulong _levelUpChannel;
 
@@ -23,12 +22,12 @@ public class LevelingModule
         _pointsToLevelUp = config.Leveling.PointsToLevelUp;
         _levelUpChannel = config.Leveling.LevelUpAnnouncementChannelId;
     }
-    
+
     public void Initialize()
     {
         _client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
         _client.MessageReceived += OnMessageReceivedAsync;
-    } 
+    }
 
     private async Task OnMessageReceivedAsync(SocketMessage arg)
     {
@@ -44,21 +43,21 @@ public class LevelingModule
         //calculate random xp based on message length
         var rate = new Random().NextDouble();
         var msgLength = arg.Content.Length;
-        var pointsToGive = (int)Math.Floor(rate * 100 + msgLength / 2);
+        var pointsToGive = (int)Math.Floor((rate * 100) + msgLength / 2);
         var user = arg.Author;
 
-        var points = await _database.AddPointsByUserId(((ITextChannel) arg.Channel).GuildId, user.Id, pointsToGive);
+        var points = await _database.AddPointsByUserIdAsync(((ITextChannel)arg.Channel).GuildId, user.Id, pointsToGive).ConfigureAwait(false);
         if (points >= _pointsToLevelUp)
         {
-            await HandleLevelUp(guild, user, points);
+            await HandleLevelUpAsync(guild, user, points).ConfigureAwait(false);
             return;
         }
-        var level = await _database.GetUserLevelById(((ITextChannel) arg.Channel).GuildId, user.Id);
+        var level = await _database.GetUserLevelByIdAsync(((ITextChannel)arg.Channel).GuildId, user.Id).ConfigureAwait(false);
         var userRoles = guild.GetUser(user.Id).Roles;
         var role = guild.Roles.FirstOrDefault(x => x.Name.Contains($"(Lvl. {level})"));
         if (role is not null && !userRoles.Contains(role))
         {
-            await HandleLevelUpBySetLevel(user, guild);
+            await HandleLevelUpBySetLevelAsync(user, guild).ConfigureAwait(false);
         }
     }
 
@@ -68,29 +67,30 @@ public class LevelingModule
         {
             return;
         }
+
         var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
-        
+        if (guild is null)
+        {
+            return;
+        }
+
         if (before.VoiceChannel is null)
         {
-            await _database.SetUserVoiceChannelJoinDateById(guild.Id, user.Id, DateTime.Now);
-            //levels.Add((user, DateTime.UtcNow));
+            await _database.SetUserVoiceChannelJoinDateByIdAsync(guild.Id, user.Id, DateTime.Now).ConfigureAwait(false);
         }
         else if (after.VoiceChannel is null)
         {
-            var joinDate = await _database.GetUserVoiceChannelJoinDateById(guild.Id, user.Id);
-            //var userToGivePointTo = levels.FirstOrDefault(x => x.user.Id == user.Id);
-            
+            var joinDate = await _database.GetUserVoiceChannelJoinDateByIdAsync(guild.Id, user.Id).ConfigureAwait(false);
             var pointsToGive = (int) (DateTime.UtcNow - joinDate).TotalSeconds;
-            var points = await _database.AddPointsByUserId(guild.Id, user.Id, pointsToGive);
-            //levels.Remove(userToGivePointTo);
+            var points = await _database.AddPointsByUserIdAsync(guild.Id, user.Id, pointsToGive).ConfigureAwait(false);
             if (points >= _pointsToLevelUp)
             {
-                await HandleLevelUp(guild, user, points);
+                await HandleLevelUpAsync(guild, user, points).ConfigureAwait(false);
             }
         }
     }
 
-    private async Task HandleLevelUp(SocketGuild guild, IUser user, int points)
+    private async Task HandleLevelUpAsync(SocketGuild guild, IUser user, int points)
     {
         var levelsToAdd = 0;
         var newPoints = 0;
@@ -105,24 +105,24 @@ public class LevelingModule
             case > 0:
             {
                 levelsToAdd = points / _pointsToLevelUp;
-                newPoints = points - levelsToAdd * _pointsToLevelUp;
+                newPoints = points - (levelsToAdd * _pointsToLevelUp);
                 break;
             }
         }
 
-        var level = await _database.AddLevelByUserId(guild.Id, user.Id, levelsToAdd);
-        await _database.SetPointsByUserId(guild.Id, user.Id, newPoints);
-            
+        var level = await _database.AddLevelByUserIdAsync(guild.Id, user.Id, levelsToAdd).ConfigureAwait(false);
+        await _database.SetPointsByUserIdAsync(guild.Id, user.Id, newPoints).ConfigureAwait(false);
+
         // give the user a corresponding role when reaching level 10, 25, 50, 75, 100
         var role = guild.Roles.FirstOrDefault(x => x.Name.Contains($"(Lvl. {level})"));
         if (role is not null)
         {
-            await guild.GetUser(user.Id).AddRoleAsync(role);
+            await guild.GetUser(user.Id).AddRoleAsync(role).ConfigureAwait(false);
             var roles = guild.GetUser(user.Id).Roles;
             var lowerLevelRoles = roles.Where(x => x.Name.Contains("Lvl.") && x.Name != role.Name);
             foreach (var lowerLevelRole in lowerLevelRoles)
             {
-                await guild.GetUser(user.Id).RemoveRoleAsync(lowerLevelRole);
+                await guild.GetUser(user.Id).RemoveRoleAsync(lowerLevelRole).ConfigureAwait(false);
             }
 
             var embed = new EmbedBuilder
@@ -132,33 +132,33 @@ public class LevelingModule
                     Name = guild.Name,
                     IconUrl = guild.IconUrl,
                 },
-                Title = $"Új jutalmat szereztél!",
+                Title = "Új jutalmat szereztél!",
                 Description = $"`{role.Name}`",
                 Color = Color.Gold,
             }.Build();
-            var dmchannel = await user.CreateDMChannelAsync();
-            await dmchannel.SendMessageAsync(embed: embed);
+            var dmchannel = await user.CreateDMChannelAsync().ConfigureAwait(false);
+            await dmchannel.SendMessageAsync(embed: embed).ConfigureAwait(false);
         }
 
         if (guild.GetChannel(_levelUpChannel) is SocketTextChannel channel)
         {
-            await channel.SendMessageAsync($"🥳 Gratulálok {user.Mention}, elérted a **{level}** szintet!");
+            await channel.SendMessageAsync($"🥳 Gratulálok {user.Mention}, elérted a **{level}** szintet!").ConfigureAwait(false);
         }
     }
-    
-    private async Task HandleLevelUpBySetLevel(IUser user, SocketGuild guild)
+
+    private async Task HandleLevelUpBySetLevelAsync(IUser user, SocketGuild guild)
     {
-        var level = await _database.GetUserLevelById(guild.Id, user.Id);
+        var level = await _database.GetUserLevelByIdAsync(guild.Id, user.Id).ConfigureAwait(false);
         var role = guild.Roles.FirstOrDefault(x => x.Name.Contains($"(Lvl. {level})"));
         if (role is not null && !guild.GetUser(user.Id).Roles.Contains(role))
         {
-            await guild.GetUser(user.Id).AddRoleAsync(role);
+            await guild.GetUser(user.Id).AddRoleAsync(role).ConfigureAwait(false);
             var roles = guild.GetUser(user.Id).Roles;
             var lowerLevelRoles = roles.Where(x => x.Name.Contains("Lvl.") && x.Name != role.Name);
             var usertoremoveform = guild.GetUser(user.Id);
             foreach (var lowerLevelRole in lowerLevelRoles)
             {
-                await usertoremoveform.RemoveRoleAsync(lowerLevelRole);
+                await usertoremoveform.RemoveRoleAsync(lowerLevelRole).ConfigureAwait(false);
             }
             var embed = new EmbedBuilder
             {
@@ -167,17 +167,17 @@ public class LevelingModule
                     Name = guild.Name,
                     IconUrl = guild.IconUrl,
                 },
-                Title = $"Új jutalmat szereztél!",
+                Title = "Új jutalmat szereztél!",
                 Description = $"`{role.Name}`",
                 Color = Color.Gold,
             }.Build();
-            var dmchannel = await user.CreateDMChannelAsync();
-            await dmchannel.SendMessageAsync(embed: embed);
+            var dmchannel = await user.CreateDMChannelAsync().ConfigureAwait(false);
+            await dmchannel.SendMessageAsync(embed: embed).ConfigureAwait(false);
         }
-        
+
         if (guild.GetChannel(_levelUpChannel) is SocketTextChannel channel)
         {
-            await channel.SendMessageAsync($"🥳 Gratulálok {user.Mention}, elérted a **{level}** szintet!");
+            await channel.SendMessageAsync($"🥳 Gratulálok {user.Mention}, elérted a **{level}** szintet!").ConfigureAwait(false);
         }
     }
 }

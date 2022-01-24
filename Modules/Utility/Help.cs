@@ -16,7 +16,7 @@ public class HelpCommand : InteractionModuleBase<SocketInteractionContext>
         [Summary("command", "Egy adott parancsra vonatkozó információt ad vissza")] string optCommand = "")
     {
         var guild = Context.Guild;
-        var guildCommands = await guild.GetApplicationCommandsAsync();
+        var guildCommands = await guild.GetApplicationCommandsAsync().ConfigureAwait(false);
 
         var combinedString = string.Join(", ", guildCommands.Select(command => command.Name).ToArray());
 
@@ -37,12 +37,12 @@ public class HelpCommand : InteractionModuleBase<SocketInteractionContext>
 
             if (reqCommand?.Name == optCommand)
             {
-                eb.WithTitle($"**{reqCommand?.Name.First().ToString().ToUpper() + reqCommand?.Name[1..]}**");
+                eb.WithTitle($"**{reqCommand?.Name[0].ToString().ToUpper() + reqCommand?.Name[1..]}**");
                 eb.WithDescription($"`{reqCommand?.Description}`");
             }
             else
             {
-                await RespondAsync($"Nincs ilyen parancs - `{optCommand}`");
+                await RespondAsync($"Nincs ilyen parancs - `{optCommand}`").ConfigureAwait(false);
             }
         }
         else
@@ -52,13 +52,14 @@ public class HelpCommand : InteractionModuleBase<SocketInteractionContext>
 
         if (Context.Channel is SocketDMChannel)
         {
-            await RespondAsync(embed: eb.Build());
+            await RespondAsync(embed: eb.Build()).ConfigureAwait(false);
         }
         else
         {
-            await Context.User.SendMessageAsync(embed: eb.Build());
+            await Context.User.SendMessageAsync(embed: eb.Build()).ConfigureAwait(false);
             await RespondAsync(
-                $":exclamation: **{Context.User.Mention}** Nézd meg a privát üzeneteidet :exclamation: ");
+                $":exclamation: **{Context.User.Mention}** Nézd meg a privát üzeneteidet :exclamation: ")
+                .ConfigureAwait(false);
         }
     }
 }

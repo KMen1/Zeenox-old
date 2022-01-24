@@ -17,7 +17,7 @@ public class Reset : InteractionModuleBase<SocketInteractionContext>
         psi.UseShellExecute = true;
         psi.Arguments = $"/k {path}";
         Process.Start(psi);
-        await RespondAsync("A bot újraindult.");
+        await RespondAsync("A bot újraindult.").ConfigureAwait(false);
         Environment.Exit(0);
     }
 }

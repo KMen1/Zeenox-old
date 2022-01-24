@@ -25,31 +25,21 @@ public class LogService
         _interactionService = services.GetRequiredService<InteractionService>();
     }
 
-    public void InitializeAsync()
+    public void Initialize()
     {
-        _client.Log += _client_Log;
-        _lavaNode.OnLog += _lavaNode_OnLog;
-        _interactionService.Log += _interactionService_log;
+        _client.Log += LogEventAsync;
+        _lavaNode.OnLog += LogEventAsync;
+        _interactionService.Log += LogEventAsync;
     }
 
-    private Task _interactionService_log(LogMessage arg)
+    private Task LogEventAsync(LogMessage arg)
     {
-        return Log(arg);
+        return LogAsync(arg);
     }
 
-    private Task _lavaNode_OnLog(LogMessage arg)
+    private async Task LogAsync(LogMessage logMessage)
     {
-        return Log(arg);
-    }
-
-    private Task _client_Log(LogMessage arg)
-    {
-        return Log(arg);
-    }
-
-    private async Task Log(LogMessage logMessage)
-    {
-        await _semaphoreSlim.WaitAsync();
+        await _semaphoreSlim.WaitAsync().ConfigureAwait(false);
 
         Console.ForegroundColor = logMessage.Severity switch
         {

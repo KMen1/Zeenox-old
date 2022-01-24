@@ -5,7 +5,13 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using KBot.Config;
 using KBot.Database;
+using KBot.Helpers;
 using KBot.Modules;
+using KBot.Modules.Announcements;
+using KBot.Modules.Leveling;
+using KBot.Modules.OSU;
+using KBot.Modules.TemporaryChannels;
+using KBot.Modules.Voice;
 using KBot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Victoria;
@@ -18,7 +24,7 @@ public class Bot
     {
         Console.Title = $"KBot - {DateTime.UtcNow.Year}";
     }
-    
+
     private DiscordSocketClient Client { get; set; }
     private InteractionService InteractionService { get; set; }
     private LavaNode LavaNode { get; set; }
@@ -27,20 +33,20 @@ public class Bot
     private ConfigModel.Config Config { get; set; }
     private DatabaseService Database { get; set; }
     private IServiceProvider Services { get; set; }
-    
+
     public async Task StartAsync()
     {
-        Config = await ConfigService.InitializeAsync();
-        
-        Client = new DiscordSocketClient(await ConfigService.GetClientConfig());
-        
-        Database = new DatabaseService(Config, Client);
-        
-        InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig());
-        
-        LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig());
+        Config = await ConfigService.InitializeAsync().ConfigureAwait(false);
 
-        AudioService = new AudioService(Client, LavaNode);
+        Client = new DiscordSocketClient(await ConfigService.GetClientConfig().ConfigureAwait(false));
+
+        Database = new DatabaseService(Config, Client);
+
+        InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig().ConfigureAwait(false));
+
+        LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig().ConfigureAwait(false));
+
+        AudioService = new AudioService(Client, LavaNode, Database);
         if (Config.Lavalink.Enabled)
         {
             AudioService.Initialize();
@@ -55,12 +61,12 @@ public class Bot
         {
             new MovieModule(Client, Config).Initialize();
         }
-        
+
         if (Config.Tour.Enabled)
         {
             new TourModule(Client, Config).Initialize();
         }
-        
+
         if (Config.TemporaryVoiceChannels.Enabled)
         {
             new TemporaryVoiceModule(Client, Config).Initialize();
@@ -71,22 +77,27 @@ public class Bot
             new LevelingModule(Client, Config, Database).Initialize();
         }
 
-        await GetServices();
+        if (Config.OsuApi.Enabled)
+        {
+            new OsuService(Config).Initialize();
+        }
+
+        await GetServicesAsync().ConfigureAwait(false);
 
         LogService = new LogService(Services);
-        LogService.InitializeAsync();
+        LogService.Initialize();
 
-        await new InteractionHandler(Services).InitializeAsync();
+        await new InteractionHandler(Services).InitializeAsync().ConfigureAwait(false);
 
-        await Client.LoginAsync(TokenType.Bot, Config.Client.Token);
-        await Client.StartAsync();
-        await Client.SetGameAsync("/" + Config.Client.Game, type:ActivityType.Listening);
-        await Client.SetStatusAsync(UserStatus.Online);
+        await Client.LoginAsync(TokenType.Bot, Config.Client.Token).ConfigureAwait(false);
+        await Client.StartAsync().ConfigureAwait(false);
+        await Client.SetGameAsync("/" + Config.Client.Game, type: ActivityType.Listening).ConfigureAwait(false);
+        await Client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
 
-        await Task.Delay(-1);
+        await Task.Delay(-1).ConfigureAwait(false);
     }
-    
-    private Task GetServices()
+
+    private Task GetServicesAsync()
     {
         Services = new ServiceCollection()
             .AddSingleton(Client)

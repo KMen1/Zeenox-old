@@ -17,7 +17,7 @@ public static class EmbedHelper
     private const string ErrorIcon = "https://i.ibb.co/SrZZggy/x.png";
     private const string PlayingGif = "https://bestanimations.com/media/discs/895872755cd-animated-gif-9.gif";
 
-    public static ValueTask<Embed> MakeLeave(IVoiceChannel vChannel)
+    public static ValueTask<Embed> LeaveEmbed(IVoiceChannel vChannel)
     {
         var eb = new EmbedBuilder
         {
@@ -32,7 +32,7 @@ public static class EmbedHelper
         return new ValueTask<Embed>(eb);
     }
 
-    public static ValueTask<Embed> MakeMove(IVoiceChannel vChannel)
+    public static ValueTask<Embed> MoveEmbed(IVoiceChannel vChannel)
     {
         var eb = new EmbedBuilder
         {
@@ -47,9 +47,8 @@ public static class EmbedHelper
         return new ValueTask<Embed>(eb);
     }
 
-    public static async ValueTask<Embed> MakeNowPlaying(SocketUser user, LavaPlayer player, bool isloopEnabled, string filter)
+    public static async ValueTask<Embed> NowPlayingEmbed(SocketUser user, LavaPlayer player, bool isloopEnabled, string filter)
     {
-        
         var eb = new EmbedBuilder
             {
                 Author = new EmbedAuthorBuilder
@@ -59,7 +58,7 @@ public static class EmbedHelper
                 },
                 Title = player.Track.Title,
                 Url = player.Track.Url,
-                ImageUrl = await player.Track.FetchArtworkAsync(),
+                ImageUrl = await player.Track.FetchArtworkAsync().ConfigureAwait(false),
                 Color = Color.Green,
                 Fields = new List<EmbedFieldBuilder>
                 {
@@ -96,33 +95,33 @@ public static class EmbedHelper
                     new()
                     {
                         Name = "🔊 Hangerő",
-                        Value = $"`{player.Volume}%`",
+                        Value = $"`{player.Volume.ToString()}%`",
                         IsInline = true
                     },
                     new()
                     {
                         Name = "🎶 Várólistán",
-                        Value = $"`{player.Queue.Count}`",
+                        Value = $"`{player.Queue.Count.ToString()}`",
                         IsInline = true
                     },
                     new()
                     {
                         Name = "📝 Szűrő",
-                        Value = filter is not null ? $"`{filter}`": "`Nincs`",
+                        Value = filter != string.Empty ? $"`{filter}`": "`Nincs`",
                         IsInline = true
                     }
                 }
             }.Build();
-        return await new ValueTask<Embed>(eb);
+        return await new ValueTask<Embed>(eb).ConfigureAwait(false);
     }
 
-    public static ValueTask<Embed> MakeVolume(LavaPlayer player)
+    public static ValueTask<Embed> VolumeEmbed(LavaPlayer player)
     {
         var eb = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
             {
-                Name = $"HANGERŐ {player.Volume}%-RA ÁLLÍTVA",
+                Name = $"HANGERŐ {player.Volume.ToString()}%-RA ÁLLÍTVA",
                 IconUrl = SuccessIcon
             },
             Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
@@ -131,7 +130,7 @@ public static class EmbedHelper
         return new ValueTask<Embed>(eb);
     }
 
-    public static ValueTask<Embed> MakeQueue(LavaPlayer player, bool cleared = false)
+    public static ValueTask<Embed> QueueEmbed(LavaPlayer player, bool cleared = false)
     {
         var eb = new EmbedBuilder
         {
@@ -156,16 +155,18 @@ public static class EmbedHelper
         {
             var desc = new StringBuilder();
             foreach (var track in player.Queue)
+            {
                 desc.AppendLine(
                     $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Url}) | Hossz: {track.Duration:hh\\:mm\\:ss}" +
                     "\n");
+            }
 
             eb.WithDescription(desc.ToString());
         }
         return new ValueTask<Embed>(eb.Build());
     }
 
-    public static async ValueTask<Embed> MakeAddedToQueue(LavaTrack track, LavaPlayer player)
+    public static async ValueTask<Embed> AddedToQueueEmbed(LavaTrack track, LavaPlayer player)
     {
         var eb = new EmbedBuilder
         {
@@ -176,7 +177,7 @@ public static class EmbedHelper
             },
             Title = track.Title,
             Url = track.Url,
-            ImageUrl = await track.FetchArtworkAsync(),
+            ImageUrl = await track.FetchArtworkAsync().ConfigureAwait(false),
             Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
             Color = Color.Orange,
             Footer = new EmbedFooterBuilder
@@ -184,10 +185,10 @@ public static class EmbedHelper
                 Text = $"Hosszúság -> {player.Track.Duration:hh\\:mm\\:ss}"
             }
         }.Build();
-        return await new ValueTask<Embed>(eb);
+        return await new ValueTask<Embed>(eb).ConfigureAwait(false);
     }
 
-    public static ValueTask<Embed> MakeError(string exception)
+    public static ValueTask<Embed> ErrorEmbed(string exception)
     {
         var eb = new EmbedBuilder
         {
@@ -198,8 +199,7 @@ public static class EmbedHelper
             },
             Title = "Hiba történt a parancs végrehajtása során",
             Description = "Kérlek próbáld meg újra! \n" +
-                          "Ha a hiba továbbra is fennáll, kérlek jelezd a <@132797923049209856>-nek! \n",
-            //$"A bot beragadása esetén használd a **/reset** parancsot!",
+                          "Ha a hiba továbbra is fennáll, kérlek jelezd a <@132797923049209856>-nek!",
             Color = Color.Red
         };
         eb.AddField("Hibaüzenet", $"```{exception}```");
@@ -265,7 +265,7 @@ public static class EmbedHelper
         return new ValueTask<Embed>(embed.Build());
     }
 
-    public static async Task<Embed> TourEventEmbed(SocketGuildEvent tourEvent, EventEmbedType tourEmbedType)
+    public static ValueTask<Embed> TourEventEmbed(SocketGuildEvent tourEvent, EventEmbedType tourEmbedType)
     {
         var embed = new EmbedBuilder
         {
@@ -321,6 +321,6 @@ public static class EmbedHelper
                 break;
             }
         }
-        return await new ValueTask<Embed>(embed.Build());
+        return new ValueTask<Embed>(embed.Build());
     }
 }

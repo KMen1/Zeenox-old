@@ -7,7 +7,7 @@ namespace KBot.Helpers;
 
 public static class ComponentHelper
 {
-    public static ValueTask<MessageComponent> MakeNowPlayingComponents(bool canGoBack, bool canGoForward, LavaPlayer player)
+    public static ValueTask<MessageComponent> NowPlayingComponents(bool canGoBack, bool canGoForward, LavaPlayer player)
     {
         var component = new ComponentBuilder()
             .WithButton("Előző", "previous", emote: new Emoji("⏮"), disabled: !canGoBack, row: 0)
