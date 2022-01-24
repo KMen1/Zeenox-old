@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using KBot.Services;
 
-namespace KBot.Modules.Voice;
+namespace KBot.Modules.Audio;
 
 [Group("voice", "Audio parancsok")]
 public class VoiceCommands : InteractionModuleBase<SocketInteractionContext>

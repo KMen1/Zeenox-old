@@ -107,7 +107,7 @@ public static class EmbedHelper
                     new()
                     {
                         Name = "📝 Szűrő",
-                        Value = filter != string.Empty ? $"`{filter}`": "`Nincs`",
+                        Value = filter is not null ? $"`{filter}`": "`Nincs`",
                         IsInline = true
                     }
                 }

@@ -53,6 +53,7 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+        <PackageReference Include="MingweiSamuel.Camille" Version="2.8.0" />
         <PackageReference Include="MongoDB.Driver" Version="2.14.1" />
         <PackageReference Include="Roslynator.Analyzers" Version="4.0.0">
           <PrivateAssets>all</PrivateAssets>

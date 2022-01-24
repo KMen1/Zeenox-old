@@ -51,15 +51,7 @@ public class DatabaseService
 
         var guild = new GuildModel
         {
-            GuildId = guildId,
-            Audio = new Audio
-            {
-                IsLooping = false,
-                EnabledFilter = string.Empty,
-                NowPlayingMessageChannelId = 0,
-                NowPlayingMessageId = 0,
-                History = Array.Empty<AudioTrack>().ToList()
-            }
+            GuildId = guildId
         };
         var guildUsers = _client.GetGuild(guildId).Users;
         var humans = guildUsers.Where(x => !x.IsBot);
@@ -298,79 +290,7 @@ public class DatabaseService
         return user.LastVoiceChannelJoin;
     }
 
-    public async Task SetNowPlayingMessageAsync(ulong guildId, ulong channelId, ulong messageId)
-    {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
-            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        guild.Audio.NowPlayingMessageChannelId = channelId;
-        guild.Audio.NowPlayingMessageId = messageId;
-
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
-    }
-
-    public async Task<(ulong channelId, ulong messageId)> GetNowPlayingMessageAsync(ulong guildId)
-    {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
-            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        return (guild.Audio.NowPlayingMessageChannelId, guild.Audio.NowPlayingMessageId);
-    }
-
-    public async Task SetEnabledFilterAsync(ulong guildId, string filter)
-    {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
-            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        guild.Audio.EnabledFilter = filter;
-
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
-    }
-    public async Task<string> GetEnabledFilterAsync(ulong guildId)
-    {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
-            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        return guild.Audio.EnabledFilter;
-    }
-
-    public async Task SetLoopEnabledAsync(ulong guildId, bool isLoop)
-    {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
-            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        guild.Audio.IsLooping = isLoop;
-
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
-    }
-
-    public async Task<bool> GetLoopEnabledAsync(ulong guildId)
-    {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
-            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        return guild.Audio.IsLooping;
-    }
-
-    public async Task AddTrackToHistoryAsync(ulong guildId, ulong userId, LavaTrack track)
+    /*public async Task AddTrackToHistoryAsync(ulong guildId, ulong userId, LavaTrack track)
     {
         var client = new MongoClient(_config.MongoDb.ConnectionString);
         var database = client.GetDatabase(_config.MongoDb.Database);
@@ -406,7 +326,7 @@ public class DatabaseService
             await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         }
         return track;
-    }
+    }*/
 
     public async Task SetUserOsuIdAsync(ulong guildId, ulong userId, ulong osuId)
     {

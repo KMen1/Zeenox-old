@@ -5,7 +5,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using KBot.Enums;
 
-namespace KBot.Modules.Voice;
+namespace KBot.Modules.Audio;
 
 public class Components : InteractionModuleBase<SocketInteractionContext>
 {

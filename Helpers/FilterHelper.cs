@@ -9,9 +9,9 @@ public static class FilterHelper
     {
         var equalizer = new EqualizerBand[]
         {
-            new(0, 0.6),
-            new(1, 0.67),
-            new(2, 0.67)
+            new(0, 0.2),
+            new(1, 0.2),
+            new(2, 0.2)
         };
         return equalizer;
     }

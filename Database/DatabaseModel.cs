@@ -15,11 +15,9 @@ public class GuildModel
 
     public ulong GuildId { get; init; }
 
-    public GuildConfig GuildConfig { get; set; }
+    //public GuildConfig GuildConfig { get; set; }
 
     public List<User> Users { get; set; }
-
-    public Audio Audio { get; init; }
 }
 
 public class GuildConfig
@@ -33,19 +31,6 @@ public class GuildConfig
     public ConfigModel.TourConfig TourEvents { get; set; }
 
     public ConfigModel.LevelingConfig Leveling { get; set; }
-}
-
-public class Audio
-{
-    public ulong NowPlayingMessageChannelId { get; set; }
-
-    public ulong NowPlayingMessageId { get; set; }
-
-    public string EnabledFilter { get; set; }
-
-    public bool IsLooping { get; set; }
-
-    public List<AudioTrack> History { get; init; }
 }
 
 public class User
