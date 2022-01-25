@@ -47,7 +47,7 @@ public static class EmbedHelper
         return new ValueTask<Embed>(eb);
     }
 
-    public static async ValueTask<Embed> NowPlayingEmbed(SocketUser user, LavaPlayer player, bool isloopEnabled, string filter)
+    public static async ValueTask<Embed> NowPlayingEmbed(IUser user, LavaPlayer player, bool isloopEnabled, string filter, int queueLength)
     {
         var eb = new EmbedBuilder
             {
@@ -65,7 +65,7 @@ public static class EmbedHelper
                     new()
                     {
                         Name = "👨 Hozzáadta",
-                        Value = $"{user.Mention}",
+                        Value = user.Mention,
                         IsInline = true
                     },
                     new()
@@ -101,7 +101,7 @@ public static class EmbedHelper
                     new()
                     {
                         Name = "🎶 Várólistán",
-                        Value = $"`{player.Queue.Count.ToString()}`",
+                        Value = $"`{queueLength.ToString()}`",
                         IsInline = true
                     },
                     new()

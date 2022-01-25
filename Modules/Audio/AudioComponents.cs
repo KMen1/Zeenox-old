@@ -53,7 +53,7 @@ public class Components : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("next")]
     public async Task Next()
     {
-        await AudioService.PlayNextTrackAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        await AudioService.PlayNextTrackAsync(Context.Guild).ConfigureAwait(false);
         await DeferAsync().ConfigureAwait(false);
     }
     [ComponentInteraction("previous")]

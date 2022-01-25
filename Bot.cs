@@ -46,7 +46,7 @@ public class Bot
 
         LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig().ConfigureAwait(false));
 
-        AudioService = new AudioService(Client, LavaNode, Database);
+        AudioService = new AudioService(Client, LavaNode);
         if (Config.Lavalink.Enabled)
         {
             AudioService.Initialize();
