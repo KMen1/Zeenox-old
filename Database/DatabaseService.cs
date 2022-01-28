@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord.WebSocket;
 using KBot.Config;
 using MongoDB.Driver;
-using Victoria;
 
 namespace KBot.Database;
 
@@ -13,7 +12,7 @@ public class DatabaseService
 {
     private readonly ConfigModel.Config _config;
     private readonly DiscordSocketClient _client;
-    
+
     public DatabaseService(ConfigModel.Config config, DiscordSocketClient client)
     {
         _config = config;
@@ -232,6 +231,17 @@ public class DatabaseService
         return user?.Level ?? 0;
     }
 
+    public async Task<List<User>> GetTopAsync(ulong guildId, int users)
+    {
+        var client = new MongoClient(_config.MongoDb.ConnectionString);
+        var database = client.GetDatabase(_config.MongoDb.Database);
+        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
+
+        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
+        return guild.Users.OrderByDescending(x => x.Points).Take(users).ToList();
+    }
+
     public async Task<DateTime> GetDailyClaimDateByIdAsync(ulong guildId, ulong userId)
     {
         var client = new MongoClient(_config.MongoDb.ConnectionString);
@@ -290,44 +300,6 @@ public class DatabaseService
         return user.LastVoiceChannelJoin;
     }
 
-    /*public async Task AddTrackToHistoryAsync(ulong guildId, ulong userId, LavaTrack track)
-    {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
-            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        guild.Audio.History.Add(new AudioTrack
-        {
-            Track = track,
-            UserId = userId
-        });
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
-    }
-
-    public async Task<AudioTrack> GetTrackFromHistoryAsync(ulong guildId, bool remove)
-    {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
-            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        var history = guild.Audio.History;
-        if (history.Count == 0)
-        {
-            return null;
-        }
-        var track = guild.Audio.History.Last();
-        if (remove)
-        {
-            guild.Audio.History.Remove(track);
-            await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
-        }
-        return track;
-    }*/
-
     public async Task SetUserOsuIdAsync(ulong guildId, ulong userId, ulong osuId)
     {
         var client = new MongoClient(_config.MongoDb.ConnectionString);
@@ -355,5 +327,17 @@ public class DatabaseService
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
         return user.OsuId;
+    }
+
+    public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(ulong guildId, int limit)
+    {
+            var client = new MongoClient(_config.MongoDb.ConnectionString);
+        var database = client.GetDatabase(_config.MongoDb.Database);
+        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
+
+        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
+
+        return guild.Users.Where(x => x.OsuId != 0).Select(x => (x.UserId, x.OsuId)).Take(limit).ToList();
     }
 }

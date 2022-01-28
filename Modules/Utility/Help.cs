@@ -15,8 +15,7 @@ public class HelpCommand : InteractionModuleBase<SocketInteractionContext>
     public async Task Help(
         [Summary("command", "Egy adott parancsra vonatkozó információt ad vissza")] string optCommand = "")
     {
-        var guild = Context.Guild;
-        var guildCommands = await guild.GetApplicationCommandsAsync().ConfigureAwait(false);
+        var guildCommands = await Context.Guild.GetApplicationCommandsAsync().ConfigureAwait(false);
 
         var combinedString = string.Join(", ", guildCommands.Select(command => command.Name).ToArray());
 

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using Victoria.Filters;
 
-namespace KBot.Helpers;
+namespace KBot.Modules.Audio.Helpers;
 
-public static class FilterHelper
+public static class Filters
 {
     public static EqualizerBand[] BassBoost()
     {

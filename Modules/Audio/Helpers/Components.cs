@@ -1,13 +1,12 @@
-﻿using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Victoria;
 using Victoria.Enums;
 
-namespace KBot.Helpers;
+namespace KBot.Modules.Audio.Helpers;
 
-public static class ComponentHelper
+public static class Components
 {
-    public static ValueTask<MessageComponent> NowPlayingComponents(bool canGoBack, bool canGoForward, LavaPlayer player)
+    public static MessageComponent NowPlayingComponents(bool canGoBack, bool canGoForward, LavaPlayer player)
     {
         var component = new ComponentBuilder()
             .WithButton("Előző", "previous", emote: new Emoji("⏮"), disabled: !canGoBack, row: 0)
@@ -40,6 +39,6 @@ public static class ComponentHelper
                     .AddOption("Vibrato hanghatás", "vibrato")
                     .AddOption("Tremolo hanghatás", "tremolo")
                 , 2).Build();
-        return new ValueTask<MessageComponent>(component);
+        return component;
     }
 }

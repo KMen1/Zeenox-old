@@ -3,7 +3,7 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Config;
 using KBot.Enums;
-using KBot.Helpers;
+using KBot.Modules.Announcements.Helpers;
 
 namespace KBot.Modules.Announcements;
 
@@ -41,7 +41,7 @@ public class MovieModule
             var movieRole = arg.Guild.GetRole(MovieRoleId);
             var notifyChannel = arg.Guild.GetTextChannel(MovieEventAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(movieRole.Mention,
-                    embed: await EmbedHelper.MovieEventEmbed(arg, EventEmbedType.Scheduled).ConfigureAwait(false))
+                    embed: Embeds.MovieEventEmbed(arg, EventEmbedType.Scheduled))
                 .ConfigureAwait(false);
         }
     }
@@ -55,7 +55,7 @@ public class MovieModule
             var movieRole = arg2.Guild.GetRole(MovieRoleId);
             var notifyChannel = arg2.Guild.GetTextChannel(MovieEventAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(movieRole.Mention,
-                    embed: await EmbedHelper.MovieEventEmbed(arg2, EventEmbedType.Updated).ConfigureAwait(false))
+                    embed: Embeds.MovieEventEmbed(arg2, EventEmbedType.Updated))
                 .ConfigureAwait(false);
         }
     }
@@ -69,7 +69,7 @@ public class MovieModule
             var movieRole = arg.Guild.GetRole(MovieRoleId);
             var notifyChannel = arg.Guild.GetTextChannel(MovieEventAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(movieRole.Mention,
-                    embed: await EmbedHelper.MovieEventEmbed(arg, EventEmbedType.Started).ConfigureAwait(false))
+                    embed: Embeds.MovieEventEmbed(arg, EventEmbedType.Started))
                 .ConfigureAwait(false);
         }
     }
@@ -83,7 +83,7 @@ public class MovieModule
             var movieRole = arg.Guild.GetRole(MovieRoleId);
             var notifyChannel = arg.Guild.GetTextChannel(MovieEventAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(movieRole.Mention,
-                    embed: await EmbedHelper.MovieEventEmbed(arg, EventEmbedType.Cancelled).ConfigureAwait(false))
+                    embed: Embeds.MovieEventEmbed(arg, EventEmbedType.Cancelled))
                 .ConfigureAwait(false);
         }
     }

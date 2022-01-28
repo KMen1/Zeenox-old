@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Helpers;
+using KBot.Modules.Audio;
+using KBot.Modules.Audio.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KBot.Services;
@@ -42,37 +43,37 @@ public class InteractionHandler
             case InteractionCommandError.Exception:
             {
                 await interaction.FollowupAsync(embed:
-                    await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ConvertFailed:
             {
                 await interaction.FollowupAsync(embed:
-                    await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.BadArgs:
             {
                 await interaction.FollowupAsync(embed:
-                    await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.Unsuccessful:
             {
                 await interaction.FollowupAsync(embed:
-                    await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.UnmetPrecondition:
             {
                 await interaction.FollowupAsync(embed:
-                    await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ParseFailed:
             {
                 await interaction.FollowupAsync(embed:
-                    await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
         }
@@ -89,32 +90,32 @@ public class InteractionHandler
         {
             case InteractionCommandError.Exception:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ConvertFailed:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.BadArgs:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.Unsuccessful:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.UnmetPrecondition:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ParseFailed:
             {
-                await interaction.FollowupAsync(embed: await EmbedHelper.ErrorEmbed(result.ErrorReason).ConfigureAwait(false)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
         }

@@ -3,7 +3,7 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Config;
 using KBot.Enums;
-using KBot.Helpers;
+using KBot.Modules.Announcements.Helpers;
 
 namespace KBot.Modules.Announcements;
 
@@ -36,8 +36,7 @@ public class TourModule
             var tourRole = arg.Guild.GetRole(_tourRoleId);
             var notifyChannel = arg.Guild.GetTextChannel(_tourAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(tourRole.Mention, 
-                    embed: await EmbedHelper.TourEventEmbed(arg, EventEmbedType.Scheduled).ConfigureAwait(false))
-                .ConfigureAwait(false);
+                    embed: Embeds.TourEventEmbed(arg, EventEmbedType.Scheduled)).ConfigureAwait(false);
         }
     }
     private static async Task AnnounceScheduledEventUpdatedAsync(Cacheable<SocketGuildEvent, ulong> arg1, SocketGuildEvent arg2)
@@ -48,8 +47,7 @@ public class TourModule
             var tourRole = arg2.Guild.GetRole(_tourRoleId);
             var notifyChannel = arg2.Guild.GetTextChannel(_tourAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(tourRole.Mention,
-                    embed: await EmbedHelper.TourEventEmbed(arg2, EventEmbedType.Updated).ConfigureAwait(false))
-                .ConfigureAwait(false);
+                    embed: Embeds.TourEventEmbed(arg2, EventEmbedType.Updated)).ConfigureAwait(false);
         }
     }
     private static async Task AnnounceScheduledEventStartedAsync(SocketGuildEvent arg)
@@ -60,8 +58,7 @@ public class TourModule
             var tourRole = arg.Guild.GetRole(_tourRoleId);
             var notifyChannel = arg.Guild.GetTextChannel(_tourAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(tourRole.Mention,
-                    embed: await EmbedHelper.TourEventEmbed(arg, EventEmbedType.Started).ConfigureAwait(false))
-                .ConfigureAwait(false);
+                    embed: Embeds.TourEventEmbed(arg, EventEmbedType.Started)).ConfigureAwait(false);
         }
     }
     private static async Task AnnounceScheduledEventCancelledAsync(SocketGuildEvent arg)
@@ -72,8 +69,7 @@ public class TourModule
             var tourRole = arg.Guild.GetRole(_tourRoleId);
             var notifyChannel = arg.Guild.GetTextChannel(_tourAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(tourRole.Mention,
-                    embed: await EmbedHelper.TourEventEmbed(arg, EventEmbedType.Cancelled).ConfigureAwait(false))
-                .ConfigureAwait(false);
+                    embed: Embeds.TourEventEmbed(arg, EventEmbedType.Cancelled)).ConfigureAwait(false);
         }
     }
 }

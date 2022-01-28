@@ -16,28 +16,56 @@ namespace KBot.Modules.OSU;
 
 public class OsuService
 {
-    private static ulong _id;
-    private static string _appSecret;
-    private static ConfigModel.Config _config;
+    private static ClientCredentialsGrant _credentials;
 
     public OsuService(ConfigModel.Config config)
     {
-        _config = config;
+        _credentials = new ClientCredentialsGrant(config.OsuApi.AppId, config.OsuApi.AppSecret);
     }
 
-    public void Initialize()
+    public static string GetEmojiFromGrade(ScoreGrade grade)
     {
-        _id = _config.OsuApi.AppId;
-        _appSecret = _config.OsuApi.AppSecret;
+        switch (grade)
+        {
+            case ScoreGrade.N:
+                return "<:osuF:936588252763271168>";
+            case ScoreGrade.F:
+                return "<:osuF:936588252763271168>";
+            case ScoreGrade.D:
+                return "<:osuD:936588252884910130>";
+            case ScoreGrade.C:
+                return "<:osuC:936588253031723078>";
+            case ScoreGrade.B:
+                return "<:osuB:936588252830380042>";
+            case ScoreGrade.A:
+                return "<:osuA:936588252754882570>";
+            case ScoreGrade.S:
+                return "<:osuS:936588252872318996>";
+            case ScoreGrade.SH:
+                return "<:osuSH:936588252834574336>";
+            case ScoreGrade.X:
+                return "<:osuX:936588252402573333>";
+            case ScoreGrade.XH:
+                return "<:osuXH:936588252822007818>";
+        }
+        return "<:osuF:936588252763271168>";
     }
 
-    public static async Task<Score> GetRecentScoreAsync(ulong userId)
+    public static async Task<User> GetUserAsync(ulong userId)
     {
         using var httpClient = new HttpClient();
-        var credentials = new ClientCredentialsGrant(_id, _appSecret);
-        var token = await Authentication.OAuthClientCredentialsAsync(credentials, httpClient).ConfigureAwait(false);
+        var token = await Authentication.OAuthClientCredentialsAsync(_credentials, httpClient).ConfigureAwait(false);
 
-        var scoresRequest = new GetUserScoresRequest(new UserUrlParam(userId), new ScoreTypeUrlParam(ScoreType.RECENT), token.Token, new IncludeFailsQueyParam(true), new ModeQueryParam(Gamemode.osu), new LimitQueryParam(1));
+        var userRequest = new GetUserRequest(new UserUrlParam(userId), new ModeUrlParam(Gamemode.osu), token.Token);
+        return await userRequest.GetAsync(httpClient).ConfigureAwait(false);
+    }
+
+    public static async Task<Score> GetScoreAsync(ulong userId, ScoreType scoreType)
+    {
+        using var httpClient = new HttpClient();
+        var token = await Authentication.OAuthClientCredentialsAsync(_credentials, httpClient).ConfigureAwait(false);
+
+        var scoresRequest = new GetUserScoresRequest(new UserUrlParam(userId), new ScoreTypeUrlParam(scoreType), token.Token, new IncludeFailsQueyParam(true), new ModeQueryParam(Gamemode.osu), new LimitQueryParam(1));
         var scores = await scoresRequest.GetAsync(httpClient).ConfigureAwait(false);
         return scores.FirstOrDefault();
     }
@@ -45,8 +73,7 @@ public class OsuService
     public static async Task<Beatmap> GetBeatMapByIdAsync(ulong beatMapId)
     {
         using var httpClient = new HttpClient();
-        var credentials = new ClientCredentialsGrant(_id, _appSecret);
-        var token = await Authentication.OAuthClientCredentialsAsync(credentials, httpClient).ConfigureAwait(false);
+        var token = await Authentication.OAuthClientCredentialsAsync(_credentials, httpClient).ConfigureAwait(false);
 
         var beatmapRequest = new GetBeatmapRequest(new BeatmapUrlParam(beatMapId), token.Token);
         var beatmap = await beatmapRequest.GetAsync(httpClient).ConfigureAwait(false);

@@ -43,9 +43,8 @@ public class WarnModule : KBotModuleBase
     [SlashCommand("unwarn", "Figyelmeztetést ad az adott felhasználónak.")]
     public async Task RemoveWarnAsync(SocketUser user, string reason, int warnId)
     {
-        var userId = user.Id;
         await DeferAsync().ConfigureAwait(false);
-        var result = await Database.RemoveWarnByUserIdAsync(Context.Guild.Id, userId, warnId).ConfigureAwait(false);
+        var result = await Database.RemoveWarnByUserIdAsync(Context.Guild.Id, user.Id, warnId).ConfigureAwait(false);
         if (!result)
         {
             await FollowupWithEmbedAsync(EmbedResult.Error, "Nem sikerült a figyelmeztetés törlése!",
@@ -88,7 +87,6 @@ public class WarnModule : KBotModuleBase
             warnString.AppendLine(
                 $"{warns.TakeWhile(n => n != warn).Count() + 1}. {Context.Client.GetUser(warn.ModeratorId).Mention} által - Indok:`{warn.Reason}`");
         }
-        await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} figyelmeztetései sikeresen lekérve", warnString.ToString()).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} figyelmeztetései", warnString.ToString()).ConfigureAwait(false);
     }
-
 }

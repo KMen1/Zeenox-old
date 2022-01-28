@@ -7,7 +7,7 @@ using KBot.Enums;
 
 namespace KBot.Modules.Audio;
 
-public class Components : InteractionModuleBase<SocketInteractionContext>
+public class MusicComponents : InteractionModuleBase<SocketInteractionContext>
 {
     public AudioService AudioService { get; set; }
 
@@ -27,52 +27,52 @@ public class Components : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("stop")]
     public async Task Stop()
     {
-        await AudioService.StopAsync(Context.Guild).ConfigureAwait(false);
+        await DeferAsync().ConfigureAwait(false);
         await AudioService.DisconnectAsync(Context.Guild).ConfigureAwait(false);
         await ((SocketMessageComponent)Context.Interaction).Message.DeleteAsync().ConfigureAwait(false);
     }
     [ComponentInteraction("volumeup")]
     public async Task VolumeUp()
     {
-        await AudioService.SetVolumeAsync(Context.Guild, VoiceButtonType.VolumeUp).ConfigureAwait(false);
         await DeferAsync().ConfigureAwait(false);
+        await AudioService.SetVolumeAsync(Context.Guild, VoiceButtonType.VolumeUp).ConfigureAwait(false);
     }
     [ComponentInteraction("volumedown")]
     public async Task VolumeDown()
     {
-        await AudioService.SetVolumeAsync(Context.Guild, VoiceButtonType.VolumeDown).ConfigureAwait(false);
         await DeferAsync().ConfigureAwait(false);
+        await AudioService.SetVolumeAsync(Context.Guild, VoiceButtonType.VolumeDown).ConfigureAwait(false);
     }
 
     [ComponentInteraction("pause")]
     public async Task Pause()
     {
-        await AudioService.PauseOrResumeAsync(Context.Guild).ConfigureAwait(false);
         await DeferAsync().ConfigureAwait(false);
+        await AudioService.PauseOrResumeAsync(Context.Guild).ConfigureAwait(false);
     }
     [ComponentInteraction("next")]
     public async Task Next()
     {
-        await AudioService.PlayNextTrackAsync(Context.Guild).ConfigureAwait(false);
         await DeferAsync().ConfigureAwait(false);
+        await AudioService.PlayNextTrackAsync(Context.Guild).ConfigureAwait(false);
     }
     [ComponentInteraction("previous")]
     public async Task Previous()
     {
-        await AudioService.PlayPreviousTrackAsync(Context.Guild).ConfigureAwait(false);
         await DeferAsync().ConfigureAwait(false);
+        await AudioService.PlayPreviousTrackAsync(Context.Guild, Context.User).ConfigureAwait(false);
     }
     [ComponentInteraction("repeat")]
     public async Task Repeat()
     {
-        await AudioService.SetRepeatAsync(Context.Guild).ConfigureAwait(false);
         await DeferAsync().ConfigureAwait(false);
+        await AudioService.SetRepeatAsync(Context.Guild).ConfigureAwait(false);
     }
 
     [ComponentInteraction("clearfilters")]
     public async Task ClearFilters()
     {
-        await AudioService.ClearFiltersAsync(Context.Guild).ConfigureAwait(false);
         await DeferAsync().ConfigureAwait(false);
+        await AudioService.ClearFiltersAsync(Context.Guild).ConfigureAwait(false);
     }
 }

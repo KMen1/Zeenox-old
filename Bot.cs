@@ -5,8 +5,6 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using KBot.Config;
 using KBot.Database;
-using KBot.Helpers;
-using KBot.Modules;
 using KBot.Modules.Announcements;
 using KBot.Modules.Audio;
 using KBot.Modules.Leveling;
@@ -22,7 +20,7 @@ public class Bot
 {
     public Bot()
     {
-        Console.Title = $"KBot - {DateTime.UtcNow.Year}";
+        Console.Title = $"KBot - {DateTime.UtcNow.Year.ToString()}";
     }
 
     private DiscordSocketClient Client { get; set; }
@@ -79,7 +77,7 @@ public class Bot
 
         if (Config.OsuApi.Enabled)
         {
-            new OsuService(Config).Initialize();
+            new OsuService(Config);
         }
 
         await GetServicesAsync().ConfigureAwait(false);

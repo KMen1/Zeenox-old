@@ -12,8 +12,8 @@ public class LevelingModule
 {
     private readonly DiscordSocketClient _client;
     private readonly DatabaseService _database;
-    private readonly int _pointsToLevelUp;
     private readonly ulong _levelUpChannel;
+    private readonly int _pointsToLevelUp;
 
     public LevelingModule(DiscordSocketClient client, ConfigModel.Config config, DatabaseService database)
     {
