@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using KBot.Config;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Victoria;
 
 namespace KBot.Database;
 
@@ -15,22 +13,22 @@ public class GuildModel
 
     public ulong GuildId { get; init; }
 
-    //public GuildConfig GuildConfig { get; set; }
+    public GuildConfig Config { get; set; }
 
     public List<User> Users { get; set; }
 }
 
 public class GuildConfig
 {
-    public ConfigModel.AnnouncementConfig Announcements { get; set; }
+    public AnnouncementConfig Announcements { get; set; }
 
-    public ConfigModel.TemporaryVoiceChannelConfig TemporaryChannels { get; set; }
+    public TemporaryVoiceChannelConfig TemporaryChannels { get; set; }
 
-    public ConfigModel.MovieConfig MovieEvents { get; set; }
+    public MovieConfig MovieEvents { get; set; }
 
-    public ConfigModel.TourConfig TourEvents { get; set; }
+    public TourConfig TourEvents { get; set; }
 
-    public ConfigModel.LevelingConfig Leveling { get; set; }
+    public LevelingConfig Leveling { get; set; }
 }
 
 public class User
@@ -59,9 +57,45 @@ public class Warn
     public DateTime Date { get; set; }
 }
 
-public class AudioTrack
+public class AnnouncementConfig
 {
-    public ulong UserId { get; set; }
+    public bool Enabled { get; set; }
+    public ulong UserJoinAnnouncementChannelId { get; set; }
+    public ulong UserLeaveAnnouncementChannelId { get; set; }
+    public ulong UserBanAnnouncementChannelId { get; set; }
+    public ulong UserUnbanAnnouncementChannelId { get; set; }
+}
 
-    public LavaTrack Track { get; init; }
+public class TemporaryVoiceChannelConfig
+{
+    public bool Enabled { get; set; }
+    public ulong CategoryId { get; set; }
+
+    public ulong CreateChannelId { get; set; }
+}
+
+public class MovieConfig
+{
+    public bool Enabled { get; set; }
+    public ulong EventAnnouncementChannelId { get; set; }
+
+    public ulong StreamingChannelId { get; set; }
+
+    public ulong RoleId { get; set; }
+}
+
+public class TourConfig
+{
+    public bool Enabled { get; set; }
+    public ulong EventAnnouncementChannelId { get; set; }
+
+    public ulong RoleId { get; set; }
+}
+
+public class LevelingConfig
+{
+    public bool Enabled { get; set; }
+    public int PointsToLevelUp { get; set; }
+
+    public ulong LevelUpAnnouncementChannelId { get; set; }
 }

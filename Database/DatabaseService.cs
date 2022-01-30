@@ -10,10 +10,10 @@ namespace KBot.Database;
 
 public class DatabaseService
 {
-    private readonly ConfigModel.Config _config;
+    private readonly BotConfig _config;
     private readonly DiscordSocketClient _client;
 
-    public DatabaseService(ConfigModel.Config config, DiscordSocketClient client)
+    public DatabaseService(BotConfig config, DiscordSocketClient client)
     {
         _config = config;
         _client = client;
@@ -50,7 +50,38 @@ public class DatabaseService
 
         var guild = new GuildModel
         {
-            GuildId = guildId
+            GuildId = guildId,
+            Config = new GuildConfig
+            {
+                Announcements = new AnnouncementConfig
+                {
+                    UserBanAnnouncementChannelId = 0,
+                    UserUnbanAnnouncementChannelId = 0,
+                    UserJoinAnnouncementChannelId = 0,
+                    UserLeaveAnnouncementChannelId = 0,
+                },
+                Leveling = new LevelingConfig
+                {
+                    LevelUpAnnouncementChannelId = 0,
+                    PointsToLevelUp = 0
+                },
+                MovieEvents = new MovieConfig
+                {
+                    EventAnnouncementChannelId = 0,
+                    RoleId = 0,
+                    StreamingChannelId = 0
+                },
+                TemporaryChannels = new TemporaryVoiceChannelConfig
+                {
+                    CategoryId = 0,
+                    CreateChannelId = 0
+                },
+                TourEvents = new TourConfig
+                {
+                    EventAnnouncementChannelId = 0,
+                    RoleId = 0
+                }
+            }
         };
         var guildUsers = _client.GetGuild(guildId).Users;
         var humans = guildUsers.Where(x => !x.IsBot);
@@ -67,6 +98,17 @@ public class DatabaseService
         guild.Users = usersToAdd;
         await collection.InsertOneAsync(guild).ConfigureAwait(false);
         return guild;
+    }
+
+    public async ValueTask<GuildConfig> GetGuildConfigAsync(ulong guildId)
+    {
+        var client = new MongoClient(_config.MongoDb.ConnectionString);
+        var database = client.GetDatabase(_config.MongoDb.Database);
+        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
+
+        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
+        return guild.Config;
     }
 
     private async ValueTask<User> RegisterUserAsync(ulong guildId, ulong userId)
@@ -331,7 +373,7 @@ public class DatabaseService
 
     public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(ulong guildId, int limit)
     {
-            var client = new MongoClient(_config.MongoDb.ConnectionString);
+        var client = new MongoClient(_config.MongoDb.ConnectionString);
         var database = client.GetDatabase(_config.MongoDb.Database);
         var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
 
@@ -339,5 +381,18 @@ public class DatabaseService
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
 
         return guild.Users.Where(x => x.OsuId != 0).Select(x => (x.UserId, x.OsuId)).Take(limit).ToList();
+    }
+
+    public async Task SaveGuildConfigAsync(ulong guildId, GuildConfig config)
+    {
+        var client = new MongoClient(_config.MongoDb.ConnectionString);
+        var database = client.GetDatabase(_config.MongoDb.Database);
+        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
+        
+        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+            .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
+        
+        guild.Config = config;
+        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
     }
 }

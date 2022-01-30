@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Fergun.Interactive;
 using KBot.Config;
 using KBot.Database;
 using KBot.Modules.Announcements;
@@ -23,14 +24,15 @@ public class Bot
         Console.Title = $"KBot - {DateTime.UtcNow.Year.ToString()}";
     }
 
-    private DiscordSocketClient Client { get; set; }
-    private InteractionService InteractionService { get; set; }
-    private LavaNode LavaNode { get; set; }
-    private LogService LogService { get; set; }
-    private AudioService AudioService { get; set; }
-    private ConfigModel.Config Config { get; set; }
-    private DatabaseService Database { get; set; }
-    private IServiceProvider Services { get; set; }
+    private static DiscordSocketClient Client;
+    private static LavaNode LavaNode;
+    private static LogService LogService;
+    private static BotConfig Config;
+    private static DatabaseService Database;
+    private static InteractionService InteractionService;
+    private static InteractiveService InteractiveService;
+    private static AudioService AudioService;
+    private static IServiceProvider Services;
 
     public async Task StartAsync()
     {
@@ -45,40 +47,18 @@ public class Bot
         LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig().ConfigureAwait(false));
 
         AudioService = new AudioService(Client, LavaNode);
-        if (Config.Lavalink.Enabled)
+        AudioService.Initialize();
+        InteractiveService = new InteractiveService(Client, new InteractiveConfig
         {
-            AudioService.Initialize();
-        }
-
-        if (Config.Announcements.Enabled)
-        {
-            new AnnouncementsModule(Client, Config).Initialize();
-        }
-
-        if (Config.Movie.Enabled)
-        {
-            new MovieModule(Client, Config).Initialize();
-        }
-
-        if (Config.Tour.Enabled)
-        {
-            new TourModule(Client, Config).Initialize();
-        }
-
-        if (Config.TemporaryVoiceChannels.Enabled)
-        {
-            new TemporaryVoiceModule(Client, Config).Initialize();
-        }
-
-        if (Config.Leveling.Enabled)
-        {
-            new LevelingModule(Client, Config, Database).Initialize();
-        }
-
-        if (Config.OsuApi.Enabled)
-        {
-            new OsuService(Config);
-        }
+            DefaultTimeout = new TimeSpan(0, 0, 5, 0),
+            LogLevel = LogSeverity.Debug
+        });
+        new AnnouncementsModule(Client, Database).Initialize();
+        new MovieModule(Client, Database).Initialize();
+        new TourModule(Client, Database).Initialize();
+        new TemporaryVoiceModule(Client, Database).Initialize();
+        new LevelingModule(Client, Database).Initialize();
+        new OsuService(Config);
 
         await GetServicesAsync().ConfigureAwait(false);
 
@@ -104,6 +84,7 @@ public class Bot
             .AddSingleton(AudioService)
             .AddSingleton(Config)
             .AddSingleton(Database)
+            .AddSingleton(InteractiveService)
             .BuildServiceProvider();
         return Task.CompletedTask;
     }

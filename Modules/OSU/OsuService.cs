@@ -18,7 +18,7 @@ public class OsuService
 {
     private static ClientCredentialsGrant _credentials;
 
-    public OsuService(ConfigModel.Config config)
+    public OsuService(BotConfig config)
     {
         _credentials = new ClientCredentialsGrant(config.OsuApi.AppId, config.OsuApi.AppSecret);
     }

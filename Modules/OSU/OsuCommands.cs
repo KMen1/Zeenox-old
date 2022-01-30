@@ -8,7 +8,6 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
-using KBot.Database;
 using KBot.Enums;
 using osu.API.Data.Enums;
 using User = osu.API.Data.User;
@@ -18,8 +17,6 @@ namespace KBot.Modules.OSU;
 [Group("osu", "osu! parancsok")]
 public class Osu : KBotModuleBase
 {
-    public DatabaseService Database { get; set; }
-
     [SlashCommand("set", "osu! profil beállítása")]
     public async Task OsuSetProfile(string link)
     {

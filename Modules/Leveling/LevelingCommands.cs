@@ -14,15 +14,6 @@ public class Levels : KBotModuleBase
 {
     public DatabaseService Database { get; set; }
 
-    [RequireOwner]
-    [SlashCommand("registerguild", "Regisztrálja a szerverre a botot")]
-    public async Task RegisterGuildAsync()
-    {
-        await DeferAsync().ConfigureAwait(false);
-        await Database.RegisterGuildAsync(Context.Guild.Id).ConfigureAwait(false);
-        await FollowupAsync("Kész").ConfigureAwait(false);
-    }
-
     [SlashCommand("rank", "Saját/más szint és xp lekérése")]
     public async Task GetLevelAsync(SocketUser user = null)
     {

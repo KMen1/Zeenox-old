@@ -13,8 +13,6 @@ namespace KBot.Modules.Moderation;
 [Group("mod", "Moderációs parancsok")]
 public class WarnModule : KBotModuleBase
 {
-    public DatabaseService Database { get; set; }
-
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("warn", "Figyelmeztetést ad az adott felhasználónak.")]
     public async Task WarnAsync(SocketUser user, string reason)

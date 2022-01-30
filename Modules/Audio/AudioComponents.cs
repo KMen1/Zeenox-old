@@ -7,10 +7,8 @@ using KBot.Enums;
 
 namespace KBot.Modules.Audio;
 
-public class MusicComponents : InteractionModuleBase<SocketInteractionContext>
+public class MusicComponents : KBotModuleBase
 {
-    public AudioService AudioService { get; set; }
-
     [ComponentInteraction("filterselectmenu")]
     public async Task HandleFilterSelectMenu(params string[] selections)
     {

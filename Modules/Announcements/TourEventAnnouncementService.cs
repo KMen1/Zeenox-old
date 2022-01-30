@@ -2,6 +2,7 @@
 using Discord;
 using Discord.WebSocket;
 using KBot.Config;
+using KBot.Database;
 using KBot.Enums;
 using KBot.Modules.Announcements.Helpers;
 
@@ -10,13 +11,12 @@ namespace KBot.Modules.Announcements;
 public class TourModule
 {
     private readonly DiscordSocketClient _client;
-    private readonly ConfigModel.Config _config;
-    private static ulong _tourRoleId;
-    private static ulong _tourAnnouncementChannelId;
-    public TourModule(DiscordSocketClient client, ConfigModel.Config config)
+    private static DatabaseService _database;
+
+    public TourModule(DiscordSocketClient client, DatabaseService database)
     {
         _client = client;
-        _config = config;
+        _database = database;
     }
 
     public void Initialize()
@@ -25,27 +25,31 @@ public class TourModule
         _client.GuildScheduledEventUpdated += AnnounceScheduledEventUpdatedAsync;
         _client.GuildScheduledEventStarted += AnnounceScheduledEventStartedAsync;
         _client.GuildScheduledEventCancelled += AnnounceScheduledEventCancelledAsync;
-        _tourRoleId = _config.Tour.RoleId;
-        _tourAnnouncementChannelId = _config.Tour.EventAnnouncementChannelId;
     }
     private static async Task AnnounceScheduledEventCreatedAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;
+        var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
+        var tourRoleId = config.TourEvents.RoleId;
+        var tourEventAnnouncementChannelId = config.TourEvents.EventAnnouncementChannelId;
         if (eventChannel is null && arg.Location.Contains("goo.gl/maps"))
         {
-            var tourRole = arg.Guild.GetRole(_tourRoleId);
-            var notifyChannel = arg.Guild.GetTextChannel(_tourAnnouncementChannelId);
-            await notifyChannel.SendMessageAsync(tourRole.Mention, 
+            var tourRole = arg.Guild.GetRole(tourRoleId);
+            var notifyChannel = arg.Guild.GetTextChannel(tourEventAnnouncementChannelId);
+            await notifyChannel.SendMessageAsync(tourRole.Mention,
                     embed: Embeds.TourEventEmbed(arg, EventEmbedType.Scheduled)).ConfigureAwait(false);
         }
     }
     private static async Task AnnounceScheduledEventUpdatedAsync(Cacheable<SocketGuildEvent, ulong> arg1, SocketGuildEvent arg2)
     {
         var eventChannel = arg2.Channel;
+        var config = await _database.GetGuildConfigAsync(arg2.Guild.Id).ConfigureAwait(false);
+        var tourRoleId = config.TourEvents.RoleId;
+        var tourEventAnnouncementChannelId = config.TourEvents.EventAnnouncementChannelId;
         if (eventChannel is null && arg2.Location.Contains("goo.gl/maps"))
         {
-            var tourRole = arg2.Guild.GetRole(_tourRoleId);
-            var notifyChannel = arg2.Guild.GetTextChannel(_tourAnnouncementChannelId);
+            var tourRole = arg2.Guild.GetRole(tourRoleId);
+            var notifyChannel = arg2.Guild.GetTextChannel(tourEventAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(tourRole.Mention,
                     embed: Embeds.TourEventEmbed(arg2, EventEmbedType.Updated)).ConfigureAwait(false);
         }
@@ -53,10 +57,13 @@ public class TourModule
     private static async Task AnnounceScheduledEventStartedAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;
+        var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
+        var tourRoleId = config.TourEvents.RoleId;
+        var tourEventAnnouncementChannelId = config.TourEvents.EventAnnouncementChannelId;
         if (eventChannel is null && arg.Location.Contains("goo.gl/maps"))
         {
-            var tourRole = arg.Guild.GetRole(_tourRoleId);
-            var notifyChannel = arg.Guild.GetTextChannel(_tourAnnouncementChannelId);
+            var tourRole = arg.Guild.GetRole(tourRoleId);
+            var notifyChannel = arg.Guild.GetTextChannel(tourEventAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(tourRole.Mention,
                     embed: Embeds.TourEventEmbed(arg, EventEmbedType.Started)).ConfigureAwait(false);
         }
@@ -64,10 +71,13 @@ public class TourModule
     private static async Task AnnounceScheduledEventCancelledAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;
+        var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
+        var tourRoleId = config.TourEvents.RoleId;
+        var tourEventAnnouncementChannelId = config.TourEvents.EventAnnouncementChannelId;
         if (eventChannel is null && arg.Location.Contains("goo.gl/maps"))
         {
-            var tourRole = arg.Guild.GetRole(_tourRoleId);
-            var notifyChannel = arg.Guild.GetTextChannel(_tourAnnouncementChannelId);
+            var tourRole = arg.Guild.GetRole(tourRoleId);
+            var notifyChannel = arg.Guild.GetTextChannel(tourEventAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(tourRole.Mention,
                     embed: Embeds.TourEventEmbed(arg, EventEmbedType.Cancelled)).ConfigureAwait(false);
         }

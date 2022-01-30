@@ -4,38 +4,17 @@
     "Game": "play"
   },
   "LavaLink": {
-    "Enabled": true,
     "Host": "localhost",
     "Port": 2333,
     "Password": "youshallnotpass"
   },
-  "Announcements": {
-    "Enabled": true,
-    "UserAnnouncementChannelId": 863754743042146304
-  },
-  "TemporaryVoiceChannels": {
-    "Enabled": true,
-    "CategoryId": 863786713813483550,
-    "CreateChannelId": 863819407204286474
-  },
-  "MongodDb": {
+  "MongoDb": {
     "ConnectionString": "",
-    "Database": "kbot_dev",
-    "Collection": "warns"
+    "Database": "",
+    "Collection": ""
   },
-  "Movie": {
-    "Enabled": true,
-    "EventAnnouncementChannelId": 911159070982025237,
-    "StreamingChannelId": 863768908359794708,
-    "RoleId": 863754555062091796
-  },
-  "Tour": {
-    "Enabled": true,
-    "EventAnnouncementChannelId": 925763397771997184,
-    "RoleId": 925763047656681493
-  },
-  "Leveling": {
-    "Enabled": true,
-    "PointsToLevelUp": 18000
+  "OsuApi": {
+    "AppId": 0,
+    "AppSecret": ""
   }
 }
