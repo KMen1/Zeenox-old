@@ -10,7 +10,6 @@ namespace KBot.Modules.Setup;
 
 public class SetupCommands : KBotModuleBase
 {
-#pragma warning disable AsyncFixer01
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("setup", "Bot beállítása")]
     public async Task SetupGuildAsync()
@@ -515,13 +514,11 @@ public class SetupCommands : KBotModuleBase
         }.Build();
         await FollowupAsync(embed: configEmbed).ConfigureAwait(false);
     }
-    
+
     [ComponentInteraction("setup-cancel")]
     public async Task SetupCancelAsync()
     {
         await DeferAsync().ConfigureAwait(false);
         await ((SocketMessageComponent)Context.Interaction).Message.DeleteAsync().ConfigureAwait(false);
     }
-
-#pragma warning restore AsyncFixer01
 }

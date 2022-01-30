@@ -34,17 +34,34 @@ public class Bot
     private static AudioService AudioService;
     private static IServiceProvider Services;
 
-    public async Task StartAsync()
+    public async Task StartAsync(BotConfig config)
     {
-        Config = await ConfigService.InitializeAsync().ConfigureAwait(false);
+        Config = config;
 
-        Client = new DiscordSocketClient(await ConfigService.GetClientConfig().ConfigureAwait(false));
+        Client = new DiscordSocketClient(new DiscordSocketConfig
+        {
+            LogLevel = LogSeverity.Debug,
+            AlwaysDownloadUsers = true,
+            MessageCacheSize = 100,
+            GatewayIntents = GatewayIntents.All,
+            LogGatewayIntentWarnings = false
+        });
 
         Database = new DatabaseService(Config, Client);
 
-        InteractionService = new InteractionService(Client, await ConfigService.GetInteractionConfig().ConfigureAwait(false));
+        InteractionService = new InteractionService(Client, new InteractionServiceConfig
+        {
+            DefaultRunMode = RunMode.Async,
+            LogLevel = LogSeverity.Debug,
+            UseCompiledLambda = true,
+        });
 
-        LavaNode = new LavaNode(Client, await ConfigService.GetLavaConfig().ConfigureAwait(false));
+        LavaNode = new LavaNode(Client, new LavaConfig
+        {
+            Hostname = Config.Lavalink.Host,
+            Port = Config.Lavalink.Port,
+            Authorization = Config.Lavalink.Password
+        });
 
         AudioService = new AudioService(Client, LavaNode);
         AudioService.Initialize();
