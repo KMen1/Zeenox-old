@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,24 +45,18 @@ public class LogService
         Console.ForegroundColor = logMessage.Severity switch
         {
             LogSeverity.Critical => ConsoleColor.Red,
-            LogSeverity.Error => ConsoleColor.Red,
+            LogSeverity.Error => ConsoleColor.DarkRed,
             LogSeverity.Warning => ConsoleColor.Yellow,
             LogSeverity.Info => ConsoleColor.Green,
-            LogSeverity.Verbose => ConsoleColor.Blue,
+            LogSeverity.Verbose => ConsoleColor.DarkGray,
             LogSeverity.Debug => ConsoleColor.Gray,
-            _ => Console.ForegroundColor
+            _ => ConsoleColor.White
         };
 
         var time = DateTime.Now.ToString(CultureInfo.CurrentCulture);
-        if (logMessage.Exception == null)
-        {
-            Console.WriteLine($"[{time}] [{logMessage.Severity,7}] : ({logMessage.Source,7}) : {logMessage.Message}");
-        }
-        else
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(logMessage.Exception.ToString());
-        }
+        Console.WriteLine(logMessage.Exception is null
+            ? $"[{time}] [{logMessage.Severity,7}] : ({logMessage.Source,7}) : {logMessage.Message}"
+            : logMessage.Exception.ToString());
 
         _semaphoreSlim.Release();
     }

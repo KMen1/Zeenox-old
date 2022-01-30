@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
+using KBot.Modules.Audio.Enums;
 using KBot.Modules.Audio.Helpers;
 using Victoria;
 using Victoria.Enums;

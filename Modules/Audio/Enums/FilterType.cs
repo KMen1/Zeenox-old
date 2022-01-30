@@ -1,4 +1,4 @@
-﻿namespace KBot.Enums;
+﻿namespace KBot.Modules.Audio.Enums;
 
 public enum FilterType
 {

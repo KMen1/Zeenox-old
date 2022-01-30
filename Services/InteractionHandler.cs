@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Modules.Audio;
 using KBot.Modules.Audio.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -67,7 +66,7 @@ public class InteractionHandler
             case InteractionCommandError.UnmetPrecondition:
             {
                 await interaction.FollowupAsync(embed:
-                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                    Embeds.ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ParseFailed:
@@ -110,7 +109,7 @@ public class InteractionHandler
             }
             case InteractionCommandError.UnmetPrecondition:
             {
-                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ParseFailed:

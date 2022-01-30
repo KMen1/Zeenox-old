@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Discord.Interactions;
 using Discord.WebSocket;
 using KBot.Enums;
+using KBot.Modules.Audio.Enums;
 
 namespace KBot.Modules.Audio;
 
