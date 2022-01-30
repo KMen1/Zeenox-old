@@ -10,14 +10,14 @@ namespace KBot.Config;
 
 public static class ConfigService
 {
-    private static ConfigModel.Config _config;
+    private static BotConfig _config;
 
-    public static Task<ConfigModel.Config> InitializeAsync()
+    public static Task<BotConfig> InitializeAsync()
     {
         var root = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("config.json").Build();
-        _config = root.Get<ConfigModel.Config>();
+        _config = root.Get<BotConfig>();
         return Task.FromResult(_config);
     }
 

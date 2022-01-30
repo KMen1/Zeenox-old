@@ -65,8 +65,6 @@ public class AudioService
 
     private async Task OnTrackExceptionAsync(TrackExceptionEventArgs arg)
     {
-        await arg.Player.StopAsync().ConfigureAwait(false);
-        await arg.Player.ApplyFiltersAsync(Array.Empty<IFilter>(), equalizerBands: Array.Empty<EqualizerBand>()).ConfigureAwait(false);
         await arg.Player.TextChannel.SendMessageAsync(embed: Embeds.ErrorEmbed(arg.Exception.Message)).ConfigureAwait(false);
         await _lavaNode.LeaveAsync(arg.Player.VoiceChannel).ConfigureAwait(false);
     }
@@ -127,8 +125,7 @@ public class AudioService
                 }
                 Queue[guild.Id] = queue;
                 var msg = await interaction
-                    .FollowupAsync(embed: Embeds.AddedToQueueEmbed(search.Tracks.ToList()),
-                        ephemeral: true).ConfigureAwait(false);
+                    .FollowupAsync(embed: Embeds.AddedToQueueEmbed(search.Tracks.ToList())).ConfigureAwait(false);
                 await Task.Delay(5000).ConfigureAwait(false);
                 await msg.DeleteAsync().ConfigureAwait(false);
             }
@@ -136,9 +133,7 @@ public class AudioService
             {
                 queue.AddLast((search.Tracks.First(), user));
                 Queue[guild.Id] = queue;
-                var msg = await interaction
-                    .FollowupAsync(embed: Embeds.AddedToQueueEmbed(new List<LavaTrack>{search.Tracks.First()}),
-                        ephemeral: true).ConfigureAwait(false);
+                var msg = await interaction.FollowupAsync(embed: Embeds.AddedToQueueEmbed(new List<LavaTrack>{search.Tracks.First()})).ConfigureAwait(false);
                 await Task.Delay(5000).ConfigureAwait(false);
                 await msg.DeleteAsync().ConfigureAwait(false);
             }
@@ -146,7 +141,7 @@ public class AudioService
             return;
         }
 
-        NowPlayingMessage.Add(guild.Id, await interaction.GetOriginalResponseAsync().ConfigureAwait(false));
+        NowPlayingMessage[guild.Id] = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
 
         if (!string.IsNullOrWhiteSpace(search.Playlist.Name))
         {
@@ -159,8 +154,46 @@ public class AudioService
         await player.PlayAsync(search.Tracks.First()).ConfigureAwait(false);
         await player.UpdateVolumeAsync(100).ConfigureAwait(false);
         await interaction.FollowupAsync(
-            embed: await Embeds.NowPlayingEmbed(user, player, LoopEnabled.GetValueOrDefault(guild.Id), FilterEnabled.GetValueOrDefault(guild.Id), 0).ConfigureAwait(false),
+            embed: await Embeds.NowPlayingEmbed(user, player, LoopEnabled.GetValueOrDefault(guild.Id), FilterEnabled.GetValueOrDefault(guild.Id), queue.Count).ConfigureAwait(false),
             components: Components.NowPlayingComponents(CanGoBack(guild.Id), CanGoForward(guild.Id), player)).ConfigureAwait(false);
+    }
+    public async Task PlayAsync(IGuild guild, ITextChannel tChannel, SocketUser user, IDiscordInteraction interaction,
+        LavaTrack track)
+    {
+        var voiceChannel = ((IVoiceState)user).VoiceChannel;
+        if (voiceChannel is null)
+        {
+            await interaction.FollowupAsync(embed: Embeds.ErrorEmbed("Nem vagy hangcsatornában!")).ConfigureAwait(false);
+            return;
+        }
+        
+
+        var queue = Queue.GetValueOrDefault(guild.Id) ?? new LinkedList<(LavaTrack, SocketUser)>();
+        var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(voiceChannel, tChannel).ConfigureAwait(false);
+        if (IsPlaying(player))
+        {
+            queue.AddLast((track, user));
+            Queue[guild.Id] = queue;
+            var msg = await interaction.FollowupAsync(embed: Embeds.AddedToQueueEmbed(new List<LavaTrack>{track})).ConfigureAwait(false);
+            await Task.Delay(5000).ConfigureAwait(false);
+            await msg.DeleteAsync().ConfigureAwait(false);
+            var choose = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
+            await choose.DeleteAsync().ConfigureAwait(false);
+            await UpdateNowPlayingMessageAsync(guild.Id, player, null, true, true).ConfigureAwait(false);
+            return;
+        }
+        NowPlayingMessage[guild.Id] = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
+
+        await player.PlayAsync(track).ConfigureAwait(false);
+        await player.UpdateVolumeAsync(100).ConfigureAwait(false);
+        var msgt = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
+        var embed = await Embeds.NowPlayingEmbed(user, player, LoopEnabled.GetValueOrDefault(guild.Id),
+            FilterEnabled.GetValueOrDefault(guild.Id), queue.Count).ConfigureAwait(false);
+        await msgt.ModifyAsync(x =>
+        {
+            x.Embed = embed;
+            x.Components = Components.NowPlayingComponents(CanGoBack(guild.Id), CanGoForward(guild.Id), player);
+        }).ConfigureAwait(false);
     }
 
     public async Task StopAsync(IGuild guild)
@@ -447,7 +480,7 @@ public class AudioService
         }
 
         user ??= message.Interaction.User;
-        var queueLength = Queue.GetValueOrDefault(guildId)!.Count;
+        var queueLength = Queue.GetValueOrDefault(guildId) is null ? 0 : Queue[guildId].Count;
         var embed = await Embeds.NowPlayingEmbed(user, player, LoopEnabled.GetValueOrDefault(guildId),
             FilterEnabled.GetValueOrDefault(guildId), queueLength).ConfigureAwait(false);
         var components = Components.NowPlayingComponents(CanGoBack(guildId), CanGoForward(guildId), player);
@@ -494,5 +527,11 @@ public class AudioService
         FilterEnabled[guildId] = null;
         QueueHistory[guildId] = null;
         Queue[guildId] = null;
+    }
+
+    public async Task<List<LavaTrack>> SearchAsync(string query)
+    {
+        var results = await _lavaNode.SearchYouTubeAsync(query).ConfigureAwait(false);
+        return results.Tracks.ToList();
     }
 }

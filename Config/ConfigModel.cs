@@ -1,106 +1,44 @@
 ﻿namespace KBot.Config;
 
-public abstract class ConfigModel
+public class BotConfig
 {
-    public class Config
-    {
-        public ClientConfig Client { get; set; }
+    public ClientConfig Client { get; init; }
 
-        public LavalinkConfig Lavalink { get; set; }
+    public LavalinkConfig Lavalink { get; init; }
 
-        public MongoDbConfig MongoDb { get; set; }
+    public MongoDbConfig MongoDb { get; init; }
 
-        public OsuApiConfig OsuApi { get; set; }
+    public OsuApiConfig OsuApi { get; init; }
+}
 
-        public AnnouncementConfig Announcements { get; set; }
+public class ClientConfig
+{
+    public string Token { get; init; }
 
-        public TemporaryVoiceChannelConfig TemporaryVoiceChannels { get; set; }
+    public string Game { get; init; }
+}
 
-        public MovieConfig Movie { get; set; }
+public class LavalinkConfig
+{
+    public string Host { get; init; }
 
-        public TourConfig Tour { get; set; }
+    public ushort Port { get; init; }
 
-        public LevelingConfig Leveling { get; set; }
-    }
+    public string Password { get; init; }
+}
 
-    public class ClientConfig
-    {
-        public string Token { get; set; }
+public class MongoDbConfig
+{
+    public string ConnectionString { get; init; }
 
-        public string Game { get; set; }
-    }
+    public string Database { get; init; }
 
-    public class LavalinkConfig
-    {
-        public bool Enabled { get; set; }
+    public string Collection { get; init; }
+}
 
-        public string Host { get; set; }
+public class OsuApiConfig
+{
+    public ulong AppId { get; init; }
 
-        public ushort Port { get; set; }
-
-        public string Password { get; set; }
-    }
-
-    public class MongoDbConfig
-    {
-        public string ConnectionString { get; set; }
-
-        public string Database { get; set; }
-
-        public string Collection { get; set; }
-    }
-    public class AnnouncementConfig
-    {
-        public bool Enabled { get; set; }
-
-        public ulong UserAnnouncementChannelId { get; set; }
-    }
-
-    public class TemporaryVoiceChannelConfig
-    {
-        public bool Enabled { get; set; }
-
-        public ulong CategoryId { get; set; }
-
-        public ulong CreateChannelId { get; set; }
-    }
-
-    public class MovieConfig
-    {
-        public bool Enabled { get; set; }
-
-        public ulong EventAnnouncementChannelId { get; set; }
-
-        public ulong StreamingChannelId { get; set; }
-
-        public ulong RoleId { get; set; }
-    }
-
-    public class TourConfig
-    {
-        public bool Enabled { get; set; }
-
-        public ulong EventAnnouncementChannelId { get; set; }
-
-        public ulong RoleId { get; set; }
-    }
-
-    public class LevelingConfig
-    {
-        public bool Enabled { get; set; }
-
-        public int PointsToLevelUp { get; set; }
-
-        public ulong LevelUpAnnouncementChannelId { get; set; }
-
-    }
-
-    public class OsuApiConfig
-    {
-        public bool Enabled { get; set; }
-
-        public ulong AppId { get; set; }
-
-        public string AppSecret { get; set; }
-    }
+    public string AppSecret { get; init; }
 }

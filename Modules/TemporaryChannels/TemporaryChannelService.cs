@@ -4,20 +4,19 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using KBot.Config;
+using KBot.Database;
 
 namespace KBot.Modules.TemporaryChannels;
 
 public class TemporaryVoiceModule
 {
     private readonly DiscordSocketClient _client;
+    private static DatabaseService _database;
     private readonly List<(SocketUser user, ulong channelId)> _channels = new();
-    private readonly ulong _categoryId;
-    private readonly ulong _createChannelId;
-    public TemporaryVoiceModule(DiscordSocketClient client, ConfigModel.Config config)
+    public TemporaryVoiceModule(DiscordSocketClient client, DatabaseService database)
     {
         _client = client;
-        _categoryId = config.TemporaryVoiceChannels.CategoryId;
-        _createChannelId = config.TemporaryVoiceChannels.CreateChannelId;
+        _database = database;
     }
     public void Initialize()
     {
@@ -35,12 +34,13 @@ public class TemporaryVoiceModule
         {
             return;
         }
-        if (after.VoiceChannel is not null && after.VoiceChannel.Id == _createChannelId)
+        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        if (after.VoiceChannel is not null && after.VoiceChannel.Id == config.TemporaryChannels.CreateChannelId)
         {
             var voiceChannel = await guild.CreateVoiceChannelAsync($"{user.Username} Társalgója", x =>
             {
                 x.UserLimit = 2;
-                x.CategoryId = _categoryId;
+                x.CategoryId = config.TemporaryChannels.CategoryId;
                 x.Bitrate = 96000;
                 x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
                 {

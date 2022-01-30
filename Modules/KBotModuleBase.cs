@@ -1,12 +1,20 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using Fergun.Interactive;
+using KBot.Database;
 using KBot.Enums;
+using KBot.Modules.Audio;
 
 namespace KBot.Modules;
 
 public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionContext>
 {
+    public DatabaseService Database { get; set; }
+    public AudioService AudioService { get; set; }
+    
+    public InteractiveService InteractiveService { get; set; }
+    
     protected Task RespondWithEmbedAsync(EmbedResult result, string title, string description, string url = null,
         string imageUrl = null)
     {

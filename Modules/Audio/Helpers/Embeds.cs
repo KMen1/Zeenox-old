@@ -180,7 +180,10 @@ public static class Embeds
             desc.AppendLine(
                 $"{tracks.TakeWhile(n => n != track).Count() + 1} [`{track.Title}`]({track.Url})`");
         }
-        eb.WithDescription(desc.ToString());
+        if (tracks.Count > 10)
+        {
+            desc.Append("és még ").Append(tracks.Count - 10).AppendLine(" zene");
+        }
         return eb.Build();
     }
 
