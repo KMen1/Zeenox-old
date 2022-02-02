@@ -13,6 +13,7 @@ namespace KBot.Modules.Utility;
 public class Update : InteractionModuleBase<SocketInteractionContext>
 {
     private const string VersionUrl = "https://pastebin.com/raw/1gh1hT32";
+    private const string UpdateUrl = "https://pastebin.com/raw/ru9hWYcj";
     [RequireOwner]
     [SlashCommand("update", "Frissíti a botot")]
     public async Task ResetAsync()
@@ -39,6 +40,10 @@ public class Update : InteractionModuleBase<SocketInteractionContext>
                 .Build();
             await FollowupAsync(embed: eb, components: comp).ConfigureAwait(false);
         }
+        else
+        {
+            await FollowupAsync("Nem érhető el új verzió.").ConfigureAwait(false);
+        }
     }
     [ComponentInteraction("update-yes")]
     public async Task UpdateYesAsync()
@@ -49,13 +54,14 @@ public class Update : InteractionModuleBase<SocketInteractionContext>
         var msg = await bmsg.Channel.SendMessageAsync("Frissítés letöltése folyamatban...").ConfigureAwait(false);
         using var client = new HttpClient();
         var newVersion = await client.GetStringAsync(VersionUrl).ConfigureAwait(false);
-        var uri = new Uri(await client.GetStringAsync("https://pastebin.com/raw/ru9hWYcj").ConfigureAwait(false));
+        var uri = new Uri(await client.GetStringAsync(UpdateUrl).ConfigureAwait(false));
         Directory.CreateDirectory($"C:\\KBot\\{newVersion}");
         var response = await client.GetAsync(uri).ConfigureAwait(false);
         using (var fs = new FileStream($"C:\\KBot\\{newVersion}\\update.zip", FileMode.CreateNew))
         {
             await response.Content.CopyToAsync(fs).ConfigureAwait(false);
         }
+        
         await msg.ModifyAsync(x => x.Content = "Frissítés letöltve...").ConfigureAwait(false);
         await Task.Delay(1000).ConfigureAwait(false);
         await msg.ModifyAsync(x => x.Content = "Frissítés kitömörítése...").ConfigureAwait(false);

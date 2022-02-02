@@ -42,6 +42,11 @@ public class Osu : KBotModuleBase
             return;
         }
         var score = await OsuService.GetScoreAsync(osuId, ScoreType.RECENT).ConfigureAwait(false);
+        if (score is null)
+        {
+            await FollowupWithEmbedAsync(EmbedResult.Error, "Az elmúlt 24 órában nincs osu! scoreod!", "Kérlek próbáld meg később!").ConfigureAwait(false);
+            return;
+        }
         var beatmap = await OsuService.GetBeatMapByIdAsync(score.Beatmap.Id).ConfigureAwait(false);
         var pp = score.PP is null ? 0 : Math.Round((double)score.PP, 2);
         var mods = score.Mods.Length == 0 ? "No Mod" : string.Concat(score.Mods).ToUpper();

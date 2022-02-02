@@ -178,12 +178,13 @@ public static class Embeds
         foreach (var track in tracks.Take(10))
         {
             desc.AppendLine(
-                $"{tracks.TakeWhile(n => n != track).Count() + 1} [`{track.Title}`]({track.Url})`");
+                $"{tracks.TakeWhile(n => n != track).Count() + 1} [`{track.Title}`]({track.Url})");
         }
         if (tracks.Count > 10)
         {
             desc.Append("és még ").Append(tracks.Count - 10).AppendLine(" zene");
         }
+        eb.WithDescription(desc.ToString());
         return eb.Build();
     }
 

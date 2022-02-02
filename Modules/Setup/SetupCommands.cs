@@ -445,12 +445,8 @@ public class SetupCommands : KBotModuleBase
         }
         
         await Database.SaveGuildConfigAsync(Context.Guild.Id, config).ConfigureAwait(false);
-        await setupMessage.ModifyAsync(x =>
-        {
-            x.Embed = new EmbedBuilder().Build();
-            x.Components = new ComponentBuilder().Build();
-            x.Content = "Beállítások sikeresen elmentve!";
-        }).ConfigureAwait(false);
+        await setupMessage.DeleteAsync().ConfigureAwait(false);
+        await setupMessage.Channel.SendMessageAsync("Beállítások mentve!").ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.Administrator)]

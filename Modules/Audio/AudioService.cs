@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using KBot.Enums;
 using KBot.Modules.Audio.Enums;
 using KBot.Modules.Audio.Helpers;
 using Victoria;
@@ -25,6 +24,7 @@ public class AudioService
     private Dictionary<ulong, IUserMessage> NowPlayingMessage { get; } = new();
     private Dictionary<ulong, LinkedList<(LavaTrack track, SocketUser user)>> Queue { get; } = new();
     private Dictionary<ulong, List<LavaTrack>> QueueHistory { get; } = new();
+    private Dictionary<ulong, SocketUser> LastRequestedBy { get; } = new();
 
     public AudioService(DiscordSocketClient client, LavaNode lavaNode)
     {
@@ -52,13 +52,18 @@ public class AudioService
         {
             return;
         }
+
         var nowPlayingMessage = NowPlayingMessage.GetValueOrDefault(guild.Id);
         if (user.Id == _client.CurrentUser.Id && after.VoiceChannel is null && nowPlayingMessage is not null)
         {
+            var log = guild.GetAuditLogsAsync(1, actionType: ActionType.MemberDisconnected).Flatten();
+            var logUser = await log.FirstAsync().ConfigureAwait(false);
+            var guildUser = guild.GetUser(logUser.User.Id);
+            await guildUser.ModifyAsync(x => x.Channel = null).ConfigureAwait(false);
             await DisconnectAsync(before.VoiceChannel?.Guild).ConfigureAwait(false);
             await nowPlayingMessage.Channel.SendMessageAsync(embed: new EmbedBuilder().WithColor(Color.Red)
-                .WithDescription("Egy barom lecsatlakoztatott a hangcsatornából ezért nem tudom folytatni a kívánt muzsika lejátszását. \n" +
-                                 "Szánalmas vagy bárki is legyél, ha egyszer találkoznánk a torkodon nyomnám le azt az ujjadat amivel rákattintottál a lecsatlakoztatásra!")
+                .WithDescription($"{guildUser.Mention} lecsatlakoztatott a hangcsatornából ezért nem tudom folytatni a kívánt muzsika lejátszását. \n" +
+                                 "Milyen érzés ha téged is lecsatlakoztatnak? :kissing_heart: ")
                 .Build()).ConfigureAwait(false);
             await nowPlayingMessage.DeleteAsync().ConfigureAwait(false);
         }
@@ -153,6 +158,7 @@ public class AudioService
             Queue[guild.Id] = queue;
         }
         await player.PlayAsync(search.Tracks.First()).ConfigureAwait(false);
+        LastRequestedBy[guild.Id] = user;
         await player.UpdateVolumeAsync(100).ConfigureAwait(false);
         await interaction.FollowupAsync(
             embed: await Embeds.NowPlayingEmbed(user, player, LoopEnabled.GetValueOrDefault(guild.Id), FilterEnabled.GetValueOrDefault(guild.Id), queue.Count).ConfigureAwait(false),
@@ -220,6 +226,7 @@ public class AudioService
         queuehistory.Add(player.Track);
         QueueHistory[guild.Id] = queuehistory;
         Queue.GetValueOrDefault(guild.Id)?.RemoveFirst();
+        LastRequestedBy[guild.Id] = nextTrack.Value.user;
         await player.PlayAsync(nextTrack.Value.track).ConfigureAwait(false);
         await UpdateNowPlayingMessageAsync(guild.Id, player, nextTrack.Value.user, true, true).ConfigureAwait(false);
     }
@@ -230,11 +237,12 @@ public class AudioService
         var prev = QueueHistory.GetValueOrDefault(guild.Id)?.LastOrDefault();
         if (prev is null)
         {
-            await UpdateNowPlayingMessageAsync(guild.Id, player, null, updateComponents: true).ConfigureAwait(false);
+            await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], updateComponents: true).ConfigureAwait(false);
             return;
         }
         await player.PlayAsync(prev).ConfigureAwait(false);
         QueueHistory[guild.Id].Remove(prev);
+        LastRequestedBy[guild.Id] = user;
         await UpdateNowPlayingMessageAsync(guild.Id, player, user, true, true).ConfigureAwait(false);
     }
 
@@ -251,13 +259,13 @@ public class AudioService
             case PlayerState.Playing:
             {
                 await player.PauseAsync().ConfigureAwait(false);
-                await UpdateNowPlayingMessageAsync(guild.Id, player, null, updateComponents: true).ConfigureAwait(false);
+                await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], updateComponents: true).ConfigureAwait(false);
                 break;
             }
             case PlayerState.Paused:
             {
                 await player.ResumeAsync().ConfigureAwait(false);
-                await UpdateNowPlayingMessageAsync(guild.Id, player, null, updateComponents: true).ConfigureAwait(false);
+                await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], updateComponents: true).ConfigureAwait(false);
                 break;
             }
         }
@@ -280,13 +288,13 @@ public class AudioService
             case VoiceButtonType.VolumeUp:
             {
                 await player.UpdateVolumeAsync((ushort)(currentVolume + 10)).ConfigureAwait(false);
-                await UpdateNowPlayingMessageAsync(guild.Id, player, null, true, true).ConfigureAwait(false);
+                await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
                 break;
             }
             case VoiceButtonType.VolumeDown:
             {
                 await player.UpdateVolumeAsync((ushort)(currentVolume - 10)).ConfigureAwait(false); 
-                await UpdateNowPlayingMessageAsync(guild.Id, player, null, true, true).ConfigureAwait(false);
+                await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
                 break;
             }
         }
@@ -301,7 +309,7 @@ public class AudioService
         }
 
         await player.UpdateVolumeAsync(volume).ConfigureAwait(false);
-        await UpdateNowPlayingMessageAsync(guild.Id, player, null, true, true).ConfigureAwait(false);
+        await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
         return Embeds.VolumeEmbed(player);
     }
 
@@ -398,14 +406,14 @@ public class AudioService
             }
         }
         FilterEnabled[guild.Id] = filterType.ToString();
-        await UpdateNowPlayingMessageAsync(guild.Id, player, null, true).ConfigureAwait(false);
+        await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true).ConfigureAwait(false);
     }
 
     public Task SetRepeatAsync(IGuild guild)
     {
         var player = _lavaNode.GetPlayer(guild);
         LoopEnabled[guild.Id] = !LoopEnabled.GetValueOrDefault(guild.Id);
-        return UpdateNowPlayingMessageAsync(guild.Id, player, null, true, true);
+        return UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true);
     }
 
     public async Task ClearFiltersAsync(IGuild guild)
@@ -417,7 +425,7 @@ public class AudioService
         }
         await player.ApplyFiltersAsync(Array.Empty<IFilter>(), equalizerBands: Array.Empty<EqualizerBand>()).ConfigureAwait(false);
         FilterEnabled[guild.Id] = null;
-        await UpdateNowPlayingMessageAsync(guild.Id, player, null, true).ConfigureAwait(false);
+        await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true).ConfigureAwait(false);
     }
 
     public Embed GetQueue(IGuild guild)
@@ -436,7 +444,7 @@ public class AudioService
             return Embeds.ErrorEmbed("A lejátszó nem található!");
         }
         Queue.GetValueOrDefault(guild.Id)?.Clear();
-        await UpdateNowPlayingMessageAsync(guild.Id, player, null, true).ConfigureAwait(false);
+        await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true).ConfigureAwait(false);
         return Embeds.QueueEmbed(player, null, true);
     }
 
@@ -463,6 +471,7 @@ public class AudioService
             var queuehistory = QueueHistory.GetValueOrDefault(guild.Id) ?? new List<LavaTrack>();
             queuehistory.Add(args.Track);
             QueueHistory[guild.Id] = queuehistory;
+            LastRequestedBy[guild.Id] = nextTrack.Value.user;
             await UpdateNowPlayingMessageAsync(guild.Id, player, nextTrack.Value.user,true, true).ConfigureAwait(false);
             return;
         }
@@ -528,6 +537,7 @@ public class AudioService
         FilterEnabled[guildId] = null;
         QueueHistory[guildId] = null;
         Queue[guildId] = null;
+        LastRequestedBy[guildId] = null;
     }
 
     public async Task<List<LavaTrack>> SearchAsync(string query)

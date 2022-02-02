@@ -34,7 +34,7 @@ public class MusicCommands : KBotModuleBase
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("search", "Keres egy zenét a YouTube-on")]
+    /*[SlashCommand("search", "Keres egy zenét a YouTube-on")]
     public async Task Search([Summary("query", "Zene címe")] string query)
     {
         await DeferAsync().ConfigureAwait(false);
@@ -66,7 +66,7 @@ public class MusicCommands : KBotModuleBase
             .Build();
 
         await FollowupAsync(embed: eb, components: comp).ConfigureAwait(false);
-        
+
         var result = await InteractiveService.NextMessageComponentAsync(x => x.User.Id == Context.User.Id).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
@@ -76,7 +76,7 @@ public class MusicCommands : KBotModuleBase
         await result.Value!.DeferAsync().ConfigureAwait(false);
         var index = int.Parse(result.Value!.Data.CustomId);
         await AudioService.PlayAsync(Context.Guild, (ITextChannel) Context.Channel, Context.User, Context.Interaction, tracks[index]).ConfigureAwait(false);
-    }
+    }*/
 
     [SlashCommand("volume", "Hangerő beállítása")]
     public async Task Volume(

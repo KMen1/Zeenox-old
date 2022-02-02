@@ -281,6 +281,8 @@ public class DatabaseService
 
         var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
+        var pointsPerLevel = (await GetGuildConfigAsync(guildId).ConfigureAwait(false)).Leveling.PointsToLevelUp;
+        guild.Users.ForEach(x => x.Points += x.Level * pointsPerLevel);
         return guild.Users.OrderByDescending(x => x.Points).Take(users).ToList();
     }
 
