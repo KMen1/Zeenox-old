@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Database;
 using KBot.Enums;
 
 namespace KBot.Modules.Moderation;

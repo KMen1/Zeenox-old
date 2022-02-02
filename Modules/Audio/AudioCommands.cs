@@ -1,16 +1,12 @@
-﻿using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using Humanizer;
 
 namespace KBot.Modules.Audio;
 
 [Group("music", "Audio parancsok")]
 public class MusicCommands : KBotModuleBase
 {
-
     [SlashCommand("move", "Átlép abba a hangcsatornába, amelyben tartózkodsz")]
     public async Task Move()
     {

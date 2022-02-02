@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Discord.WebSocket;
-using KBot.Config;
 using KBot.Database;
 
 namespace KBot.Modules.Announcements;

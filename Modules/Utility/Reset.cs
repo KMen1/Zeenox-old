@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Discord.Commands;
 using Discord.Interactions;
 
 namespace KBot.Modules.Utility;
 
 public class Reset : InteractionModuleBase<SocketInteractionContext>
 {
-    [Discord.Interactions.RequireOwner]
+    [RequireOwner]
     [SlashCommand("reset", "Újraindítja a botot")]
     public async Task ResetAsync()
     {

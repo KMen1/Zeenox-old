@@ -61,7 +61,8 @@ public class AudioService
             var guildUser = guild.GetUser(logUser.User.Id);
             await guildUser.ModifyAsync(x => x.Channel = null).ConfigureAwait(false);
             await DisconnectAsync(before.VoiceChannel?.Guild).ConfigureAwait(false);
-            await nowPlayingMessage.Channel.SendMessageAsync(embed: new EmbedBuilder().WithColor(Color.Red)
+            await nowPlayingMessage.Channel.SendMessageAsync(embed: new EmbedBuilder()
+                .WithColor(Color.Red)
                 .WithDescription($"{guildUser.Mention} lecsatlakoztatott a hangcsatornából ezért nem tudom folytatni a kívánt muzsika lejátszását. \n" +
                                  "Milyen érzés ha téged is lecsatlakoztatnak? :kissing_heart: ")
                 .Build()).ConfigureAwait(false);
@@ -173,7 +174,6 @@ public class AudioService
             await interaction.FollowupAsync(embed: Embeds.ErrorEmbed("Nem vagy hangcsatornában!")).ConfigureAwait(false);
             return;
         }
-        
 
         var queue = Queue.GetValueOrDefault(guild.Id) ?? new LinkedList<(LavaTrack, SocketUser)>();
         var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(voiceChannel, tChannel).ConfigureAwait(false);

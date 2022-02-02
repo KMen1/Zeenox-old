@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using System.IO.Compression;
 
 namespace KBot.Modules.Utility;
 

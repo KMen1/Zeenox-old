@@ -178,7 +178,7 @@ public static class Embeds
         foreach (var track in tracks.Take(10))
         {
             desc.AppendLine(
-                $"{tracks.TakeWhile(n => n != track).Count() + 1} [`{track.Title}`]({track.Url})");
+                $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Url})");
         }
         if (tracks.Count > 10)
         {

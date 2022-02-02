@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using KBot.Config;
 using KBot.Database;
 using KBot.Enums;
 using KBot.Modules.Announcements.Helpers;

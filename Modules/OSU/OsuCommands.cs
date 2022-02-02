@@ -9,8 +9,8 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
 using KBot.Enums;
+using osu.API.Data;
 using osu.API.Data.Enums;
-using User = osu.API.Data.User;
 
 namespace KBot.Modules.OSU;
 
