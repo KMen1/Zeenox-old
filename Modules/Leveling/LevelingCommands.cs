@@ -23,7 +23,7 @@ public class Levels : KBotModuleBase
 
         var level = await Database.GetUserLevelByIdAsync(Context.Guild.Id, userId).ConfigureAwait(false);
         var xp = await Database.GetUserPointsByIdAsync(Context.Guild.Id, userId).ConfigureAwait(false);
-
+        
         var embed = new EmbedBuilder()
             .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
             .WithColor(Color.Gold)
@@ -40,9 +40,21 @@ public class Levels : KBotModuleBase
         await DeferAsync().ConfigureAwait(false);
         var top = await Database.GetTopAsync(Context.Guild.Id, 10).ConfigureAwait(false);
 
-        await FollowupWithEmbedAsync(EmbedResult.Success, "Top 10 Rank",
-                string.Join("\n", top.Select(x => $"{top.IndexOf(x) + 1 }. {Context.Guild.GetUser(x.UserId).Mention} - `Lvl. {x.Level} ({x.Points} XP)`")))
-            .ConfigureAwait(false);
+        var userColumn = "";
+        var levelColumn = "";
+
+        foreach (var user in top)
+        {
+            userColumn += $"{top.IndexOf(user) +1 }. {Context.Guild.GetUser(user.UserId).Mention}\n";
+            levelColumn += $"`{user.Level} ({user.Points} XP)`\n";
+        }
+
+        await FollowupAsync(embed: new EmbedBuilder()
+            .WithTitle("Top 10 szintjei")
+            .WithColor(Color.Green)
+            .AddField("Felhasználó", userColumn, true)
+            .AddField("Szint", levelColumn, true)
+            .Build()).ConfigureAwait(false);
     }
 
     [SlashCommand("daily", "Napi XP begyűjtése")]

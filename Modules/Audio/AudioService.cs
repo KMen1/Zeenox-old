@@ -83,8 +83,8 @@ public class AudioService
             return Embeds.ErrorEmbed("Ezen a szerveren nem található lejátszó!");
         }
         var voiceChannel = _lavaNode.GetPlayer(guild).VoiceChannel;
-        await _lavaNode.LeaveAsync(voiceChannel).ConfigureAwait(false);
         ResetPlayer(guild.Id);
+        await _lavaNode.LeaveAsync(voiceChannel).ConfigureAwait(false);
         return Embeds.LeaveEmbed(voiceChannel);
     }
 
