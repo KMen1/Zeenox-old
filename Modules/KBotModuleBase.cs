@@ -30,7 +30,7 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
     }
 
     protected async Task<IUserMessage> FollowupWithEmbedAsync(EmbedResult result, string title, string description,
-        string url = null, string imageUrl = null)
+        string url = null, string imageUrl = null, bool ephemeral = false)
     {
         var embed = new EmbedBuilder
         {
@@ -40,6 +40,6 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
             ImageUrl = imageUrl,
             Color = result == EmbedResult.Error ? Color.Red : Color.Green
         }.Build();
-        return await Context.Interaction.FollowupAsync(embed: embed).ConfigureAwait(false);
+        return await Context.Interaction.FollowupAsync(embed: embed, ephemeral: ephemeral).ConfigureAwait(false);
     }
 }

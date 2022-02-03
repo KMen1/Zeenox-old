@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 
@@ -30,7 +32,7 @@ public class MusicCommands : KBotModuleBase
             .ConfigureAwait(false);
     }
 
-    /*[SlashCommand("search", "Keres egy zenét a YouTube-on")]
+    [SlashCommand("search", "Keres egy zenét a YouTube-on")]
     public async Task Search([Summary("query", "Zene címe")] string query)
     {
         await DeferAsync().ConfigureAwait(false);
@@ -72,7 +74,7 @@ public class MusicCommands : KBotModuleBase
         await result.Value!.DeferAsync().ConfigureAwait(false);
         var index = int.Parse(result.Value!.Data.CustomId);
         await AudioService.PlayAsync(Context.Guild, (ITextChannel) Context.Channel, Context.User, Context.Interaction, tracks[index]).ConfigureAwait(false);
-    }*/
+    }
 
     [SlashCommand("volume", "Hangerő beállítása")]
     public async Task Volume(

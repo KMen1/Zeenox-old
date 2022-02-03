@@ -186,7 +186,7 @@ public class AudioService
             await msg.DeleteAsync().ConfigureAwait(false);
             var choose = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
             await choose.DeleteAsync().ConfigureAwait(false);
-            await UpdateNowPlayingMessageAsync(guild.Id, player, null, true, true).ConfigureAwait(false);
+            await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
             return;
         }
         NowPlayingMessage[guild.Id] = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);

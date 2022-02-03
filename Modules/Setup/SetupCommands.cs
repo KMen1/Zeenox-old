@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -79,14 +80,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Add meg annak a csatornának az id-jét ahol a bot **üdvözölje** az új felhasználókat. \n" +
+                    "Tageld be azt a csatornát ahol a bot **üdvözölje** az új felhasználókat. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-át.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
 
         var joinChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var joinChannelId = Convert.ToUInt64(joinChannelIdMessage.Value!.Content);
+        var joinChannelId = Convert.ToUInt64(Regex.Replace(joinChannelIdMessage.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetTextChannel(joinChannelId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -94,7 +95,7 @@ public class SetupCommands : KBotModuleBase
                     .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                     .Build()).ConfigureAwait(false);
             joinChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            joinChannelId = Convert.ToUInt64(joinChannelIdMessage.Value!.Content);
+            joinChannelId = Convert.ToUInt64(Regex.Replace(joinChannelIdMessage.Value!.Content, "[^0-9]", ""));
         }
         config.Announcements.UserJoinAnnouncementChannelId = joinChannelId;
         await joinChannelIdMessage.Value.DeleteAsync().ConfigureAwait(false);
@@ -103,14 +104,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Add meg annak a csatornának az id-jét ahol a bot **elköszöntse** a felhasználókat. \n" +
+                    "Tageld be azt a csatornát ahol a bot **elköszöntse** a felhasználókat. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
 
         var leaveChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var leaveChannelId = Convert.ToUInt64(leaveChannelIdMessage.Value!.Content);
+        var leaveChannelId = Convert.ToUInt64(Regex.Replace(leaveChannelIdMessage.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetTextChannel(leaveChannelId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -118,7 +119,7 @@ public class SetupCommands : KBotModuleBase
                     .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                     .Build()).ConfigureAwait(false);
             leaveChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            leaveChannelId = Convert.ToUInt64(leaveChannelIdMessage.Value!.Content);
+            leaveChannelId = Convert.ToUInt64(Regex.Replace(leaveChannelIdMessage.Value!.Content, "[^0-9]", ""));
         }
         config.Announcements.UserLeaveAnnouncementChannelId = leaveChannelId;
         await leaveChannelIdMessage.Value.DeleteAsync().ConfigureAwait(false);
@@ -127,14 +128,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Add meg annak a csatornának az id-jét ahol a bot bejelentse a **bannokat**. \n" +
+                    "Tageld be azt a csatornát ahol a bot bejelentse a **bannokat**. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
         
         var banChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var banChannelId = Convert.ToUInt64(banChannelIdMessage.Value!.Content);
+        var banChannelId = Convert.ToUInt64(Regex.Replace(banChannelIdMessage.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetTextChannel(banChannelId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -142,7 +143,7 @@ public class SetupCommands : KBotModuleBase
                     .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                     .Build()).ConfigureAwait(false);
             banChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            banChannelId = Convert.ToUInt64(banChannelIdMessage.Value!.Content);
+            banChannelId = Convert.ToUInt64(Regex.Replace(banChannelIdMessage.Value!.Content, "[^0-9]", ""));
         }
         config.Announcements.UserBanAnnouncementChannelId = banChannelId;
         await banChannelIdMessage.Value.DeleteAsync().ConfigureAwait(false);
@@ -151,14 +152,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Add meg annak a csatornának az id-jét ahol a bot bejelentse az **unbannokat**. \n" +
+                    "Tageld be azt a csatornát ahol a bot bejelentse az **unbannokat**. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
         
         var unBanChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var unBanChannelId = Convert.ToUInt64(unBanChannelIdMessage.Value!.Content);
+        var unBanChannelId = Convert.ToUInt64(Regex.Replace(unBanChannelIdMessage.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetTextChannel(unBanChannelId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -166,7 +167,7 @@ public class SetupCommands : KBotModuleBase
                     .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                     .Build()).ConfigureAwait(false);
             unBanChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            unBanChannelId = Convert.ToUInt64(unBanChannelIdMessage.Value!.Content);
+            unBanChannelId = Convert.ToUInt64(Regex.Replace(unBanChannelIdMessage.Value!.Content, "[^0-9]", ""));
         }
         config.Announcements.UserUnbanAnnouncementChannelId = unBanChannelId;
         await unBanChannelIdMessage.Value.DeleteAsync().ConfigureAwait(false);
@@ -175,14 +176,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Add meg annak a csatornának az id-jét ahol a bot bejelentse a **szintlépéseket**. \n" +
+                    "Tageld be azt a csatornát ahol a bot bejelentse a **szintlépéseket**. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
 
         var levelChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var levelChannelId = Convert.ToUInt64(levelChannelIdMessage.Value!.Content);
+        var levelChannelId = Convert.ToUInt64(Regex.Replace(levelChannelIdMessage.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetTextChannel(unBanChannelId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -190,7 +191,7 @@ public class SetupCommands : KBotModuleBase
                     .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                     .Build()).ConfigureAwait(false);
             levelChannelIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            levelChannelId = Convert.ToUInt64(levelChannelIdMessage.Value!.Content);
+            levelChannelId = Convert.ToUInt64(Regex.Replace(levelChannelIdMessage.Value!.Content, "[^0-9]", ""));
         }
         config.Leveling.LevelUpAnnouncementChannelId = levelChannelId;
         await levelChannelIdMessage.Value.DeleteAsync().ConfigureAwait(false);
@@ -226,7 +227,7 @@ public class SetupCommands : KBotModuleBase
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
                 .WithColor(Color.Red)
-                .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
+                .WithDescription("Nem található ilyen kategória! Kérlek próbáld újra")
                 .Build()).ConfigureAwait(false);
             temporaryCategoryIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
             temporaryCategoryId = Convert.ToUInt64(temporaryCategoryIdMessage.Value!.Content);
@@ -238,14 +239,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Kérlek add meg az ideiglenes hangcsatornák létrehozás csatornájának az id-jét. \n" +
+                    "Kérlek tageld be az ideiglenes hangcsatornák létrehozás csatornáját. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
         
         var temporaryCreateIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var temporaryCreateId = Convert.ToUInt64(temporaryCreateIdMessage.Value!.Content);
+        var temporaryCreateId = Convert.ToUInt64(Regex.Replace(temporaryCreateIdMessage.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetVoiceChannel(temporaryCreateId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -253,7 +254,7 @@ public class SetupCommands : KBotModuleBase
                 .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                 .Build()).ConfigureAwait(false);
             temporaryCreateIdMessage = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            temporaryCreateId = Convert.ToUInt64(temporaryCreateIdMessage.Value!.Content);
+            temporaryCreateId = Convert.ToUInt64(Regex.Replace(temporaryCreateIdMessage.Value!.Content, "[^0-9]", ""));
         }
         config.TemporaryChannels.CreateChannelId = temporaryCreateId;
         await temporaryCreateIdMessage.Value.DeleteAsync().ConfigureAwait(false);
@@ -261,14 +262,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Kérlek add meg a film események bejelentő csatornájának az id-jét. \n" +
+                    "Kérlek tageld be a film események bejelentő csatornáját. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
         
         var movieAnnouncement = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var movieAnnouncementId = Convert.ToUInt64(movieAnnouncement.Value!.Content);
+        var movieAnnouncementId = Convert.ToUInt64(Regex.Replace(movieAnnouncement.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetTextChannel(movieAnnouncementId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -276,7 +277,7 @@ public class SetupCommands : KBotModuleBase
                 .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                 .Build()).ConfigureAwait(false);
             movieAnnouncement = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            movieAnnouncementId = Convert.ToUInt64(movieAnnouncement.Value!.Content);
+            movieAnnouncementId = Convert.ToUInt64(Regex.Replace(movieAnnouncement.Value!.Content, "[^0-9]", ""));
         }
         config.MovieEvents.EventAnnouncementChannelId = movieAnnouncementId;
         await movieAnnouncement.Value.DeleteAsync().ConfigureAwait(false);
@@ -285,14 +286,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Kérlek add meg a film események vetítő csatornájának az id-jét. \n" +
+                    "Kérlek tageld be a film események vetítő csatornáját. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
         
         var movieStreaming = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var movieStreamingId = Convert.ToUInt64(movieStreaming.Value!.Content);
+        var movieStreamingId = Convert.ToUInt64(Regex.Replace(movieStreaming.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetVoiceChannel(movieStreamingId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -300,7 +301,7 @@ public class SetupCommands : KBotModuleBase
                 .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                 .Build()).ConfigureAwait(false);
             movieStreaming = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            movieStreamingId = Convert.ToUInt64(movieStreaming.Value!.Content);
+            movieStreamingId = Convert.ToUInt64(Regex.Replace(movieStreaming.Value!.Content, "[^0-9]", ""));
         }
         config.MovieEvents.StreamingChannelId = movieStreamingId;
         await movieStreaming.Value.DeleteAsync().ConfigureAwait(false);
@@ -309,14 +310,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Kérlek add meg a film rang id-jét. \n" +
+                    "Kérlek tageld be a film rang-ot. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
         
         var movieRank = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var movieRankId = Convert.ToUInt64(movieRank.Value!.Content);
+        var movieRankId = Convert.ToUInt64(Regex.Replace(movieRank.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetRole(movieRankId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -324,7 +325,7 @@ public class SetupCommands : KBotModuleBase
                 .WithDescription("Nem található ilyen rang! Kérlek próbáld újra")
                 .Build()).ConfigureAwait(false);
             movieRank = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            movieRankId = Convert.ToUInt64(movieRank.Value!.Content);
+            movieRankId = Convert.ToUInt64(Regex.Replace(movieRank.Value!.Content, "[^0-9]", ""));
         }
         config.MovieEvents.RoleId = movieRankId;
         await movieRank.Value.DeleteAsync().ConfigureAwait(false);
@@ -333,14 +334,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Kérlek add meg a túra események bejelentő csatornájának az id-jét. \n" +
+                    "Kérlek tageld be a túra események bejelentő csatornáját. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
         
         var tourChannel = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var tourChannelId = Convert.ToUInt64(tourChannel.Value!.Content);
+        var tourChannelId = Convert.ToUInt64(Regex.Replace(tourChannel.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetTextChannel(tourChannelId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -348,7 +349,7 @@ public class SetupCommands : KBotModuleBase
                 .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                 .Build()).ConfigureAwait(false);
             tourChannel = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            tourChannelId = Convert.ToUInt64(tourChannel.Value!.Content);
+            tourChannelId = Convert.ToUInt64(Regex.Replace(tourChannel.Value!.Content, "[^0-9]", ""));
         }
         config.TourEvents.EventAnnouncementChannelId = tourChannelId;
         await tourChannel.Value.DeleteAsync().ConfigureAwait(false);
@@ -357,14 +358,14 @@ public class SetupCommands : KBotModuleBase
         {
             x.Embed = setupEmbed
                 .WithDescription(
-                    "Kérlek add meg a túra rang id-jét. \n" +
+                    "Kérlek tageld be a túra rang-ot. \n" +
                     "`Ha nem szeretnéd beállítani, írj egy 0-t.`")
                 .Build();
             x.Components = null;
         }).ConfigureAwait(false);
         
         var tourRank = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-        var tourRankId = Convert.ToUInt64(tourRank.Value!.Content);
+        var tourRankId = Convert.ToUInt64(Regex.Replace(tourRank.Value!.Content, "[^0-9]", ""));
         while (Context.Guild.GetRole(tourRankId) is null)
         {
             await setupMessage.ModifyAsync(x => x.Embed = setupEmbed
@@ -372,12 +373,11 @@ public class SetupCommands : KBotModuleBase
                 .WithDescription("Nem található ilyen csatorna! Kérlek próbáld újra")
                 .Build()).ConfigureAwait(false);
             tourRank = await InteractiveService.NextMessageAsync(x => x.Author.Id == Context.User.Id).ConfigureAwait(false);
-            tourRankId = Convert.ToUInt64(tourRank.Value!.Content);
+            tourRankId = Convert.ToUInt64(Regex.Replace(tourRank.Value!.Content, "[^0-9]", ""));
         }
         config.TourEvents.RoleId = tourRankId;
         await tourRank.Value!.DeleteAsync().ConfigureAwait(false);
 
-        
         var finalEmbed = new EmbedBuilder
         {
             Author = new EmbedAuthorBuilder
