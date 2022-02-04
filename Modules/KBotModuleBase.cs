@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Fergun.Interactive;
 using KBot.Database;
 using KBot.Enums;
 using KBot.Modules.Audio;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace KBot.Modules;
 
@@ -12,8 +14,8 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
 {
     public DatabaseService Database { get; set; }
     public AudioService AudioService { get; set; }
-    
     public InteractiveService InteractiveService { get; set; }
+    public IMemoryCache Cache { get; set; }
     
     protected Task RespondWithEmbedAsync(EmbedResult result, string title, string description, string url = null,
         string imageUrl = null)
@@ -41,5 +43,10 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
             Color = result == EmbedResult.Error ? Color.Red : Color.Green
         }.Build();
         return await Context.Interaction.FollowupAsync(embed: embed, ephemeral: ephemeral).ConfigureAwait(false);
+    }
+
+    protected async Task<GuildConfig> GetGuildConfigAsync()
+    {
+        return await Database.GetGuildConfigFromCacheAsync(Context.Guild.Id).ConfigureAwait(false);
     }
 }

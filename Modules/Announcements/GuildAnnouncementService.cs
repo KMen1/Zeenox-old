@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord.WebSocket;
 using KBot.Database;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace KBot.Modules.Announcements;
 
@@ -30,7 +31,11 @@ public class AnnouncementsModule
             return;
         }
 
-        var config = await _database.GetGuildConfigAsync(user.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(user.Guild.Id).ConfigureAwait(false);
+        if (!config.Announcements.Enabled)
+        {
+            return;
+        }
         var channel = user.Guild.GetTextChannel(config.Announcements.UserJoinedChannelId);
         await channel.SendMessageAsync($":wave: Üdv a szerveren {user.Mention}, érezd jól magad!").ConfigureAwait(false);
     }
@@ -41,7 +46,11 @@ public class AnnouncementsModule
         {
             return;
         }
-        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+        if (!config.Announcements.Enabled)
+        {
+            return;
+        }
         var channel = guild.GetTextChannel(config.Announcements.UserLeftChannelId);
         await channel.SendMessageAsync($":cry: {user.Mention} elhagyta a szervert.").ConfigureAwait(false);
     }
@@ -52,7 +61,11 @@ public class AnnouncementsModule
         {
             return;
         }
-        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+        if (!config.Announcements.Enabled)
+        {
+            return;
+        }
         var channel = guild.GetTextChannel(config.Announcements.UserBannedChannelId);
         await channel.SendMessageAsync($":no_entry: {user.Mention} ki lett tiltva a szerverről.").ConfigureAwait(false);
     }
@@ -63,7 +76,11 @@ public class AnnouncementsModule
         {
             return;
         }
-        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+        if (!config.Announcements.Enabled)
+        {
+            return;
+        }
         var channel = guild.GetTextChannel(config.Announcements.UserUnbannedChannelId);
         await channel.SendMessageAsync($":grinning: {user.Mention} kitiltása vissza lett vonva.").ConfigureAwait(false);
     }

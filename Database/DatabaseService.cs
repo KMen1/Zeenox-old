@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord.WebSocket;
 using KBot.Config;
+using Microsoft.Extensions.Caching.Memory;
 using MongoDB.Driver;
 
 namespace KBot.Database;
@@ -12,11 +13,13 @@ public class DatabaseService
 {
     private readonly BotConfig _config;
     private readonly DiscordSocketClient _client;
+    private readonly IMemoryCache _cache;
 
-    public DatabaseService(BotConfig config, DiscordSocketClient client)
+    public DatabaseService(BotConfig config, DiscordSocketClient client, IMemoryCache cache)
     {
         _config = config;
         _client = client;
+        _cache = cache;
         client.Ready += RegisterGuildsAsync;
         client.JoinedGuild += RegisterNewGuildAsync;
     }
@@ -40,6 +43,7 @@ public class DatabaseService
                 await RegisterGuildAsync(guild.Id).ConfigureAwait(false);
             }
         }
+         
     }
 
     public async Task<GuildModel> RegisterGuildAsync(ulong guildId)
@@ -100,7 +104,7 @@ public class DatabaseService
         return guild;
     }
 
-    public async ValueTask<GuildConfig> GetGuildConfigAsync(ulong guildId)
+    private async ValueTask<GuildConfig> GetGuildConfigAsync(ulong guildId)
     {
         var client = new MongoClient(_config.MongoDb.ConnectionString);
         var database = client.GetDatabase(_config.MongoDb.Database);
@@ -109,6 +113,16 @@ public class DatabaseService
         var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         return guild.Config;
+    }
+
+    public async ValueTask<GuildConfig> GetGuildConfigFromCacheAsync(ulong guildId)
+    {
+        var config = await _cache.GetOrCreateAsync(guildId.ToString(), async x =>
+        {
+            x.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
+            return await GetGuildConfigAsync(guildId).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+        return config;
     }
 
     private async ValueTask<User> RegisterUserAsync(ulong guildId, ulong userId)
@@ -393,8 +407,8 @@ public class DatabaseService
         
         var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        
         guild.Config = config;
         await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        _cache.Set(guildId.ToString(), config);
     }
 }

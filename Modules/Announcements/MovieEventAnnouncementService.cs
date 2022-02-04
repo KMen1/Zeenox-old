@@ -29,7 +29,11 @@ public class MovieModule
     private static async Task AnnounceScheduledEventCreatedAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;
-        var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(arg.Guild.Id).ConfigureAwait(false);
+        if (!config.MovieEvents.Enabled)
+        {
+            return;
+        }
         var streamingChannelId = config.MovieEvents.StreamingChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
         var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
@@ -46,7 +50,11 @@ public class MovieModule
     private static async Task AnnounceScheduledEventUpdatedAsync(Cacheable<SocketGuildEvent, ulong> arg1, SocketGuildEvent arg2)
     {
         var eventChannel = arg2.Channel;
-        var config = await _database.GetGuildConfigAsync(arg2.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(arg2.Guild.Id).ConfigureAwait(false);
+        if (!config.MovieEvents.Enabled)
+        {
+            return;
+        }
         var streamingChannelId = config.MovieEvents.StreamingChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
         var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
@@ -63,7 +71,11 @@ public class MovieModule
     private static async Task AnnounceScheduledEventStartedAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;
-        var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(arg.Guild.Id).ConfigureAwait(false);
+        if (!config.MovieEvents.Enabled)
+        {
+            return;
+        }
         var streamingChannelId = config.MovieEvents.StreamingChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
         var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
@@ -80,7 +92,11 @@ public class MovieModule
     private static async Task AnnounceScheduledEventCancelledAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;
-        var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(arg.Guild.Id).ConfigureAwait(false);
+        if (!config.MovieEvents.Enabled)
+        {
+            return;
+        }
         var streamingChannelId = config.MovieEvents.StreamingChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
         var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;

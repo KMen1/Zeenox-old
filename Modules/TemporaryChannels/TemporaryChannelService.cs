@@ -25,7 +25,7 @@ public class TemporaryVoiceModule
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
         var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
-        if (guild == null)
+        if (guild is null)
         {
             return;
         }
@@ -33,7 +33,11 @@ public class TemporaryVoiceModule
         {
             return;
         }
-        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+        if (!config.TemporaryChannels.Enabled)
+        {
+            return;
+        }
         if (after.VoiceChannel is not null && after.VoiceChannel.Id == config.TemporaryChannels.CreateChannelId)
         {
             var voiceChannel = await guild.CreateVoiceChannelAsync($"{user.Username} Társalgója", x =>

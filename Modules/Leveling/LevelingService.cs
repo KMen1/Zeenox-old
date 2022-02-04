@@ -35,16 +35,20 @@ public class LevelingModule
         {
             return;
         }
+        var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+        if (config == null)
+        {
+            return;
+        }
+        if (!config.Leveling.Enabled)
+        {
+            return;
+        }
         //calculate random xp based on message length
         var rate = new Random().NextDouble();
         var msgLength = arg.Content.Length;
         var pointsToGive = (int)Math.Floor((rate * 100) + msgLength / 2);
         var user = arg.Author;
-        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
-        if (config == null)
-        {
-            return;
-        }
         var points = await _database.AddPointsByUserIdAsync(((ITextChannel)arg.Channel).GuildId, user.Id, pointsToGive).ConfigureAwait(false);
         if (points >= config.Leveling.PointsToLevelUp)
         {
@@ -66,20 +70,27 @@ public class LevelingModule
         {
             return;
         }
-
         var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
         if (guild is null)
         {
             return;
         }
-
         if (before.VoiceChannel is null)
         {
+            var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+            if (!config.Leveling.Enabled)
+            {
+                return;
+            }
             await _database.SetUserVoiceChannelJoinDateByIdAsync(guild.Id, user.Id, DateTime.Now).ConfigureAwait(false);
         }
         else if (after.VoiceChannel is null)
         {
-            var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+            var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+            if (!config.Leveling.Enabled)
+            {
+                return;
+            }
             var joinDate = await _database.GetUserVoiceChannelJoinDateByIdAsync(guild.Id, user.Id).ConfigureAwait(false);
             var pointsToGive = (int) (DateTime.UtcNow - joinDate).TotalSeconds;
             var points = await _database.AddPointsByUserIdAsync(guild.Id, user.Id, pointsToGive).ConfigureAwait(false);

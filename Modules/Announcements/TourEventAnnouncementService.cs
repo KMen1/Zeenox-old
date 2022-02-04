@@ -28,7 +28,11 @@ public class TourModule
     private static async Task AnnounceScheduledEventCreatedAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;
-        var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(arg.Guild.Id).ConfigureAwait(false);
+        if (!config.TourEvents.Enabled)
+        {
+            return;
+        }
         var tourRoleId = config.TourEvents.RoleId;
         var tourEventAnnouncementChannelId = config.TourEvents.AnnouncementChannelId;
         if (eventChannel is null && arg.Location.Contains("goo.gl/maps"))
@@ -42,7 +46,11 @@ public class TourModule
     private static async Task AnnounceScheduledEventUpdatedAsync(Cacheable<SocketGuildEvent, ulong> arg1, SocketGuildEvent arg2)
     {
         var eventChannel = arg2.Channel;
-        var config = await _database.GetGuildConfigAsync(arg2.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(arg2.Guild.Id).ConfigureAwait(false);
+        if (!config.TourEvents.Enabled)
+        {
+            return;
+        }
         var tourRoleId = config.TourEvents.RoleId;
         var tourEventAnnouncementChannelId = config.TourEvents.AnnouncementChannelId;
         if (eventChannel is null && arg2.Location.Contains("goo.gl/maps"))
@@ -56,7 +64,11 @@ public class TourModule
     private static async Task AnnounceScheduledEventStartedAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;
-        var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(arg.Guild.Id).ConfigureAwait(false);
+        if (!config.TourEvents.Enabled)
+        {
+            return;
+        }
         var tourRoleId = config.TourEvents.RoleId;
         var tourEventAnnouncementChannelId = config.TourEvents.AnnouncementChannelId;
         if (eventChannel is null && arg.Location.Contains("goo.gl/maps"))
@@ -70,7 +82,11 @@ public class TourModule
     private static async Task AnnounceScheduledEventCancelledAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;
-        var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(arg.Guild.Id).ConfigureAwait(false);
+        if (!config.TourEvents.Enabled)
+        {
+            return;
+        }
         var tourRoleId = config.TourEvents.RoleId;
         var tourEventAnnouncementChannelId = config.TourEvents.AnnouncementChannelId;
         if (eventChannel is null && arg.Location.Contains("goo.gl/maps"))

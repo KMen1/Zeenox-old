@@ -20,7 +20,7 @@ public class SetupComponents : KBotModuleBase
         var moduleEnum = Enum.Parse<GuildModules>(moduleName);
         var selectedproperty = selection[0].Split(":")[1];
 
-        var config = await Database.GetGuildConfigAsync(Context.Guild.Id).ConfigureAwait(false);
+        var config = await GetGuildConfigAsync().ConfigureAwait(false);
         var module = Converters.GetModuleConfigFromGuildConfig(moduleEnum, config);
 
         var msg = await Context.Interaction.GetOriginalResponseAsync().ConfigureAwait(false);
