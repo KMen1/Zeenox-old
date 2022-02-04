@@ -32,7 +32,7 @@ public class MovieModule
         var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
         var streamingChannelId = config.MovieEvents.StreamingChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
-        var movieEventAnnouncementChannelId = config.MovieEvents.EventAnnouncementChannelId;
+        var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
         if (eventChannel is not null && eventChannel.Id == streamingChannelId)
         {
             var movieRole = arg.Guild.GetRole(movieRoleId);
@@ -49,7 +49,7 @@ public class MovieModule
         var config = await _database.GetGuildConfigAsync(arg2.Guild.Id).ConfigureAwait(false);
         var streamingChannelId = config.MovieEvents.StreamingChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
-        var movieEventAnnouncementChannelId = config.MovieEvents.EventAnnouncementChannelId;
+        var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
         if (eventChannel is not null && eventChannel.Id == streamingChannelId)
         {
             var movieRole = arg2.Guild.GetRole(movieRoleId);
@@ -66,7 +66,7 @@ public class MovieModule
         var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
         var streamingChannelId = config.MovieEvents.StreamingChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
-        var movieEventAnnouncementChannelId = config.MovieEvents.EventAnnouncementChannelId;
+        var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
         if (eventChannel is not null && eventChannel.Id == streamingChannelId)
         {
             var movieRole = arg.Guild.GetRole(movieRoleId);
@@ -83,7 +83,7 @@ public class MovieModule
         var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
         var streamingChannelId = config.MovieEvents.StreamingChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
-        var movieEventAnnouncementChannelId = config.MovieEvents.EventAnnouncementChannelId;
+        var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
         if (eventChannel is not null && eventChannel.Id == streamingChannelId)
         {
             var movieRole = arg.Guild.GetRole(movieRoleId);

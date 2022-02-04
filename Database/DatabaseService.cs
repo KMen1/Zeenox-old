@@ -55,19 +55,19 @@ public class DatabaseService
             {
                 Announcements = new AnnouncementConfig
                 {
-                    UserBanAnnouncementChannelId = 0,
-                    UserUnbanAnnouncementChannelId = 0,
-                    UserJoinAnnouncementChannelId = 0,
-                    UserLeaveAnnouncementChannelId = 0,
+                    UserBannedChannelId = 0,
+                    UserUnbannedChannelId = 0,
+                    UserJoinedChannelId = 0,
+                    UserLeftChannelId = 0,
                 },
                 Leveling = new LevelingConfig
                 {
-                    LevelUpAnnouncementChannelId = 0,
+                    AnnouncementChannelId = 0,
                     PointsToLevelUp = 0
                 },
                 MovieEvents = new MovieConfig
                 {
-                    EventAnnouncementChannelId = 0,
+                    AnnouncementChannelId = 0,
                     RoleId = 0,
                     StreamingChannelId = 0
                 },
@@ -78,7 +78,7 @@ public class DatabaseService
                 },
                 TourEvents = new TourConfig
                 {
-                    EventAnnouncementChannelId = 0,
+                    AnnouncementChannelId = 0,
                     RoleId = 0
                 }
             }

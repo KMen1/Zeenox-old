@@ -48,7 +48,7 @@ public class LevelingModule
         var points = await _database.AddPointsByUserIdAsync(((ITextChannel)arg.Channel).GuildId, user.Id, pointsToGive).ConfigureAwait(false);
         if (points >= config.Leveling.PointsToLevelUp)
         {
-            await HandleLevelUpAsync(guild, user, points, config.Leveling.PointsToLevelUp, config.Leveling.LevelUpAnnouncementChannelId).ConfigureAwait(false);
+            await HandleLevelUpAsync(guild, user, points, config.Leveling.PointsToLevelUp, config.Leveling.AnnouncementChannelId).ConfigureAwait(false);
             return;
         }
         var level = await _database.GetUserLevelByIdAsync(((ITextChannel)arg.Channel).GuildId, user.Id).ConfigureAwait(false);
@@ -56,7 +56,7 @@ public class LevelingModule
         var role = guild.Roles.FirstOrDefault(x => x.Name.Contains($"(Lvl. {level})"));
         if (role is not null && !userRoles.Contains(role))
         {
-            await HandleLevelUpBySetLevelAsync(user, guild, config.Leveling.LevelUpAnnouncementChannelId).ConfigureAwait(false);
+            await HandleLevelUpBySetLevelAsync(user, guild, config.Leveling.AnnouncementChannelId).ConfigureAwait(false);
         }
     }
 
@@ -85,7 +85,7 @@ public class LevelingModule
             var points = await _database.AddPointsByUserIdAsync(guild.Id, user.Id, pointsToGive).ConfigureAwait(false);
             if (points >= config.Leveling.PointsToLevelUp)
             {
-                await HandleLevelUpAsync(guild, user, points, config.Leveling.PointsToLevelUp, config.Leveling.LevelUpAnnouncementChannelId).ConfigureAwait(false);
+                await HandleLevelUpAsync(guild, user, points, config.Leveling.PointsToLevelUp, config.Leveling.AnnouncementChannelId).ConfigureAwait(false);
             }
         }
     }

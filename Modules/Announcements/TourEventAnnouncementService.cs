@@ -30,7 +30,7 @@ public class TourModule
         var eventChannel = arg.Channel;
         var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
         var tourRoleId = config.TourEvents.RoleId;
-        var tourEventAnnouncementChannelId = config.TourEvents.EventAnnouncementChannelId;
+        var tourEventAnnouncementChannelId = config.TourEvents.AnnouncementChannelId;
         if (eventChannel is null && arg.Location.Contains("goo.gl/maps"))
         {
             var tourRole = arg.Guild.GetRole(tourRoleId);
@@ -44,7 +44,7 @@ public class TourModule
         var eventChannel = arg2.Channel;
         var config = await _database.GetGuildConfigAsync(arg2.Guild.Id).ConfigureAwait(false);
         var tourRoleId = config.TourEvents.RoleId;
-        var tourEventAnnouncementChannelId = config.TourEvents.EventAnnouncementChannelId;
+        var tourEventAnnouncementChannelId = config.TourEvents.AnnouncementChannelId;
         if (eventChannel is null && arg2.Location.Contains("goo.gl/maps"))
         {
             var tourRole = arg2.Guild.GetRole(tourRoleId);
@@ -58,7 +58,7 @@ public class TourModule
         var eventChannel = arg.Channel;
         var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
         var tourRoleId = config.TourEvents.RoleId;
-        var tourEventAnnouncementChannelId = config.TourEvents.EventAnnouncementChannelId;
+        var tourEventAnnouncementChannelId = config.TourEvents.AnnouncementChannelId;
         if (eventChannel is null && arg.Location.Contains("goo.gl/maps"))
         {
             var tourRole = arg.Guild.GetRole(tourRoleId);
@@ -72,7 +72,7 @@ public class TourModule
         var eventChannel = arg.Channel;
         var config = await _database.GetGuildConfigAsync(arg.Guild.Id).ConfigureAwait(false);
         var tourRoleId = config.TourEvents.RoleId;
-        var tourEventAnnouncementChannelId = config.TourEvents.EventAnnouncementChannelId;
+        var tourEventAnnouncementChannelId = config.TourEvents.AnnouncementChannelId;
         if (eventChannel is null && arg.Location.Contains("goo.gl/maps"))
         {
             var tourRole = arg.Guild.GetRole(tourRoleId);

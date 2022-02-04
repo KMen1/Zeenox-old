@@ -60,10 +60,10 @@ public class Warn
 public class AnnouncementConfig
 {
     public bool Enabled { get; set; }
-    public ulong UserJoinAnnouncementChannelId { get; set; }
-    public ulong UserLeaveAnnouncementChannelId { get; set; }
-    public ulong UserBanAnnouncementChannelId { get; set; }
-    public ulong UserUnbanAnnouncementChannelId { get; set; }
+    public ulong UserJoinedChannelId { get; set; }
+    public ulong UserLeftChannelId { get; set; }
+    public ulong UserBannedChannelId { get; set; }
+    public ulong UserUnbannedChannelId { get; set; }
 }
 
 public class TemporaryVoiceChannelConfig
@@ -77,7 +77,7 @@ public class TemporaryVoiceChannelConfig
 public class MovieConfig
 {
     public bool Enabled { get; set; }
-    public ulong EventAnnouncementChannelId { get; set; }
+    public ulong AnnouncementChannelId { get; set; }
 
     public ulong StreamingChannelId { get; set; }
 
@@ -87,7 +87,7 @@ public class MovieConfig
 public class TourConfig
 {
     public bool Enabled { get; set; }
-    public ulong EventAnnouncementChannelId { get; set; }
+    public ulong AnnouncementChannelId { get; set; }
 
     public ulong RoleId { get; set; }
 }
@@ -97,5 +97,5 @@ public class LevelingConfig
     public bool Enabled { get; set; }
     public int PointsToLevelUp { get; set; }
 
-    public ulong LevelUpAnnouncementChannelId { get; set; }
+    public ulong AnnouncementChannelId { get; set; }
 }
