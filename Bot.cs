@@ -12,6 +12,7 @@ using KBot.Modules.Leveling;
 using KBot.Modules.OSU;
 using KBot.Modules.TemporaryChannels;
 using KBot.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Victoria;
 
@@ -33,26 +34,25 @@ public class Bot
     private static InteractiveService InteractiveService;
     private static AudioService AudioService;
     private static IServiceProvider Services;
+    private IMemoryCache Cache;
 
     public async Task StartAsync(BotConfig config)
     {
         Config = config;
-
+        Cache = new MemoryCache(new MemoryCacheOptions());
         Client = new DiscordSocketClient(new DiscordSocketConfig
         {
-            LogLevel = LogSeverity.Debug,
+            LogLevel = LogSeverity.Verbose,
             AlwaysDownloadUsers = true,
             MessageCacheSize = 100,
             GatewayIntents = GatewayIntents.All,
             LogGatewayIntentWarnings = false
         });
 
-        Database = new DatabaseService(Config, Client);
-
         InteractionService = new InteractionService(Client, new InteractionServiceConfig
         {
             DefaultRunMode = RunMode.Async,
-            LogLevel = LogSeverity.Debug,
+            LogLevel = LogSeverity.Verbose,
             UseCompiledLambda = true,
         });
 
@@ -64,26 +64,25 @@ public class Bot
         });
 
         AudioService = new AudioService(Client, LavaNode);
-        AudioService.Initialize();
+        //AudioService.Initialize();
         InteractiveService = new InteractiveService(Client, new InteractiveConfig
         {
             DefaultTimeout = new TimeSpan(0, 0, 5, 0),
             LogLevel = LogSeverity.Debug
         });
+        Database = new DatabaseService(Config, Client, Cache);
+        
         new AnnouncementsModule(Client, Database).Initialize();
         new MovieModule(Client, Database).Initialize();
         new TourModule(Client, Database).Initialize();
         new TemporaryVoiceModule(Client, Database).Initialize();
         new LevelingModule(Client, Database).Initialize();
         new OsuService(Config);
-
         await GetServicesAsync().ConfigureAwait(false);
-
         LogService = new LogService(Services);
         LogService.Initialize();
 
         await new InteractionHandler(Services).InitializeAsync().ConfigureAwait(false);
-
         await Client.LoginAsync(TokenType.Bot, Config.Client.Token).ConfigureAwait(false);
         await Client.StartAsync().ConfigureAwait(false);
         await Client.SetGameAsync("/" + Config.Client.Game, type: ActivityType.Listening).ConfigureAwait(false);
@@ -102,6 +101,7 @@ public class Bot
             .AddSingleton(Config)
             .AddSingleton(Database)
             .AddSingleton(InteractiveService)
+            .AddSingleton(Cache)
             .BuildServiceProvider();
         return Task.CompletedTask;
     }
