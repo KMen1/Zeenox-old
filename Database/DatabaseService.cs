@@ -1,27 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Discord.Addons.Hosting;
+using Discord.Addons.Hosting.Util;
 using Discord.WebSocket;
 using KBot.Config;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 
 namespace KBot.Database;
 
-public class DatabaseService
+public class DatabaseService : DiscordClientService
 {
     private readonly BotConfig _config;
     private readonly DiscordSocketClient _client;
     private readonly IMemoryCache _cache;
 
-    public DatabaseService(BotConfig config, DiscordSocketClient client, IMemoryCache cache)
+    public DatabaseService(DiscordSocketClient client, ILogger<DatabaseService> logger, BotConfig config, IMemoryCache cache) : base(client, logger)
     {
         _config = config;
         _client = client;
         _cache = cache;
-        client.Ready += RegisterGuildsAsync;
-        client.JoinedGuild += RegisterNewGuildAsync;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        Client.JoinedGuild += RegisterNewGuildAsync;
+        await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
+        
+        await RegisterGuildsAsync().ConfigureAwait(false);
     }
 
     private Task RegisterNewGuildAsync(SocketGuild arg)
@@ -43,10 +53,9 @@ public class DatabaseService
                 await RegisterGuildAsync(guild.Id).ConfigureAwait(false);
             }
         }
-         
     }
 
-    public async Task<GuildModel> RegisterGuildAsync(ulong guildId)
+    private async Task<GuildModel> RegisterGuildAsync(ulong guildId)
     {
         var client = new MongoClient(_config.MongoDb.ConnectionString);
         var database = client.GetDatabase(_config.MongoDb.Database);

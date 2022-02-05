@@ -1,27 +1,33 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Addons.Hosting;
 using Discord.WebSocket;
 using KBot.Database;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace KBot.Modules.Leveling;
 
-public class LevelingModule
+public class LevelingModule : DiscordClientService
 {
     private readonly DiscordSocketClient _client;
     private readonly DatabaseService _database;
 
-    public LevelingModule(DiscordSocketClient client, DatabaseService database)
+    public LevelingModule(DiscordSocketClient client, ILogger<LevelingModule> logger, DatabaseService database) : base(client, logger)
     {
         _client = client;
         _database = database;
     }
 
-    public void Initialize()
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
-        _client.MessageReceived += OnMessageReceivedAsync;
+        Client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
+        Client.MessageReceived += OnMessageReceivedAsync;
+        Log.Logger.Information("Leveling Module Loaded");
+        return Task.CompletedTask;
     }
 
     private async Task OnMessageReceivedAsync(SocketMessage arg)

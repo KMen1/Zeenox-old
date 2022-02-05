@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Addons.Hosting;
+using Discord.Addons.Hosting.Util;
 using Discord.WebSocket;
 using KBot.Modules.Audio.Enums;
 using KBot.Modules.Audio.Helpers;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using Victoria;
 using Victoria.Enums;
 using Victoria.EventArgs;
@@ -14,10 +19,11 @@ using Victoria.Responses.Search;
 
 namespace KBot.Modules.Audio;
 
-public class AudioService
+public class AudioService : DiscordClientService
 {
     private readonly DiscordSocketClient _client;
     private readonly LavaNode _lavaNode;
+    private readonly ILogger<AudioService> _logger;
 
     private Dictionary<ulong, bool> LoopEnabled { get; } = new();
     private Dictionary<ulong, string> FilterEnabled { get; } = new();
@@ -26,25 +32,23 @@ public class AudioService
     private Dictionary<ulong, List<LavaTrack>> QueueHistory { get; } = new();
     private Dictionary<ulong, SocketUser> LastRequestedBy { get; } = new();
 
-    public AudioService(DiscordSocketClient client, LavaNode lavaNode)
+    public AudioService(DiscordSocketClient client, ILogger<AudioService> logger, LavaNode lavaNode) : base(client, logger)
     {
         _lavaNode = lavaNode;
         _client = client;
+        _logger = logger;
     }
 
-    public void Initialize()
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _client.Ready += OnReadyAsync;
-        _client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
+        Client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
         _lavaNode.OnTrackEnded += OnTrackEndedAsync;
         _lavaNode.OnTrackException += OnTrackExceptionAsync;
+        await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
+        await _lavaNode.ConnectAsync().ConfigureAwait(false);
+        Log.Logger.Information("Audio Service Loaded");
     }
-
-    private Task OnReadyAsync()
-    {
-        return _lavaNode.ConnectAsync();
-    }
-
+    
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
         var guild = before.VoiceChannel?.Guild ?? after.VoiceChannel?.Guild;

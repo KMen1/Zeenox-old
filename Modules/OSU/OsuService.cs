@@ -1,8 +1,10 @@
 ﻿using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using KBot.Config;
+using Microsoft.Extensions.Hosting;
 using osu.API.Client.Auth;
 using osu.API.Data;
 using osu.API.Data.Enums;
@@ -11,16 +13,23 @@ using osu.API.Requests.Parameters;
 using osu.API.Requests.QueryParams;
 using osu.API.Requests.UrlParams;
 using osu.API.Requests.Users;
+using Serilog;
 
 namespace KBot.Modules.OSU;
 
-public class OsuService
+public class OsuService : BackgroundService
 {
     private static ClientCredentialsGrant _credentials;
 
     public OsuService(BotConfig config)
     {
         _credentials = new ClientCredentialsGrant(config.OsuApi.AppId, config.OsuApi.AppSecret);
+    }
+
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        Log.Logger.Information("osu! service Loaded");
+        return Task.CompletedTask;
     }
 
     public static string GetEmojiFromGrade(ScoreGrade grade)

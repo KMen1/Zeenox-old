@@ -1,27 +1,30 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Discord.Addons.Hosting;
 using Discord.WebSocket;
 using KBot.Database;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace KBot.Modules.Announcements;
 
-public class AnnouncementsModule
+public class AnnouncementsModule : DiscordClientService
 {
-    private static DiscordSocketClient _client;
     private static DatabaseService _database;
 
-    public AnnouncementsModule(DiscordSocketClient client, DatabaseService database)
+    public AnnouncementsModule(DiscordSocketClient client, ILogger<AnnouncementsModule> logger, DatabaseService database) : base(client, logger)
     {
-        _client = client;
         _database = database;
     }
 
-    public void Initialize()
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _client.UserJoined += AnnounceUserJoinedAsync;
-        _client.UserLeft += AnnounceUserLeftAsync;
-        _client.UserBanned += AnnounceUserBannedAsync;
-        _client.UserUnbanned += AnnounceUserUnbannedAsync;
+        Client.UserJoined += AnnounceUserJoinedAsync;
+        Client.UserLeft += AnnounceUserLeftAsync;
+        Client.UserBanned += AnnounceUserBannedAsync;
+        Client.UserUnbanned += AnnounceUserUnbannedAsync;
+        Log.Logger.Information("Guild Announcements Module Loaded");
+        return Task.CompletedTask;
     }
 
     private static async Task AnnounceUserJoinedAsync(SocketGuildUser user)

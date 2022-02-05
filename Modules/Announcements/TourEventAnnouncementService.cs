@@ -1,30 +1,35 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Discord;
+using Discord.Addons.Hosting;
 using Discord.WebSocket;
 using KBot.Database;
 using KBot.Enums;
 using KBot.Modules.Announcements.Helpers;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace KBot.Modules.Announcements;
 
-public class TourModule
+public class TourModule : DiscordClientService
 {
-    private readonly DiscordSocketClient _client;
     private static DatabaseService _database;
 
-    public TourModule(DiscordSocketClient client, DatabaseService database)
+    public TourModule(DiscordSocketClient client, ILogger<TourModule> logger, DatabaseService database) : base(client, logger)
     {
-        _client = client;
         _database = database;
     }
 
-    public void Initialize()
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _client.GuildScheduledEventCreated += AnnounceScheduledEventCreatedAsync;
-        _client.GuildScheduledEventUpdated += AnnounceScheduledEventUpdatedAsync;
-        _client.GuildScheduledEventStarted += AnnounceScheduledEventStartedAsync;
-        _client.GuildScheduledEventCancelled += AnnounceScheduledEventCancelledAsync;
+        Client.GuildScheduledEventCreated += AnnounceScheduledEventCreatedAsync;
+        Client.GuildScheduledEventUpdated += AnnounceScheduledEventUpdatedAsync;
+        Client.GuildScheduledEventStarted += AnnounceScheduledEventStartedAsync;
+        Client.GuildScheduledEventCancelled += AnnounceScheduledEventCancelledAsync;
+        Log.Logger.Information("Tour Events Module Loaded");
+        return Task.CompletedTask;
     }
+    
     private static async Task AnnounceScheduledEventCreatedAsync(SocketGuildEvent arg)
     {
         var eventChannel = arg.Channel;

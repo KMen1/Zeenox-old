@@ -1,25 +1,32 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Addons.Hosting;
 using Discord.WebSocket;
 using KBot.Database;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace KBot.Modules.TemporaryChannels;
 
-public class TemporaryVoiceModule
+public class TemporaryVoiceModule : DiscordClientService
 {
     private readonly DiscordSocketClient _client;
     private static DatabaseService _database;
     private readonly List<(SocketUser user, ulong channelId)> _channels = new();
-    public TemporaryVoiceModule(DiscordSocketClient client, DatabaseService database)
+    public TemporaryVoiceModule(DiscordSocketClient client, ILogger<TemporaryVoiceModule> logger, DatabaseService database) : base(client, logger)
     {
         _client = client;
         _database = database;
     }
-    public void Initialize()
+
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
+        Log.Logger.Information("Temporary Channel Service Loaded");
+        return Task.CompletedTask;
     }
 
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)

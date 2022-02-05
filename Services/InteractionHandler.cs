@@ -1,35 +1,51 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Addons.Hosting;
+using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Config;
 using KBot.Modules.Audio.Helpers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace KBot.Services;
 
-public class InteractionHandler
+public class InteractionHandler : DiscordClientService
 {
-    private readonly DiscordSocketClient _client;
+    private readonly IServiceProvider _provider;
     private readonly InteractionService _interactionService;
-    private readonly IServiceProvider _services;
 
-    public InteractionHandler(IServiceProvider services)
+    public InteractionHandler(DiscordSocketClient client, ILogger<DiscordClientService> logger, IServiceProvider provider, InteractionService interactionService) : base(client, logger)
     {
-        _services = services;
-        _client = services.GetRequiredService<DiscordSocketClient>();
-        _interactionService = services.GetRequiredService<InteractionService>();
+        _provider = provider;
+        _interactionService = interactionService;
     }
-
-    public async Task InitializeAsync()
+    
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services).ConfigureAwait(false);
-        _client.InteractionCreated += HandleInteractionAsync;
+        Client.InteractionCreated += HandleInteractionAsync;
+        
         _interactionService.SlashCommandExecuted += HandleSlashCommandResultAsync;
         _interactionService.ComponentCommandExecuted += HandleComponentCommandResultAsync;
-        _client.Ready += GenerateSlashCommandsAsync;
+
+        try
+        {
+            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _provider).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Failed to load modules");
+        }
+        await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
+        await Client.SetGameAsync("/" + _provider.GetRequiredService<BotConfig>().Client.Game, type: ActivityType.Listening).ConfigureAwait(false);
+        await Client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
+        foreach (var guild in Client.Guilds)
+            await _interactionService.AddModulesToGuildAsync(guild, true, _interactionService.Modules.ToArray()).ConfigureAwait(false);
     }
 
     private static async Task HandleComponentCommandResultAsync(ComponentCommandInfo componentInfo, IInteractionContext interactionContext, IResult result)
@@ -120,18 +136,12 @@ public class InteractionHandler
         }
     }
 
-    private async Task GenerateSlashCommandsAsync()
-    {
-        foreach (var guild in _client.Guilds)
-            await _interactionService.AddModulesToGuildAsync(guild, true, _interactionService.Modules.ToArray()).ConfigureAwait(false);
-    }
-
     private async Task HandleInteractionAsync(SocketInteraction arg)
     {
         try
         {
-            var ctx = new SocketInteractionContext(_client, arg);
-            await _interactionService.ExecuteCommandAsync(ctx, _services).ConfigureAwait(false);
+            var ctx = new SocketInteractionContext(Client, arg);
+            await _interactionService.ExecuteCommandAsync(ctx, _provider).ConfigureAwait(false);
         }
         catch (Exception)
         {

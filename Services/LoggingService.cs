@@ -1,62 +1,52 @@
-﻿using System;
-using System.Globalization;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Interactions;
+using Discord.Addons.Hosting;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using Victoria;
 
 namespace KBot.Services;
 
-public class LogService
+public class LoggingService : DiscordClientService
 {
-    private readonly DiscordSocketClient _client;
-    private readonly InteractionService _interactionService;
+    
     private readonly LavaNode _lavaNode;
-    private readonly SemaphoreSlim _semaphoreSlim;
-
-    public LogService(IServiceProvider services)
+    public LoggingService(DiscordSocketClient client, ILogger<LoggingService> logger, LavaNode lavaNode) : base(client, logger)
     {
-        _semaphoreSlim = new SemaphoreSlim(1);
-        _client = services.GetRequiredService<DiscordSocketClient>();
-        _lavaNode = services.GetRequiredService<LavaNode>();
-        _interactionService = services.GetRequiredService<InteractionService>();
+        _lavaNode = lavaNode;
+    }
+    
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _lavaNode.OnLog += LogAsync;
+        return Task.CompletedTask;
     }
 
-    public void Initialize()
+    private Task LogAsync(LogMessage arg)
     {
-        _client.Log += LogEventAsync;
-        _lavaNode.OnLog += LogEventAsync;
-        _interactionService.Log += LogEventAsync;
-    }
-
-    private Task LogEventAsync(LogMessage arg)
-    {
-        return LogAsync(arg);
-    }
-
-    private async Task LogAsync(LogMessage logMessage)
-    {
-        await _semaphoreSlim.WaitAsync().ConfigureAwait(false);
-
-        Console.ForegroundColor = logMessage.Severity switch
+        switch (arg.Severity)
         {
-            LogSeverity.Critical => ConsoleColor.Red,
-            LogSeverity.Error => ConsoleColor.DarkRed,
-            LogSeverity.Warning => ConsoleColor.Yellow,
-            LogSeverity.Info => ConsoleColor.Green,
-            LogSeverity.Verbose => ConsoleColor.DarkGray,
-            LogSeverity.Debug => ConsoleColor.Gray,
-            _ => ConsoleColor.White
-        };
-
-        var time = DateTime.Now.ToString(CultureInfo.CurrentCulture);
-        Console.WriteLine(logMessage.Exception is null
-            ? $"[{time}] [{logMessage.Severity,7}] : ({logMessage.Source,7}) : {logMessage.Message}"
-            : logMessage.Exception.ToString());
-
-        _semaphoreSlim.Release();
+            case LogSeverity.Critical:
+                Log.Logger.Fatal(arg.Exception, arg.Message);
+                break;
+            case LogSeverity.Error:
+                Log.Logger.Error(arg.Exception, arg.Message);
+                break;
+            case LogSeverity.Warning:
+                Log.Logger.Error(arg.Exception, arg.Message);
+                break;
+            case LogSeverity.Info:
+                Log.Logger.Information(arg.Exception, arg.Message);
+                break;
+            case LogSeverity.Verbose:
+                Log.Logger.Verbose(arg.Exception, arg.Message);
+                break;
+            case LogSeverity.Debug:
+                Log.Logger.Debug(arg.Exception, arg.Message);
+                break;
+        }
+        return Task.CompletedTask;
     }
 }
