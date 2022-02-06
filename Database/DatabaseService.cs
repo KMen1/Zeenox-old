@@ -68,6 +68,7 @@ public class DatabaseService : DiscordClientService
             {
                 Announcements = new AnnouncementConfig
                 {
+                    Enabled = false,
                     UserBannedChannelId = 0,
                     UserUnbannedChannelId = 0,
                     UserJoinedChannelId = 0,
@@ -75,26 +76,35 @@ public class DatabaseService : DiscordClientService
                 },
                 Leveling = new LevelingConfig
                 {
+                    Enabled = false,
                     AnnouncementChannelId = 0,
                     PointsToLevelUp = 0
                 },
                 MovieEvents = new MovieConfig
                 {
+                    Enabled = false,
                     AnnouncementChannelId = 0,
                     RoleId = 0,
                     StreamingChannelId = 0
                 },
                 TemporaryChannels = new TemporaryVoiceChannelConfig
                 {
+                    Enabled = false,
                     CategoryId = 0,
                     CreateChannelId = 0
                 },
                 TourEvents = new TourConfig
                 {
+                    Enabled = false,
                     AnnouncementChannelId = 0,
                     RoleId = 0
+                },
+                Suggestions = new SuggestionsConfig
+                {
+                    Enabled = false,
+                    AnnouncementChannelId = 0
                 }
-            }
+        }
         };
         var guildUsers = _client.GetGuild(guildId).Users;
         var humans = guildUsers.Where(x => !x.IsBot);

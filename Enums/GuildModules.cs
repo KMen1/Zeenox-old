@@ -7,6 +7,5 @@ public enum GuildModules
     Leveling,
     MovieEvents,
     TourEvents,
-    
-
+    Suggestions
 }

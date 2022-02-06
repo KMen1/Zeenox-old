@@ -39,7 +39,7 @@ public class SetupCommands : KBotModuleBase
             if (value is bool enabled)
             {
                 embed.AddField("Bekapcsolva", enabled ? "`Igen`" : "`Nem`");
-                selectMenu.AddOption(title, property.Name);
+                selectMenu.AddOption(title, $"{module.ToString()}:{property.Name}");
                 continue;
             }
 
@@ -63,7 +63,7 @@ public class SetupCommands : KBotModuleBase
             {
                 embed.AddField(title, $"`{value}`");
             }
-            
+
             selectMenu.AddOption(title, $"{module.ToString()}:{property.Name}");
         }
 

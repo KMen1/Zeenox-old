@@ -17,134 +17,61 @@ public static class Embeds
 
     public static Embed LeaveEmbed(IVoiceChannel vChannel)
     {
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                Name = "SIKERES ELHAGYÁS",
-                IconUrl = SuccessIcon
-            },
-            Description = $"A következő csatornából: `{vChannel.Name}`",
-            Color = Color.Green
-        }.Build();
-        return eb;
+        return new EmbedBuilder()
+            .WithAuthor("SIKERES ELHAGYÁS", SuccessIcon)
+            .WithDescription($"A következő csatornából: {vChannel.Mention}")
+            .WithColor(Color.Green)
+            .Build();
     }
 
     public static Embed MoveEmbed(IVoiceChannel vChannel)
     {
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                Name = "SIKERES ÁTHELYEZÉS",
-                IconUrl = SuccessIcon
-            },
-            Description = $"A következő csatornába: `{vChannel.Name}`",
-            Color = Color.Green
-        }.Build();
-        return eb;
+        return new EmbedBuilder()
+            .WithAuthor("SIKERES MOZGATÁS", SuccessIcon)
+            .WithDescription($"A következő csatornába: {vChannel.Mention}")
+            .WithColor(Color.Green)
+            .Build();
     }
 
     public static async ValueTask<Embed> NowPlayingEmbed(IUser user, LavaPlayer player, bool isloopEnabled, string filter, int queueLength)
     {
-        var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "MOST JÁTSZOTT",
-                    IconUrl = PlayingGif
-                },
-                Title = player.Track.Title,
-                Url = player.Track.Url,
-                ImageUrl = await player.Track.FetchArtworkAsync().ConfigureAwait(false),
-                Color = Color.Green,
-                Fields = new List<EmbedFieldBuilder>
-                {
-                    new()
-                    {
-                        Name = "👨 Hozzáadta",
-                        Value = user.Mention,
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "🔼 Feltöltötte",
-                        Value = $"`{player.Track.Author}`",
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "🎙️ Csatorna",
-                        Value = $"`{player.VoiceChannel.Name}`",
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "🕐 Hosszúság",
-                        Value = $"`{player.Track.Duration:hh\\:mm\\:ss}`",
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "🔁 Ismétlés",
-                        Value = isloopEnabled ? "`Bekapcsolva`" : "`Kikapcsolva`",
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "🔊 Hangerő",
-                        Value = $"`{player.Volume.ToString()}%`",
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "📝 Szűrő",
-                        Value = filter is not null ? $"`{filter}`": "`Nincs`",
-                        IsInline = true
-                    },
-                    new()
-                    {
-                        Name = "🎶 Várólistán",
-                        Value = $"`{queueLength.ToString()}`",
-                        IsInline = true
-                    },
-                }
-            }.Build();
+        var eb = new EmbedBuilder()
+            .WithAuthor("MOST JÁTSZOTT", PlayingGif)
+            .WithTitle(player.Track.Title)
+            .WithUrl(player.Track.Url)
+            .WithImageUrl(await player.Track.FetchArtworkAsync().ConfigureAwait(false))
+            .WithColor(Color.Green)
+            .AddField("👨 Hozzáadta", user.Mention, true)
+            .AddField("🔼 Feltöltötte", $"`{player.Track.Author}`", true)
+            .AddField("🎙️ Csatorna", player.VoiceChannel.Mention, true)
+            .AddField("🕐 Hosszúság", $"`{player.Track.Duration:hh\\:mm\\:ss}`", true)
+            .AddField("🔁 Ismétlés", isloopEnabled ? "`Igen`" : "`Nem`", true)
+            .AddField("🔊 Hangerő", $"`{player.Volume.ToString()}%`", true)
+            .AddField("📝 Szűrő", filter is not null ? $"`{filter}`" : "`Nincs`", true)
+            .AddField("🎶 Várólistán", $"`{queueLength.ToString()}`", true)
+            .Build();
         return await new ValueTask<Embed>(eb).ConfigureAwait(false);
     }
 
     public static Embed VolumeEmbed(LavaPlayer player)
     {
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                Name = $"HANGERŐ {player.Volume.ToString()}%-RA ÁLLÍTVA",
-                IconUrl = SuccessIcon
-            },
-            Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-            Color = Color.Green,
-        }.Build();
-        return eb;
+        return new EmbedBuilder()
+            .WithAuthor($"HANGERŐ {player.Volume.ToString()}%-RA ÁLLÍTVA", SuccessIcon)
+            .WithDescription($"Ebben a csatornában: {player.VoiceChannel.Mention}")
+            .WithColor(Color.Green)
+            .Build();
     }
 
     public static Embed QueueEmbed(LavaPlayer player, LinkedList<(LavaTrack track, SocketUser user)> queue, bool cleared = false)
     {
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                Name = cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE",
-                IconUrl = SuccessIcon
-            },
-            Description = $"Ebben a csatornában: `{player.VoiceChannel.Name}`",
-            Color = Color.Green
-        };
+        var eb = new EmbedBuilder()
+            .WithAuthor(cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE", SuccessIcon)
+            .WithDescription($"Ebben a csatornában: {player.VoiceChannel.Mention}")
+            .WithColor(Color.Green);
         if (cleared)
         {
             return eb.Build();
         }
-
         if (queue.Count == 0)
         {
             eb.WithDescription("`Nincs zene a lejátszási listában`");
@@ -165,15 +92,6 @@ public static class Embeds
 
     public static Embed AddedToQueueEmbed(List<LavaTrack> tracks)
     {
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                Name = $"{tracks.Count} SZÁM HOZZÁADVA A VÁRÓLISTÁHOZ",
-                IconUrl = SuccessIcon
-            },
-            Color = Color.Orange
-        };
         var desc = new StringBuilder();
         foreach (var track in tracks.Take(10))
         {
@@ -184,25 +102,23 @@ public static class Embeds
         {
             desc.Append("és még ").Append(tracks.Count - 10).AppendLine(" zene");
         }
-        eb.WithDescription(desc.ToString());
-        return eb.Build();
+
+        return new EmbedBuilder()
+            .WithAuthor($"{tracks.Count} SZÁM HOZZÁADVA A VÁRÓLISTÁHOZ", SuccessIcon)
+            .WithColor(Color.Orange)
+            .WithDescription(desc.ToString())
+            .Build();
     }
 
     public static Embed ErrorEmbed(string exception)
     {
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                Name = "HIBA",
-                IconUrl = ErrorIcon
-            },
-            Title = "Hiba történt a parancs végrehajtása során",
-            Description = "Kérlek próbáld meg újra! \n" +
-                          "Ha a hiba továbbra is fennáll, kérlek jelezd a <@132797923049209856>-nek!",
-            Color = Color.Red
-        };
-        eb.AddField("Hibaüzenet", $"```{exception}```");
-        return eb.Build();
+        return new EmbedBuilder()
+            .WithAuthor("HIBA", ErrorIcon)
+            .WithTitle("Hiba történt a parancs végrehajtása során")
+            .WithDescription("Kérlek próbáld meg újra! \n" +
+                             "Ha a hiba továbbra is fennáll, kérlek jelezd a <@132797923049209856>-nek!")
+            .WithColor(Color.Red)
+            .AddField("Hibaüzenet", $"```{exception}```")
+            .Build();
     }
 }

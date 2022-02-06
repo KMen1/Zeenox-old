@@ -79,7 +79,7 @@ public static class Filters
         return equalizer;
     }
 
-    public static TimescaleFilter NightCore()
+    public static IFilter NightCore()
     {
         var timescaleFilter = new TimescaleFilter
         {
@@ -90,7 +90,7 @@ public static class Filters
         return timescaleFilter;
     }
 
-    public static RotationFilter EightD()
+    public static IFilter EightD()
     {
         var rotationFilter = new RotationFilter
         {
@@ -121,7 +121,7 @@ public static class Filters
         };
         return (filters, eq);
     }
-    public static TimescaleFilter Doubletime()
+    public static IFilter Doubletime()
     {
         var timescaleFilter = new TimescaleFilter
         {
@@ -131,7 +131,7 @@ public static class Filters
         };
         return timescaleFilter;
     }
-    public static TimescaleFilter Slowmotion()
+    public static IFilter Slowmotion()
     {
         var timescaleFilter = new TimescaleFilter
         {
@@ -141,7 +141,7 @@ public static class Filters
         };
         return timescaleFilter;
     }
-    public static TimescaleFilter Chipmunk()
+    public static IFilter Chipmunk()
     {
         var timescaleFilter = new TimescaleFilter
         {
@@ -151,7 +151,7 @@ public static class Filters
         };
         return timescaleFilter;
     }
-    public static TimescaleFilter Darthvader()
+    public static IFilter Darthvader()
     {
         var timescaleFilter = new TimescaleFilter
         {
@@ -161,7 +161,7 @@ public static class Filters
         };
         return timescaleFilter;
     }
-    public static TimescaleFilter Dance()
+    public static IFilter Dance()
     {
         var timescaleFilter = new TimescaleFilter
         {
@@ -171,7 +171,7 @@ public static class Filters
         };
         return timescaleFilter;
     }
-    public static TimescaleFilter China()
+    public static IFilter China()
     {
         var timescaleFilter = new TimescaleFilter
         {
@@ -198,7 +198,7 @@ public static class Filters
         };
         return filters;
     }
-    public static VibratoFilter Vibrato()
+    public static IFilter Vibrato()
     {
         var vibrato = new VibratoFilter()
         {
@@ -207,7 +207,7 @@ public static class Filters
         };
         return vibrato;
     }
-    public static TremoloFilter Tremolo()
+    public static IFilter Tremolo()
     {
         var tremolo = new TremoloFilter()
         {

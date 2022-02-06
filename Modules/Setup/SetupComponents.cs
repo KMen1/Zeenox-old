@@ -12,6 +12,7 @@ namespace KBot.Modules.Setup;
 
 public class SetupComponents : KBotModuleBase
 {
+    [RequireUserPermission(GuildPermission.Administrator)]
     [ComponentInteraction("setupselect")]
     public async Task SetupSelectMenu(params string[] selection)
     {
@@ -62,6 +63,10 @@ public class SetupComponents : KBotModuleBase
             else if (Context.Guild.GetRole(id) is { } role)
             {
                 embed.Fields.First(x => x.Name == GetTitleFromPropertyName(selectedproperty)).Value = role.Mention;
+            }
+            else
+            {
+                embed.Fields.First(x => x.Name == GetTitleFromPropertyName(selectedproperty)).Value = $"`{id}`";
             }
 
             await Database.SaveGuildConfigAsync(Context.Guild.Id, config).ConfigureAwait(false);

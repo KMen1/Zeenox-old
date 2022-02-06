@@ -29,7 +29,7 @@ namespace KBot;
 
 public static class Program
 {
-    private static async Task Main()
+    private static Task Main()
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
@@ -91,9 +91,9 @@ public static class Program
                 services.AddHostedService<LevelingModule>();
                 services.AddHostedService<OsuService>();
                 services.AddMemoryCache();
-
             })
             .UseSerilog()
+            .UseConsoleLifetime()
             .Build();
         
         IShellLink link = (IShellLink)new ShellLink();
@@ -104,9 +104,8 @@ public static class Program
         // C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
         const string startupPath = @"C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup";
         //file.Save(Path.Combine(startupPath, "KBot.lnk"), false);
-        
-        await host.RunAsync().ConfigureAwait(false);
-        await Task.Delay(-1).ConfigureAwait(false);
+
+        return host.RunAsync();
     }
 
     [ComImport]

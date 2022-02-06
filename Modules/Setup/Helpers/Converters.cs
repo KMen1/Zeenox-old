@@ -15,6 +15,7 @@ public static class Converters
             GuildModules.Leveling => config.Leveling,
             GuildModules.MovieEvents => config.MovieEvents,
             GuildModules.TourEvents => config.TourEvents,
+            GuildModules.Suggestions => config.Suggestions,
             _ => throw new ArgumentOutOfRangeException(nameof(module), module, null)
         };
     }
@@ -28,6 +29,7 @@ public static class Converters
             GuildModules.Leveling => "Szintrendszer beállítása",
             GuildModules.MovieEvents => "Film események beállítása",
             GuildModules.TourEvents => "Túra események beállítása",
+            GuildModules.Suggestions => "Ötletek beállítása",
             _ => "Ismeretlen modul beállítása"
         };
     }

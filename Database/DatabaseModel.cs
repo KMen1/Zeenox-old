@@ -29,6 +29,13 @@ public class GuildConfig
     public TourConfig TourEvents { get; set; }
 
     public LevelingConfig Leveling { get; set; }
+    public SuggestionsConfig Suggestions { get; set; }
+}
+
+public class SuggestionsConfig
+{
+    public bool Enabled { get; set; }
+    public ulong AnnouncementChannelId { get; set; }
 }
 
 public class User

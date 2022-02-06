@@ -10,6 +10,7 @@ namespace KBot.Modules.ReactionRoles;
 
 public class ReactionRoleComponents : KBotModuleBase
 {
+    [RequireUserPermission(GuildPermission.KickMembers)]
     [ComponentInteraction("rradd")]
     public async Task AddRrRoleAsync()
     {
@@ -40,9 +41,24 @@ public class ReactionRoleComponents : KBotModuleBase
             await getEmoteMsg.DeleteAsync().ConfigureAwait(false);
             return;
         }
-        var emote = Emote.Parse(emojiMsg.Value!.Content);
+        var emoteResult = Emote.TryParse(emojiMsg.Value!.Content, out var emote);
+        var emojiResult = Emoji.TryParse(emojiMsg.Value!.Content, out var emoji);
 
-        embed.AddField(role.Name, $"{emote} {role.Mention}");
+        if (emojiResult)
+        {
+            embed.AddField(role.Name, $"{emoji} {role.Mention}");
+        }
+        else if (emoteResult)
+        {
+            embed.AddField(role.Name, $"{emote} {role.Mention}");
+        }
+        else
+        {
+            await Context.Channel.SendMessageAsync("Sajnos nem sikerült a kívánt emojit megadni, kérlek próbáld újra").ConfigureAwait(false);
+            await getRoleMsg.DeleteAsync().ConfigureAwait(false);
+            await getEmoteMsg.DeleteAsync().ConfigureAwait(false);
+            return;
+        }
 
         await getRoleMsg.DeleteAsync().ConfigureAwait(false);
         await roleMsg.Value.DeleteAsync().ConfigureAwait(false);
@@ -50,7 +66,7 @@ public class ReactionRoleComponents : KBotModuleBase
         await emojiMsg.Value.DeleteAsync().ConfigureAwait(false);
         await msg.ModifyAsync(x => x.Embed = embed.Build()).ConfigureAwait(false);
     }
-
+    [RequireUserPermission(GuildPermission.KickMembers)]
     [ComponentInteraction("rrremove")]
     public async Task RemoveRrRoleAsync()
     {
@@ -85,7 +101,7 @@ public class ReactionRoleComponents : KBotModuleBase
         await roleMsg.Value.DeleteAsync().ConfigureAwait(false);
         await msg.ModifyAsync(x => x.Embed = embed.Build()).ConfigureAwait(false);
     }
-
+    [RequireUserPermission(GuildPermission.KickMembers)]
     [ComponentInteraction("rrsave")]
     public async Task SaveRrRoleAsync()
     {
@@ -94,15 +110,24 @@ public class ReactionRoleComponents : KBotModuleBase
         var embed = msg.Embeds.First().ToEmbedBuilder();
 
         var components = new ComponentBuilder();
-        foreach (var field in embed.Fields)
+        foreach (var valu in embed.Fields.Select(field => field.Value as string))
         {
-            var valu = field.Value as string;
+            var emoteResult = Emote.TryParse(valu!.Split(" ")[0], out var emote);
+            var emojiResult = Emoji.TryParse(valu!.Split(" ")[0], out var emoji);
             var role = Context.Guild.GetRole(Convert.ToUInt64(valu!.Split(" ")[1].Replace("<@&", "").Replace(">", "")));
-            components.WithButton(role.Name, $"rrtr:{role.Id}", emote:Emote.Parse(valu.Split(" ")[0]));
+            if (emoteResult)
+            {
+                components.WithButton(role.Name, $"rrtr:{role.Id}", emote:emote);
+            }
+            else
+            {
+                components.WithButton(role.Name, $"rrtr:{role.Id}", emote:emoji);
+            }
         }
 
         var fembed = new EmbedBuilder()
             .WithTitle("Reakciós Rangok")
+            .WithDescription(embed.Description.Replace("Menü a reaction role-ok beállításához.\n", ""))
             .WithColor(Color.Gold)
             .Build();
         await Context.Channel.SendMessageAsync(embed: fembed, components: components.Build()).ConfigureAwait(false);

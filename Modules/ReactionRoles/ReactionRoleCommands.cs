@@ -8,14 +8,15 @@ namespace KBot.Modules.ReactionRoles;
 public class ReactionRoleCommands : KBotModuleBase
 {
 #pragma warning disable AsyncFixer01
+    [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("create", "RR menü megnyitása.")]
-    public async Task AddReactionRoleAsync()
+    public async Task AddReactionRoleAsync(string description)
     {
         await DeferAsync().ConfigureAwait(false);
         var embed = new EmbedBuilder
         {
             Title = "Reaction Roles",
-            Description = "Menü a reaction role-ok beállításához.",
+            Description = $"Menü a reaction role-ok beállításához.\n{description}",
             Color = Color.Green
         }.Build();
         var comp = new ComponentBuilder()
@@ -24,7 +25,7 @@ public class ReactionRoleCommands : KBotModuleBase
             .WithButton("Mentés", "rrsave", emote: new Emoji("💾"))
             .Build();
 
-        await Context.Channel.SendMessageAsync(embed: embed, components: comp).ConfigureAwait(false);
+        await FollowupAsync(embed: embed, components: comp).ConfigureAwait(false);
     }
 #pragma warning restore AsyncFixer01
 }
