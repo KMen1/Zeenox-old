@@ -454,6 +454,7 @@ public class AudioService : DiscordClientService
 
     private async Task OnTrackEndedAsync(TrackEndedEventArgs args)
     {
+        var test = NowPlayingMessage[args.Player.TextChannel.GuildId];
         if (!ShouldPlayNext(args.Reason))
         {
             return;

@@ -40,6 +40,7 @@ public class AnnouncementsModule : DiscordClientService
             return;
         }
         var channel = user.Guild.GetTextChannel(config.Announcements.UserJoinedChannelId);
+        await user.AddRoleAsync(config.Announcements.JoinRoleId).ConfigureAwait(false);
         await channel.SendMessageAsync($":wave: Üdv a szerveren {user.Mention}, érezd jól magad!").ConfigureAwait(false);
     }
 

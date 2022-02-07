@@ -18,12 +18,14 @@ public class DatabaseService : DiscordClientService
     private readonly BotConfig _config;
     private readonly DiscordSocketClient _client;
     private readonly IMemoryCache _cache;
+    private readonly IMongoCollection<GuildModel> _collection;
 
-    public DatabaseService(DiscordSocketClient client, ILogger<DatabaseService> logger, BotConfig config, IMemoryCache cache) : base(client, logger)
+    public DatabaseService(DiscordSocketClient client, ILogger<DatabaseService> logger, BotConfig config, IMemoryCache cache, IMongoDatabase database) : base(client, logger)
     {
         _config = config;
         _client = client;
         _cache = cache;
+        _collection = database.GetCollection<GuildModel>(config.MongoDb.Collection);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -41,12 +43,9 @@ public class DatabaseService : DiscordClientService
 
     private async Task RegisterGuildsAsync()
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
         foreach (var guild in _client.Guilds)
         {
-            var isGuildInDb = await (await collection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false))
+            var isGuildInDb = await (await _collection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false))
                 .AnyAsync().ConfigureAwait(false);
             if (!isGuildInDb)
             {
@@ -57,10 +56,6 @@ public class DatabaseService : DiscordClientService
 
     private async Task<GuildModel> RegisterGuildAsync(ulong guildId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
         var guild = new GuildModel
         {
             GuildId = guildId,
@@ -119,17 +114,13 @@ public class DatabaseService : DiscordClientService
             })
             .ToList();
         guild.Users = usersToAdd;
-        await collection.InsertOneAsync(guild).ConfigureAwait(false);
+        await _collection.InsertOneAsync(guild).ConfigureAwait(false);
         return guild;
     }
 
     private async ValueTask<GuildConfig> GetGuildConfigAsync(ulong guildId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         return guild.Config;
     }
@@ -138,7 +129,7 @@ public class DatabaseService : DiscordClientService
     {
         var config = await _cache.GetOrCreateAsync(guildId.ToString(), async x =>
         {
-            x.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
+            x.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(5);
             return await GetGuildConfigAsync(guildId).ConfigureAwait(false);
         }).ConfigureAwait(false);
         return config;
@@ -146,11 +137,7 @@ public class DatabaseService : DiscordClientService
 
     private async ValueTask<User> RegisterUserAsync(ulong guildId, ulong userId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         guild.Users.Add(new User
         {
@@ -160,16 +147,12 @@ public class DatabaseService : DiscordClientService
             LastDailyClaim = DateTime.MinValue,
             Warns = Array.Empty<Warn>().ToList()
         });
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         return guild.Users.Find(x => x.UserId == userId);
     }
     public async ValueTask<List<Warn>> GetWarnsByUserIdAsync(ulong guildId, ulong userId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
@@ -179,27 +162,19 @@ public class DatabaseService : DiscordClientService
 
     public async Task AddWarnByUserIdAsync(ulong guildId, ulong userId, ulong moderatorId, string reason)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
         user.Warns.Add(new Warn {ModeratorId = moderatorId, Reason = reason, Date = DateTime.UtcNow});
         guild.Users.Remove(user);
         guild.Users.Add(user);
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
     }
 
     public async Task<bool> RemoveWarnByUserIdAsync(ulong guildId, ulong userId, int warnId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
@@ -210,50 +185,38 @@ public class DatabaseService : DiscordClientService
         user.Warns.RemoveAt(warnId - 1);
         guild.Users.Remove(user);
         guild.Users.Add(user);
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         return true;
     }
 
     public async Task<int> AddPointsByUserIdAsync(ulong guildId, ulong userId, int pointsToAdd)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
         user.Points += pointsToAdd;
         guild.Users.Remove(user);
         guild.Users.Add(user);
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         return user.Points;
     }
     public async Task<int> SetPointsByUserIdAsync(ulong guildId, ulong userId, int points)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
         user.Points = points;
         guild.Users.Remove(user);
         guild.Users.Add(user);
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         return user.Points;
     }
 
     public async Task<int> GetUserPointsByIdAsync(ulong guildId, ulong userId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
@@ -262,44 +225,32 @@ public class DatabaseService : DiscordClientService
 
     public async Task<int> AddLevelByUserIdAsync(ulong guildId, ulong userId, int levelsToAdd)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
         user.Level += levelsToAdd;
         guild.Users.Remove(user);
         guild.Users.Add(user);
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         return user.Level;
     }
     public async Task<int> SetLevelByUserIdAsync(ulong guildId, ulong userId, int level)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
         user.Level = level;
         guild.Users.Remove(user);
         guild.Users.Add(user);
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         return user.Level;
     }
 
     public async Task<int> GetUserLevelByIdAsync(ulong guildId, ulong userId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
@@ -308,11 +259,7 @@ public class DatabaseService : DiscordClientService
 
     public async Task<List<User>> GetTopAsync(ulong guildId, int users)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var pointsPerLevel = (await GetGuildConfigAsync(guildId).ConfigureAwait(false)).Leveling.PointsToLevelUp;
         guild.Users.ForEach(x => x.Points += x.Level * pointsPerLevel);
@@ -321,11 +268,7 @@ public class DatabaseService : DiscordClientService
 
     public async Task<DateTime> GetDailyClaimDateByIdAsync(ulong guildId, ulong userId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
@@ -334,43 +277,31 @@ public class DatabaseService : DiscordClientService
 
     public async Task SetDailyClaimDateByIdAsync(ulong guildId, ulong userId, DateTime now)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
         user.LastDailyClaim = now;
         guild.Users.Remove(user);
         guild.Users.Add(user);
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
     }
 
     public async Task SetUserVoiceChannelJoinDateByIdAsync(ulong guildId, ulong userId, DateTime now)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
         user.LastVoiceChannelJoin = now;
         guild.Users.Remove(user);
         guild.Users.Add(user);
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
     }
 
     public async Task<DateTime> GetUserVoiceChannelJoinDateByIdAsync(ulong guildId, ulong userId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
@@ -379,11 +310,7 @@ public class DatabaseService : DiscordClientService
 
     public async Task SetUserOsuIdAsync(ulong guildId, ulong userId, ulong osuId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
@@ -391,15 +318,11 @@ public class DatabaseService : DiscordClientService
         guild.Users.Remove(user);
         guild.Users.Add(user);
 
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
     }
     public async Task<ulong> GetUserOsuIdAsync(ulong guildId, ulong userId)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == userId) ??
                    await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
@@ -408,11 +331,7 @@ public class DatabaseService : DiscordClientService
 
     public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(ulong guildId, int limit)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
 
         return guild.Users.Where(x => x.OsuId != 0).Select(x => (x.UserId, x.OsuId)).Take(limit).ToList();
@@ -420,14 +339,10 @@ public class DatabaseService : DiscordClientService
 
     public async Task SaveGuildConfigAsync(ulong guildId, GuildConfig config)
     {
-        var client = new MongoClient(_config.MongoDb.ConnectionString);
-        var database = client.GetDatabase(_config.MongoDb.Database);
-        var collection = database.GetCollection<GuildModel>(_config.MongoDb.Collection);
-        
-        var guild = (await collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).ToList()
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         guild.Config = config;
-        await collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         _cache.Set(guildId.ToString(), config);
     }
 }

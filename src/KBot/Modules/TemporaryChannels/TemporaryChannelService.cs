@@ -55,7 +55,7 @@ public class TemporaryVoiceModule : DiscordClientService
                 x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
                 {
                     new Overwrite(user.Id, PermissionTarget.User,
-                        new OverwritePermissions(manageChannel: PermValue.Allow, moveMembers: PermValue.Allow)),
+                        new OverwritePermissions(connect: PermValue.Allow, manageChannel: PermValue.Allow, moveMembers: PermValue.Allow)),
                     new Overwrite(guild.EveryoneRole.Id, PermissionTarget.Role,
                         new OverwritePermissions(connect: PermValue.Deny)),
                     new Overwrite(_client.CurrentUser.Id, PermissionTarget.Role,
@@ -69,7 +69,6 @@ public class TemporaryVoiceModule : DiscordClientService
         else if (_channels.Contains((user, before.VoiceChannel?.Id ?? 0)))
         {
             var (puser, channelId) = _channels.First(x => x.user == user && x.channelId == before.VoiceChannel.Id);
-            await guild.GetUser(puser.Id).ModifyAsync(x => x.Channel = null).ConfigureAwait(false);
             await guild.GetChannel(channelId).DeleteAsync().ConfigureAwait(false);
             _channels.Remove((puser, channelId));
         }

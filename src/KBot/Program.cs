@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
-using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Hosting;
 using Discord.Interactions;
@@ -21,9 +20,12 @@ using KBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Win32.TaskScheduler;
+using MongoDB.Driver;
 using Serilog;
 using Serilog.Events;
 using Victoria;
+using Task = System.Threading.Tasks.Task;
 
 namespace KBot;
 
@@ -80,8 +82,11 @@ public static class Program
                 });
                 services.AddSingleton<InteractiveService>();
                 services.AddHostedService<InteractionHandler>();
-                services.AddHostedService<AudioService>();
+                //services.AddHostedService<AudioService>();
                 services.AddSingleton<AudioService>();
+                services.AddSingleton<IHostedService, AudioService>(services => services.GetService<AudioService>());
+                services.AddSingleton<IMongoClient>(new MongoClient(context.Configuration.Get<BotConfig>().MongoDb.ConnectionString));
+                services.AddSingleton<IMongoDatabase>(services => services.GetService<IMongoClient>().GetDatabase(context.Configuration.Get<BotConfig>().MongoDb.Database));
                 services.AddSingleton<DatabaseService>();
                 services.AddHostedService<LoggingService>();
                 services.AddHostedService<AnnouncementsModule>();
@@ -95,6 +100,19 @@ public static class Program
             .UseSerilog()
             .UseConsoleLifetime()
             .Build();
+        
+        var wt = new WeeklyTrigger();
+        wt.StartBoundary = DateTime.Now.AddDays(7);
+        wt.DaysOfWeek = DaysOfTheWeek.Thursday;
+        wt.WeeksInterval = 1;
+        var td = TaskService.Instance.NewTask();
+        td.RegistrationInfo.Description = "KBot - Epic Free Games";
+        td.Triggers.Add(wt);
+        td.Settings.Compatibility = TaskCompatibility.V2_3;
+        td.Actions.Add("C:\\KBot\\KBotEpic.exe");
+
+        
+        TaskService.Instance.RootFolder.RegisterTaskDefinition("KBot - Epic Free Games", td);
         
         IShellLink link = (IShellLink)new ShellLink();
         link.SetDescription($"KBot");
@@ -110,9 +128,7 @@ public static class Program
 
     [ComImport]
     [Guid("00021401-0000-0000-C000-000000000046")]
-    internal class ShellLink
-    {
-    }
+    internal class ShellLink { }
 
     [ComImport]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

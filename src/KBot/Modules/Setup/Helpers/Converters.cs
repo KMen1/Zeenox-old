@@ -39,6 +39,7 @@ public static class Converters
         {
             "Enabled" => "Bekapcsolva",
             "UserJoinedChannelId" => "Köszöntő csatorna",
+            "JoinRoleId" => "Auto Rang",
             "UserLeftChannelId" => "Kilépő csatorna",
             "UserBannedChannelId" => "Ban csatorna",
             "UserUnbannedChannelId" => "Unban csatorna",

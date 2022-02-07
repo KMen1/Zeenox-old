@@ -29,7 +29,7 @@ public class InteractionHandler : DiscordClientService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Client.InteractionCreated += HandleInteractionAsync;
-        
+        Client.GuildAvailable += ClientOnGuildAvailableAsync;
         _interactionService.SlashCommandExecuted += HandleSlashCommandResultAsync;
         _interactionService.ComponentCommandExecuted += HandleComponentCommandResultAsync;
 
@@ -44,8 +44,13 @@ public class InteractionHandler : DiscordClientService
         await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
         await Client.SetGameAsync("/" + _provider.GetRequiredService<BotConfig>().Client.Game, type: ActivityType.Listening).ConfigureAwait(false);
         await Client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
-        foreach (var guild in Client.Guilds)
-            await _interactionService.AddModulesToGuildAsync(guild, true, _interactionService.Modules.ToArray()).ConfigureAwait(false);
+        /*foreach (var guild in Client.Guilds)
+            await _interactionService.AddModulesToGuildAsync(guild, true, _interactionService.Modules.ToArray()).ConfigureAwait(false);*/
+    }
+
+    private Task ClientOnGuildAvailableAsync(SocketGuild arg)
+    {
+        return _interactionService.AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray());
     }
 
     private static async Task HandleComponentCommandResultAsync(ComponentCommandInfo componentInfo, IInteractionContext interactionContext, IResult result)

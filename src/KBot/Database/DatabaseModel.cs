@@ -68,6 +68,7 @@ public class AnnouncementConfig
 {
     public bool Enabled { get; set; }
     public ulong UserJoinedChannelId { get; set; }
+    public ulong JoinRoleId { get; set; }
     public ulong UserLeftChannelId { get; set; }
     public ulong UserBannedChannelId { get; set; }
     public ulong UserUnbannedChannelId { get; set; }

@@ -10,7 +10,7 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Utility;
 
-public class Update : InteractionModuleBase<SocketInteractionContext>
+public class Update : KBotModuleBase
 {
     private const string VersionUrl = "https://pastebin.com/raw/1gh1hT32";
     private const string UpdateUrl = "https://pastebin.com/raw/ru9hWYcj";
@@ -61,7 +61,7 @@ public class Update : InteractionModuleBase<SocketInteractionContext>
         {
             await response.Content.CopyToAsync(fs).ConfigureAwait(false);
         }
-        
+
         await msg.ModifyAsync(x => x.Content = "Frissítés letöltve...").ConfigureAwait(false);
         await Task.Delay(1000).ConfigureAwait(false);
         await msg.ModifyAsync(x => x.Content = "Frissítés kitömörítése...").ConfigureAwait(false);
