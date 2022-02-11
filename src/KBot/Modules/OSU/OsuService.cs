@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using KBot.Config;
+using KBot.Common;
 using Microsoft.Extensions.Hosting;
 using osu.API.Client.Auth;
 using osu.API.Data;
@@ -14,6 +14,7 @@ using osu.API.Requests.QueryParams;
 using osu.API.Requests.UrlParams;
 using osu.API.Requests.Users;
 using Serilog;
+using User = osu.API.Data.User;
 
 namespace KBot.Modules.OSU;
 

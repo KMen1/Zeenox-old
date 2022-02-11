@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Hosting;
 using Discord.WebSocket;
-using KBot.Database;
+using KBot.Services;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
@@ -32,15 +32,11 @@ public class TemporaryVoiceModule : DiscordClientService
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
         var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
-        if (guild is null)
-        {
-            return;
-        }
         if (user.IsBot)
         {
             return;
         }
-        var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigFromCacheAsync(guild!.Id).ConfigureAwait(false);
         if (!config.TemporaryChannels.Enabled)
         {
             return;
@@ -66,7 +62,7 @@ public class TemporaryVoiceModule : DiscordClientService
             await guild.GetUser(user.Id).ModifyAsync(x => x.Channel = voiceChannel).ConfigureAwait(false);
             _channels.Add((user, voiceChannel.Id));
         }
-        else if (_channels.Contains((user, before.VoiceChannel?.Id ?? 0)))
+        else if (_channels.Contains((user, before.VoiceChannel.Id)))
         {
             var (puser, channelId) = _channels.First(x => x.user == user && x.channelId == before.VoiceChannel.Id);
             await guild.GetChannel(channelId).DeleteAsync().ConfigureAwait(false);

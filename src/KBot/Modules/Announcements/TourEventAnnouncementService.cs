@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Hosting;
 using Discord.WebSocket;
-using KBot.Database;
 using KBot.Enums;
 using KBot.Modules.Announcements.Helpers;
+using KBot.Services;
 using Microsoft.Extensions.Logging;
 using Serilog;
 

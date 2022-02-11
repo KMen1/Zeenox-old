@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Discord.Addons.Hosting;
 using Discord.WebSocket;
-using KBot.Database;
+using KBot.Services;
 using Microsoft.Extensions.Logging;
 using Serilog;
 

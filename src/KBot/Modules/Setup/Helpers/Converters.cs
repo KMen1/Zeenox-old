@@ -1,5 +1,5 @@
 ﻿using System;
-using KBot.Database;
+using KBot.Common;
 using KBot.Enums;
 
 namespace KBot.Modules.Setup.Helpers;
@@ -49,6 +49,7 @@ public static class Converters
             "StreamingChannelId" => "Vetítő csatorna",
             "RoleId" => "Rang",
             "PointsToLevelUp" => "Pontok a szintlépéshez",
+            "AfkChannelId" => "AFK csatorna",
             _ => "Ismeretlen"
         };
     }

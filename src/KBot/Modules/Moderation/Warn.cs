@@ -19,7 +19,7 @@ public class WarnModule : KBotModuleBase
         var moderatorId = Context.User.Id;
         var userId = user.Id;
         await DeferAsync().ConfigureAwait(false);
-        await Database.AddWarnByUserIdAsync(Context.Guild.Id, userId, moderatorId, reason).ConfigureAwait(false);
+        await Database.AddWarnAsync(Context.Guild.Id, userId, moderatorId, reason).ConfigureAwait(false);
         await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} sikeresen figyelmeztetve!",
             $"A következő indokkal: `{reason}`").ConfigureAwait(false);
         await user.CreateDMChannelAsync().ContinueWith(async (task) =>
@@ -41,7 +41,7 @@ public class WarnModule : KBotModuleBase
     public async Task RemoveWarnAsync(SocketUser user, string reason, int warnId)
     {
         await DeferAsync().ConfigureAwait(false);
-        var result = await Database.RemoveWarnByUserIdAsync(Context.Guild.Id, user.Id, warnId).ConfigureAwait(false);
+        var result = await Database.RemoveWarnAsync(Context.Guild.Id, user.Id, warnId).ConfigureAwait(false);
         if (!result)
         {
             await FollowupWithEmbedAsync(EmbedResult.Error, "Nem sikerült a figyelmeztetés törlése!",
@@ -70,7 +70,7 @@ public class WarnModule : KBotModuleBase
     {
         var userId = user.Id;
         await DeferAsync().ConfigureAwait(false);
-        var warns = await Database.GetWarnsByUserIdAsync(Context.Guild.Id, userId).ConfigureAwait(false);
+        var warns = await Database.GetWarnsAsync(Context.Guild.Id, userId).ConfigureAwait(false);
         if (warns.Count is 0)
         {
             await FollowupWithEmbedAsync(EmbedResult.Success, "😎 Szép munka!",

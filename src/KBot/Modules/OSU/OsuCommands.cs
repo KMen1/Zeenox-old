@@ -27,7 +27,7 @@ public class Osu : KBotModuleBase
         }
         await DeferAsync().ConfigureAwait(false);
         var osuId = Convert.ToUInt64(link.Split("/").Last());
-        await Database.SetUserOsuIdAsync(Context.Guild.Id, Context.User.Id, osuId).ConfigureAwait(false);
+        await Database.SetOsuIdAsync(Context.Guild.Id, Context.User.Id, osuId).ConfigureAwait(false);
         await FollowupWithEmbedAsync(EmbedResult.Success, "Sikeresen beállítottad az osu! profilod!", "https://osu.ppy.sh/u/" + osuId).ConfigureAwait(false);
     }
 
@@ -35,7 +35,7 @@ public class Osu : KBotModuleBase
     public async Task OsuRecent()
     {
         await DeferAsync().ConfigureAwait(false);
-        var osuId = await Database.GetUserOsuIdAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        var osuId = await Database.GetOsuIdAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(EmbedResult.Error, "Nincs osu! profil beállítva!", "Kérlek állítsd be osu! profilodat a `osu set` parancs segítségével!").ConfigureAwait(false);
@@ -74,7 +74,7 @@ public class Osu : KBotModuleBase
     public async Task OsuStats()
     {
         await DeferAsync().ConfigureAwait(false);
-        var osuId = await Database.GetUserOsuIdAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        var osuId = await Database.GetOsuIdAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(EmbedResult.Error, "Nincs osu! profil beállítva!", "Kérlek állítsd be osu! profilodat a `osu set` parancs segítségével!").ConfigureAwait(false);
@@ -192,7 +192,7 @@ public class Osu : KBotModuleBase
     public async Task OsuTopPlay()
     {
         await DeferAsync().ConfigureAwait(false);
-        var osuId = await Database.GetUserOsuIdAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        var osuId = await Database.GetOsuIdAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(EmbedResult.Error, "Nincs osu! profil beállítva!", "Kérlek állítsd be osu! profilodat a `osu set` parancs segítségével!").ConfigureAwait(false);

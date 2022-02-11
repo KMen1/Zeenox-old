@@ -1,9 +1,8 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using Newtonsoft.Json;
+using KBot.Common;
 
 namespace KBot.Modules.EpicFreeGames;
 
@@ -14,20 +13,18 @@ public class EpicCommands : KBotModuleBase
     public async Task GetEpicFreeGameAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        using (var client = new HttpClient())
-        {
-            var response = await client.GetStringAsync("https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=HU&allowCountries=HU").ConfigureAwait(false);
-            var store = JsonConvert.DeserializeObject<StoreModel>(response);
-            var eb = new EmbedBuilder()
-                .WithTitle(store!.Data.Catalog.Search.Games[0].Title)
-                .WithDescription($"`{store.Data.Catalog.Search.Games[0].Description}`\n\n" +
-                                 $"💰 **{store.Data.Catalog.Search.Games[0].Price.TotalPrice.CountryPrice.OriginalPrice} -> Ingyenes** \n\n" +
-                                 $"🏁 <t:{((DateTimeOffset)store.Data.Catalog.Search.Games[0].Promotions.PromotionalOffers[0].Offers[0].EndDate).ToUnixTimeSeconds()}:R>" +
-                                 $"\n\n[Böngésző]({store.Data.Catalog.Search.Games[0].Url}) • [Epic Games Launcher](http://epicfreegames.net/redirect?slug={store.Data.Catalog.Search.Games[0].UrlSlug})")
-                .WithImageUrl(store.Data.Catalog.Search.Games[0].Images[0].Url)
-                .WithColor(Color.Gold)
-                .Build();
-            await FollowupAsync(embed: eb).ConfigureAwait(false);
-        }
+        using var client = new HttpClient();
+        var response = await client.GetStringAsync("https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=HU&allowCountries=HU").ConfigureAwait(false);
+        var search = EpicStore.FromJson(response);
+        var eb = new EmbedBuilder()
+            .WithTitle(search!.CurrentGame.Title)
+            .WithDescription($"`{search.CurrentGame.Description}`\n\n" +
+                             $"💰 **{search.CurrentGame.Price.TotalPrice.FmtPrice.OriginalPrice} -> Ingyenes** \n\n" +
+                             $"🏁 <t:{search.CurrentGame.Discounts[0].EndDate.ToUnixTimeSeconds()}:R>" +
+                             $"\n\n[Böngésző]({search.CurrentGame.Url}) • [Epic Games Launcher](http://epicfreegames.net/redirect?slug={search.CurrentGame.UrlSlug})")
+            .WithImageUrl(search.CurrentGame.KeyImages[0].Url.ToString())
+            .WithColor(Color.Gold)
+            .Build();
+        await FollowupAsync(embed: eb).ConfigureAwait(false);
     }
 }

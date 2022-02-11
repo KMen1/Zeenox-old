@@ -2,9 +2,10 @@
 using Discord;
 using Discord.Interactions;
 using Fergun.Interactive;
-using KBot.Database;
+using KBot.Common;
 using KBot.Enums;
 using KBot.Modules.Audio;
+using KBot.Services;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace KBot.Modules;

@@ -23,7 +23,6 @@ public class AudioService : DiscordClientService
 {
     private readonly DiscordSocketClient _client;
     private readonly LavaNode _lavaNode;
-    private readonly ILogger<AudioService> _logger;
 
     private Dictionary<ulong, bool> LoopEnabled { get; } = new();
     private Dictionary<ulong, string> FilterEnabled { get; } = new();
@@ -36,7 +35,6 @@ public class AudioService : DiscordClientService
     {
         _lavaNode = lavaNode;
         _client = client;
-        _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -52,12 +50,8 @@ public class AudioService : DiscordClientService
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
         var guild = before.VoiceChannel?.Guild ?? after.VoiceChannel?.Guild;
-        if (guild == null)
-        {
-            return;
-        }
 
-        var nowPlayingMessage = NowPlayingMessage.GetValueOrDefault(guild.Id);
+        var nowPlayingMessage = NowPlayingMessage.GetValueOrDefault(guild!.Id);
         if (user.Id == _client.CurrentUser.Id && after.VoiceChannel is null && nowPlayingMessage is not null)
         {
             var log = guild.GetAuditLogsAsync(1, actionType: ActionType.MemberDisconnected).Flatten();
@@ -148,7 +142,7 @@ public class AudioService : DiscordClientService
                 await Task.Delay(5000).ConfigureAwait(false);
                 await msg.DeleteAsync().ConfigureAwait(false);
             }
-            await UpdateNowPlayingMessageAsync(guild.Id, player, null, true, true).ConfigureAwait(false);
+            await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
             return;
         }
 

@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Common;
 using KBot.Enums;
 using KBot.Modules.Setup.Helpers;
 
@@ -25,6 +28,7 @@ public class SetupCommands : KBotModuleBase
             Title = Converters.GetTitleFromModuleEnum(module),
             Color = Color.Gold
         };
+        var components = new ComponentBuilder();
         var selectMenu = new SelectMenuBuilder()
             .WithPlaceholder("Módosítás...")
             .WithCustomId("setupselect")
@@ -43,7 +47,20 @@ public class SetupCommands : KBotModuleBase
                 continue;
             }
 
-            if (Context.Guild.GetChannel(Convert.ToUInt64(value)) is SocketCategoryChannel category)
+            if (value is List<LevelRole> levelRoles)
+            {
+                var desc = new StringBuilder();
+                if (levelRoles.Count == 0)
+                {
+                    desc.AppendLine("`Nincs`");
+                }
+                foreach (var role in levelRoles)
+                {
+                    desc.AppendLine($"Lvl. {role.Level} - {Context.Guild.GetRole(role.RoleId).Mention}");
+                }
+                embed.AddField("Auto Rangok", desc.ToString());
+            }
+            else if (Context.Guild.GetChannel(Convert.ToUInt64(value)) is SocketCategoryChannel category)
             {
                 embed.AddField(title, $"`{category.Name}`");
             }
@@ -67,6 +84,11 @@ public class SetupCommands : KBotModuleBase
             selectMenu.AddOption(title, $"{module.ToString()}:{property.Name}");
         }
 
-        await FollowupAsync(embed: embed.Build(), components: new ComponentBuilder().WithSelectMenu(selectMenu).Build()).ConfigureAwait(false);
+        if (module is GuildModules.Leveling)
+        {
+            components.WithButton("Auto Rang", "setupaddlevelrole", ButtonStyle.Success, new Emoji("➕"));
+            components.WithButton("Auto Rang", "setupremovelevelrole", ButtonStyle.Danger, new Emoji("➖"));
+        }
+        await FollowupAsync(embed: embed.Build(), components: components.WithSelectMenu(selectMenu).Build()).ConfigureAwait(false);
     }
 }
