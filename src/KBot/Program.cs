@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -21,6 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Win32.TaskScheduler;
 using MongoDB.Driver;
+using Sentry;
 using Serilog;
 using Serilog.Events;
 using Victoria;
@@ -36,6 +38,16 @@ public static class Program
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
             .WriteTo.Console()
+            .WriteTo.Sentry(x =>
+            {
+                x.MinimumBreadcrumbLevel = LogEventLevel.Warning;
+                x.MinimumEventLevel = LogEventLevel.Warning;
+                x.Dsn = "";
+                x.Debug = false;
+                x.AttachStacktrace = true;
+                x.SendDefaultPii = true;
+                x.TracesSampleRate = 1.0;
+            })
             .CreateLogger();
 
         var host = Host.CreateDefaultBuilder()
@@ -81,7 +93,6 @@ public static class Program
                 });
                 services.AddSingleton<InteractiveService>();
                 services.AddHostedService<InteractionHandler>();
-                //services.AddHostedService<AudioService>();
                 services.AddSingleton<AudioService>();
                 services.AddSingleton<IHostedService, AudioService>(x => x.GetService<AudioService>());
                 services.AddSingleton<IMongoClient>(new MongoClient(context.Configuration.Get<BotConfig>().MongoDb.ConnectionString));
@@ -101,14 +112,14 @@ public static class Program
             .Build();
         
         var wt = new WeeklyTrigger();
-        wt.StartBoundary = DateTime.Now.AddDays(7);
+        wt.StartBoundary = DateTime.Today.AddHours(17).AddMinutes(15);
         wt.DaysOfWeek = DaysOfTheWeek.Thursday;
         wt.WeeksInterval = 1;
         var td = TaskService.Instance.NewTask();
         td.RegistrationInfo.Description = "KBot - Epic Free Games";
         td.Triggers.Add(wt);
         td.Settings.Compatibility = TaskCompatibility.V2_3;
-        td.Actions.Add("C:\\KBot\\KBotEpic.exe");
+        td.Actions.Add($"C:\\KBot\\{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}\\Epic\\KBotEpic.exe");
 
         
         TaskService.Instance.RootFolder.RegisterTaskDefinition("KBot - Epic Free Games", td);
