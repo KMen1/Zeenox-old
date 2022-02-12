@@ -332,6 +332,6 @@ public class DatabaseService : DiscordClientService
             .FirstOrDefault() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
         guild.Config = config;
         await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
-        _cache.Set(guildId.ToString(), config);
+        _cache.Remove(guildId.ToString());
     }
 }
