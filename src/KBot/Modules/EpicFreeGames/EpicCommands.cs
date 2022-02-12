@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -20,8 +21,8 @@ public class EpicCommands : KBotModuleBase
             .WithTitle(search!.CurrentGame.Title)
             .WithDescription($"`{search.CurrentGame.Description}`\n\n" +
                              $"💰 **{search.CurrentGame.Price.TotalPrice.FmtPrice.OriginalPrice} -> Ingyenes** \n\n" +
-                             $"🏁 <t:{search.CurrentGame.Discounts[0].EndDate.ToUnixTimeSeconds()}:R>" +
-                             $"\n\n[Böngésző]({search.CurrentGame.Url}) • [Epic Games Launcher](http://epicfreegames.net/redirect?slug={search.CurrentGame.UrlSlug})")
+                             $"🏁 <t:{((DateTimeOffset)DateTime.Today.AddHours(17)).ToUnixTimeSeconds()}:R>" +
+                             $"\n\n[Böngésző]({search.CurrentGame.EpicUrl}) • [Epic Games Launcher](http://epicfreegames.net/redirect?slug={search.CurrentGame.UrlSlug})")
             .WithImageUrl(search.CurrentGame.KeyImages[0].Url.ToString())
             .WithColor(Color.Gold)
             .Build();
