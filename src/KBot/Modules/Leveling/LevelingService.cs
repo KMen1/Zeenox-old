@@ -75,7 +75,7 @@ public class LevelingModule : DiscordClientService
         }
         if (before.VoiceChannel is null || before.VoiceChannel.Id == config.Leveling.AfkChannelId)
         {
-            await _database.SetVoiceChannelJoinDateAsync(guild.Id, user.Id, DateTime.Now).ConfigureAwait(false);
+            await _database.SetVoiceChannelJoinDateAsync(guild.Id, user.Id, DateTime.UtcNow).ConfigureAwait(false);
         }
         else if (after.VoiceChannel is null || after.VoiceChannel.Id == config.Leveling.AfkChannelId)
         {
@@ -111,8 +111,11 @@ public class LevelingModule : DiscordClientService
         }
         var newLevel = await _database.AddLevelAsync(guild.Id, user.Id, levelsToAdd).ConfigureAwait(false);
         await _database.SetPointsAsync(guild.Id, user.Id, newPoints).ConfigureAwait(false);
-
-        var roleId = config.Leveling.LevelRoles.First(x => x.Level == newLevel).RoleId;
+        ulong roleId = 0;
+        if (config.Leveling.LevelRoles.Exists(x => x.Level == newLevel))
+        {
+            roleId = config.Leveling.LevelRoles.First(x => x.Level == newLevel).RoleId;
+        }
         var roleToAdd = guild.GetRole(roleId);
         if (roleToAdd is not null)
         {

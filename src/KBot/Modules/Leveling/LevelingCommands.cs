@@ -45,7 +45,7 @@ public class Levels : KBotModuleBase
         foreach (var user in top)
         {
             userColumn += $"{top.IndexOf(user) +1 }. {Context.Guild.GetUser(user.UserId).Mention}\n";
-            levelColumn += $"`{user.Level} ({user.Points} XP)`\n";
+            levelColumn += $"{user.Level} ({user.Points} XP)\n";
         }
 
         await FollowupAsync(embed: new EmbedBuilder()
