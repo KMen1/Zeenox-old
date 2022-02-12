@@ -62,7 +62,7 @@ public class TemporaryVoiceModule : DiscordClientService
             await guild.GetUser(user.Id).ModifyAsync(x => x.Channel = voiceChannel).ConfigureAwait(false);
             _channels.Add((user, voiceChannel.Id));
         }
-        else if (_channels.Contains((user, before.VoiceChannel.Id)))
+        else if (_channels.Contains((user, before.VoiceChannel?.Id ?? 0)))
         {
             var (puser, channelId) = _channels.First(x => x.user == user && x.channelId == before.VoiceChannel.Id);
             await guild.GetChannel(channelId).DeleteAsync().ConfigureAwait(false);
