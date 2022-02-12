@@ -7,7 +7,7 @@ namespace KBot.Modules.Forms;
 [Group("form", "Kitölthető űrlapok")]
 public class FormCommands : KBotModuleBase
 {
-    [SlashCommand("appeal", "Warn/Timeout/Ban fellebbezés")]
+    [SlashCommand("appeal", "Warn, Timeout, Mute fellebbezés")]
     public Task ApplyForAdminAsync()
     {
         var modal = new ModalBuilder()
