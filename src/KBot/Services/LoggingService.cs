@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Hosting;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -13,14 +14,17 @@ public class LoggingService : DiscordClientService
 {
     
     private readonly LavaNode _lavaNode;
-    public LoggingService(DiscordSocketClient client, ILogger<LoggingService> logger, LavaNode lavaNode) : base(client, logger)
+    private readonly InteractionService _interactionService;
+    public LoggingService(DiscordSocketClient client, ILogger<LoggingService> logger, LavaNode lavaNode, InteractionService interactionService) : base(client, logger)
     {
         _lavaNode = lavaNode;
+        _interactionService = interactionService;
     }
     
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _lavaNode.OnLog += LogAsync;
+        _interactionService.Log += LogAsync;
         return Task.CompletedTask;
     }
 
