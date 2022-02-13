@@ -91,7 +91,7 @@ public class OsuService : BackgroundService
         return beatmap;
     }
 
-    public static Color? GetColorFromGrade(ScoreGrade scoreGrade)
+    public static Color GetColorFromGrade(ScoreGrade scoreGrade)
     {
         switch (scoreGrade)
         {

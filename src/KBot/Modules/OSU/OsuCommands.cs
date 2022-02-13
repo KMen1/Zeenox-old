@@ -47,29 +47,9 @@ public class Osu : KBotModuleBase
             await FollowupWithEmbedAsync(EmbedResult.Error, "Az elmúlt 24 órában nincs osu! scoreod!", "Kérlek próbáld meg később!").ConfigureAwait(false);
             return;
         }
-        var beatmap = await OsuService.GetBeatMapByIdAsync(score.Beatmap.Id).ConfigureAwait(false);
-        var pp = score.PP is null ? 0 : Math.Round((double)score.PP, 2);
-        var mods = score.Mods.Length == 0 ? "No Mod" : string.Concat(score.Mods).ToUpper();
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-               IconUrl = score.User.AvatarUrl,
-               Name = $"{score.Beatmapset.Title} [{score.Beatmap.Version}] +{mods} [{score.Beatmap.DifficultyRating.ToString(CultureInfo.InvariantCulture).Replace(",", ".")}★]",
-               Url = score.Beatmap.Url
-            },
-            ThumbnailUrl = $"https://b.ppy.sh/thumb/{score.Beatmapset.Id.ToString()}.jpg",
-            Description = $"▸ {OsuService.GetEmojiFromGrade(score.Grade)}▸ {score.Accuracy:P2} ▸ **{pp.ToString(CultureInfo.InvariantCulture)}PP** \n " +
-                          $"▸ {score.Score_:n0} ▸ x{score.MaxCombo.ToString()}/{beatmap.MaxCombo.ToString()} ▸ [{score.Statistics.Count300.ToString()}/{score.Statistics.Count100.ToString()}/{score.Statistics.Count50.ToString()}/{score.Statistics.CountMiss.ToString()}]",
-            Color = OsuService.GetColorFromGrade(score.Grade),
-            Footer = new EmbedFooterBuilder
-            {
-                Text = $"{score.User.Username} - {score.CreatedAt.Humanize(culture: new CultureInfo("hu-HU"))}",
-                IconUrl = "https://cdn.discordapp.com/emojis/864051085810991164.webp?size=96&quality=lossless"
-            }
-        }.Build();
-        await FollowupAsync(embed: eb).ConfigureAwait(false);
+        await FollowUpWithScoreAsync(score).ConfigureAwait(false);
     }
+
     [SlashCommand("stats", "osu! statisztikák")]
     public async Task OsuStats()
     {
@@ -199,28 +179,25 @@ public class Osu : KBotModuleBase
             return;
         }
         var score = await OsuService.GetScoreAsync(osuId, ScoreType.BEST).ConfigureAwait(false);
+        await FollowUpWithScoreAsync(score).ConfigureAwait(false);
+    }
+    private async Task FollowUpWithScoreAsync(Score score)
+    {
         var beatmap = await OsuService.GetBeatMapByIdAsync(score.Beatmap.Id).ConfigureAwait(false);
-        var pp = score.PP is null ? 0 : Math.Round((double)score.PP, 2);
-
+        var pp = score.PP is null ? 0 : Math.Round((double) score.PP, 2);
         var mods = score.Mods.Length == 0 ? "No Mod" : string.Concat(score.Mods).ToUpper();
-        var eb = new EmbedBuilder
-        {
-            Author = new EmbedAuthorBuilder
-            {
-                IconUrl = score.User.AvatarUrl,
-                Name = $"{score.Beatmapset.Title} [{score.Beatmap.Version}] +{mods} [{score.Beatmap.DifficultyRating.ToString(CultureInfo.InvariantCulture).Replace(",", ".")}★]",
-                Url = score.Beatmap.Url
-            },
-            ThumbnailUrl = $"https://b.ppy.sh/thumb/{score.Beatmapset.Id.ToString()}.jpg",
-            Description = $"▸ {OsuService.GetEmojiFromGrade(score.Grade)}▸ {score.Accuracy:P2} ▸ **{pp.ToString(CultureInfo.InvariantCulture)}PP** \n " +
-                          $"▸ {score.Score_:n0} ▸ x{score.MaxCombo.ToString()}/{beatmap.MaxCombo.ToString()} ▸ [{score.Statistics.Count300.ToString()}/{score.Statistics.Count100.ToString()}/{score.Statistics.Count50.ToString()}/{score.Statistics.CountMiss.ToString()}]",
-            Color = OsuService.GetColorFromGrade(score.Grade),
-            Footer = new EmbedFooterBuilder
-            {
-                Text = $"{score.User.Username} - {score.CreatedAt.Humanize(culture: new CultureInfo("hu-HU"))}",
-                IconUrl = "https://cdn.discordapp.com/emojis/864051085810991164.webp?size=96&quality=lossless"
-            }
-        }.Build();
+        var eb = new EmbedBuilder()
+            .WithAuthor(
+                $"{score.Beatmapset.Title} [{score.Beatmap.Version}] +{mods} [{score.Beatmap.DifficultyRating.ToString(CultureInfo.InvariantCulture).Replace(",", ".")}★]",
+                score.User.AvatarUrl, score.Beatmap.Url)
+            .WithThumbnailUrl($"https://b.ppy.sh/thumb/{score.Beatmapset.Id.ToString()}.jpg")
+            .WithDescription(
+                $"▸ {OsuService.GetEmojiFromGrade(score.Grade)}▸ {score.Accuracy:P2} ▸ **{pp.ToString(CultureInfo.InvariantCulture)}PP** \n " +
+                $"▸ {score.Score_:n0} ▸ x{score.MaxCombo.ToString()}/{beatmap.MaxCombo.ToString()} ▸ [{score.Statistics.Count300.ToString()}/{score.Statistics.Count100.ToString()}/{score.Statistics.Count50.ToString()}/{score.Statistics.CountMiss.ToString()}]")
+            .WithColor(OsuService.GetColorFromGrade(score.Grade))
+            .WithFooter($"{score.User.Username} - {score.CreatedAt.Humanize(culture: new CultureInfo("hu-HU"))}",
+                "https://cdn.discordapp.com/emojis/864051085810991164.webp?size=96&quality=lossless")
+            .Build();
         await FollowupAsync(embed: eb).ConfigureAwait(false);
     }
 }
