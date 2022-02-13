@@ -31,6 +31,30 @@ public class AudioService : DiscordClientService
     private Dictionary<ulong, List<LavaTrack>> QueueHistory { get; } = new();
     private Dictionary<ulong, SocketUser> LastRequestedBy { get; } = new();
 
+    private readonly Dictionary<FilterType, EqualizerBand[]> EqualizerBands = new()
+    {
+        {FilterType.Bassboost, Helpers.Filters.BassBoost()},
+        {FilterType.Pop, Helpers.Filters.Pop()},
+        {FilterType.Soft, Helpers.Filters.Soft()},
+        {FilterType.Treblebass, Helpers.Filters.TrebleBass()},
+    };
+
+    private readonly Dictionary<FilterType, IFilter> Filters = new()
+    {
+        {FilterType.Nightcore, Helpers.Filters.NightCore()},
+        {FilterType.Eightd, Helpers.Filters.EightD()},
+        {FilterType.Vaporwave, Helpers.Filters.VaporWave()},
+        {FilterType.Doubletime, Helpers.Filters.Doubletime()},
+        {FilterType.Slowmotion, Helpers.Filters.Slowmotion()},
+        {FilterType.Chipmunk, Helpers.Filters.Chipmunk()},
+        {FilterType.Darthvader, Helpers.Filters.Darthvader()},
+        {FilterType.Dance, Helpers.Filters.Dance()},
+        {FilterType.China, Helpers.Filters.China()},
+        //{FilterType.Vibrate, Helpers.Filters.Vibrate()},
+        {FilterType.Vibrato, Helpers.Filters.Vibrato()},
+        {FilterType.Tremolo, Helpers.Filters.Tremolo()},
+    };
+
     public AudioService(DiscordSocketClient client, ILogger<AudioService> logger, LavaNode lavaNode) : base(client, logger)
     {
         _lavaNode = lavaNode;
@@ -100,45 +124,40 @@ public class AudioService : DiscordClientService
         await _lavaNode.MoveChannelAsync(voiceChannel).ConfigureAwait(false);
         return Embeds.MoveEmbed(voiceChannel);
     }
-    public async Task PlayAsync(IGuild guild, ITextChannel tChannel, SocketUser user, IDiscordInteraction interaction,
-        string query)
+    public async Task PlayAsync(IGuild guild, SocketInteraction interaction, string query)
     {
+        var user = interaction.User;
+        var textChannel = (ITextChannel)interaction.Channel;
         var voiceChannel = ((IVoiceState)user).VoiceChannel;
-        if (voiceChannel is null)
-        {
-            await interaction.FollowupAsync(embed: Embeds.ErrorEmbed("Nem vagy hangcsatornában!")).ConfigureAwait(false);
-            return;
-        }
-        var search = Uri.IsWellFormedUriString(query, UriKind.Absolute)
-            ? await _lavaNode.SearchAsync(SearchType.Direct, query).ConfigureAwait(false) :
-            await _lavaNode.SearchYouTubeAsync(query).ConfigureAwait(false);
-        if (search.Status == SearchStatus.NoMatches)
+        var searchResponse = await SearchAsync(query).ConfigureAwait(false);
+        if (searchResponse.Tracks is null)
         {
             await interaction.FollowupAsync(embed: Embeds.ErrorEmbed("Nincs találat!")).ConfigureAwait(false);
             return;
         }
 
         var queue = Queue.GetValueOrDefault(guild.Id) ?? new LinkedList<(LavaTrack, SocketUser)>();
-        var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(voiceChannel, tChannel).ConfigureAwait(false);
+        var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(voiceChannel, textChannel).ConfigureAwait(false);
+
         if (IsPlaying(player))
         {
-            if (!string.IsNullOrWhiteSpace(search.Playlist.Name))
+            if (!string.IsNullOrWhiteSpace(searchResponse.Playlist.Name))
             {
-                foreach (var track in search.Tracks)
+                foreach (var track in searchResponse.Tracks)
                 {
                     queue.AddLast((track, user));
                 }
                 Queue[guild.Id] = queue;
                 var msg = await interaction
-                    .FollowupAsync(embed: Embeds.AddedToQueueEmbed(search.Tracks.ToList())).ConfigureAwait(false);
+                    .FollowupAsync(embed: Embeds.AddedToQueueEmbed(searchResponse.Tracks.ToList())).ConfigureAwait(false);
                 await Task.Delay(5000).ConfigureAwait(false);
                 await msg.DeleteAsync().ConfigureAwait(false);
             }
             else
             {
-                queue.AddLast((search.Tracks.First(), user));
+                queue.AddLast((searchResponse.Tracks.First(), user));
                 Queue[guild.Id] = queue;
-                var msg = await interaction.FollowupAsync(embed: Embeds.AddedToQueueEmbed(new List<LavaTrack>{search.Tracks.First()})).ConfigureAwait(false);
+                var msg = await interaction.FollowupAsync(embed: Embeds.AddedToQueueEmbed(new List<LavaTrack>{searchResponse.Tracks.First()})).ConfigureAwait(false);
                 await Task.Delay(5000).ConfigureAwait(false);
                 await msg.DeleteAsync().ConfigureAwait(false);
             }
@@ -148,24 +167,25 @@ public class AudioService : DiscordClientService
 
         NowPlayingMessage[guild.Id] = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
 
-        if (!string.IsNullOrWhiteSpace(search.Playlist.Name))
+        if (!string.IsNullOrWhiteSpace(searchResponse.Playlist.Name))
         {
-            foreach (var track in search.Tracks.Skip(1))
+            foreach (var track in searchResponse.Tracks.Skip(1))
             {
                 queue.AddLast((track, user));
             }
             Queue[guild.Id] = queue;
         }
-        await player.PlayAsync(search.Tracks.First()).ConfigureAwait(false);
+        await player.PlayAsync(searchResponse.Tracks.First()).ConfigureAwait(false);
         LastRequestedBy[guild.Id] = user;
         await player.UpdateVolumeAsync(100).ConfigureAwait(false);
         await interaction.FollowupAsync(
             embed: await Embeds.NowPlayingEmbed(user, player, LoopEnabled.GetValueOrDefault(guild.Id), FilterEnabled.GetValueOrDefault(guild.Id), queue.Count).ConfigureAwait(false),
             components: Components.NowPlayingComponents(CanGoBack(guild.Id), CanGoForward(guild.Id), player)).ConfigureAwait(false);
     }
-    public async Task PlayAsync(IGuild guild, ITextChannel tChannel, SocketUser user, IDiscordInteraction interaction,
-        LavaTrack track)
+    public async Task PlayAsync(IGuild guild, SocketInteraction interaction, LavaTrack track)
     {
+        var user = interaction.User;
+        var textChannel = (ITextChannel)interaction.Channel;
         var voiceChannel = ((IVoiceState)user).VoiceChannel;
         if (voiceChannel is null)
         {
@@ -174,7 +194,7 @@ public class AudioService : DiscordClientService
         }
 
         var queue = Queue.GetValueOrDefault(guild.Id) ?? new LinkedList<(LavaTrack, SocketUser)>();
-        var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(voiceChannel, tChannel).ConfigureAwait(false);
+        var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(voiceChannel, textChannel).ConfigureAwait(false);
         if (IsPlaying(player))
         {
             queue.AddLast((track, user));
@@ -187,7 +207,6 @@ public class AudioService : DiscordClientService
             await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
             return;
         }
-        NowPlayingMessage[guild.Id] = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
 
         await player.PlayAsync(track).ConfigureAwait(false);
         await player.UpdateVolumeAsync(100).ConfigureAwait(false);
@@ -199,6 +218,8 @@ public class AudioService : DiscordClientService
             x.Embed = embed;
             x.Components = Components.NowPlayingComponents(CanGoBack(guild.Id), CanGoForward(guild.Id), player);
         }).ConfigureAwait(false);
+        NowPlayingMessage[guild.Id] = msgt;
+        LastRequestedBy[guild.Id] = user;
     }
 
     public async Task StopAsync(IGuild guild)
@@ -277,7 +298,7 @@ public class AudioService : DiscordClientService
             return;
         }
         var currentVolume = player.Volume;
-        if ((currentVolume == 0 && buttonType == VoiceButtonType.VolumeDown) || (currentVolume == 100 && buttonType == VoiceButtonType.VolumeUp))
+        if (currentVolume == 0 && buttonType == VoiceButtonType.VolumeDown || currentVolume == 100 && buttonType == VoiceButtonType.VolumeUp)
         {
             return;
         }
@@ -319,89 +340,13 @@ public class AudioService : DiscordClientService
             return;
         }
         await player.ApplyFiltersAsync(Array.Empty<IFilter>(), equalizerBands: Array.Empty<EqualizerBand>()).ConfigureAwait(false);
-        switch (filterType)
+        if (Filters.ContainsKey(filterType))
         {
-            case FilterType.Bassboost:
-            {
-                await player.EqualizerAsync(Filters.BassBoost()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Pop:
-            {
-                await player.EqualizerAsync(Filters.Pop()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Soft:
-            {
-                await player.EqualizerAsync(Filters.Soft()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Treblebass:
-            {
-                await player.EqualizerAsync(Filters.TrebleBass()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Nightcore:
-            {
-                await player.ApplyFilterAsync(Filters.NightCore()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Eightd:
-            {
-                await player.ApplyFilterAsync(Filters.EightD()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Vaporwave:
-            {
-                var (filter, eq) = Filters.VaporWave();
-                await player.ApplyFiltersAsync(filter, equalizerBands: eq).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Doubletime:
-            {
-                await player.ApplyFilterAsync(Filters.Doubletime()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Slowmotion:
-            {
-                await player.ApplyFilterAsync(Filters.Slowmotion()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Chipmunk:
-            {
-                await player.ApplyFilterAsync(Filters.Chipmunk()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Darthvader:
-            {
-                await player.ApplyFilterAsync(Filters.Darthvader()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Dance:
-            {
-                await player.ApplyFilterAsync(Filters.Dance()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.China:
-            {
-                await player.ApplyFilterAsync(Filters.China()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Vibrate:
-            {
-                await player.ApplyFiltersAsync(Filters.Vibrate()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Vibrato:
-            {
-                await player.ApplyFilterAsync(Filters.Vibrato()).ConfigureAwait(false);
-                break;
-            }
-            case FilterType.Tremolo:
-            {
-                await player.ApplyFilterAsync(Filters.Tremolo()).ConfigureAwait(false);
-                break;
-            }
+            await player.ApplyFilterAsync(Filters[filterType]).ConfigureAwait(false);
+        }
+        else if (EqualizerBands.ContainsKey(filterType))
+        {
+            await player.EqualizerAsync(EqualizerBands[filterType]).ConfigureAwait(false);
         }
         FilterEnabled[guild.Id] = filterType.ToString();
         await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true).ConfigureAwait(false);
@@ -448,7 +393,6 @@ public class AudioService : DiscordClientService
 
     private async Task OnTrackEndedAsync(TrackEndedEventArgs args)
     {
-        var test = NowPlayingMessage[args.Player.TextChannel.GuildId];
         if (!ShouldPlayNext(args.Reason))
         {
             return;
@@ -539,9 +483,11 @@ public class AudioService : DiscordClientService
         LastRequestedBy[guildId] = null;
     }
 
-    public async Task<List<LavaTrack>> SearchAsync(string query)
+    public async Task<SearchResponse> SearchAsync(string query)
     {
-        var results = await _lavaNode.SearchYouTubeAsync(query).ConfigureAwait(false);
-        return results.Tracks.ToList();
+        var results = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
+            await _lavaNode.SearchAsync(SearchType.Direct, query).ConfigureAwait(false) :
+            await _lavaNode.SearchYouTubeAsync(query).ConfigureAwait(false);
+        return results.Status is not SearchStatus.NoMatches or SearchStatus.LoadFailed ? results : new SearchResponse();
     }
 }

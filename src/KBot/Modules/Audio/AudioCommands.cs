@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using KBot.Modules.Audio.Helpers;
 
 namespace KBot.Modules.Audio;
 
@@ -27,8 +28,13 @@ public class MusicCommands : KBotModuleBase
     public async Task Play([Summary("query", "Zene linkje vagy címe (YouTube, SoundCloud, Twitch)")] string query)
     {
         await DeferAsync().ConfigureAwait(false);
+        if (((IVoiceState)Context.User).VoiceChannel is null)
+        {
+            await FollowupAsync(embed: Embeds.ErrorEmbed("Nem vagy hangcsatornában!")).ConfigureAwait(false);
+            return;
+        }
         await AudioService
-            .PlayAsync(Context.Guild, (ITextChannel) Context.Channel, Context.User, Context.Interaction, query)
+            .PlayAsync(Context.Guild, Context.Interaction, query)
             .ConfigureAwait(false);
     }
 
@@ -36,7 +42,7 @@ public class MusicCommands : KBotModuleBase
     public async Task Search([Summary("query", "Zene címe")] string query)
     {
         await DeferAsync().ConfigureAwait(false);
-        var tracks = await AudioService.SearchAsync(query).ConfigureAwait(false);
+        var tracks = (await AudioService.SearchAsync(query).ConfigureAwait(false)).Tracks.ToList();
         var desc = new StringBuilder();
         foreach (var track in tracks.Take(10))
         {
@@ -73,7 +79,7 @@ public class MusicCommands : KBotModuleBase
 
         await result.Value!.DeferAsync().ConfigureAwait(false);
         var index = int.Parse(result.Value!.Data.CustomId);
-        await AudioService.PlayAsync(Context.Guild, (ITextChannel) Context.Channel, Context.User, Context.Interaction, tracks[index]).ConfigureAwait(false);
+        await AudioService.PlayAsync(Context.Guild, Context.Interaction, tracks[index]).ConfigureAwait(false);
     }
 
     [SlashCommand("volume", "Hangerő beállítása")]
