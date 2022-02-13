@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Addons.Hosting;
 using Discord.WebSocket;
 using KBot.Enums;
@@ -22,94 +21,32 @@ public class MovieModule : DiscordClientService
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Client.GuildScheduledEventCreated += AnnounceScheduledEventCreatedAsync;
-        Client.GuildScheduledEventUpdated += AnnounceScheduledEventUpdatedAsync;
-        Client.GuildScheduledEventStarted += AnnounceScheduledEventStartedAsync;
-        Client.GuildScheduledEventCancelled += AnnounceScheduledEventCancelledAsync;
+        Client.GuildScheduledEventCreated += guildEvent => HandleMovieEventAsync(guildEvent, EventEmbedType.Scheduled);
+        Client.GuildScheduledEventUpdated += (_, after) => HandleMovieEventAsync(after, EventEmbedType.Updated);
+        Client.GuildScheduledEventStarted += guildEvent => HandleMovieEventAsync(guildEvent, EventEmbedType.Started);
+        Client.GuildScheduledEventCancelled += guildEvent => HandleMovieEventAsync(guildEvent, EventEmbedType.Cancelled);
         Log.Logger.Information("Movie Events Module Loaded");
         return Task.CompletedTask;
     }
 
-    private static async Task AnnounceScheduledEventCreatedAsync(SocketGuildEvent arg)
+    private static async Task HandleMovieEventAsync(SocketGuildEvent guildEvent, EventEmbedType type)
     {
-        var eventChannel = arg.Channel;
-        var config = await _database.GetGuildConfigFromCacheAsync(arg.Guild.Id).ConfigureAwait(false);
+        var eventChannel = guildEvent.Channel;
+        var config = await _database.GetGuildConfigFromCacheAsync(guildEvent.Guild.Id).ConfigureAwait(false);
         if (!config.MovieEvents.Enabled)
         {
             return;
         }
-        var streamingChannelId = config.MovieEvents.StreamingChannelId;
-        var movieRoleId = config.MovieEvents.RoleId;
-        var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
-        if (eventChannel is not null && eventChannel.Id == streamingChannelId)
-        {
-            var movieRole = arg.Guild.GetRole(movieRoleId);
-            var notifyChannel = arg.Guild.GetTextChannel(movieEventAnnouncementChannelId);
-            await notifyChannel.SendMessageAsync(movieRole.Mention,
-                    embed: Embeds.MovieEventEmbed(arg, EventEmbedType.Scheduled))
-                .ConfigureAwait(false);
-        }
-    }
 
-    private static async Task AnnounceScheduledEventUpdatedAsync(Cacheable<SocketGuildEvent, ulong> arg1, SocketGuildEvent arg2)
-    {
-        var eventChannel = arg2.Channel;
-        var config = await _database.GetGuildConfigFromCacheAsync(arg2.Guild.Id).ConfigureAwait(false);
-        if (!config.MovieEvents.Enabled)
-        {
-            return;
-        }
         var streamingChannelId = config.MovieEvents.StreamingChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
         var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
         if (eventChannel is not null && eventChannel.Id == streamingChannelId)
         {
-            var movieRole = arg2.Guild.GetRole(movieRoleId);
-            var notifyChannel = arg2.Guild.GetTextChannel(movieEventAnnouncementChannelId);
+            var movieRole = guildEvent.Guild.GetRole(movieRoleId);
+            var notifyChannel = guildEvent.Guild.GetTextChannel(movieEventAnnouncementChannelId);
             await notifyChannel.SendMessageAsync(movieRole.Mention,
-                    embed: Embeds.MovieEventEmbed(arg2, EventEmbedType.Updated))
-                .ConfigureAwait(false);
-        }
-    }
-
-    private static async Task AnnounceScheduledEventStartedAsync(SocketGuildEvent arg)
-    {
-        var eventChannel = arg.Channel;
-        var config = await _database.GetGuildConfigFromCacheAsync(arg.Guild.Id).ConfigureAwait(false);
-        if (!config.MovieEvents.Enabled)
-        {
-            return;
-        }
-        var streamingChannelId = config.MovieEvents.StreamingChannelId;
-        var movieRoleId = config.MovieEvents.RoleId;
-        var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
-        if (eventChannel is not null && eventChannel.Id == streamingChannelId)
-        {
-            var movieRole = arg.Guild.GetRole(movieRoleId);
-            var notifyChannel = arg.Guild.GetTextChannel(movieEventAnnouncementChannelId);
-            await notifyChannel.SendMessageAsync(movieRole.Mention,
-                    embed: Embeds.MovieEventEmbed(arg, EventEmbedType.Started))
-                .ConfigureAwait(false);
-        }
-    }
-
-    private static async Task AnnounceScheduledEventCancelledAsync(SocketGuildEvent arg)
-    {
-        var eventChannel = arg.Channel;
-        var config = await _database.GetGuildConfigFromCacheAsync(arg.Guild.Id).ConfigureAwait(false);
-        if (!config.MovieEvents.Enabled)
-        {
-            return;
-        }
-        var streamingChannelId = config.MovieEvents.StreamingChannelId;
-        var movieRoleId = config.MovieEvents.RoleId;
-        var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
-        if (eventChannel is not null && eventChannel.Id == streamingChannelId)
-        {
-            var movieRole = arg.Guild.GetRole(movieRoleId);
-            var notifyChannel = arg.Guild.GetTextChannel(movieEventAnnouncementChannelId);
-            await notifyChannel.SendMessageAsync(movieRole.Mention,
-                    embed: Embeds.MovieEventEmbed(arg, EventEmbedType.Cancelled))
+                    embed: Embeds.MovieEventEmbed(guildEvent, type))
                 .ConfigureAwait(false);
         }
     }
