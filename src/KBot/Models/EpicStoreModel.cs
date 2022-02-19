@@ -1,20 +1,19 @@
-﻿namespace KBot.Epic
+﻿using System;
+using System.Globalization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+namespace KBot.Models
 {
-    using System;
-
-    using System.Globalization;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
-
     public partial class EpicStore
     {
         [JsonProperty("data")]
         public Data Data { get; set; }
 
-        [JsonProperty("extensions")]
-        public Extensions Extensions { get; set; }
+        //[JsonProperty("extensions")]
+        //public Extensions Extensions { get; set; }
 
-        public Game[] Games => Data.Catalog.SearchStore.Games;
+        private Game[] Games => Data.Catalog.SearchStore.Games;
         public Game CurrentGame => Games[0];
         public Game UpcomingGame => Games[1];
     }
@@ -108,6 +107,8 @@
 
         [JsonProperty("promotions")]
         public Promotions Promotions { get; set; }
+        
+        public PromotionalOfferPromotionalOffer[] Discounts => Promotions.PromotionalOffers[0].PromotionalOffers;
     }
 
     public partial class CatalogNs
@@ -281,7 +282,6 @@
     public partial class Tag
     {
         [JsonProperty("id")]
-        [JsonConverter(typeof(ParseStringConverter))]
         public long Id { get; set; }
     }
 
@@ -294,16 +294,12 @@
         public long Total { get; set; }
     }
 
-    public partial class Extensions
-    {
-    }
-
     public partial class EpicStore
     {
-        public static EpicStore FromJson(string json) => JsonConvert.DeserializeObject<EpicStore>(json, Converter.Settings);
+        public static EpicStore FromJson(string json) => JsonConvert.DeserializeObject<EpicStore>(json, ConverterEpic.Settings);
     }
 
-    internal static class Converter
+    internal static class ConverterEpic
     {
         public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
         {
@@ -314,36 +310,5 @@
                 new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
             },
         };
-    }
-
-    internal class ParseStringConverter : JsonConverter
-    {
-        public override bool CanConvert(Type t) => t == typeof(long) || t == typeof(long?);
-
-        public override object ReadJson(JsonReader reader, Type t, object existingValue, JsonSerializer serializer)
-        {
-            if (reader.TokenType == JsonToken.Null) return null;
-            var value = serializer.Deserialize<string>(reader);
-            long l;
-            if (Int64.TryParse(value, out l))
-            {
-                return l;
-            }
-            throw new Exception("Cannot unmarshal type long");
-        }
-
-        public override void WriteJson(JsonWriter writer, object untypedValue, JsonSerializer serializer)
-        {
-            if (untypedValue == null)
-            {
-                serializer.Serialize(writer, null);
-                return;
-            }
-            var value = (long)untypedValue;
-            serializer.Serialize(writer, value.ToString());
-            return;
-        }
-
-        public static readonly ParseStringConverter Singleton = new ParseStringConverter();
     }
 }
