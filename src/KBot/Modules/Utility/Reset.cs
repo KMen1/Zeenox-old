@@ -5,7 +5,7 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Utility;
 
-public class Reset : InteractionModuleBase<SocketInteractionContext>
+public class Reset : KBotModuleBase
 {
     [RequireOwner]
     [SlashCommand("reset", "Újraindítja a botot")]

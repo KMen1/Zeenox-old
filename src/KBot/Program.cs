@@ -10,9 +10,10 @@ using Discord.Addons.Hosting;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Fergun.Interactive;
-using KBot.Common;
+using KBot.Models;
 using KBot.Modules.Announcements;
 using KBot.Modules.Audio;
+using KBot.Modules.DeadByDaylight;
 using KBot.Modules.Leveling;
 using KBot.Modules.OSU;
 using KBot.Modules.TemporaryChannels;
@@ -22,6 +23,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Win32.TaskScheduler;
 using MongoDB.Driver;
+using OsuSharp;
+using OsuSharp.Extensions;
 using Sentry;
 using Serilog;
 using Serilog.Events;
@@ -42,7 +45,7 @@ public static class Program
             {
                 x.MinimumBreadcrumbLevel = LogEventLevel.Warning;
                 x.MinimumEventLevel = LogEventLevel.Warning;
-                x.Dsn = "";
+                x.Dsn = "https://fdd00dc16d0047139121570b692abcb4@o88188.ingest.sentry.io/6201115";
                 x.Debug = false;
                 x.AttachStacktrace = true;
                 x.SendDefaultPii = true;
@@ -68,7 +71,7 @@ public static class Program
                     GatewayIntents = GatewayIntents.All,
                     LogGatewayIntentWarnings = false
                 };
-                config.Token = context.Configuration.Get<BotConfig>().Client.Token;
+                config.Token = context.Configuration.GetSection("Client").GetValue<string>("Token");
             })
             .UseInteractionService((_, config) =>
             {
@@ -76,14 +79,23 @@ public static class Program
                 config.LogLevel = LogSeverity.Verbose;
                 config.UseCompiledLambda = true;
             })
+            .ConfigureOsuSharp((context, options) =>
+            {
+                options.Configuration = new OsuClientConfiguration()
+                {
+                    ClientId = context.Configuration.GetSection("OsuApi").GetValue<long>("AppId"),
+                    ClientSecret = context.Configuration.GetSection("OsuApi").GetValue<string>("AppSecret"),
+                };
+            })
             .ConfigureServices((context, services) =>
             {
                 services.AddSingleton(context.Configuration.Get<BotConfig>());
                 services.AddSingleton(new LavaConfig
                 {
-                    Hostname = context.Configuration.Get<BotConfig>().Lavalink.Host,
-                    Port = context.Configuration.Get<BotConfig>().Lavalink.Port,
-                    Authorization = context.Configuration.Get<BotConfig>().Lavalink.Password
+                    Hostname = context.Configuration.GetSection("LavaLink").GetValue<string>("Host"),
+                    Port = context.Configuration.GetSection("LavaLink").GetValue<ushort>("Port"),
+                    Authorization = context.Configuration.GetSection("LavaLink").GetValue<string>("Password"),
+                    LogSeverity = LogSeverity.Verbose
                 });
                 services.AddSingleton<LavaNode>();
                 services.AddSingleton(new InteractiveConfig()
@@ -95,23 +107,24 @@ public static class Program
                 services.AddHostedService<InteractionHandler>();
                 services.AddSingleton<AudioService>();
                 services.AddSingleton<IHostedService, AudioService>(x => x.GetService<AudioService>());
-                services.AddSingleton<IMongoClient>(new MongoClient(context.Configuration.Get<BotConfig>().MongoDb.ConnectionString));
+                services.AddSingleton<IMongoClient>(new MongoClient(context.Configuration.GetSection("MongoDb").GetValue<string>("ConnectionString")));
                 services.AddSingleton(x => x.GetService<IMongoClient>()!.GetDatabase(context.Configuration.Get<BotConfig>().MongoDb.Database));
                 services.AddSingleton<DatabaseService>();
+                services.AddSingleton<OsuClient>();
                 services.AddHostedService<LoggingService>();
                 services.AddHostedService<AnnouncementsModule>();
                 services.AddHostedService<MovieModule>();
                 services.AddHostedService<TourModule>();
                 services.AddHostedService<TemporaryVoiceModule>();
                 services.AddHostedService<LevelingModule>();
-                services.AddHostedService<OsuService>();
+                services.AddSingleton<DbDService>();
                 services.AddMemoryCache();
             })
             .UseSerilog()
             .UseConsoleLifetime()
             .Build();
-        
-        var wt = new WeeklyTrigger();
+
+        /*var wt = new WeeklyTrigger();
         wt.StartBoundary = DateTime.Today.AddHours(17).AddMinutes(15);
         wt.DaysOfWeek = DaysOfTheWeek.Thursday;
         wt.WeeksInterval = 1;
@@ -120,18 +133,16 @@ public static class Program
         td.Triggers.Add(wt);
         td.Settings.Compatibility = TaskCompatibility.V2_3;
         td.Actions.Add($"C:\\KBot\\{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}\\Epic\\KBotEpic.exe");
+        TaskService.Instance.RootFolder.RegisterTaskDefinition("KBot - Epic Free Games", td);*/
 
-        
-        TaskService.Instance.RootFolder.RegisterTaskDefinition("KBot - Epic Free Games", td);
-        
         IShellLink link = (IShellLink)new ShellLink();
-        link.SetDescription($"KBot");
+        link.SetDescription("KBot");
         link.SetPath($"C:\\KBot\\{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}\\KBot.exe");
         IPersistFile file = (IPersistFile)link;
         // C:\Users\Oli\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
         // C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
         const string startupPath = @"C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup";
-        //file.Save(Path.Combine(startupPath, "KBot.lnk"), false);
+        file.Save(Path.Combine(startupPath, "KBot.lnk"), false);
 
         return host.RunAsync();
     }

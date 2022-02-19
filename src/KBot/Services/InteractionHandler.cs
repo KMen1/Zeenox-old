@@ -8,7 +8,7 @@ using Discord.Addons.Hosting;
 using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Common;
+using KBot.Models;
 using KBot.Modules.Audio.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -25,7 +25,7 @@ public class InteractionHandler : DiscordClientService
         _provider = provider;
         _interactionService = interactionService;
     }
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Client.InteractionCreated += HandleInteractionAsync;

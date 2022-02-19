@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace KBot.Common;
+namespace KBot.Models;
 
 public class GuildModel
 {

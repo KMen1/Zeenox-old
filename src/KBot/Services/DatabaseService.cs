@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord.Addons.Hosting;
 using Discord.WebSocket;
-using KBot.Common;
+using KBot.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -89,7 +89,7 @@ public class DatabaseService : DiscordClientService
                     Enabled = false,
                     AnnouncementChannelId = 0
                 }
-        }
+            }
         };
         var users = _client.GetGuild(guildId).Users.Where(x => !x.IsBot);
         var usersToAdd = users.Select(human => new User

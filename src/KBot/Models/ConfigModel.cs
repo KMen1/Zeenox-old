@@ -1,4 +1,4 @@
-﻿namespace KBot.Common;
+﻿namespace KBot.Models;
 
 public class BotConfig
 {

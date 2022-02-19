@@ -24,7 +24,7 @@
         <AssemblyVersion>3.3.1.1</AssemblyVersion>
         <FileVersion>3.3.1.1</FileVersion>
         <IsPackable>false</IsPackable>
-        <Nullable>enable</Nullable>
+        <Nullable>disable</Nullable>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -65,6 +65,7 @@
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
         <PackageReference Include="MingweiSamuel.Camille" Version="2.8.0" />
         <PackageReference Include="MongoDB.Driver" Version="2.14.1" />
+        <PackageReference Include="OsuSharp" Version="6.0.0-ci-20220129.2" />
         <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -74,8 +75,9 @@
         <PackageReference Include="Sentry.Serilog" Version="3.13.0" />
         <PackageReference Include="Serilog.Extensions.Hosting" Version="4.2.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
         <PackageReference Include="TaskScheduler" Version="2.10.0" />
-        <PackageReference Include="Victoria" Version="5.2.5" />
+        <PackageReference Include="Victoria" Version="5.2.7" />
     </ItemGroup>
 
     <ItemGroup>
@@ -98,11 +100,5 @@
 
     <ItemGroup>
       <Folder Include="Modules\Tickets" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="osuAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\..\..\osu.API\bin\Release\net6.0\osuAPI.dll</HintPath>
-      </Reference>
     </ItemGroup>
 </Project>

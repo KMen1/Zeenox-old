@@ -13,12 +13,11 @@ public class ReactionRoleCommands : KBotModuleBase
     public async Task AddReactionRoleAsync(string description)
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = new EmbedBuilder
-        {
-            Title = "Reaction Roles",
-            Description = $"Menü a reaction role-ok beállításához.\n{description}",
-            Color = Color.Green
-        }.Build();
+        var embed = new EmbedBuilder()
+            .WithTitle("Reaction Roles")
+            .WithDescription($"Menü a reaction role-ok beállításához.\n{description}")
+            .WithColor(Color.Blue)
+            .Build();
         var comp = new ComponentBuilder()
             .WithButton("Hozzáadás", "rradd", ButtonStyle.Success,new Emoji("➕"))
             .WithButton("Eltávolítás", "rrremove", ButtonStyle.Danger, new Emoji("➖"))

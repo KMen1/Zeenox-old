@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -22,18 +21,15 @@ public class WarnModule : KBotModuleBase
         await Database.AddWarnAsync(Context.Guild.Id, userId, moderatorId, reason).ConfigureAwait(false);
         await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} sikeresen figyelmeztetve!",
             $"A következő indokkal: `{reason}`").ConfigureAwait(false);
-        await user.CreateDMChannelAsync().ContinueWith(async (task) =>
-        {
-            var eb = new EmbedBuilder()
-            {
-                Title = $"Figyelmeztetve lettél {Context.Guild.Name}-ban!",
-                Color = Color.Red,
-                Description = $"{Context.User.Mention} moderátor által \n A következő indokkal: `{reason}`",
-                Timestamp = DateTimeOffset.UtcNow,
-            }.Build();
-            var dmChannel = task.Result;
-            await dmChannel.SendMessageAsync(embed: eb).ConfigureAwait(false);
-        }).Unwrap().ConfigureAwait(false);
+
+        var channel = await user.CreateDMChannelAsync().ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithTitle($"Figyelmeztetve lettél {Context.Guild.Name}-ban!")
+            .WithColor(Color.Red)
+            .WithDescription($"{Context.User.Mention} moderátor által \n A következő indokkal: `{reason}`")
+            .WithCurrentTimestamp()
+            .Build();
+        await channel.SendMessageAsync(embed:eb).ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
@@ -51,25 +47,21 @@ public class WarnModule : KBotModuleBase
         await FollowupWithEmbedAsync(EmbedResult.Success,
                 $"{user.Username} {warnId} számú figyelmeztetése eltávolítva!", $"A következő indokkal: `{reason}`")
             .ConfigureAwait(false);
-        await user.CreateDMChannelAsync().ContinueWith(async (task) =>
-        {
-            var eb = new EmbedBuilder()
-            {
-                Title = $"Eltávolítottak rólad egy figyelmeztetést {Context.Guild.Name}-ban!",
-                Color = Color.Green,
-                Description = $"{Context.User.Mention} moderátor által \n A következő indokkal: `{reason}`",
-                Timestamp = DateTimeOffset.UtcNow,
-            }.Build();
-            var dmChannel = task.Result;
-            await dmChannel.SendMessageAsync(embed: eb).ConfigureAwait(false);
-        }).Unwrap().ConfigureAwait(false);
+        var channel = await user.CreateDMChannelAsync().ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithTitle($"Eltávolítottak rólad egy figyelmeztetést {Context.Guild.Name}-ban!")
+            .WithColor(Color.Green)
+            .WithDescription($"{Context.User.Mention} moderátor által \n A következő indokkal: `{reason}`")
+            .WithCurrentTimestamp()
+            .Build();
+        await channel.SendMessageAsync(embed:eb).ConfigureAwait(false);
     }
 
     [SlashCommand("warns", "A felhasználó figyelmeztetéseinek listája.")]
     public async Task WarnsAsync(SocketUser user)
     {
         var userId = user.Id;
-        await DeferAsync().ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
         var warns = await Database.GetWarnsAsync(Context.Guild.Id, userId).ConfigureAwait(false);
         if (warns.Count is 0)
         {
@@ -84,6 +76,6 @@ public class WarnModule : KBotModuleBase
             warnString.AppendLine(
                 $"{warns.TakeWhile(n => n != warn).Count() + 1}. {Context.Client.GetUser(warn.ModeratorId).Mention} által - Indok:`{warn.Reason}`");
         }
-        await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} figyelmeztetései", warnString.ToString()).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} figyelmeztetései", warnString.ToString(), ephemeral: true).ConfigureAwait(false);
     }
 }

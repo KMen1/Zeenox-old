@@ -1,6 +1,6 @@
 ﻿using System;
-using KBot.Common;
 using KBot.Enums;
+using KBot.Models;
 
 namespace KBot.Modules.Setup.Helpers;
 

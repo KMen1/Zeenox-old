@@ -12,7 +12,7 @@ namespace KBot.Services;
 
 public class LoggingService : DiscordClientService
 {
-    
+
     private readonly LavaNode _lavaNode;
     private readonly InteractionService _interactionService;
     public LoggingService(DiscordSocketClient client, ILogger<LoggingService> logger, LavaNode lavaNode, InteractionService interactionService) : base(client, logger)
@@ -20,7 +20,7 @@ public class LoggingService : DiscordClientService
         _lavaNode = lavaNode;
         _interactionService = interactionService;
     }
-    
+
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _lavaNode.OnLog += LogAsync;
@@ -28,7 +28,7 @@ public class LoggingService : DiscordClientService
         return Task.CompletedTask;
     }
 
-    private Task LogAsync(LogMessage arg)
+    private static Task LogAsync(LogMessage arg)
     {
         switch (arg.Severity)
         {
