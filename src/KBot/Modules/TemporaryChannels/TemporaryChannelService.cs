@@ -53,7 +53,7 @@ public class TemporaryVoiceModule : DiscordClientService
                     new Overwrite(user.Id, PermissionTarget.User,
                         new OverwritePermissions(connect: PermValue.Allow, manageChannel: PermValue.Allow, moveMembers: PermValue.Allow)),
                     new Overwrite(guild.EveryoneRole.Id, PermissionTarget.Role,
-                        new OverwritePermissions(connect: PermValue.Deny)),
+                        new OverwritePermissions(connect: PermValue.Allow)),
                     new Overwrite(_client.CurrentUser.Id, PermissionTarget.Role,
                         new OverwritePermissions(viewChannel: PermValue.Allow, manageChannel: PermValue.Allow,
                             connect: PermValue.Allow, moveMembers: PermValue.Allow))
