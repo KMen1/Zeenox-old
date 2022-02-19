@@ -78,9 +78,8 @@ public class AudioService : DiscordClientService
         var nowPlayingMessage = NowPlayingMessage.GetValueOrDefault(guild!.Id);
         if (user.Id == _client.CurrentUser.Id && after.VoiceChannel is null && nowPlayingMessage is not null)
         {
-            var log = guild.GetAuditLogsAsync(1, actionType: ActionType.MemberDisconnected).Flatten();
-            var logUser = await log.FirstAsync().ConfigureAwait(false);
-            var guildUser = guild.GetUser(logUser.User.Id);
+            var log = await guild.GetAuditLogsAsync(1, actionType: ActionType.MemberDisconnected).Flatten().FirstAsync().ConfigureAwait(false);
+            var guildUser = guild.GetUser(log.User.Id);
             await guildUser.ModifyAsync(x => x.Channel = null).ConfigureAwait(false);
             await DisconnectAsync(before.VoiceChannel?.Guild).ConfigureAwait(false);
             await nowPlayingMessage.Channel.SendMessageAsync(embed: new EmbedBuilder()
@@ -130,7 +129,7 @@ public class AudioService : DiscordClientService
         var textChannel = (ITextChannel)interaction.Channel;
         var voiceChannel = ((IVoiceState)user).VoiceChannel;
         var searchResponse = await SearchAsync(query).ConfigureAwait(false);
-        if (searchResponse.Tracks is null)
+        if (searchResponse is null)
         {
             await interaction.FollowupAsync(embed: Embeds.ErrorEmbed("Nincs találat!")).ConfigureAwait(false);
             return;
@@ -138,45 +137,40 @@ public class AudioService : DiscordClientService
 
         var queue = Queue.GetValueOrDefault(guild.Id) ?? new LinkedList<(LavaTrack, SocketUser)>();
         var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(voiceChannel, textChannel).ConfigureAwait(false);
+        var isPlaylist = !string.IsNullOrWhiteSpace(searchResponse.Value.Playlist.Name);
+        var firstTrack = searchResponse.Value.Tracks.First();
 
-        if (IsPlaying(player))
+        if (isPlaylist)
         {
-            if (!string.IsNullOrWhiteSpace(searchResponse.Playlist.Name))
-            {
-                foreach (var track in searchResponse.Tracks)
-                {
-                    queue.AddLast((track, user));
-                }
-                Queue[guild.Id] = queue;
-                var msg = await interaction
-                    .FollowupAsync(embed: Embeds.AddedToQueueEmbed(searchResponse.Tracks.ToList())).ConfigureAwait(false);
-                await Task.Delay(5000).ConfigureAwait(false);
-                await msg.DeleteAsync().ConfigureAwait(false);
-            }
-            else
-            {
-                queue.AddLast((searchResponse.Tracks.First(), user));
-                Queue[guild.Id] = queue;
-                var msg = await interaction.FollowupAsync(embed: Embeds.AddedToQueueEmbed(new List<LavaTrack>{searchResponse.Tracks.First()})).ConfigureAwait(false);
-                await Task.Delay(5000).ConfigureAwait(false);
-                await msg.DeleteAsync().ConfigureAwait(false);
-            }
-            await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
-            return;
-        }
-
-        NowPlayingMessage[guild.Id] = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
-
-        if (!string.IsNullOrWhiteSpace(searchResponse.Playlist.Name))
-        {
-            foreach (var track in searchResponse.Tracks.Skip(1))
+            var tracks = IsPlaying(player) ? searchResponse.Value.Tracks : searchResponse.Value.Tracks.Skip(1);
+            foreach (var track in tracks)
             {
                 queue.AddLast((track, user));
             }
             Queue[guild.Id] = queue;
         }
-        await player.PlayAsync(searchResponse.Tracks.First()).ConfigureAwait(false);
+
+        if (IsPlaying(player))
+        {
+            var eb = Embeds.AddedToQueueEmbed(searchResponse.Value.Tracks.ToList());
+            if (!isPlaylist)
+            {
+                queue.AddLast((firstTrack, user));
+                Queue[guild.Id] = queue;
+                eb = Embeds.AddedToQueueEmbed(firstTrack);
+            }
+
+            var msg = await interaction.FollowupAsync(embed: eb).ConfigureAwait(false);
+            await Task.Delay(5000).ConfigureAwait(false);
+            await msg.DeleteAsync().ConfigureAwait(false);
+            await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
+            return;
+        }
+
+        NowPlayingMessage[guild.Id] = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
         LastRequestedBy[guild.Id] = user;
+        
+        await player.PlayAsync(firstTrack).ConfigureAwait(false);
         await player.UpdateVolumeAsync(100).ConfigureAwait(false);
         await interaction.FollowupAsync(
             embed: await Embeds.NowPlayingEmbed(user, player, LoopEnabled.GetValueOrDefault(guild.Id), FilterEnabled.GetValueOrDefault(guild.Id), queue.Count).ConfigureAwait(false),
@@ -199,7 +193,7 @@ public class AudioService : DiscordClientService
         {
             queue.AddLast((track, user));
             Queue[guild.Id] = queue;
-            var msg = await interaction.FollowupAsync(embed: Embeds.AddedToQueueEmbed(new List<LavaTrack>{track})).ConfigureAwait(false);
+            var msg = await interaction.FollowupAsync(embed: Embeds.AddedToQueueEmbed(track)).ConfigureAwait(false);
             await Task.Delay(5000).ConfigureAwait(false);
             await msg.DeleteAsync().ConfigureAwait(false);
             var choose = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
@@ -483,11 +477,11 @@ public class AudioService : DiscordClientService
         LastRequestedBy[guildId] = null;
     }
 
-    public async Task<SearchResponse> SearchAsync(string query)
+    public async Task<SearchResponse?> SearchAsync(string query)
     {
         var results = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
             await _lavaNode.SearchAsync(SearchType.Direct, query).ConfigureAwait(false) :
             await _lavaNode.SearchYouTubeAsync(query).ConfigureAwait(false);
-        return results.Status is not SearchStatus.NoMatches or SearchStatus.LoadFailed ? results : new SearchResponse();
+        return results.Status is not SearchStatus.NoMatches or SearchStatus.LoadFailed ? results : null;
     }
 }

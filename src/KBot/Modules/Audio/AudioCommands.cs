@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using KBot.Enums;
 using KBot.Modules.Audio.Helpers;
 
 namespace KBot.Modules.Audio;
@@ -42,7 +43,13 @@ public class MusicCommands : KBotModuleBase
     public async Task Search([Summary("query", "Zene címe")] string query)
     {
         await DeferAsync().ConfigureAwait(false);
-        var tracks = (await AudioService.SearchAsync(query).ConfigureAwait(false)).Tracks.ToList();
+        var search = await AudioService.SearchAsync(query).ConfigureAwait(false);
+        if (search is null)
+        {
+            await FollowupWithEmbedAsync(EmbedResult.Error, "Nincs találat!", "").ConfigureAwait(false);
+            return;
+        }
+        var tracks = search.Value.Tracks.ToList();
         var desc = new StringBuilder();
         foreach (var track in tracks.Take(10))
         {
@@ -93,7 +100,7 @@ public class MusicCommands : KBotModuleBase
     [SlashCommand("queue", "A sorban lévő zenék listája")]
     public Task Queue()
     {
-        return RespondAsync(embed: AudioService.GetQueue(Context.Guild));
+        return RespondAsync(embed: AudioService.GetQueue(Context.Guild), ephemeral: true);
     }
 
     [SlashCommand("clearqueue", "A sorban lévő zenék törlése")]
