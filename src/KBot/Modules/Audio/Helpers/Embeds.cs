@@ -109,6 +109,15 @@ public static class Embeds
             .WithDescription(desc.ToString())
             .Build();
     }
+    
+    public static Embed AddedToQueueEmbed(LavaTrack track)
+    {
+        return new EmbedBuilder()
+            .WithAuthor("SZÁM HOZZÁADVA A VÁRÓLISTÁHOZ", SuccessIcon)
+            .WithColor(Color.Orange)
+            .WithDescription($"[`{track.Title}`]({track.Url})")
+            .Build();
+    }
 
     public static Embed ErrorEmbed(string exception)
     {
