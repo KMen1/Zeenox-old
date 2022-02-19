@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Common;
 using KBot.Enums;
+using KBot.Models;
 using KBot.Modules.Setup.Helpers;
 
 namespace KBot.Modules.Setup;
@@ -106,6 +106,7 @@ public class SetupComponents : KBotModuleBase
         
         if (Context.Guild.GetRole(roleId) is { } roleObj)
         {
+            config.Leveling.LevelRoles ??= Array.Empty<LevelRole>().ToList();
             config.Leveling.LevelRoles.Add(new LevelRole(level, roleObj.Id));
             await roleMsg.DeleteAsync().ConfigureAwait(false);
             await reqMsg.DeleteAsync().ConfigureAwait(false);

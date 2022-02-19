@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Common;
 using KBot.Enums;
+using KBot.Models;
 using KBot.Modules.Setup.Helpers;
 
 namespace KBot.Modules.Setup;
