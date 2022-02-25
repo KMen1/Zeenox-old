@@ -161,7 +161,7 @@ public class AudioService : DiscordClientService
             }
 
             var msg = await interaction.FollowupAsync(embed: eb).ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
+            await Task.Delay(2500).ConfigureAwait(false);
             await msg.DeleteAsync().ConfigureAwait(false);
             await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
             return;
@@ -189,30 +189,31 @@ public class AudioService : DiscordClientService
 
         var queue = Queue.GetValueOrDefault(guild.Id) ?? new LinkedList<(LavaTrack, SocketUser)>();
         var player = _lavaNode.HasPlayer(guild) ? _lavaNode.GetPlayer(guild) : await _lavaNode.JoinAsync(voiceChannel, textChannel).ConfigureAwait(false);
+        var interactionMessage = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
         if (IsPlaying(player))
         {
             queue.AddLast((track, user));
             Queue[guild.Id] = queue;
+            await interactionMessage.DeleteAsync().ConfigureAwait(false);
+
             var msg = await interaction.FollowupAsync(embed: Embeds.AddedToQueueEmbed(track)).ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
+            await Task.Delay(2000).ConfigureAwait(false);
             await msg.DeleteAsync().ConfigureAwait(false);
-            var choose = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
-            await choose.DeleteAsync().ConfigureAwait(false);
+
             await UpdateNowPlayingMessageAsync(guild.Id, player, LastRequestedBy[guild.Id], true, true).ConfigureAwait(false);
             return;
         }
 
         await player.PlayAsync(track).ConfigureAwait(false);
         await player.UpdateVolumeAsync(100).ConfigureAwait(false);
-        var msgt = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
         var embed = await Embeds.NowPlayingEmbed(user, player, LoopEnabled.GetValueOrDefault(guild.Id),
             FilterEnabled.GetValueOrDefault(guild.Id), queue.Count).ConfigureAwait(false);
-        await msgt.ModifyAsync(x =>
+        await interactionMessage.ModifyAsync(x =>
         {
             x.Embed = embed;
             x.Components = Components.NowPlayingComponents(CanGoBack(guild.Id), CanGoForward(guild.Id), player);
         }).ConfigureAwait(false);
-        NowPlayingMessage[guild.Id] = msgt;
+        NowPlayingMessage[guild.Id] = interactionMessage;
         LastRequestedBy[guild.Id] = user;
     }
 

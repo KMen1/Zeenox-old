@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -42,6 +43,11 @@ public class MusicCommands : KBotModuleBase
     [SlashCommand("search", "Keres egy zenét a YouTube-on")]
     public async Task Search([Summary("query", "Zene címe")] string query)
     {
+        if (Uri.IsWellFormedUriString(query, UriKind.Absolute))
+        {
+            await Play(query).ConfigureAwait(false);
+            return;
+        }
         await DeferAsync().ConfigureAwait(false);
         var search = await AudioService.SearchAsync(query).ConfigureAwait(false);
         if (search is null)
