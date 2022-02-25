@@ -10,11 +10,19 @@ public class AppealSubmission : IModal
     public string Moderator { get; set; }
 
     [ModalTextInput("appeal-punishtype")]
-    public string AdminReason { get; set; }
+    public string PunishType { get; set; }
 
     [ModalTextInput("appeal-punishreason")]
-    public string AppealGiveReason { get; set; }
+    public string PunishReason { get; set; }
 
     [ModalTextInput("appeal-reason")]
     public string AppealReason { get; set; }
+}
+
+public class ReasonModal : IModal
+{
+    public string Title => "Döntés részletei";
+    
+    [ModalTextInput("reason-input")]
+    public string Reason { get; set; }
 }
