@@ -20,7 +20,7 @@ namespace KBot.Modules.DeadByDaylight.Models
         public long CharacterId { get; set; }
         public string CharacterName => DbDService.GetCharacterNameFromId(CharacterId);
 
-        [JsonProperty("tunables")] public long[][] Tunables { get; set; }
+        [JsonProperty("tunables")] public float[][] Tunables { get; set; }
 
         [JsonProperty("modifier")] public string Modifier { get; set; }
 
