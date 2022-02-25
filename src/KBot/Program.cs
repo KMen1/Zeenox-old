@@ -15,17 +15,14 @@ using KBot.Modules.Announcements;
 using KBot.Modules.Audio;
 using KBot.Modules.DeadByDaylight;
 using KBot.Modules.Leveling;
-using KBot.Modules.OSU;
 using KBot.Modules.TemporaryChannels;
 using KBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Win32.TaskScheduler;
 using MongoDB.Driver;
 using OsuSharp;
 using OsuSharp.Extensions;
-using Sentry;
 using Serilog;
 using Serilog.Events;
 using Victoria;
@@ -124,21 +121,10 @@ public static class Program
             .UseConsoleLifetime()
             .Build();
 
-        /*var wt = new WeeklyTrigger();
-        wt.StartBoundary = DateTime.Today.AddHours(17).AddMinutes(15);
-        wt.DaysOfWeek = DaysOfTheWeek.Thursday;
-        wt.WeeksInterval = 1;
-        var td = TaskService.Instance.NewTask();
-        td.RegistrationInfo.Description = "KBot - Epic Free Games";
-        td.Triggers.Add(wt);
-        td.Settings.Compatibility = TaskCompatibility.V2_3;
-        td.Actions.Add($"C:\\KBot\\{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}\\Epic\\KBotEpic.exe");
-        TaskService.Instance.RootFolder.RegisterTaskDefinition("KBot - Epic Free Games", td);*/
-
-        IShellLink link = (IShellLink)new ShellLink();
+        IShellLink link = (IShellLink) new ShellLink();
         link.SetDescription("KBot");
         link.SetPath($"C:\\KBot\\{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}\\KBot.exe");
-        IPersistFile file = (IPersistFile)link;
+        IPersistFile file = (IPersistFile) link;
         // C:\Users\Oli\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
         // C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
         const string startupPath = @"C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup";
