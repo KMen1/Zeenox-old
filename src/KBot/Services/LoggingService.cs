@@ -1,31 +1,41 @@
-﻿using System.Threading;
+﻿#nullable enable
 using System.Threading.Tasks;
 using Discord;
-using Discord.Addons.Hosting;
 using Discord.Interactions;
-using Discord.WebSocket;
-using Microsoft.Extensions.Logging;
-using Serilog;
-using Victoria;
+using Lavalink4NET.Logging;
+using ILogger = Lavalink4NET.Logging.ILogger;
+using LogLevel = Lavalink4NET.Logging.LogLevel;
 
 namespace KBot.Services;
 
-public class LoggingService : DiscordClientService
+public class LoggingService
 {
-
-    private readonly LavaNode _lavaNode;
-    private readonly InteractionService _interactionService;
-    public LoggingService(DiscordSocketClient client, ILogger<LoggingService> logger, LavaNode lavaNode, InteractionService interactionService) : base(client, logger)
+    public LoggingService(InteractionService interactionService, ILogger lavaLogger)
     {
-        _lavaNode = lavaNode;
-        _interactionService = interactionService;
+        interactionService.Log += LogAsync;
+        ((EventLogger)lavaLogger).LogMessage += Log;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    private void Log(object? sender, LogMessageEventArgs arg)
     {
-        _lavaNode.OnLog += LogAsync;
-        _interactionService.Log += LogAsync;
-        return Task.CompletedTask;
+        switch (arg.Level)
+        {
+            case LogLevel.Error:
+                Serilog.Log.Logger.Error(arg.Exception, arg.Message);
+                break;
+            case LogLevel.Warning:
+                Serilog.Log.Logger.Error(arg.Exception, arg.Message);
+                break;
+            case LogLevel.Information:
+                Serilog.Log.Logger.Information(arg.Exception, arg.Message);
+                break;
+            case LogLevel.Trace:
+                Serilog.Log.Logger.Verbose(arg.Exception, arg.Message);
+                break;
+            case LogLevel.Debug:
+                Serilog.Log.Logger.Debug(arg.Exception, arg.Message);
+                break;
+        }
     }
 
     private static Task LogAsync(LogMessage arg)
@@ -33,22 +43,22 @@ public class LoggingService : DiscordClientService
         switch (arg.Severity)
         {
             case LogSeverity.Critical:
-                Log.Logger.Fatal(arg.Exception, arg.Message);
+                Serilog.Log.Logger.Fatal(arg.Exception, arg.Message);
                 break;
             case LogSeverity.Error:
-                Log.Logger.Error(arg.Exception, arg.Message);
+                Serilog.Log.Logger.Error(arg.Exception, arg.Message);
                 break;
             case LogSeverity.Warning:
-                Log.Logger.Error(arg.Exception, arg.Message);
+                Serilog.Log.Logger.Error(arg.Exception, arg.Message);
                 break;
             case LogSeverity.Info:
-                Log.Logger.Information(arg.Exception, arg.Message);
+                Serilog.Log.Logger.Information(arg.Exception, arg.Message);
                 break;
             case LogSeverity.Verbose:
-                Log.Logger.Verbose(arg.Exception, arg.Message);
+                Serilog.Log.Logger.Verbose(arg.Exception, arg.Message);
                 break;
             case LogSeverity.Debug:
-                Log.Logger.Debug(arg.Exception, arg.Message);
+                Serilog.Log.Logger.Debug(arg.Exception, arg.Message);
                 break;
         }
         return Task.CompletedTask;

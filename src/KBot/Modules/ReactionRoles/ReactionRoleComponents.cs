@@ -143,12 +143,12 @@ public class ReactionRoleComponents : KBotModuleBase
         if (user.Roles.Contains(role))
         {
             await user.RemoveRoleAsync(role).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(EmbedResult.Error, "Reakciós Rangok", $"Sikeresen levetted a {role.Mention} rangot", ephemeral: true).ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "Reakciós Rangok", $"Sikeresen levetted a {role.Mention} rangot", ephemeral: true).ConfigureAwait(false);
         }
         else
         {
             await user.AddRoleAsync(role).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(EmbedResult.Success, "Reakciós Rangok", $"Sikeresen felvetted a {role.Mention} rangot", ephemeral: true).ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "Reakciós Rangok", $"Sikeresen felvetted a {role.Mention} rangot", ephemeral: true).ConfigureAwait(false);
         }
     }
 }

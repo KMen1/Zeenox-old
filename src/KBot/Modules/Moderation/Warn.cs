@@ -1,10 +1,11 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Enums;
+using KBot.Models;
 
 namespace KBot.Modules.Moderation;
 
@@ -18,8 +19,10 @@ public class WarnModule : KBotModuleBase
         var moderatorId = Context.User.Id;
         var userId = user.Id;
         await DeferAsync().ConfigureAwait(false);
-        await Database.AddWarnAsync(Context.Guild.Id, userId, moderatorId, reason).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} sikeresen figyelmeztetve!",
+        var dbUser = await Database.GetUserAsync(Context.Guild.Id, userId).ConfigureAwait(false);
+        dbUser.Warns.Add(new Warn(moderatorId, reason, DateTime.UtcNow));
+        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} sikeresen figyelmeztetve!",
             $"A következő indokkal: `{reason}`").ConfigureAwait(false);
 
         var channel = await user.CreateDMChannelAsync().ConfigureAwait(false);
@@ -37,14 +40,18 @@ public class WarnModule : KBotModuleBase
     public async Task RemoveWarnAsync(SocketUser user, string reason, int warnId)
     {
         await DeferAsync().ConfigureAwait(false);
-        var result = await Database.RemoveWarnAsync(Context.Guild.Id, user.Id, warnId).ConfigureAwait(false);
-        if (!result)
+        var dbUser = await Database.GetUserAsync(Context.Guild.Id, user.Id).ConfigureAwait(false);
+        try
         {
-            await FollowupWithEmbedAsync(EmbedResult.Error, "Nem sikerült a figyelmeztetés törlése!",
+            dbUser.Warns.RemoveAt(warnId - 1);
+        }
+        catch
+        {
+            await FollowupWithEmbedAsync(Color.Red, "Nem sikerült a figyelmeztetés törlése!",
                 "Ehhez a `warnid`-hez nem tartozik figyelmeztetés!").ConfigureAwait(false);
             return;
         }
-        await FollowupWithEmbedAsync(EmbedResult.Success,
+        await FollowupWithEmbedAsync(Color.Green,
                 $"{user.Username} {warnId} számú figyelmeztetése eltávolítva!", $"A következő indokkal: `{reason}`")
             .ConfigureAwait(false);
         var channel = await user.CreateDMChannelAsync().ConfigureAwait(false);
@@ -62,10 +69,10 @@ public class WarnModule : KBotModuleBase
     {
         var userId = user.Id;
         await DeferAsync(true).ConfigureAwait(false);
-        var warns = await Database.GetWarnsAsync(Context.Guild.Id, userId).ConfigureAwait(false);
+        var warns = (await Database.GetUserAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false)).Warns;
         if (warns.Count is 0)
         {
-            await FollowupWithEmbedAsync(EmbedResult.Success, "😎 Szép munka!",
+            await FollowupWithEmbedAsync(Color.Gold, "😎 Szép munka!",
                 $"{user.Mention} még nem rendelkezik figyelmeztetéssel. Maradjon is így!").ConfigureAwait(false);
             return;
         }
@@ -76,6 +83,6 @@ public class WarnModule : KBotModuleBase
             warnString.AppendLine(
                 $"{warns.TakeWhile(n => n != warn).Count() + 1}. {Context.Client.GetUser(warn.ModeratorId).Mention} által - Indok:`{warn.Reason}`");
         }
-        await FollowupWithEmbedAsync(EmbedResult.Success, $"{user.Username} figyelmeztetései", warnString.ToString(), ephemeral: true).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} figyelmeztetései", warnString.ToString(), ephemeral: true).ConfigureAwait(false);
     }
 }

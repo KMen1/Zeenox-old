@@ -18,7 +18,7 @@ public class MusicComponents : KBotModuleBase
         if (result)
         {
             await DeferAsync().ConfigureAwait(false);
-            await AudioService.SetFiltersAsync(Context.Guild, filterType).ConfigureAwait(false);
+            await AudioService.SetFiltersAsync(Context.Guild, Context.User, filterType).ConfigureAwait(false);
         }
     }
 
@@ -52,7 +52,7 @@ public class MusicComponents : KBotModuleBase
     public async Task Next()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.PlayNextTrackAsync(Context.Guild).ConfigureAwait(false);
+        await AudioService.PlayNextTrackAsync(Context.Guild, Context.User).ConfigureAwait(false);
     }
     [ComponentInteraction("previous")]
     public async Task Previous()
@@ -71,6 +71,6 @@ public class MusicComponents : KBotModuleBase
     public async Task ClearFilters()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.ClearFiltersAsync(Context.Guild).ConfigureAwait(false);
+        await AudioService.ClearFiltersAsync(Context.Guild, Context.User).ConfigureAwait(false);
     }
 }

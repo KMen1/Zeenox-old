@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -13,9 +15,8 @@ namespace KBot.Models
         //[JsonProperty("extensions")]
         //public Extensions Extensions { get; set; }
 
-        private Game[] Games => Data.Catalog.SearchStore.Games;
-        public Game CurrentGame => Games[0];
-        public Game UpcomingGame => Games[1];
+        private IEnumerable<Game> Games => Data.Catalog.SearchStore.Games;
+        public List<Game> CurrentGame => Games.ToList().FindAll(x => x.Promotions is not null && x.Promotions.PromotionalOffers.Length != 0);
     }
 
     public partial class Data

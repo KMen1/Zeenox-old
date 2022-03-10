@@ -24,15 +24,17 @@ public class Osu : KBotModuleBase
     {
         if (!link.Contains("osu.ppy.sh/users") || !link.Contains("osu.ppy.sh/u"))
         {
-            await RespondWithEmbedAsync(EmbedResult.Error, "Hibás link!",
+            await RespondWithEmbedAsync(Color.Red, "Hibás link!",
                 "Kérlek adj meg egy valós osu! profil linket!", ephemeral: true).ConfigureAwait(false);
             return;
         }
 
         await DeferAsync(true).ConfigureAwait(false);
         var osuId = Convert.ToUInt64(link.Split("/").Last());
-        await Database.SetOsuIdAsync(Context.Guild.Id, Context.User.Id, osuId).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(EmbedResult.Success, "Sikeresen beállítottad az osu! profilod!",
+        var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        dbUser.OsuId = osuId;
+        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Red, "Sikeresen beállítottad az osu! profilod!",
             "https://osu.ppy.sh/u/" + osuId).ConfigureAwait(false);
     }
 
@@ -41,18 +43,18 @@ public class Osu : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var osuId = await Database.GetOsuIdAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false);
+        var osuId = (await Database.GetUserAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
-            await FollowupWithEmbedAsync(EmbedResult.Error, "Nincs osu! profil beállítva!",
+            await FollowupWithEmbedAsync(Color.Red, "Nincs osu! profil beállítva!",
                 "Kérlek állítsd be osu! profilodat a `osu set` parancs segítségével!").ConfigureAwait(false);
             return;
         }
 
-        var score = await OsuClient.GetUserScoresAsync((long)osuId, OsuSharp.Domain.ScoreType.Recent, true, GameMode.Osu, 1).ConfigureAwait(false);
+        var score = await OsuClient.GetUserScoresAsync((long)osuId, ScoreType.Recent, true, GameMode.Osu, 1).ConfigureAwait(false);
         if (score.Count == 0)
         {
-            await FollowupWithEmbedAsync(EmbedResult.Error, "Az elmúlt 24 órában nincs osu! scoreod!",
+            await FollowupWithEmbedAsync(Color.Red, "Az elmúlt 24 órában nincs osu! scoreod!",
                 "Kérlek próbáld meg később!").ConfigureAwait(false);
             return;
         }
@@ -65,10 +67,10 @@ public class Osu : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var osuId = await Database.GetOsuIdAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false);
+        var osuId = (await Database.GetUserAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
-            await FollowupWithEmbedAsync(EmbedResult.Error, "Nincs osu! profil beállítva!",
+            await FollowupWithEmbedAsync(Color.Red, "Nincs osu! profil beállítva!",
                 "Kérlek állítsd be osu! profilodat a `osu set` parancs segítségével!").ConfigureAwait(false);
             return;
         }
@@ -82,10 +84,10 @@ public class Osu : KBotModuleBase
             .AddField("🌍 Ország", $"`{osuUser.Country.Name}`", true)
             .AddField("🎚️ Szint", $"`{osuUser.Statistics.UserLevel.Current.ToString()}`", true)
             .AddField("🥇 Globál Rank",
-                $"`# {osuUser.Statistics.GlobalRank:n0} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)}PP)`",
+                $"`# {osuUser.Statistics.GlobalRank.ToString("n0")} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)}PP)`",
                 true)
-            .AddField("🥇 Országos Rank", $"`# {osuUser.Statistics.CountryRank:n0}`", true)
-            .AddField("🎯 Pontosság", $"`{Math.Round(osuUser.Statistics.HitAccuracy, 1)} %`", true)
+            .AddField("🥇 Országos Rank", $"`# {osuUser.Statistics.CountryRank.ToString("n0")}`", true)
+            .AddField("🎯 Pontosság", $"`{Math.Round(osuUser.Statistics.HitAccuracy, 1).ToString()} %`", true)
             .AddField("🕐 Játékidő",
                 $"`{TimeSpan.FromSeconds(osuUser.Statistics.PlayTime).Humanize()} ({osuUser.Statistics.PlayCount.ToString()} játék)`",
                 true)
@@ -132,10 +134,10 @@ public class Osu : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = new Stopwatch();
-        var osuId = await Database.GetOsuIdAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false);
+        var osuId = (await Database.GetUserAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
-            await FollowupWithEmbedAsync(EmbedResult.Error, "Nincs osu! profil beállítva!",
+            await FollowupWithEmbedAsync(Color.Red, "Nincs osu! profil beállítva!",
                 "Kérlek állítsd be osu! profilodat a `osu set` parancs segítségével!").ConfigureAwait(false);
             return;
         }

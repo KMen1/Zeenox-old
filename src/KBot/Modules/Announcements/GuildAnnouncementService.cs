@@ -34,7 +34,7 @@ public class AnnouncementsModule : DiscordClientService
             return;
         }
 
-        var config = await _database.GetGuildConfigFromCacheAsync(user.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigAsync(user.Guild.Id).ConfigureAwait(false);
         if (!config.Announcements.Enabled)
         {
             return;
@@ -50,7 +50,7 @@ public class AnnouncementsModule : DiscordClientService
         {
             return;
         }
-        var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
         if (!config.Announcements.Enabled)
         {
             return;
@@ -65,7 +65,7 @@ public class AnnouncementsModule : DiscordClientService
         {
             return;
         }
-        var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
         if (!config.Announcements.Enabled)
         {
             return;
@@ -80,7 +80,7 @@ public class AnnouncementsModule : DiscordClientService
         {
             return;
         }
-        var config = await _database.GetGuildConfigFromCacheAsync(guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
         if (!config.Announcements.Enabled)
         {
             return;

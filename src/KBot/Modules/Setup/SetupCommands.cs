@@ -35,6 +35,7 @@ public class SetupCommands : KBotModuleBase
             .WithMaxValues(1)
             .WithMinValues(1);
         var config = await GetGuildConfigAsync().ConfigureAwait(false);
+        config ??= new GuildConfig();
         var moduleconfig = Converters.GetModuleConfigFromGuildConfig(module, config);
         foreach (var property in moduleconfig.GetType().GetProperties())
         {

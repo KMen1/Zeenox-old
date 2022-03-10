@@ -17,7 +17,7 @@ public class FormComponents : KBotModuleBase
         Warn warn = null;
         if (warnId != "0")
         {
-            warn = (await Database.GetWarnsAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false))[int.Parse(warnId) - 1];
+            warn = (await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false)).Warns[int.Parse(warnId) - 1];
         }
 
         var eb = new EmbedBuilder()

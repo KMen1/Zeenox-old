@@ -15,7 +15,7 @@ public class SuggestionCommands : KBotModuleBase
 
         var embed = new EmbedBuilder()
             .WithAuthor(Context.User.Username, Context.User.GetAvatarUrl())
-            .WithTitle($"Ötlet")
+            .WithTitle("Ötlet")
             .WithDescription(description)
             .WithColor(Color.Blue)
             .Build();
@@ -32,6 +32,6 @@ public class SuggestionCommands : KBotModuleBase
         }
         var suggestionChannel = Context.Guild.GetTextChannel(config.Suggestions.AnnouncementChannelId);
         await suggestionChannel.SendMessageAsync(embed: embed, components: comp).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(EmbedResult.Success, "Ötlet létrehozva", $"Ebben a csatornában: {suggestionChannel.Mention}").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Green, "Ötlet létrehozva", $"Ebben a csatornában: {suggestionChannel.Mention}").ConfigureAwait(false);
     }
 }

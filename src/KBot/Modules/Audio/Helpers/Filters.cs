@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Victoria.Filters;
+﻿using Lavalink4NET.Filters;
 
 namespace KBot.Modules.Audio.Helpers;
 
@@ -9,82 +8,82 @@ public static class Filters
     {
         return new EqualizerBand[]
         {
-            new(0, 0.2),
-            new(1, 0.2),
-            new(2, 0.2)
+            new(0, 0.2f),
+            new(1, 0.2f),
+            new(2, 0.2f)
         };
     }
     public static EqualizerBand[] Pop()
     {
         return new EqualizerBand[]
         {
-            new(0, 0.65),
-            new(1, 0.45),
-            new(2, -0.25),
-            new(3, -0.25),
-            new(4, -0.25),
-            new(5, 0.45),
-            new(6, 0.55),
-            new(7, 0.6),
-            new(8, 0.6),
-            new(9, 0.6),
+            new(0, 0.65f),
+            new(1, 0.45f),
+            new(2, -0.25f),
+            new(3, -0.25f),
+            new(4, -0.25f),
+            new(5, 0.45f),
+            new(6, 0.55f),
+            new(7, 0.6f),
+            new(8, 0.6f),
+            new(9, 0.6f),
         };
     }
     public static EqualizerBand[] Soft()
     {
         return new EqualizerBand[]
         {
-            new(8, -0.25),
-            new(9, -0.25),
-            new(10, -0.25),
-            new(11, -0.25),
-            new(12, -0.25),
-            new(13, -0.25)
+            new(8, -0.25f),
+            new(9, -0.25f),
+            new(10, -0.25f),
+            new(11, -0.25f),
+            new(12, -0.25f),
+            new(13, -0.25f)
         };
     }
     public static EqualizerBand[] TrebleBass()
     {
         return new EqualizerBand[]
         {
-            new(0, 0.6),
-            new(1, 0.67),
-            new(2, 0.67),
-            new(4, -0.2),
-            new(5, 0.15),
-            new(6, -0.25),
-            new(7, 0.23),
-            new(8, 0.35),
-            new(9, 0.45),
-            new(10, 0.55),
-            new(11, 0.6),
-            new(12, 0.55),
+            new(0, 0.6f),
+            new(1, 0.67f),
+            new(2, 0.67f),
+            new(4, -0.2f),
+            new(5, 0.15f),
+            new(6, -0.25f),
+            new(7, 0.23f),
+            new(8, 0.35f),
+            new(9, 0.45f),
+            new(10, 0.55f),
+            new(11, 0.6f),
+            new(12, 0.55f),
         };
     }
 
-    public static IFilter NightCore()
+    public static TimescaleFilterOptions NightCore()
     {
-        return new TimescaleFilter
+        return new TimescaleFilterOptions
         {
-            Speed = 1.165,
-            Pitch = 1.125,
-            Rate = 1.05
+            Speed = 1.165f,
+            Pitch = 1.125f,
+            Rate = 1.05f
         };
     }
 
-    public static IFilter EightD()
+    public static RotationFilterOptions EightD()
     {
-        return new RotationFilter
+        return new RotationFilterOptions
         {
-            Hertz = 0.2
+            Frequency = 0.2f
         };
     }
-    public static IFilter VaporWave()
+    public static TimescaleFilterOptions VaporWave()
     {
-        return new TimescaleFilter
+        return new TimescaleFilterOptions
         {
-            Speed = 1.0,
-            Pitch = 0.5,
-            Rate = 1.0
+            Speed = 1.0f,
+            Pitch = 0.5f,
+            Rate = 1.0f
         };
         /*
         new TremoloFilter()
@@ -94,61 +93,61 @@ public static class Filters
         }*/
 
     }
-    public static IFilter Doubletime()
+    public static TimescaleFilterOptions Doubletime()
     {
-        return new TimescaleFilter
+        return new TimescaleFilterOptions
         {
-            Speed = 1.165,
-            Pitch = 1.0,
-            Rate = 1.0
+            Speed = 1.165f,
+            Pitch = 1.0f,
+            Rate = 1.0f
         };
     }
-    public static IFilter Slowmotion()
+    public static TimescaleFilterOptions Slowmotion()
     {
-        return new TimescaleFilter
+        return new TimescaleFilterOptions
         {
-            Speed = 0.5,
-            Pitch = 1.0,
-            Rate = 0.8
+            Speed = 0.5f,
+            Pitch = 1.0f,
+            Rate = 0.8f
         };
     }
-    public static IFilter Chipmunk()
+    public static TimescaleFilterOptions Chipmunk()
     {
-        return new TimescaleFilter
+        return new TimescaleFilterOptions
         {
-            Speed = 1.05,
-            Pitch = 1.35,
-            Rate = 1.25
+            Speed = 1.05f,
+            Pitch = 1.35f,
+            Rate = 1.25f
         };
     }
-    public static IFilter Darthvader()
+    public static TimescaleFilterOptions Darthvader()
     {
-        return new TimescaleFilter
+        return new TimescaleFilterOptions
         {
-            Speed = 0.975,
-            Pitch = 0.5,
-            Rate = 0.8
+            Speed = 0.975f,
+            Pitch = 0.5f,
+            Rate = 0.8f
         };
     }
-    public static IFilter Dance()
+    public static TimescaleFilterOptions Dance()
     {
-        return new TimescaleFilter
+        return new TimescaleFilterOptions
         {
-            Speed = 1.25,
-            Pitch = 1.25,
-            Rate = 1.25
+            Speed = 1.25f,
+            Pitch = 1.25f,
+            Rate = 1.25f
         };
     }
-    public static IFilter China()
+    public static TimescaleFilterOptions China()
     {
-        return new TimescaleFilter
+        return new TimescaleFilterOptions
         {
-            Speed = 0.75,
-            Pitch = 1.25,
-            Rate = 1.25
+            Speed = 0.75f,
+            Pitch = 1.25f,
+            Rate = 1.25f
         };
     }
-    public static IEnumerable<IFilter> Vibrate()
+    /*public static IEnumerable<IFilter> Vibrate()
     {
         return new IFilter[]
         {
@@ -163,21 +162,21 @@ public static class Filters
                 Depth = 0.75
             }
         };
-    }
-    public static IFilter Vibrato()
+    }*/
+    public static VibratoFilterOptions Vibrato()
     {
-        return new VibratoFilter
+        return new VibratoFilterOptions
         {
-            Frequency = 4.0,
-            Depth = 0.75
+            Frequency = 4.0f,
+            Depth = 0.75f
         };
     }
-    public static IFilter Tremolo()
+    public static TremoloFilterOptions Tremolo()
     {
-        return new TremoloFilter
+        return new TremoloFilterOptions
         {
-            Frequency = 4.0,
-            Depth = 0.75
+            Frequency = 4.0f,
+            Depth = 0.75f
         };
     }
 }

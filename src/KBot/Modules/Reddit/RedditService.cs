@@ -20,7 +20,12 @@ public static class RedditService
 
     public class PostObject
     {
-        [JsonProperty("data")] public PostData Data { get; set; }
+        [JsonProperty("data")] private PostData Data { get; set; }
+        
+        public string Title => Data.Title;
+        public string ImageUrl => Data.Url;
+        public string Name => Data.Name;
+        public string Permalink => Data.Permalink;
     }
 
     public class PostData
@@ -45,7 +50,7 @@ public static class RedditService
         var randomNumber = random.Next(0, subredditObject.Data.Posts.Count);
         var post = subredditObject.Data.Posts[randomNumber];
 
-        var imageUrl = post.Data.Url;
+        var imageUrl = post.ImageUrl;
         if (!imageUrl.EndsWith(".jpg") && !imageUrl.EndsWith(".png") && !imageUrl.EndsWith(".gif") && !imageUrl.EndsWith(".jpeg"))
         {
             post = await GetRandomPostAsync(subreddit).ConfigureAwait(false);

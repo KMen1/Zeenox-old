@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Humanizer;
-using Victoria;
+using Lavalink4NET.Player;
 
 namespace KBot.Modules.Audio.Helpers;
 
@@ -33,27 +33,27 @@ public static class Embeds
             .Build();
     }
 
-    public static async ValueTask<Embed> NowPlayingEmbed(IUser user, LavaPlayer player, bool isloopEnabled, string filter, int queueLength)
+    public static Embed NowPlayingEmbed(SocketUser user, MusicPlayer player)
     {
         var eb = new EmbedBuilder()
             .WithAuthor("MOST JÁTSZOTT", PlayingGif)
-            .WithTitle(player.Track.Title)
-            .WithUrl(player.Track.Url)
-            .WithImageUrl(await player.Track.FetchArtworkAsync().ConfigureAwait(false))
+            .WithTitle(player.CurrentTrack.Title)
+            .WithUrl(player.CurrentTrack.Source)
+            .WithImageUrl($"https://img.youtube.com/vi/{player.CurrentTrack.TrackIdentifier}/maxresdefault.jpg")
             .WithColor(Color.Green)
             .AddField("👨 Hozzáadta", user.Mention, true)
-            .AddField("🔼 Feltöltötte", $"`{player.Track.Author}`", true)
+            .AddField("🔼 Feltöltötte", $"`{player.CurrentTrack.Author}`", true)
             .AddField("🎙️ Csatorna", player.VoiceChannel.Mention, true)
-            .AddField("🕐 Hosszúság", $"`{player.Track.Duration:hh\\:mm\\:ss}`", true)
-            .AddField("🔁 Ismétlés", isloopEnabled ? "`Igen`" : "`Nem`", true)
-            .AddField("🔊 Hangerő", $"`{player.Volume.ToString()}%`", true)
-            .AddField("📝 Szűrő", filter is not null ? $"`{filter}`" : "`Nincs`", true)
-            .AddField("🎶 Várólistán", $"`{queueLength.ToString()}`", true)
+            .AddField("🕐 Hosszúság", $"`{player.CurrentTrack.Duration.ToString("c")}`", true)
+            .AddField("🔁 Ismétlés", player.LoopEnabled ? "`Igen`" : "`Nem`", true)
+            .AddField("🔊 Hangerő", $"`{Math.Round(player.Volume * 100).ToString()}%`", true)
+            .AddField("📝 Szűrő", player.FilterEnabled is not null ? $"`{player.FilterEnabled}`" : "`Nincs`", true)
+            .AddField("🎶 Várólistán", $"`{player.Queue.Count.ToString()}`", true)
             .Build();
-        return await new ValueTask<Embed>(eb).ConfigureAwait(false);
+        return eb;
     }
 
-    public static Embed VolumeEmbed(LavaPlayer player)
+    public static Embed VolumeEmbed(MusicPlayer player)
     {
         return new EmbedBuilder()
             .WithAuthor($"HANGERŐ {player.Volume.ToString()}%-RA ÁLLÍTVA", SuccessIcon)
@@ -62,7 +62,7 @@ public static class Embeds
             .Build();
     }
 
-    public static Embed QueueEmbed(LavaPlayer player, LinkedList<(LavaTrack track, SocketUser user)> queue, bool cleared = false)
+    public static Embed QueueEmbed(MusicPlayer player, bool cleared = false)
     {
         var eb = new EmbedBuilder()
             .WithAuthor(cleared ? "LEJÁTSZÁSI LISTA TÖRÖLVE" : "LEJÁTSZÁSI LISTA LEKÉRVE", SuccessIcon)
@@ -72,17 +72,17 @@ public static class Embeds
         {
             return eb.Build();
         }
-        if (queue.Count == 0)
+        if (player.Queue.Count == 0)
         {
             eb.WithDescription("`Nincs zene a lejátszási listában`");
         }
         else
         {
             var desc = new StringBuilder();
-            foreach (var track in queue)
+            foreach (var track in player.Queue)
             {
-                desc.AppendLine(
-                    $":{(queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.track.Title}`]({track.track.Url}) | Hozzáadta: {track.user.Mention}");
+                desc.AppendLine(//
+                    $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Source}) | Hozzáadta: {((MusicPlayer.TrackContext)track.Context)!.AddedBy.Mention}");
             }
 
             eb.WithDescription(desc.ToString());
@@ -90,32 +90,17 @@ public static class Embeds
         return eb.Build();
     }
 
-    public static Embed AddedToQueueEmbed(List<LavaTrack> tracks)
+    public static Embed AddedToQueueEmbed(List<LavalinkTrack> tracks)
     {
-        var desc = new StringBuilder();
-        foreach (var track in tracks.Take(10))
-        {
-            desc.AppendLine(
-                $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Url})");
-        }
+        var desc = tracks.Take(10).Aggregate("", (current, track) => current + $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Source})\n");
         if (tracks.Count > 10)
         {
-            desc.Append("és még ").Append(tracks.Count - 10).AppendLine(" zene");
+            desc += $"és még {(tracks.Count - 10).ToString()} zene\n";
         }
-
         return new EmbedBuilder()
             .WithAuthor($"{tracks.Count} SZÁM HOZZÁADVA A VÁRÓLISTÁHOZ", SuccessIcon)
             .WithColor(Color.Orange)
-            .WithDescription(desc.ToString())
-            .Build();
-    }
-    
-    public static Embed AddedToQueueEmbed(LavaTrack track)
-    {
-        return new EmbedBuilder()
-            .WithAuthor("SZÁM HOZZÁADVA A VÁRÓLISTÁHOZ", SuccessIcon)
-            .WithColor(Color.Orange)
-            .WithDescription($"[`{track.Title}`]({track.Url})")
+            .WithDescription(desc)
             .Build();
     }
 

@@ -33,7 +33,7 @@ public class TourModule : DiscordClientService
     private static async Task HandleTourEventAsync(SocketGuildEvent guildEvent, EventEmbedType type)
     {
         var eventChannel = guildEvent.Channel;
-        var config = await _database.GetGuildConfigFromCacheAsync(guildEvent.Guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigAsync(guildEvent.Guild.Id).ConfigureAwait(false);
         if (!config.TourEvents.Enabled)
         {
             return;

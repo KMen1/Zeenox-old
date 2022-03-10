@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using KBot.Enums;
 using KBot.Modules.Audio.Helpers;
 
 namespace KBot.Modules.Audio;
@@ -35,33 +33,26 @@ public class MusicCommands : KBotModuleBase
             await FollowupAsync(embed: Embeds.ErrorEmbed("Nem vagy hangcsatornában!")).ConfigureAwait(false);
             return;
         }
-        await AudioService
-            .PlayAsync(Context.Guild, Context.Interaction, query)
-            .ConfigureAwait(false);
+        await AudioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
     }
 
     [SlashCommand("search", "Keres egy zenét a YouTube-on")]
     public async Task Search([Summary("query", "Zene címe")] string query)
     {
+        await DeferAsync().ConfigureAwait(false);
         if (Uri.IsWellFormedUriString(query, UriKind.Absolute))
         {
-            await Play(query).ConfigureAwait(false);
+            await AudioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
             return;
         }
-        await DeferAsync().ConfigureAwait(false);
         var search = await AudioService.SearchAsync(query).ConfigureAwait(false);
         if (search is null)
         {
-            await FollowupWithEmbedAsync(EmbedResult.Error, "Nincs találat!", "").ConfigureAwait(false);
+            await FollowupAsync("Nincs találat! Kérlek próbáld újra másképp!").ConfigureAwait(false);
             return;
         }
-        var tracks = search.Value.Tracks.ToList();
-        var desc = new StringBuilder();
-        foreach (var track in tracks.Take(10))
-        {
-            desc.AppendLine(
-                $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Url}) | [`{track.Duration}`]");
-        }
+        var tracks = search.Tracks.ToList();//({track.Url})
+        var desc = tracks.Take(10).Aggregate("", (current, track) => current + $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`] | [`{track.Duration}`]");
 
         var comp = new ComponentBuilder()
             .WithButton(" ", "0", emote: new Emoji("1️⃣"))
@@ -79,7 +70,7 @@ public class MusicCommands : KBotModuleBase
         var eb = new EmbedBuilder()
             .WithTitle("Válaszd ki a kívánt számot")
             .WithColor(Color.Blue)
-            .WithDescription(desc.ToString())
+            .WithDescription(desc)
             .Build();
 
         await FollowupAsync(embed: eb, components: comp).ConfigureAwait(false);

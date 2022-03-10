@@ -44,8 +44,6 @@ public class InteractionHandler : DiscordClientService
         await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
         await Client.SetGameAsync("/" + _provider.GetRequiredService<BotConfig>().Client.Game, type: ActivityType.Listening).ConfigureAwait(false);
         await Client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
-        /*foreach (var guild in Client.Guilds)
-            await _interactionService.AddModulesToGuildAsync(guild, true, _interactionService.Modules.ToArray()).ConfigureAwait(false);*/
     }
 
     private Task ClientOnGuildAvailableAsync(SocketGuild arg)

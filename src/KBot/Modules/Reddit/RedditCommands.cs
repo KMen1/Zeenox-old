@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 using KBot.Enums;
 
@@ -12,11 +13,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostAsync("FostTalicska").ConfigureAwait(false);
-        var title = post.Data.Title;
-        var imageUrl = post.Data.Url;
-        var postUrl = "https://reddit.com" + post.Data.Permalink;
-
-        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl).ConfigureAwait(false);
+        var postUrl = "https://reddit.com" + post.Permalink;
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [SlashCommand("meme", "Küld egy random mémet az r/memes subredditről.")]
@@ -24,11 +22,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostAsync("memes").ConfigureAwait(false);
-        var title = post.Data.Title;
-        var imageUrl = post.Data.Url;
-        var postUrl = "https://reddit.com" + post.Data.Permalink;
-
-        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl).ConfigureAwait(false);
+        var postUrl = "https://reddit.com" + post.Permalink;
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [SlashCommand("blursed", "Küld egy random elátkozott képet az r/blursedimages subredditről.")]
@@ -36,11 +31,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostAsync("blursedimages").ConfigureAwait(false);
-        var title = post.Data.Title;
-        var imageUrl = post.Data.Url;
-        var postUrl = "https://reddit.com" + post.Data.Permalink;
-
-        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl).ConfigureAwait(false);
+        var postUrl = "https://reddit.com" + post.Permalink;
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [RequireNsfw]
@@ -49,11 +41,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostAsync("pussy").ConfigureAwait(false);
-        var title = post.Data.Title;
-        var imageUrl = post.Data.Url;
-        var postUrl = "https://reddit.com" + post.Data.Permalink;
-
-        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl).ConfigureAwait(false);
+        var postUrl = "https://reddit.com" + post.Permalink;
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [RequireNsfw]
@@ -62,11 +51,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostAsync("boobs").ConfigureAwait(false);
-        var title = post.Data.Title;
-        var imageUrl = post.Data.Url;
-        var postUrl = "https://reddit.com" + post.Data.Permalink;
-
-        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl).ConfigureAwait(false);
+        var postUrl = "https://reddit.com" + post.Permalink;
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [RequireNsfw]
@@ -75,10 +61,7 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostAsync("ass").ConfigureAwait(false);
-        var title = post.Data.Title;
-        var imageUrl = post.Data.Url;
-        var postUrl = "https://reddit.com" + post.Data.Permalink;
-
-        await FollowupWithEmbedAsync(EmbedResult.Success, title, null, postUrl, imageUrl).ConfigureAwait(false);
+        var postUrl = "https://reddit.com" + post.Permalink;
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
     }
 }

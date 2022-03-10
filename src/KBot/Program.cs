@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
+using System.Threading.Tasks;
+using CloudinaryDotNet;
 using Discord;
 using Discord.Addons.Hosting;
 using Discord.Interactions;
@@ -14,9 +16,13 @@ using KBot.Models;
 using KBot.Modules.Announcements;
 using KBot.Modules.Audio;
 using KBot.Modules.DeadByDaylight;
+using KBot.Modules.Gambling;
 using KBot.Modules.Leveling;
 using KBot.Modules.TemporaryChannels;
 using KBot.Services;
+using Lavalink4NET;
+using Lavalink4NET.DiscordNet;
+using Lavalink4NET.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -25,8 +31,6 @@ using OsuSharp;
 using OsuSharp.Extensions;
 using Serilog;
 using Serilog.Events;
-using Victoria;
-using Task = System.Threading.Tasks.Task;
 
 namespace KBot;
 
@@ -87,60 +91,66 @@ public static class Program
             .ConfigureServices((context, services) =>
             {
                 services.AddSingleton(context.Configuration.Get<BotConfig>());
-                services.AddSingleton(new LavaConfig
-                {
-                    Hostname = context.Configuration.GetSection("LavaLink").GetValue<string>("Host"),
-                    Port = context.Configuration.GetSection("LavaLink").GetValue<ushort>("Port"),
-                    Authorization = context.Configuration.GetSection("LavaLink").GetValue<string>("Password"),
-                    LogSeverity = LogSeverity.Verbose
-                });
-                services.AddSingleton<LavaNode>();
-                services.AddSingleton(new InteractiveConfig()
+                services.AddSingleton(new InteractiveConfig
                 {
                     DefaultTimeout = new TimeSpan(0, 0, 5, 0),
                     LogLevel = LogSeverity.Verbose
                 });
                 services.AddSingleton<InteractiveService>();
                 services.AddHostedService<InteractionHandler>();
+                services.AddSingleton<IDiscordClientWrapper, DiscordClientWrapper>();
+                services.AddSingleton<IAudioService, LavalinkNode>();
+                services.AddSingleton<LavalinkNode>();
+                services.AddSingleton(new LavalinkNodeOptions
+                {
+                    AllowResuming = true,
+                    Password = "youshallnotpass",
+                    WebSocketUri = "ws://127.0.0.1:2333",
+                    RestUri = "http://127.0.0.1:2333",
+                    DisconnectOnStop = false,
+                });
+                services.AddSingleton<Lavalink4NET.Logging.ILogger, EventLogger>();
                 services.AddSingleton<AudioService>();
-                services.AddSingleton<IHostedService, AudioService>(x => x.GetService<AudioService>());
                 services.AddSingleton<IMongoClient>(new MongoClient(context.Configuration.GetSection("MongoDb").GetValue<string>("ConnectionString")));
                 services.AddSingleton(x => x.GetService<IMongoClient>()!.GetDatabase(context.Configuration.Get<BotConfig>().MongoDb.Database));
                 services.AddSingleton<DatabaseService>();
                 services.AddSingleton<OsuClient>();
-                services.AddHostedService<LoggingService>();
+                services.AddSingleton<LoggingService>();
                 services.AddHostedService<AnnouncementsModule>();
                 services.AddHostedService<MovieModule>();
                 services.AddHostedService<TourModule>();
                 services.AddHostedService<TemporaryVoiceModule>();
                 services.AddHostedService<LevelingModule>();
                 services.AddSingleton<DbDService>();
+                services.AddSingleton<GamblingService>();
+                services.AddSingleton(new Cloudinary(new Account(
+                    context.Configuration.GetSection("Cloudinary").GetValue<string>("CloudName"),
+                    context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiKey"),
+                    context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiSecret"))));
                 services.AddMemoryCache();
             })
             .UseSerilog()
             .UseConsoleLifetime()
             .Build();
-
-        IShellLink link = (IShellLink) new ShellLink();
+#if RELEASE
+        var link = (IShellLink) new ShellLink();
         link.SetDescription("KBot");
         link.SetPath($"C:\\KBot\\{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}\\KBot.exe");
-        IPersistFile file = (IPersistFile) link;
-        // C:\Users\Oli\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
-        // C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+        var file = (IPersistFile) link;
         const string startupPath = @"C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup";
         file.Save(Path.Combine(startupPath, "KBot.lnk"), false);
-
+#endif
         return host.RunAsync();
     }
 
     [ComImport]
     [Guid("00021401-0000-0000-C000-000000000046")]
-    internal class ShellLink { }
+    private class ShellLink { }
 
     [ComImport]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     [Guid("000214F9-0000-0000-C000-000000000046")]
-    internal interface IShellLink
+    private interface IShellLink
     {
         void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxPath, out IntPtr pfd, int fFlags);
         void GetIDList(out IntPtr ppidl);

@@ -1,15 +1,15 @@
 ﻿using System.Threading.Tasks;
+using CloudinaryDotNet;
 using Discord;
 using Discord.Interactions;
 using Fergun.Interactive;
-using KBot.Enums;
 using KBot.Models;
 using KBot.Modules.Audio;
 using KBot.Modules.DeadByDaylight;
+using KBot.Modules.Gambling;
 using KBot.Services;
 using Microsoft.Extensions.Caching.Memory;
 using OsuSharp;
-using OsuSharp.Interfaces;
 
 namespace KBot.Modules;
 
@@ -21,8 +21,10 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
     public IMemoryCache Cache { get; set; }
     public OsuClient OsuClient { get; set; }
     public DbDService DbDService { get; set; }
+    public GamblingService GamblingService { get; set; }
+    public Cloudinary Cloudinary { get; set; }
     
-    protected Task RespondWithEmbedAsync(EmbedResult result, string title, string description, string url = null,
+    protected Task RespondWithEmbedAsync(Color color, string title, string description, string url = null,
         string imageUrl = null, bool ephemeral = false)
     {
         var embed = new EmbedBuilder()
@@ -30,12 +32,12 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
             .WithDescription(description)
             .WithUrl(url)
             .WithImageUrl(imageUrl)
-            .WithColor(result == EmbedResult.Error ? Color.Red : Color.Green)
+            .WithColor(color)
             .Build();
         return Context.Interaction.RespondAsync(embed: embed, ephemeral: ephemeral);
     }
 
-    protected async Task<IUserMessage> FollowupWithEmbedAsync(EmbedResult result, string title, string description,
+    protected async Task<IUserMessage> FollowupWithEmbedAsync(Color color, string title, string description,
         string url = null, string imageUrl = null, bool ephemeral = false)
     {
         var embed = new EmbedBuilder()
@@ -43,13 +45,13 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
             .WithDescription(description)
             .WithUrl(url)
             .WithImageUrl(imageUrl)
-            .WithColor(result == EmbedResult.Error ? Color.Red : Color.Green)
+            .WithColor(color)
             .Build();
         return await Context.Interaction.FollowupAsync(embed: embed, ephemeral: ephemeral).ConfigureAwait(false);
     }
 
     protected async Task<GuildConfig> GetGuildConfigAsync()
     {
-        return await Database.GetGuildConfigFromCacheAsync(Context.Guild.Id).ConfigureAwait(false);
+        return await Database.GetGuildConfigAsync(Context.Guild.Id).ConfigureAwait(false);
     }
 }

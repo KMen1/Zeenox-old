@@ -48,7 +48,6 @@ public static class Converters
             "AnnouncementChannelId" => "Bejelentő csatorna",
             "StreamingChannelId" => "Vetítő csatorna",
             "RoleId" => "Rang",
-            "PointsToLevelUp" => "Pontok a szintlépéshez",
             "AfkChannelId" => "AFK csatorna",
             "LevelRole" => "Auto Rangok",
             _ => "Ismeretlen"
