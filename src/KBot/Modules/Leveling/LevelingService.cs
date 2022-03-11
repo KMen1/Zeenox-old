@@ -75,7 +75,7 @@ public class LevelingModule : DiscordClientService
             {
                 return;
             }
-            var dbUser = await _database.GetUserAsync(guild.Id, user.Id).ConfigureAwait(false);
+            var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
             dbUser.LastVoiceChannelJoin = DateTime.UtcNow;
             await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);
             Log.Logger.Information("Set Join Date for {0} by JoinedChannel", user.Username);
@@ -86,7 +86,7 @@ public class LevelingModule : DiscordClientService
             {
                 return;
             }
-            var joinDate = (await _database.GetUserAsync(guild.Id, user.Id).ConfigureAwait(false)).LastVoiceChannelJoin;
+            var joinDate = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).LastVoiceChannelJoin;
             await HandleGivePointsAsync(user, guild, config, (int)(DateTime.UtcNow - joinDate).TotalSeconds).ConfigureAwait(false);
             Log.Logger.Information("Gave points to {0} by LeftChannel", user.Username);
         }
@@ -96,7 +96,7 @@ public class LevelingModule : DiscordClientService
             {
                 return;
             }
-            var joinDate = (await _database.GetUserAsync(guild.Id, user.Id).ConfigureAwait(false)).LastVoiceChannelJoin;
+            var joinDate = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).LastVoiceChannelJoin;
             await HandleGivePointsAsync(user, guild, config, (int)(DateTime.UtcNow - joinDate).TotalSeconds).ConfigureAwait(false);
             Log.Logger.Information("Gave points to {0} by Muted", user.Username);
         }
@@ -106,21 +106,21 @@ public class LevelingModule : DiscordClientService
             {
                 return;
             }
-            var dbUser = await _database.GetUserAsync(user.Id, guild.Id).ConfigureAwait(false);
+            var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
             dbUser.LastVoiceChannelJoin = DateTime.UtcNow;
             await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);
             Log.Logger.Information("Set Join Date {0} by Unmuted", user.Username);
         }
         else if (SwitchedChannelFromAfk(before, after, config))
         {
-            var dbUser = await _database.GetUserAsync(user.Id, guild.Id).ConfigureAwait(false);
+            var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
             dbUser.LastVoiceChannelJoin = DateTime.UtcNow;
             await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);
             Log.Logger.Information("Set Join Date for {0} by SwitchedChannelFromAfk", user.Username);
         }
         else if (JoinedOrLeftAfkChannel(after, config))
         {
-            var joinDate = (await _database.GetUserAsync(guild.Id, user.Id).ConfigureAwait(false)).LastVoiceChannelJoin;
+            var joinDate = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).LastVoiceChannelJoin;
             await HandleGivePointsAsync(user, guild, config, (int)(DateTime.UtcNow - joinDate).TotalSeconds).ConfigureAwait(false);
             Log.Logger.Information("Gave points to {0} by JoinedOrLeftAfkChannel", user.Username);
         }
@@ -128,9 +128,9 @@ public class LevelingModule : DiscordClientService
 
     private async Task HandleGivePointsAsync(SocketUser user, SocketGuild guild, GuildConfig config, int points)
     {
-        var currentLevel = (await _database.GetUserAsync(guild.Id, user.Id).ConfigureAwait(false)).Level;
+        var currentLevel = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).Level;
         var currentRequiredPoints = Math.Pow(currentLevel * 4, 2);
-        var dbUser = await _database.GetUserAsync(guild.Id, user.Id).ConfigureAwait(false);
+        var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
         dbUser.Points += points;
         await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);
         if (dbUser.Points >= currentRequiredPoints)
@@ -198,11 +198,16 @@ public class LevelingModule : DiscordClientService
             case > 0:
             {
                 levelsToAdd = xp / xpToLevelUp;
-                newPoints = xp - (int)Math.Pow(levelsToAdd * 4, 2);
+                var total = 0;
+                for (var i = level; i < level + levelsToAdd; i++)
+                {
+                    total += (int)Math.Pow(i * 4, 2);
+                }
+                newPoints = xp - total;
                 break;
             }
         }
-        var dbUser = await _database.GetUserAsync(guild.Id, user.Id).ConfigureAwait(false);
+        var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
         dbUser.Level += levelsToAdd;
         dbUser.Points = newPoints;
         await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);

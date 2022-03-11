@@ -15,8 +15,7 @@ public class Levels : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var setUser = user ?? Context.User;
-        var userId = setUser.Id;
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, userId).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, setUser).ConfigureAwait(false);
         var level = dbUser.Level;
         var requiredXP = Math.Pow(level * 4, 2);
         var xp = dbUser.Points;
@@ -57,8 +56,7 @@ public class Levels : KBotModuleBase
     public async Task GetDailyAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var userId = Context.User.Id;
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, userId).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         var lastDaily = dbUser.LastDailyClaim;
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
@@ -83,7 +81,7 @@ public class Levels : KBotModuleBase
     public async Task AddPointsAsync(SocketUser user, int xp)
     {
         await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, user.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
         dbUser.Points += xp;
         await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Pontok beállítva!",
@@ -95,7 +93,7 @@ public class Levels : KBotModuleBase
     public async Task AddLevelAsync(SocketUser user, int levels)
     {
         await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, user.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
         dbUser.Level += levels;
         await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Szint hozzáadva!",

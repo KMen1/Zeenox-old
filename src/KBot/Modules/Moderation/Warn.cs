@@ -17,9 +17,8 @@ public class WarnModule : KBotModuleBase
     public async Task WarnAsync(SocketUser user, string reason)
     {
         var moderatorId = Context.User.Id;
-        var userId = user.Id;
         await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, userId).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
         dbUser.Warns.Add(new Warn(moderatorId, reason, DateTime.UtcNow));
         await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} sikeresen figyelmeztetve!",
@@ -40,7 +39,7 @@ public class WarnModule : KBotModuleBase
     public async Task RemoveWarnAsync(SocketUser user, string reason, int warnId)
     {
         await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, user.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
         try
         {
             dbUser.Warns.RemoveAt(warnId - 1);
@@ -69,7 +68,7 @@ public class WarnModule : KBotModuleBase
     {
         var userId = user.Id;
         await DeferAsync(true).ConfigureAwait(false);
-        var warns = (await Database.GetUserAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false)).Warns;
+        var warns = (await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false)).Warns;
         if (warns.Count is 0)
         {
             await FollowupWithEmbedAsync(Color.Gold, "😎 Szép munka!",

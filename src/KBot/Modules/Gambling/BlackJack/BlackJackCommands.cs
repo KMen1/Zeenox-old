@@ -11,7 +11,7 @@ public class BlackJackCommands : KBotModuleBase
     public async Task StartBlackJackAsync([Summary("stake", "Add meg hány szintet szeretnél feltenni")] int stake)
     {
         await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         dbUser.GamblingProfile ??= new GamblingProfile();
         dbUser.GamblingProfile.BlackJack ??= new BlackJackProfile();
         if (dbUser.GamblingProfile.Money < stake)

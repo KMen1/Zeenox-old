@@ -12,7 +12,7 @@ public class CrashCommands : KBotModuleBase
     public async Task StartCrash(int stake)
     {
         await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         dbUser.GamblingProfile ??= new GamblingProfile();
         dbUser.GamblingProfile.Crash ??= new CrashProfile();
         if (dbUser.GamblingProfile.Money < stake)

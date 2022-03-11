@@ -10,7 +10,7 @@ public class HighLowCommands : KBotModuleBase
     public async Task StartHighLowAsync([Summary("stake", "Add meg a kívánt tétet"), MinValue(20), MaxValue(100)]int stake)
     {
         await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         dbUser.GamblingProfile ??= new GamblingProfile();
         dbUser.GamblingProfile.HighLow ??= new HighLowProfile();
         if (dbUser.GamblingProfile.Money < stake)

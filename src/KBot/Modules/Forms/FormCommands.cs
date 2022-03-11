@@ -35,7 +35,7 @@ public class FormCommands : KBotModuleBase
             await RespondWithModalAsync(modal.Build()).ConfigureAwait(false);
             return;
         }
-        var warns = (await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false)).Warns;
+        var warns = (await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false)).Warns;
         if (warns.Count < warnId)
         {
             await RespondAsync("Nincs ilyen ID-jű warnod!", ephemeral: true).ConfigureAwait(false);

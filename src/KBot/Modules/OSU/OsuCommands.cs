@@ -31,7 +31,7 @@ public class Osu : KBotModuleBase
 
         await DeferAsync(true).ConfigureAwait(false);
         var osuId = Convert.ToUInt64(link.Split("/").Last());
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         dbUser.OsuId = osuId;
         await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Red, "Sikeresen beállítottad az osu! profilod!",
@@ -43,7 +43,7 @@ public class Osu : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var osuId = (await Database.GetUserAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false)).OsuId;
+        var osuId = (await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "Nincs osu! profil beállítva!",
@@ -67,7 +67,7 @@ public class Osu : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var osuId = (await Database.GetUserAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false)).OsuId;
+        var osuId = (await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "Nincs osu! profil beállítva!",
@@ -134,7 +134,7 @@ public class Osu : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = new Stopwatch();
-        var osuId = (await Database.GetUserAsync(Context.Guild.Id, user?.Id ?? Context.User.Id).ConfigureAwait(false)).OsuId;
+        var osuId = (await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "Nincs osu! profil beállítva!",

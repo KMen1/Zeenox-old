@@ -35,7 +35,7 @@ public class DatabaseService : DiscordClientService
         var guild = (await _collection.FindAsync(x => x.GuildId == vguild.Id).ConfigureAwait(false)).First();
         foreach (var guildUser in guild.Users)
         {
-            guildUser.GamblingProfile = new GamblingProfile();
+            guildUser.Points = 0;
         }
         await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
     }
@@ -71,11 +71,11 @@ public class DatabaseService : DiscordClientService
         await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         return guild.Users.Find(x => x.UserId == userId);
     }
-    public async ValueTask<User> GetUserAsync(ulong guildId, ulong userId)
+    public async ValueTask<User> GetUserAsync(SocketGuild vGuild, SocketUser vUser)
     {
-        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        var user = guild.Users.Find(x => x.UserId == userId) ??
-                   await RegisterUserAsync(guildId, userId).ConfigureAwait(false);
+        var guild = (await _collection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(vGuild.Id).ConfigureAwait(false);
+        var user = guild.Users.Find(x => x.UserId == vUser.Id) ??
+                   await RegisterUserAsync(vGuild.Id, vUser.Id).ConfigureAwait(false);
         return user;
     }
     public async Task UpdateUserAsync(ulong guildId, User user)

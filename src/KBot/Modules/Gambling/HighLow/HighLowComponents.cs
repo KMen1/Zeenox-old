@@ -40,7 +40,7 @@ public class HighLowComponents : KBotModuleBase
             embed.WithDescription($"Nem találtad el! Vesztettél **{game.Stake}** kreditet!");
             embed.WithImageUrl(game.Reveal());
             GamblingService.RemoveHighLowGame(Id);
-            var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+            var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
             dbUser.GamblingProfile.HighLow.MoneyLost += game.Stake;
             dbUser.GamblingProfile.HighLow.Losses++;
             await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
@@ -85,7 +85,7 @@ public class HighLowComponents : KBotModuleBase
             embed.WithDescription($"Nem találtad el! Vesztettél **{game.Stake}** kreditet!");
             embed.WithImageUrl(game.Reveal());
             GamblingService.RemoveHighLowGame(Id);
-            var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+            var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
             dbUser.GamblingProfile.HighLow.MoneyLost += game.Stake;
             dbUser.GamblingProfile.HighLow.Losses++;
             await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
@@ -111,7 +111,7 @@ public class HighLowComponents : KBotModuleBase
         embed.WithDescription($"A játék véget ért! **{game.Stake}** kreditet szereztél!");
         embed.WithImageUrl(game.Reveal());
         GamblingService.RemoveHighLowGame(Id);
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         dbUser.GamblingProfile.Money += game.Stake;
         dbUser.GamblingProfile.HighLow.MoneyWon += game.Stake;
         dbUser.GamblingProfile.HighLow.Wins++;

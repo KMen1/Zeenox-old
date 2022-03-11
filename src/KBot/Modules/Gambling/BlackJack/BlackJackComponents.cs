@@ -63,7 +63,7 @@ public class BlackJackComponents : KBotModuleBase
                 embed.WithImageUrl(game.GetTablePicUrl());
                 embed.Fields[0].Value = $"Érték: `{playerSum.ToString()}`";
                 embed.Fields[1].Value = game.Hidden ? "Érték: `?`" : $"Érték: `{dealerSum.ToString()}`";
-                var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+                var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
                 dbUser.GamblingProfile.BlackJack.Losses--;
                 await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
                 await Context.Interaction.ModifyOriginalResponseAsync(x =>
@@ -79,7 +79,7 @@ public class BlackJackComponents : KBotModuleBase
                 embed.WithImageUrl(game.GetTablePicUrl());
                 embed.Fields[0].Value = $"Érték: `{playerSum.ToString()}`";
                 embed.Fields[1].Value = game.Hidden ? "Érték: `?`" : $"Érték: `{dealerSum.ToString()}`";
-                var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+                var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
                 dbUser.GamblingProfile.Money += game.Stake;
                 dbUser.GamblingProfile.BlackJack.Wins++;
                 await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
@@ -96,7 +96,7 @@ public class BlackJackComponents : KBotModuleBase
                 embed.WithImageUrl(game.GetTablePicUrl());
                 embed.Fields[0].Value = $"Érték: `{playerSum.ToString()}`";
                 embed.Fields[1].Value = game.Hidden ? "Érték: `?`" : $"Érték: `{dealerSum.ToString()}`";
-                var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+                var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
                 dbUser.GamblingProfile.Money += game.Stake;
                 dbUser.GamblingProfile.BlackJack.Wins++;
                 await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
@@ -113,7 +113,7 @@ public class BlackJackComponents : KBotModuleBase
                 embed.WithImageUrl(game.GetTablePicUrl());
                 embed.Fields[0].Value = $"Érték: `{playerSum.ToString()}`";
                 embed.Fields[1].Value = game.Hidden ? "Érték: `?`" : $"Érték: `{dealerSum.ToString()}`";
-                var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+                var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
                 dbUser.GamblingProfile.BlackJack.Losses++;
                 await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
                 await Context.Interaction.ModifyOriginalResponseAsync(x =>
@@ -129,7 +129,7 @@ public class BlackJackComponents : KBotModuleBase
                 embed.WithImageUrl(game.GetTablePicUrl());
                 embed.Fields[0].Value = $"Érték: `{playerSum.ToString()}`";
                 embed.Fields[1].Value = game.Hidden ? "Érték: `?`" : $"Érték: `{dealerSum.ToString()}`";
-                var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+                var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
                 dbUser.GamblingProfile.Money += game.Stake;
                 dbUser.GamblingProfile.BlackJack.Wins++;
                 await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
@@ -146,7 +146,7 @@ public class BlackJackComponents : KBotModuleBase
                 embed.WithImageUrl(game.GetTablePicUrl());
                 embed.Fields[0].Value = $"Érték: `{playerSum.ToString()}`";
                 embed.Fields[1].Value = game.Hidden ? "Érték: `?`" : $"Érték: `{dealerSum.ToString()}`";
-                var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+                var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
                 dbUser.GamblingProfile.BlackJack.Losses++;
                 await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
                 await Context.Interaction.ModifyOriginalResponseAsync(x =>
@@ -162,7 +162,7 @@ public class BlackJackComponents : KBotModuleBase
                 embed.WithImageUrl(game.GetTablePicUrl());
                 embed.Fields[0].Value = $"Érték: `{playerSum.ToString()}`";
                 embed.Fields[1].Value = game.Hidden ? "Érték: `?`" : $"Érték: `{dealerSum.ToString()}`";
-                var dbUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+                var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
                 dbUser.GamblingProfile.Money += game.Stake;
                 await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
                 await Context.Interaction.ModifyOriginalResponseAsync(x =>

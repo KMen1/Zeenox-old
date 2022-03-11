@@ -13,7 +13,7 @@ public class GamblingCommands : KBotModuleBase
     public async Task SendGamblingProfileAsync(GambleProfileType profileType = GambleProfileType.General, SocketUser vuser = null)
     {
         var user = vuser ?? Context.User;
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, user.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
         var gambleProfile = dbUser.GamblingProfile;
 
         switch (profileType)
@@ -46,7 +46,7 @@ public class GamblingCommands : KBotModuleBase
     public async Task ChangeMoneyAsync(SocketUser user, int offset)
     {
         await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, user.Id).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
         dbUser.GamblingProfile.Money += offset;
         await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Pénz beállítva!",
@@ -57,13 +57,13 @@ public class GamblingCommands : KBotModuleBase
     public async Task TrasnferMoneyAsync(SocketUser user, int amount)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var sourceUser = await Database.GetUserAsync(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
+        var sourceUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         if (sourceUser.GamblingProfile.Money < amount)
         {
             await FollowupAsync("Nincs elég 🪙KCoin-od ehhez a művelethez!").ConfigureAwait(false);
             return;
         }
-        var destUser = await Database.GetUserAsync(Context.Guild.Id, user.Id).ConfigureAwait(false);
+        var destUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
         sourceUser.GamblingProfile.Money -= amount;
         destUser.GamblingProfile.Money += amount;
         await Database.UpdateUserAsync(Context.Guild.Id, sourceUser).ConfigureAwait(false);
@@ -83,8 +83,7 @@ public class GamblingCommands : KBotModuleBase
     public async Task ClaimDailyCoinsAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var userId = Context.User.Id;
-        var dbUser = await Database.GetUserAsync(Context.Guild.Id, userId).ConfigureAwait(false);
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         var lastDaily = dbUser.GamblingProfile.LastDailyClaim;
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
@@ -104,13 +103,6 @@ public class GamblingCommands : KBotModuleBase
         }
     }
 
-    /*[SlashCommand("update", "asa")]
-    public async Task Update()
-    {
-        await DeferAsync();
-        await Database.Update(Context.Guild);
-        await FollowupAsync("kesz");
-    }*/
     public enum GambleProfileType
     {
         General,
