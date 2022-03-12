@@ -3,11 +3,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using KBot.Modules.Audio.Helpers;
+using KBot.Modules.Music.Helpers;
 using Lavalink4NET.Events;
 using Lavalink4NET.Player;
 
-namespace KBot.Modules.Audio;
+namespace KBot.Modules.Music;
 
 public class MusicPlayer : LavalinkPlayer
 {

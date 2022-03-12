@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using KBot.Modules.Audio.Helpers;
+using KBot.Modules.Music.Helpers;
 
-namespace KBot.Modules.Audio;
+namespace KBot.Modules.Music;
 
 [Group("music", "Audio parancsok")]
 public class MusicCommands : KBotModuleBase

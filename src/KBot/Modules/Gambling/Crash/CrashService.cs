@@ -35,7 +35,7 @@ public class CrashService
     }
 }
 
-public class CrashGame
+public class CrashGame : IGamblingGame
 {
     public string Id { get; }
     private SocketUser User { get; }
@@ -109,7 +109,7 @@ public class CrashGame
         var dbUser = await Db.GetUserAsync(Guild, User).ConfigureAwait(false);
         dbUser.GamblingProfile.Money += (int)(Bet*Multiplier);
         dbUser.GamblingProfile.Crash.Wins++;
-        dbUser.GamblingProfile.Crash.MoneyWon += (int)(Bet * Multiplier - Bet);
+        dbUser.GamblingProfile.Crash.MoneyWon += (int)((Bet * Multiplier) - Bet);
         await Db.UpdateUserAsync(((SocketTextChannel)Message.Channel).Guild.Id, dbUser).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
@@ -117,7 +117,7 @@ public class CrashGame
                 .WithTitle("Crash")
                 .WithColor(Color.Green)
                 .AddField("Kivéve", $"`{Multiplier:0.0}x`", true)
-                .AddField("Profit", $"`{Bet * Multiplier - Bet:0}`", true)
+                .AddField("Profit", $"`{(Bet * Multiplier) - Bet:0}`", true)
                 .Build();
             x.Embed = embed;
             x.Components = new ComponentBuilder().Build();

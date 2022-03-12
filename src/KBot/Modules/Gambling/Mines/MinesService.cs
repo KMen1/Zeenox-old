@@ -38,7 +38,7 @@ public class MinesService
     }
 }
 
-public class MinesGame
+public class MinesGame : IGamblingGame
 {
     public string Id { get; }
     private readonly List<Point> Points = new();

@@ -38,7 +38,7 @@ public class Card
         };
 
         var x = width * (Value - 1);
-        var source = (Bitmap)Image.FromFile($"C:\\KBot\\{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}\\cards.png");
+        var source = Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.cards.png")!);
         var img = new Bitmap(width, height);
         using var g = Graphics.FromImage(img);
         g.DrawImage(source, new Rectangle(0, 0, width, height), new Rectangle(x, y, width, height), GraphicsUnit.Pixel);

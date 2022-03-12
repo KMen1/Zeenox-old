@@ -7,7 +7,7 @@ using Discord.WebSocket;
 using Humanizer;
 using Lavalink4NET.Player;
 
-namespace KBot.Modules.Audio.Helpers;
+namespace KBot.Modules.Music.Helpers;
 
 public static class Embeds
 {

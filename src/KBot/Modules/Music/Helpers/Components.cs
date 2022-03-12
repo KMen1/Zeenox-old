@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Lavalink4NET.Player;
 
-namespace KBot.Modules.Audio.Helpers;
+namespace KBot.Modules.Music.Helpers;
 
 public static class Components
 {

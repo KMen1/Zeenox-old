@@ -1,6 +1,6 @@
 ﻿using Lavalink4NET.Filters;
 
-namespace KBot.Modules.Audio.Helpers;
+namespace KBot.Modules.Music.Helpers;
 
 public static class Filters
 {

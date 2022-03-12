@@ -50,7 +50,7 @@ public class BlackJackService
     }
 }
 
-public class BlackJackGame
+public class BlackJackGame : IGamblingGame
 {
     public string Id { get; }
     private Deck Deck { get; }
@@ -128,6 +128,7 @@ public class BlackJackGame
             }
             case 21:
             {
+                Stake = (int)(Stake * 2.5);
                 Embed.WithDescription($"🥳 A játékos nyert! (BLACKJACK)\n**{Stake}** 🪙KCoin-t szereztél!");
                 Embed.WithImageUrl(GetTablePicUrl(false));
                 Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
@@ -140,8 +141,6 @@ public class BlackJackGame
                     x.Embed = Embed.Build();
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                
-                Stake = (int)(Stake * 2.5);
                 Container.Remove(this);
                 return;
             }
@@ -195,6 +194,24 @@ public class BlackJackGame
                 Container.Remove(this);
                 return;
             }
+        }
+
+        if (PlayerScore == 21)
+        {
+            Stake = (int)(Stake * 2.5);
+            Embed.WithDescription($"🥳 A játékos nyert! (BLACKJACK)\n**{Stake}** 🪙KCoin-t szereztél!");
+            Embed.WithImageUrl(GetTablePicUrl(false));
+            Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
+            Embed.Fields[1].Value = $"Érték: `{DealerScore.ToString()}`";
+            dbUser.GamblingProfile.Money += Stake;
+            dbUser.GamblingProfile.BlackJack.Wins++;
+            await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
+            await Message.ModifyAsync(x =>
+            {
+                x.Embed = Embed.Build();
+                x.Components = new ComponentBuilder().Build();
+            }).ConfigureAwait(false);
+            Container.Remove(this);
         }
         if (PlayerScore > DealerScore)
         {
@@ -250,7 +267,7 @@ public class BlackJackGame
         if (hidden)
         {
             dealerImages.Add(DealerCards[0].GetImage());
-            dealerImages.Add((Bitmap)Image.FromFile($"C:\\KBot\\{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}\\empty.png"));
+            dealerImages.Add((Bitmap) Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.empty.png")!));
         }
         else
         {

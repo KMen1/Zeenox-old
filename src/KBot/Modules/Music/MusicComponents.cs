@@ -2,9 +2,9 @@
 using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Interactions;
-using KBot.Modules.Audio.Enums;
+using KBot.Modules.Music.Enums;
 
-namespace KBot.Modules.Audio;
+namespace KBot.Modules.Music;
 
 public class MusicComponents : KBotModuleBase
 {

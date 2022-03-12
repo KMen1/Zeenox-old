@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using KBot.Modules.Audio.Enums;
-using KBot.Modules.Audio.Helpers;
+using KBot.Modules.Music.Enums;
+using KBot.Modules.Music.Helpers;
 using Lavalink4NET;
 using Lavalink4NET.Filters;
 using Lavalink4NET.Logging;
@@ -15,7 +15,7 @@ using Lavalink4NET.Rest;
 using Serilog;
 using ILogger = Lavalink4NET.Logging.ILogger;
 
-namespace KBot.Modules.Audio;
+namespace KBot.Modules.Music;
 
 public class AudioService
 {

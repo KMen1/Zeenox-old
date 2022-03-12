@@ -13,22 +13,17 @@ namespace KBot.Modules.Gambling;
 
 public class GamblingService
 {
-    private readonly Cloudinary _cloudinary;
-    private readonly DatabaseService Database;
-
     private readonly BlackJackService BlackJack;
     private readonly HighLowService HighLow;
     private readonly CrashService Crash;
     private readonly MinesService Mines;
 
-    public GamblingService(Cloudinary cloudinary, DatabaseService databaseService)
+    public GamblingService(Cloudinary cloudinary, DatabaseService database)
     {
-        _cloudinary = cloudinary;
-        Database = databaseService;
-        BlackJack = new BlackJackService(Database, _cloudinary);
-        Crash = new CrashService(Database);
-        HighLow = new HighLowService(Database, _cloudinary);
-        Mines = new MinesService(Database);
+        BlackJack = new BlackJackService(database, cloudinary);
+        Crash = new CrashService(database);
+        HighLow = new HighLowService(database, cloudinary);
+        Mines = new MinesService(database);
     }
 
     public BlackJackGame GetBlackJackGame(string id)

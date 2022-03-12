@@ -9,7 +9,7 @@ using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
 using Discord.WebSocket;
 using KBot.Models;
-using KBot.Modules.Audio.Helpers;
+using KBot.Modules.Music.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
