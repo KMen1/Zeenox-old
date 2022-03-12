@@ -41,13 +41,19 @@ public class MineCommands : KBotModuleBase
             await FollowupAsync("Egy mezőt meg kell nyomnod mielőtt kiszállhatnál.").ConfigureAwait(false);
             return;
         }
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         var reward = await game.StopAsync().ConfigureAwait(false);
         if (reward is { } i)
         {
-            var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
             dbUser.GamblingProfile.Money += i;
-            await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+            dbUser.GamblingProfile.Mines.MoneyWon += i;
+            dbUser.GamblingProfile.Mines.Wins++;
+            
         }
+
+        dbUser.GamblingProfile.Mines.Losses++;
+        dbUser.GamblingProfile.Mines.MoneyLost += game.Bet;
+        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
         await FollowupAsync("Leállítva").ConfigureAwait(false);
     }
 }

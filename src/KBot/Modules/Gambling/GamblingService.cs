@@ -46,10 +46,7 @@ public class GamblingService
     {
         return HighLow.CreateGame(user, message, stake);
     }
-    public Task StartCrashGameAsync(SocketUser user, IUserMessage message, int bet)
-    {
-        return Crash.StartGameAsync(Generators.GenerateID(), user, message, bet);
-    }
+
     public MinesGame CreateMinesGame(SocketUser user, IUserMessage message, int bet, int mines)
     {
         return Mines.CreateGame(user, message, bet, 5, mines);
@@ -57,5 +54,15 @@ public class GamblingService
     public Task StopCrashGameAsync(string id)
     {
         return Crash.StopGameAsync(id);
+    }
+
+    public CrashGame CreateCrashGame(SocketUser user, IUserMessage msg, int bet)
+    {
+        return Crash.CreateGame(Generators.GenerateID(), user, msg, bet);
+    }
+
+    public CrashGame GetCrashGame(string id)
+    {
+        return Crash.GetGame(id);
     }
 }

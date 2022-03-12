@@ -22,26 +22,17 @@ public class CrashCommands : KBotModuleBase
         }
         dbUser.GamblingProfile.Money -= bet;
         await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
-        var ticks = new DateTime(2016, 1, 1).Ticks;
-        var ans = DateTime.Now.Ticks - ticks;
-        var id =  ans.ToString("x");
-        var msg = await FollowupAsync(embed: new EmbedBuilder()
-            .WithTitle("Crash")
-            .WithColor(Color.Gold)
-            .AddField("Szorzó", "`1.0x`", true)
-            .AddField("Profit", "`0`", true)
-            .Build(), components: new ComponentBuilder()
-                .WithButton(" ", $"crash:{id}:{Context.User.Id}", ButtonStyle.Danger, new Emoji("🛑"))
-                .Build())
-            .ConfigureAwait(false);
-        await GamblingService.StartCrashGameAsync(Context.User, msg, bet).ConfigureAwait(false);
+        var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
+        var game = GamblingService.CreateCrashGame(Context.User, msg, bet);
+        await game.StartAsync().ConfigureAwait(false);
     }
 
-    [ComponentInteraction("crash:*:*")]
-    public async Task StopCrash(string id, string userId)
+    [ComponentInteraction("crash:*")]
+    public async Task StopCrash(string id)
     {
         await DeferAsync().ConfigureAwait(false);
-        if (Context.User.Id != Convert.ToUInt64(userId))
+        var game = GamblingService.GetCrashGame(id);
+        if (Context.User.Id != game.User.Id)
             return;
         await GamblingService.StopCrashGameAsync(id).ConfigureAwait(false);
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -18,14 +19,7 @@ public class CrashService
     {
         Database = database;
     }
-
-    public Task StartGameAsync(string id, SocketUser user, IUserMessage message, int bet)
-    {
-        var crashPoint = 999999999 / Convert.ToDecimal(Generators.RandomNumberBetween(1, 1000000000));
-        var game = new CrashGame(id, user, message, bet, crashPoint, Games, Database);
-        Games.Add(game);
-        return game.StartAsync();
-    }
+    
     public async Task StopGameAsync(string id)
     {
         var game = Games.Find(x => x.Id == id);
@@ -33,12 +27,25 @@ public class CrashService
             return;
         await game.StopAsync().ConfigureAwait(false);
     }
+
+    public CrashGame CreateGame(string id, SocketUser user, IUserMessage msg, int bet)
+    {
+        var crashPoint = 999999999 / Convert.ToDecimal(Generators.RandomNumberBetween(1, 1000000000));
+        var game = new CrashGame(id, user, msg, bet, crashPoint, Games, Database);
+        Games.Add(game);
+        return game;
+    }
+
+    public CrashGame GetGame(string id)
+    {
+        return Games.FirstOrDefault(x => x.Id == id);
+    }
 }
 
 public class CrashGame : IGamblingGame
 {
     public string Id { get; }
-    private SocketUser User { get; }
+    public SocketUser User { get; }
     private IUserMessage Message { get; }
     private IGuild Guild => ((ITextChannel) Message.Channel).Guild;
     private int Bet { get; }
@@ -61,6 +68,19 @@ public class CrashGame : IGamblingGame
 
     public async Task StartAsync()
     {
+        await Message.ModifyAsync(x =>
+        {
+            x.Content = string.Empty;
+            x.Embed = new EmbedBuilder()
+                .WithTitle("Crash")
+                .WithColor(Color.Gold)
+                .AddField("Szorzó", "`1.0x`", true)
+                .AddField("Profit", "`0`", true)
+                .Build();
+            x.Components = new ComponentBuilder()
+                .WithButton(" ", $"crash:{Id}", ButtonStyle.Danger, new Emoji("🛑"))
+                .Build();
+        }).ConfigureAwait(false);
         for (Multiplier = 1.0M; Multiplier < 1000000000; Multiplier += 0.1M)
         {
             if (CancellationTokenSource.Token.IsCancellationRequested)
@@ -107,7 +127,7 @@ public class CrashGame : IGamblingGame
     {
         CancellationTokenSource.Cancel();
         var dbUser = await Db.GetUserAsync(Guild, User).ConfigureAwait(false);
-        dbUser.GamblingProfile.Money += (int)(Bet*Multiplier);
+        dbUser.GamblingProfile.Money += (int)Math.Round(Bet*Multiplier);
         dbUser.GamblingProfile.Crash.Wins++;
         dbUser.GamblingProfile.Crash.MoneyWon += (int)((Bet * Multiplier) - Bet);
         await Db.UpdateUserAsync(((SocketTextChannel)Message.Channel).Guild.Id, dbUser).ConfigureAwait(false);
@@ -117,7 +137,7 @@ public class CrashGame : IGamblingGame
                 .WithTitle("Crash")
                 .WithColor(Color.Green)
                 .AddField("Kivéve", $"`{Multiplier:0.0}x`", true)
-                .AddField("Profit", $"`{(Bet * Multiplier) - Bet:0}`", true)
+                .AddField("Profit", $"`{Bet * Multiplier - Bet:0}`", true)
                 .Build();
             x.Embed = embed;
             x.Components = new ComponentBuilder().Build();

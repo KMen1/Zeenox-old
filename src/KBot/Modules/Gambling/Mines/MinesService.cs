@@ -44,7 +44,7 @@ public class MinesGame : IGamblingGame
     private readonly List<Point> Points = new();
     private IUserMessage Message { get; }
     public SocketUser User { get; }
-    private int Bet { get; set; }
+    public int Bet { get; }
     private bool Lost { get; set; }
     public bool CanStop { get; set; }
     private int Mines => Points.Count(x => x.IsMine);
@@ -131,7 +131,6 @@ public class MinesGame : IGamblingGame
         }
         point!.IsClicked = true;
         point.Label = $"{Multiplier}x";
-        Bet = (int)(Bet * Multiplier);
         var comp = new ComponentBuilder();
         for (var i = 0; i < Math.Sqrt(Points.Count); i++)
         {
@@ -184,7 +183,7 @@ public class MinesGame : IGamblingGame
             .Build();
         await RevealAsync().ConfigureAwait(false);
         await Message.ModifyAsync(x => x.Embed = eb).ConfigureAwait(false);
-        return Lost ? null : Bet;
+        return Lost ? null : (int)Math.Round(Bet * Multiplier);
     }
 }
 public class Point
