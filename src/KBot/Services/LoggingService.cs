@@ -3,8 +3,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Lavalink4NET.Logging;
-using ILogger = Lavalink4NET.Logging.ILogger;
-using LogLevel = Lavalink4NET.Logging.LogLevel;
 
 namespace KBot.Services;
 

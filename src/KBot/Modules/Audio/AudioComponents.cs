@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Interactions;
-using Discord.WebSocket;
 using KBot.Modules.Audio.Enums;
 
 namespace KBot.Modules.Audio;
@@ -26,27 +25,26 @@ public class MusicComponents : KBotModuleBase
     public async Task Stop()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.DisconnectAsync(Context.Guild).ConfigureAwait(false);
-        await ((SocketMessageComponent)Context.Interaction).Message.DeleteAsync().ConfigureAwait(false);
+        await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false);
     }
     [ComponentInteraction("volumeup")]
     public async Task VolumeUp()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.SetVolumeAsync(Context.Guild, VoiceButtonType.VolumeUp).ConfigureAwait(false);
+        await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeUp).ConfigureAwait(false);
     }
     [ComponentInteraction("volumedown")]
     public async Task VolumeDown()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.SetVolumeAsync(Context.Guild, VoiceButtonType.VolumeDown).ConfigureAwait(false);
+        await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeDown).ConfigureAwait(false);
     }
 
     [ComponentInteraction("pause")]
     public async Task Pause()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.PauseOrResumeAsync(Context.Guild).ConfigureAwait(false);
+        await AudioService.PauseOrResumeAsync(Context.Guild, Context.User).ConfigureAwait(false);
     }
     [ComponentInteraction("next")]
     public async Task Next()

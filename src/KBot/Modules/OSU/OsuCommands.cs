@@ -9,7 +9,6 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
-using KBot.Enums;
 using OsuSharp.Domain;
 using OsuSharp.Interfaces;
 using IUser = OsuSharp.Interfaces.IUser;
@@ -142,7 +141,7 @@ public class Osu : KBotModuleBase
             return;
         }
 
-        var score = await OsuClient.GetUserScoresAsync((long)osuId, OsuSharp.Domain.ScoreType.Best, true, GameMode.Osu, 1).ConfigureAwait(false);
+        var score = await OsuClient.GetUserScoresAsync((long)osuId, ScoreType.Best, true, GameMode.Osu, 1).ConfigureAwait(false);
         await FollowUpWithScoreAsync(score[0], sw).ConfigureAwait(false);
     }
 

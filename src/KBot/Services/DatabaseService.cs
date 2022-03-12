@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Addons.Hosting;
 using Discord.WebSocket;
 using KBot.Models;
@@ -35,7 +36,7 @@ public class DatabaseService : DiscordClientService
         var guild = (await _collection.FindAsync(x => x.GuildId == vguild.Id).ConfigureAwait(false)).First();
         foreach (var guildUser in guild.Users)
         {
-            guildUser.Points = 0;
+            guildUser.GamblingProfile = new GamblingProfile();
         }
         await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
     }
@@ -71,7 +72,7 @@ public class DatabaseService : DiscordClientService
         await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
         return guild.Users.Find(x => x.UserId == userId);
     }
-    public async ValueTask<User> GetUserAsync(SocketGuild vGuild, SocketUser vUser)
+    public async ValueTask<User> GetUserAsync(IGuild vGuild, SocketUser vUser)
     {
         var guild = (await _collection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(vGuild.Id).ConfigureAwait(false);
         var user = guild.Users.Find(x => x.UserId == vUser.Id) ??

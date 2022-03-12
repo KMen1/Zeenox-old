@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
 using CloudinaryDotNet;
@@ -31,6 +27,7 @@ using OsuSharp;
 using OsuSharp.Extensions;
 using Serilog;
 using Serilog.Events;
+using ILogger = Lavalink4NET.Logging.ILogger;
 
 namespace KBot;
 
@@ -109,7 +106,7 @@ public static class Program
                     RestUri = "http://127.0.0.1:2333",
                     DisconnectOnStop = false,
                 });
-                services.AddSingleton<Lavalink4NET.Logging.ILogger, EventLogger>();
+                services.AddSingleton<ILogger, EventLogger>();
                 services.AddSingleton<AudioService>();
                 services.AddSingleton<IMongoClient>(new MongoClient(context.Configuration.GetSection("MongoDb").GetValue<string>("ConnectionString")));
                 services.AddSingleton(x => x.GetService<IMongoClient>()!.GetDatabase(context.Configuration.Get<BotConfig>().MongoDb.Database));

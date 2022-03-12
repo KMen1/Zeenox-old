@@ -53,6 +53,14 @@ public class GamblingCommands : KBotModuleBase
             $"{user.Mention} mostantól {dbUser.GamblingProfile.Money.ToString()} 🪙KCoin-al rendelkezik!").ConfigureAwait(false);
     }
 
+    [RequireOwner]
+    [SlashCommand("reset", "Szerencsejáték statisztikák törlése (admin)")]
+    public async Task Reset()
+    {
+        await DeferAsync().ConfigureAwait(false);
+        await Database.Update(Context.Guild).ConfigureAwait(false);
+        await FollowupAsync("Kész").ConfigureAwait(false);
+    }
     [SlashCommand("transfer", "Pénz átadása (szerencsejáték)")]
     public async Task TrasnferMoneyAsync(SocketUser user, int amount)
     {
@@ -108,6 +116,7 @@ public class GamblingCommands : KBotModuleBase
         General,
         HighLow,
         BlackJack,
-        Crash
+        Crash,
+        Mines
     }
 }

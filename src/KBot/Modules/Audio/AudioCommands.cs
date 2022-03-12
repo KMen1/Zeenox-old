@@ -20,7 +20,7 @@ public class MusicCommands : KBotModuleBase
     [SlashCommand("leave", "Elhagyja azt a hangcsatornát, amelyben a bot éppen tartózkodik")]
     public async Task Leave()
     {
-        await RespondAsync(embed: await AudioService.DisconnectAsync(Context.Guild).ConfigureAwait(false))
+        await RespondAsync(embed: await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false))
             .ConfigureAwait(false);
     }
 

@@ -9,18 +9,18 @@ namespace KBot.Modules.Gambling.Crash;
 public class CrashCommands : KBotModuleBase
 {
     [SlashCommand("crash", "Szokásos crash játék.")]
-    public async Task StartCrash(int stake)
+    public async Task StartCrash([MinValue(100), MaxValue(1000000)]int bet)
     {
         await DeferAsync().ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         dbUser.GamblingProfile ??= new GamblingProfile();
         dbUser.GamblingProfile.Crash ??= new CrashProfile();
-        if (dbUser.GamblingProfile.Money < stake)
+        if (dbUser.GamblingProfile.Money < bet)
         {
             await FollowupAsync("Nincs elég 🪙KCoin-od ekkora tét rakásához.").ConfigureAwait(false);
             return;
         }
-        dbUser.GamblingProfile.Money -= stake;
+        dbUser.GamblingProfile.Money -= bet;
         await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
         var ticks = new DateTime(2016, 1, 1).Ticks;
         var ans = DateTime.Now.Ticks - ticks;
@@ -34,7 +34,7 @@ public class CrashCommands : KBotModuleBase
                 .WithButton(" ", $"crash:{id}:{Context.User.Id}", ButtonStyle.Danger, new Emoji("🛑"))
                 .Build())
             .ConfigureAwait(false);
-        await GamblingService.StartCrashGameAsync(id, Context.User, msg, stake, dbUser).ConfigureAwait(false);
+        await GamblingService.StartCrashGameAsync(Context.User, msg, bet).ConfigureAwait(false);
     }
 
     [ComponentInteraction("crash:*:*")]

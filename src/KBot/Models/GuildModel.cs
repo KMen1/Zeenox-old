@@ -118,23 +118,23 @@ public class GamblingProfile
     public BlackJackProfile BlackJack { get; set; }
     public CoinFlipProfile CoinFlip { get; set; }
     public HighLowProfile HighLow { get; set; }
-    
     public CrashProfile Crash { get; set; }
+    public MinesProfile Mines { get; set; }
 
     [BsonIgnore]
-    public int TotalPlayed => BlackJack.GamesPlayed + CoinFlip.GamesPlayed + HighLow.GamesPlayed + Crash.GamesPlayed;
+    public int TotalPlayed => BlackJack.GamesPlayed + CoinFlip.GamesPlayed + HighLow.GamesPlayed + Crash.GamesPlayed + Mines.GamesPlayed;
 
     [BsonIgnore]
-    public int TotalWon => BlackJack.Wins + CoinFlip.Wins + HighLow.Wins + Crash.Wins;
+    public int TotalWon => BlackJack.Wins + CoinFlip.Wins + HighLow.Wins + Crash.Wins + Mines.Wins;
 
     [BsonIgnore]
-    public int TotalLost => BlackJack.Losses + CoinFlip.Losses + HighLow.Losses + Crash.Losses;
+    public int TotalLost => BlackJack.Losses + CoinFlip.Losses + HighLow.Losses + Crash.Losses + Mines.Losses;
 
     [BsonIgnore]
-    public int TotalMoneyWon => BlackJack.MoneyWon + CoinFlip.MoneyWon + HighLow.MoneyWon + Crash.MoneyWon;
+    public int TotalMoneyWon => BlackJack.MoneyWon + CoinFlip.MoneyWon + HighLow.MoneyWon + Crash.MoneyWon + Mines.MoneyWon;
 
     [BsonIgnore]
-    public int TotalMoneyLost => BlackJack.MoneyLost + CoinFlip.MoneyLost + HighLow.MoneyLost + Crash.MoneyLost;
+    public int TotalMoneyLost => BlackJack.MoneyLost + CoinFlip.MoneyLost + HighLow.MoneyLost + Crash.MoneyLost + Mines.MoneyLost;
 
     [BsonIgnore]
     public double TotalWinRate
@@ -153,6 +153,7 @@ public class GamblingProfile
         CoinFlip = new CoinFlipProfile();
         HighLow = new HighLowProfile();
         Crash = new CrashProfile();
+        Mines = new MinesProfile();
     }
 
     public override string ToString()
@@ -178,6 +179,58 @@ public class GamblingProfile
             .AddField("📈 Győzelmi ráta", $"`{TotalWinRate.ToString()}% ({TotalWon.ToString()}W/{TotalLost.ToString()}L)`", true)
             .AddField("💰 Nyert pénz", $"`{TotalMoneyWon.ToString()} 🪙KCoin`", true)
             .AddField("💸 Vesztett pénz", $"`{TotalMoneyLost.ToString()} 🪙KCoin`", true);
+    }
+}
+
+public class MinesProfile
+{
+    public int Wins { get; set; }
+    public int Losses { get; set; }
+    public int MoneyWon { get; set; }
+    public int MoneyLost { get; set; }
+
+    [BsonIgnore]
+    public int GamesPlayed => Wins + Losses;
+
+    [BsonIgnore]
+    public double WinRate
+    {
+        get
+        {
+            var total = Wins;
+            return Math.Round(total / (double)GamesPlayed * 100, 2);
+        }
+    }
+
+    public MinesProfile()
+    {
+        Wins = 0;
+        Losses = 0;
+        MoneyWon = 0;
+        MoneyLost = 0;
+    }
+
+    public override string ToString()
+    {
+        var s = "";
+        s += $"Győzelmek: **{Wins}**\n";
+        s += $"Vereségek: **{Losses}**\n";
+        s += $"Győzelem ráta: **{WinRate}%**\n";
+        s += $"Nyert pénz: **{MoneyWon}**\n";
+        s += $"Vesztett pénz: **{MoneyLost}**";
+        return s;
+    }
+
+    public EmbedBuilder ToEmbedBuilder()
+    {
+        return new EmbedBuilder()
+            .WithTitle("Crash statisztikák")
+            .WithColor(Color.Gold)
+            .AddField("💰 Nyert pénz", $"`{MoneyWon.ToString()} 🪙KCoin`", true)
+            .AddField("💸 Vesztett pénz", $"`{MoneyLost.ToString()} 🪙KCoin`", true)
+            .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
+            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true)
+            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}% ({Wins.ToString()}W/{Losses.ToString()}L)`", true);
     }
 }
 
@@ -475,8 +528,6 @@ public class TourEvents
 public class Leveling
 {
     public bool Enabled { get; set; }
-    public int PointsToLevelUp { get; set; }
-
     public ulong AnnouncementChannelId { get; set; }
 
     public ulong AfkChannelId { get; set; }
@@ -486,7 +537,6 @@ public class Leveling
     public Leveling()
     {
         Enabled = false;
-        PointsToLevelUp = 0;
         AnnouncementChannelId = 0;
         AfkChannelId = 0;
         LevelRoles = new List<LevelRole>();
