@@ -57,8 +57,8 @@ public class BlackJackGame : IGamblingGame
     public SocketUser User { get; }
     private IUserMessage Message { get; }
     private IGuild Guild => ((ITextChannel)Message.Channel).Guild;
-    private EmbedBuilder Embed => Message.Embeds.First().ToEmbedBuilder();
     private List<Card> DealerCards { get; }
+
     private int DealerScore => GetCardsValue(DealerCards);
     private List<Card> PlayerCards { get; }
     private int PlayerScore => GetCardsValue(PlayerCards);
@@ -112,15 +112,19 @@ public class BlackJackGame : IGamblingGame
         {
             case > 21:
             {
-                Embed.WithDescription($"😭 Az osztó nyert! (PLAYER BUST)\n**{Stake}** 🪙KCoin-t veszítettél!");
-                Embed.WithImageUrl(GetTablePicUrl(false));
-                Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
-                Embed.Fields[1].Value = $"Érték: `{DealerScore.ToString()}`";
+                var eb = new EmbedBuilder()
+                    .WithTitle("Blackjack")
+                    .WithColor(Color.Red)
+                    .WithDescription($"😭 Az osztó nyert! (PLAYER BUST)\n**{Stake}** 🪙KCoin-t veszítettél!")
+                    .WithImageUrl(GetTablePicUrl(false))
+                    .AddField("Játékos", $"Érték: `{PlayerScore.ToString()}`", true)
+                    .AddField("Osztó", $"Érték: `{DealerScore.ToString()}`", true)
+                    .Build();
                 dbUser.GamblingProfile.BlackJack.Losses++;
                 await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
                 await Message.ModifyAsync(x =>
                 {
-                    x.Embed = Embed.Build();
+                    x.Embed = eb;
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
                 Container.Remove(this);
@@ -129,26 +133,35 @@ public class BlackJackGame : IGamblingGame
             case 21:
             {
                 Stake = (int)(Stake * 2.5);
-                Embed.WithDescription($"🥳 A játékos nyert! (BLACKJACK)\n**{Stake}** 🪙KCoin-t szereztél!");
-                Embed.WithImageUrl(GetTablePicUrl(false));
-                Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
-                Embed.Fields[1].Value = $"Érték: `{DealerScore.ToString()}`";
+                var eb = new EmbedBuilder()
+                    .WithTitle("Blackjack")
+                    .WithColor(Color.Green)
+                    .WithDescription($"🥳 Játékos nyert! (PLAYER BLACKJACK)\n**{Stake}** 🪙KCoin-t szereztél!")
+                    .WithImageUrl(GetTablePicUrl(false))
+                    .AddField("Játékos", $"Érték: `{PlayerScore.ToString()}`", true)
+                    .AddField("Osztó", $"Érték: `{DealerScore.ToString()}`", true)
+                    .Build();
                 dbUser.GamblingProfile.Money += Stake;
                 dbUser.GamblingProfile.BlackJack.Wins++;
                 await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
                 await Message.ModifyAsync(x =>
                 {
-                    x.Embed = Embed.Build();
+                    x.Embed = eb;
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
                 Container.Remove(this);
                 return;
             }
         }
-        Embed.WithImageUrl(GetTablePicUrl(true));
-        Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
-        Embed.Fields[1].Value = "Érték: `?`";
-        await Message.ModifyAsync(x => x.Embed = Embed.Build()).ConfigureAwait(false);
+        var playEb = new EmbedBuilder()
+            .WithTitle("Blackjack")
+            .WithColor(Color.Gold)
+            .WithDescription($"Tét: `{Stake}`")
+            .WithImageUrl(GetTablePicUrl(true))
+            .AddField("Játékos", $"Érték: `{PlayerScore.ToString()}`", true)
+            .AddField("Osztó", "Érték: `?`", true)
+            .Build();
+        await Message.ModifyAsync(x => x.Embed = playEb).ConfigureAwait(false);
     }
 
     public async Task StandAsync()
@@ -162,16 +175,20 @@ public class BlackJackGame : IGamblingGame
         {
             case > 21:
             {
-                Embed.WithDescription($"🥳 A játékos nyert! (DEALER BUST)\n**{Stake}** 🪙KCoin-t szereztél!");
-                Embed.WithImageUrl(GetTablePicUrl(false));
-                Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
-                Embed.Fields[1].Value = $"Érték: `{DealerScore.ToString()}`";
+                var eb = new EmbedBuilder()
+                    .WithTitle("Blackjack")
+                    .WithColor(Color.Green)
+                    .WithDescription($"🥳 A játékos nyert! (DEALER BUST)\n**{Stake}** 🪙KCoin-t szereztél!")
+                    .WithImageUrl(GetTablePicUrl(false))
+                    .AddField("Játékos", $"Érték: `{PlayerScore.ToString()}`", true)
+                    .AddField("Osztó", $"Érték: `{DealerScore.ToString()}`", true)
+                    .Build();
                 dbUser.GamblingProfile.Money += Stake;
                 dbUser.GamblingProfile.BlackJack.Wins++;
                 await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
                 await Message.ModifyAsync(x =>
                 {
-                    x.Embed = Embed.Build();
+                    x.Embed = eb;
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
                 Stake *= 2;
@@ -180,15 +197,19 @@ public class BlackJackGame : IGamblingGame
             }
             case 21:
             {
-                Embed.WithDescription($"😭 Az osztó nyert! (BLACKJACK)\n**{Stake}** 🪙KCoin-t vesztettél!");
-                Embed.WithImageUrl(GetTablePicUrl(false));
-                Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
-                Embed.Fields[1].Value = $"Érték: `{DealerScore.ToString()}`";
+                var eb = new EmbedBuilder()
+                    .WithTitle("Blackjack")
+                    .WithColor(Color.Red)
+                    .WithDescription($"😭 Az osztó nyert! (BLACKJACK)\n**{Stake}** 🪙KCoin-t vesztettél!")
+                    .WithImageUrl(GetTablePicUrl(false))
+                    .AddField("Játékos", $"Érték: `{PlayerScore.ToString()}`", true)
+                    .AddField("Osztó", $"Érték: `{DealerScore.ToString()}`", true)
+                    .Build();
                 dbUser.GamblingProfile.BlackJack.Losses++;
                 await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
                 await Message.ModifyAsync(x =>
                 {
-                    x.Embed = Embed.Build();
+                    x.Embed = eb;
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
                 Container.Remove(this);
@@ -199,33 +220,43 @@ public class BlackJackGame : IGamblingGame
         if (PlayerScore == 21)
         {
             Stake = (int)(Stake * 2.5);
-            Embed.WithDescription($"🥳 A játékos nyert! (BLACKJACK)\n**{Stake}** 🪙KCoin-t szereztél!");
-            Embed.WithImageUrl(GetTablePicUrl(false));
-            Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
-            Embed.Fields[1].Value = $"Érték: `{DealerScore.ToString()}`";
+            
+            var eb = new EmbedBuilder()
+                .WithTitle("Blackjack")
+                .WithColor(Color.Green)
+                .WithDescription($"🥳 A játékos nyert! (BLACKJACK)\n**{Stake}** 🪙KCoin-t szereztél!")
+                .WithImageUrl(GetTablePicUrl(false))
+                .AddField("Játékos", $"Érték: `{PlayerScore.ToString()}`", true)
+                .AddField("Osztó", $"Érték: `{DealerScore.ToString()}`", true)
+                .Build();
             dbUser.GamblingProfile.Money += Stake;
             dbUser.GamblingProfile.BlackJack.Wins++;
             await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
             await Message.ModifyAsync(x =>
             {
-                x.Embed = Embed.Build();
+                x.Embed = eb;
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
             Container.Remove(this);
+            return;
         }
         if (PlayerScore > DealerScore)
         {
             Stake *= 2;
-            Embed.WithDescription($"🥳 A játékos nyert!\n**{Stake}** 🪙KCoin-t szereztél!");
-            Embed.WithImageUrl(GetTablePicUrl(false));
-            Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
-            Embed.Fields[1].Value = $"Érték: `{DealerScore.ToString()}`";
+            var eb = new EmbedBuilder()
+                .WithTitle("Blackjack")
+                .WithColor(Color.Green)
+                .WithDescription($"🥳 A játékos nyert!\n**{Stake}** 🪙KCoin-t szereztél!")
+                .WithImageUrl(GetTablePicUrl(false))
+                .AddField("Játékos", $"Érték: `{PlayerScore.ToString()}`", true)
+                .AddField("Osztó", $"Érték: `{DealerScore.ToString()}`", true)
+                .Build();
             dbUser.GamblingProfile.Money += Stake;
             dbUser.GamblingProfile.BlackJack.Wins++;
             await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
             await Message.ModifyAsync(x =>
             {
-                x.Embed = Embed.Build();
+                x.Embed = eb;
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
             Container.Remove(this);
@@ -233,29 +264,37 @@ public class BlackJackGame : IGamblingGame
         }
         if (PlayerScore < DealerScore)
         {
-            Embed.WithDescription($"😭 Az osztó nyert!\n**{Stake}** 🪙KCoin-t vesztettél!");
-            Embed.WithImageUrl(GetTablePicUrl(false));
-            Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
-            Embed.Fields[1].Value = $"Érték: `{DealerScore.ToString()}`";
+            var eb = new EmbedBuilder()
+                .WithTitle("Blackjack")
+                .WithColor(Color.Red)
+                .WithDescription($"😭 Az osztó nyert!\n**{Stake}** 🪙KCoin-t vesztettél!")
+                .WithImageUrl(GetTablePicUrl(false))
+                .AddField("Játékos", $"Érték: `{PlayerScore.ToString()}`", true)
+                .AddField("Osztó", $"Érték: `{DealerScore.ToString()}`", true)
+                .Build();
             dbUser.GamblingProfile.BlackJack.Losses++;
             await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
             await Message.ModifyAsync(x =>
             {
-                x.Embed = Embed.Build();
+                x.Embed = eb;
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
             Container.Remove(this);
             return;
         }
-        Embed.WithDescription("😕 Döntetlen! (PUSH)\n**A tét visszaadásra került!**");
-        Embed.WithImageUrl(GetTablePicUrl(false));
-        Embed.Fields[0].Value = $"Érték: `{PlayerScore.ToString()}`";
-        Embed.Fields[1].Value = $"Érték: `{DealerScore.ToString()}`";
+        var pEb = new EmbedBuilder()
+            .WithTitle("Blackjack")
+            .WithColor(Color.Green)
+            .WithDescription("😕 Döntetlen! (PUSH)\n**A tét visszaadásra került!**")
+            .WithImageUrl(GetTablePicUrl(false))
+            .AddField("Játékos", $"Érték: `{PlayerScore.ToString()}`", true)
+            .AddField("Osztó", $"Érték: `{DealerScore.ToString()}`", true)
+            .Build();
         dbUser.GamblingProfile.Money += Stake;
         await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            x.Embed = Embed.Build();
+            x.Embed = pEb;
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);

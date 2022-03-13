@@ -51,7 +51,6 @@ public class HighLowGame : IGamblingGame
     public string Id { get; }
     public SocketUser User { get; }
     private IUserMessage Message { get; }
-    private EmbedBuilder Embed => Message.Embeds.First().ToEmbedBuilder();
     private IGuild Guild => ((ITextChannel)Message.Channel).Guild;
     private Deck Deck { get; }
     private Card PlayerHand { get; set; }
@@ -145,12 +144,16 @@ public class HighLowGame : IGamblingGame
         {
             Stake = HighStake;
             var imgUrl = Draw();
-            Embed.WithDescription($"Tét: **{Stake} kredit**");
-            Embed.Fields[0].Value = $"Szorzó: **{HighMultiplier.ToString()}**" +
-                                    $"\nNyeremény: **{HighStake.ToString()} kredit**";
-            Embed.Fields[1].Value = $"Szorzó: **{LowMultiplier.ToString()}**\n" +
-                                    $"Nyeremény: **{LowStake.ToString()}** kredit";
-            Embed.WithImageUrl(imgUrl);
+            var eb = new EmbedBuilder()
+                .WithTitle("Higher/Lower")
+                .WithDescription($"Tét: **{Stake} kredit**")
+                .WithImageUrl(imgUrl)
+                .WithColor(Color.Gold)
+                .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
+                                     $"Nyeremény: **{HighStake.ToString()} kredit**", true)
+                .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
+                                    $"Nyeremény: **{LowStake.ToString()}** kredit", true)
+                .Build();
             var components = new ComponentBuilder()
                 .WithButton(" ", $"highlow-high:{Id}", emote: new Emoji("⬆"))
                 .WithButton(" ", $"highlow-low:{Id}", emote: new Emoji("⬇"))
@@ -158,21 +161,29 @@ public class HighLowGame : IGamblingGame
                 .Build();
             await Message.ModifyAsync(x =>
             {
-                x.Embed = Embed.Build();
+                x.Embed = eb;
                 x.Components = components;
             }).ConfigureAwait(false);
             return;
         }
-        
-        Embed.WithDescription($"Nem találtad el! Vesztettél **{Stake}** kreditet!");
-        Embed.WithImageUrl(GetTablePicUrl(true));
+
+        var fEb = new EmbedBuilder()
+            .WithTitle("Higher/Lower")
+            .WithDescription($"Nem találtad el! Vesztettél **{Stake}** kreditet!")
+            .WithColor(Color.Red)
+            .WithImageUrl(GetTablePicUrl(true))
+            .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
+                                 $"Nyeremény: **{HighStake.ToString()} kredit**", true)
+            .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
+                                $"Nyeremény: **{LowStake.ToString()}** kredit", true)
+            .Build();
         var dbUser = await Database.GetUserAsync(Guild, User).ConfigureAwait(false);
         dbUser.GamblingProfile.HighLow.MoneyLost += Stake;
         dbUser.GamblingProfile.HighLow.Losses++;
         await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            x.Embed = Embed.Build();
+            x.Embed = fEb;
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);
@@ -185,12 +196,16 @@ public class HighLowGame : IGamblingGame
         {
             Stake = LowStake;
             var imgUrl = Draw();
-            Embed.WithDescription($"Tét: **{Stake} kredit**");
-            Embed.Fields[0].Value = $"Szorzó: **{HighMultiplier.ToString()}**" +
-                                    $"\nNyeremény: **{HighStake.ToString()} kredit**";
-            Embed.Fields[1].Value = $"Szorzó: **{LowMultiplier.ToString()}**\n" +
-                                    $"Nyeremény: **{LowStake.ToString()}** kredit";
-            Embed.WithImageUrl(imgUrl);
+            var eb = new EmbedBuilder()
+                .WithTitle("Higher/Lower")
+                .WithDescription($"Tét: **{Stake} kredit**")
+                .WithColor(Color.Gold)
+                .WithImageUrl(imgUrl)
+                .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
+                                     $"Nyeremény: **{HighStake.ToString()} kredit**", true)
+                .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
+                                    $"Nyeremény: **{LowStake.ToString()}** kredit", true)
+                .Build();
             var components = new ComponentBuilder()
                 .WithButton(" ", $"highlow-high:{Id}", emote: new Emoji("⬆"))
                 .WithButton(" ", $"highlow-low:{Id}", emote: new Emoji("⬇"))
@@ -198,20 +213,28 @@ public class HighLowGame : IGamblingGame
                 .Build();
             await Message.ModifyAsync(x =>
             {
-                x.Embed = Embed.Build();
+                x.Embed = eb;
                 x.Components = components;
             }).ConfigureAwait(false);
             return;
         }
-        Embed.WithDescription($"Nem találtad el! Vesztettél **{Stake}** kreditet!");
-        Embed.WithImageUrl(GetTablePicUrl(true));
+        var fEb = new EmbedBuilder()
+            .WithTitle("Higher/Lower")
+            .WithDescription($"Nem találtad el! Vesztettél **{Stake}** kreditet!")
+            .WithColor(Color.Red)
+            .WithImageUrl(GetTablePicUrl(true))
+            .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
+                                 $"Nyeremény: **{HighStake.ToString()} kredit**", true)
+            .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
+                                $"Nyeremény: **{LowStake.ToString()}** kredit", true)
+            .Build();
         var dbUser = await Database.GetUserAsync(Guild, User).ConfigureAwait(false);
         dbUser.GamblingProfile.HighLow.MoneyLost += Stake;
         dbUser.GamblingProfile.HighLow.Losses++;
         await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            x.Embed = Embed.Build();
+            x.Embed = fEb;
             x.Components = new ComponentBuilder().Build(); 
         }).ConfigureAwait(false);
         Container.Remove(this);
@@ -219,8 +242,16 @@ public class HighLowGame : IGamblingGame
 
     public async Task FinishAsync()
     {
-        Embed.WithDescription($"A játék véget ért! **{Stake}** kreditet szereztél!");
-        Embed.WithImageUrl(GetTablePicUrl(true));
+        var eb = new EmbedBuilder()
+            .WithTitle("Higher/Lower")
+            .WithDescription($"A játék véget ért! **{Stake}** kreditet szereztél!")
+            .WithColor(Color.Green)
+            .WithImageUrl(GetTablePicUrl(true))
+            .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
+                                 $"Nyeremény: **{HighStake.ToString()} kredit**", true)
+            .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
+                                $"Nyeremény: **{LowStake.ToString()}** kredit", true)
+            .Build();
         var dbUser = await Database.GetUserAsync(Guild, User).ConfigureAwait(false);
         dbUser.GamblingProfile.Money += Stake;
         dbUser.GamblingProfile.HighLow.MoneyWon += Stake;
@@ -228,7 +259,7 @@ public class HighLowGame : IGamblingGame
         await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            x.Embed = Embed.Build();
+            x.Embed = eb;
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);
@@ -236,7 +267,7 @@ public class HighLowGame : IGamblingGame
 
     private string GetTablePicUrl(bool reveal = false)
     {
-        var merged = MergePlayerAndDealer(PlayerHand.GetImage(), reveal ? DealerHand.GetImage() : Image.FromFile($"C:\\KBot\\{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}\\empty.png"));
+        var merged = MergePlayerAndDealer(PlayerHand.GetImage(), reveal ? DealerHand.GetImage() : (Bitmap) Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.empty.png")!));
         var stream = new MemoryStream();
         merged.Save(stream, ImageFormat.Png);
         stream.Position = 0;
