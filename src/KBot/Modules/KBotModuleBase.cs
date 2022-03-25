@@ -22,20 +22,6 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
     public OsuClient OsuClient { get; set; }
     public DbDService DbDService { get; set; }
     public GamblingService GamblingService { get; set; }
-    public Cloudinary Cloudinary { get; set; }
-    
-    protected Task RespondWithEmbedAsync(Color color, string title, string description, string url = null,
-        string imageUrl = null, bool ephemeral = false)
-    {
-        var embed = new EmbedBuilder()
-            .WithTitle(title)
-            .WithDescription(description)
-            .WithUrl(url)
-            .WithImageUrl(imageUrl)
-            .WithColor(color)
-            .Build();
-        return Context.Interaction.RespondAsync(embed: embed, ephemeral: ephemeral);
-    }
 
     protected async Task<IUserMessage> FollowupWithEmbedAsync(Color color, string title, string description,
         string url = null, string imageUrl = null, bool ephemeral = false)

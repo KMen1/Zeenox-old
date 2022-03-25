@@ -18,7 +18,6 @@ using KBot.Modules.Events;
 using KBot.Modules.Gambling;
 using KBot.Modules.Leveling;
 using KBot.Modules.Music;
-using KBot.Modules.TemporaryChannels;
 using KBot.Services;
 using Lavalink4NET;
 using Lavalink4NET.DiscordNet;
@@ -125,7 +124,6 @@ public static class Program
                     context.Configuration.GetSection("Cloudinary").GetValue<string>("CloudName"),
                     context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiKey"),
                     context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiSecret"))));
-                services.AddHostedService<TemporaryVoiceModule>();
                 services.AddMemoryCache();
             })
             .UseSerilog()

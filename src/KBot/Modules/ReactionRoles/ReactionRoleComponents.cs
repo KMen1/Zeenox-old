@@ -136,18 +136,18 @@ public class ReactionRoleComponents : KBotModuleBase
     [ComponentInteraction("rrtr:*")]
     public async Task ReactionRoleTriggerAsync(string roleId)
     {
-        await DeferAsync().ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
         var role = Context.Guild.GetRole(Convert.ToUInt64(roleId));
         var user = Context.Guild.GetUser(Context.User.Id);
         if (user.Roles.Contains(role))
         {
             await user.RemoveRoleAsync(role).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(Color.Red, "Reakciós Rangok", $"Sikeresen levetted a {role.Mention} rangot", ephemeral: true).ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "Reakciós Rangok", $"Sikeresen levetted a {role.Mention} rangot").ConfigureAwait(false);
         }
         else
         {
             await user.AddRoleAsync(role).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(Color.Red, "Reakciós Rangok", $"Sikeresen felvetted a {role.Mention} rangot", ephemeral: true).ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "Reakciós Rangok", $"Sikeresen felvetted a {role.Mention} rangot").ConfigureAwait(false);
         }
     }
 }

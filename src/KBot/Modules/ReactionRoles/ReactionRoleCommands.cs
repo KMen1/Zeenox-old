@@ -7,7 +7,6 @@ namespace KBot.Modules.ReactionRoles;
 [Group("rr", "Reaction Roles")]
 public class ReactionRoleCommands : KBotModuleBase
 {
-#pragma warning disable AsyncFixer01
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("create", "RR menü megnyitása.")]
     public async Task AddReactionRoleAsync(string description)
@@ -26,5 +25,4 @@ public class ReactionRoleCommands : KBotModuleBase
 
         await FollowupAsync(embed: embed, components: comp).ConfigureAwait(false);
     }
-#pragma warning restore AsyncFixer01
 }

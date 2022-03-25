@@ -2,7 +2,7 @@
 
 namespace KBot.Modules.Forms;
 
-public class AppealSubmission : IModal
+public class AppealModal : IModal
 {
     public string Title => "Büntetés fellebezés";
 
@@ -21,7 +21,7 @@ public class AppealSubmission : IModal
 
 public class ReasonModal : IModal
 {
-    public string Title => "Döntés részletei";
+    public string Title => "Döntés indoklása";
     
     [ModalTextInput("reason-input")]
     public string Reason { get; set; }

@@ -11,7 +11,7 @@ namespace KBot.Modules.Forms;
 public class FormComponents : KBotModuleBase
 {
     [ModalInteraction("appeal:*:*")]
-    public async Task HandleAppealAsync(string adminId, string warnId, AppealSubmission submission)
+    public async Task HandleAppealAsync(string adminId, string warnId, AppealModal submission)
     {
         var admin = Context.Guild.GetUser(ulong.Parse(adminId));
         Warn warn = null;

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -12,6 +13,7 @@ public class GuildEvents
 {
     private readonly DiscordSocketClient _client;
     private readonly DatabaseService _database;
+    private readonly List<(SocketUser user, ulong channelId)> _channels;
 
     public GuildEvents(DiscordSocketClient client, DatabaseService database)
     {
@@ -22,11 +24,54 @@ public class GuildEvents
         client.UserLeft += AnnounceUserLeftAsync;
         client.UserBanned += AnnounceUserBannedAsync;
         client.UserUnbanned += AnnounceUserUnbannedAsync;
+        client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
         client.GuildScheduledEventCreated += guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Scheduled);
         client.GuildScheduledEventUpdated += (_, after) => HandleScheduledEventAsync(after, EventState.Updated);
         client.GuildScheduledEventStarted += guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Started);
         client.GuildScheduledEventCancelled += guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Cancelled);
-        Log.Logger.Information("Guild Announcements Module Loaded");
+        _channels = new List<(SocketUser user, ulong channelId)>();
+        Log.Logger.Information("GuildEvents Module Loaded");
+    }
+
+    private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
+    {
+        var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
+        if (user.IsBot)
+        {
+            return;
+        }
+        var config = await _database.GetGuildConfigAsync(guild!).ConfigureAwait(false);
+        if (!config.TemporaryChannels.Enabled)
+        {
+            return;
+        }
+        if (after.VoiceChannel is not null && after.VoiceChannel.Id == config.TemporaryChannels.CreateChannelId)
+        {
+            var voiceChannel = await guild!.CreateVoiceChannelAsync($"{user.Username} Társalgója", x =>
+            {
+                x.UserLimit = 2;
+                x.CategoryId = config.TemporaryChannels.CategoryId;
+                x.Bitrate = 96000;
+                x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
+                {
+                    new Overwrite(user.Id, PermissionTarget.User,
+                        new OverwritePermissions(connect: PermValue.Allow, manageRoles: PermValue.Allow, moveMembers: PermValue.Allow)),
+                    new Overwrite(guild.EveryoneRole.Id, PermissionTarget.Role,
+                        new OverwritePermissions(connect: PermValue.Allow)),
+                    new Overwrite(_client.CurrentUser.Id, PermissionTarget.User,
+                        new OverwritePermissions(viewChannel: PermValue.Allow, manageChannel: PermValue.Allow,
+                            connect: PermValue.Allow, moveMembers: PermValue.Allow))
+                });
+            }).ConfigureAwait(false);
+            await guild.GetUser(user.Id).ModifyAsync(x => x.Channel = voiceChannel).ConfigureAwait(false);
+            _channels.Add((user, voiceChannel.Id));
+        }
+        else if (_channels.Contains((user, before.VoiceChannel?.Id ?? 0)))
+        {
+            var (puser, channelId) = _channels.First(x => x.user == user && x.channelId == before.VoiceChannel.Id);
+            await guild!.GetVoiceChannel(channelId).DeleteAsync().ConfigureAwait(false);
+            _channels.Remove((puser, channelId));
+        }
     }
 
     private async Task ClientOnGuildAvailableAsync(SocketGuild guild)

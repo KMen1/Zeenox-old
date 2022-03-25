@@ -6,7 +6,7 @@ using Discord;
 using Discord.Interactions;
 using KBot.Models;
 
-namespace KBot.Modules.EpicFreeGames;
+namespace KBot.Modules.EpicGames;
 
 [Group("epic", "Epic Games parancsok")]
 public class EpicCommands : KBotModuleBase
@@ -14,7 +14,7 @@ public class EpicCommands : KBotModuleBase
     [SlashCommand("free", "Elküldi a jelenleg ingyenes játékot epic games-en.")]
     public async Task GetEpicFreeGameAsync()
     {
-        await DeferAsync().ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
         using var client = new HttpClient();
         var response = await client.GetStringAsync("https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=HU&allowCountries=HU").ConfigureAwait(false);
         var search = EpicStore.FromJson(response);

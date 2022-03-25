@@ -9,6 +9,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
+using KBot.Enums;
 using OsuSharp.Domain;
 using OsuSharp.Interfaces;
 using IUser = OsuSharp.Interfaces.IUser;
@@ -23,8 +24,7 @@ public class Osu : KBotModuleBase
     {
         if (!link.Contains("osu.ppy.sh/users") || !link.Contains("osu.ppy.sh/u"))
         {
-            await RespondWithEmbedAsync(Color.Red, "Hibás link!",
-                "Kérlek adj meg egy valós osu! profil linket!", ephemeral: true).ConfigureAwait(false);
+            await RespondAsync("Kérlek adj meg egy valós osu! profil linket!", ephemeral: true).ConfigureAwait(false);
             return;
         }
 
@@ -155,48 +155,12 @@ public class Osu : KBotModuleBase
                 score.User.AvatarUrl.ToString(), score.Beatmap.Url)
             .WithThumbnailUrl($"https://b.ppy.sh/thumb/{score.Beatmapset.Id.ToString()}.jpg")
             .WithDescription(
-                $"▸ {GetEmojiFromGrade(score.Rank)}▸ {score.Accuracy:P2} ▸ **{pp.ToString(CultureInfo.InvariantCulture)}PP** \n " +
+                $"▸ {Enum.Parse<Grade>(score.Rank).GetGradeEmoji()}▸ {score.Accuracy:P2} ▸ **{pp.ToString(CultureInfo.InvariantCulture)}PP** \n " +
                 $"▸ {score.TotalScore:n0} ▸ x{score.MaxCombo.ToString()}/{beatmap.MaxCombo.ToString()} ▸ [{score.Statistics.Count300.ToString()}/{score.Statistics.Count100.ToString()}/{score.Statistics.Count50.ToString()}/{score.Statistics.CountMiss.ToString()}]")
-            .WithColor(GetColorFromGrade(score.Rank))
+            .WithColor(Enum.Parse<Grade>(score.Rank).GetGradeColor())
             .WithFooter($"{score.User.Username} - {score.CreatedAt.Humanize(culture: new CultureInfo("hu-HU"))} - {sw.ElapsedMilliseconds} ms",
                 "https://cdn.discordapp.com/emojis/864051085810991164.webp?size=96&quality=lossless")
             .Build();
         await FollowupAsync(embed: eb).ConfigureAwait(false);
-    }
-
-    private static string GetEmojiFromGrade(string grade)
-    {
-        return grade switch
-        {
-            "N" => "<:osuF:936588252763271168>",
-            "F" => "<:osuF:936588252763271168>",
-            "D" => "<:osuD:936588252884910130>",
-            "C" => "<:osuC:936588253031723078>",
-            "B" => "<:osuB:936588252830380042>",
-            "A" => "<:osuA:936588252754882570>",
-            "S" => "<:osuS:936588252872318996>",
-            "SH" => "<:osuSH:936588252834574336>",
-            "X" => "<:osuX:936588252402573333>",
-            "XH" => "<:osuXH:936588252822007818>",
-            _ => "<:osuF:936588252763271168>"
-        };
-    }
-
-    private static Color GetColorFromGrade(string grade)
-    {
-        return grade switch
-        {
-            "N" => Color.Default,
-            "F" => new Color(109, 73, 38),
-            "D" => Color.Red,
-            "C" => Color.Purple,
-            "B" => Color.Blue,
-            "A" => Color.Green,
-            "S" => Color.Gold,
-            "SH" => Color.LightGrey,
-            "X" => Color.Gold,
-            "XH" => Color.LightGrey,
-            _ => Color.Default
-        };
     }
 }
