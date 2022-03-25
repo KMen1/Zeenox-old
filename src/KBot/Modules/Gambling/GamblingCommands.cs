@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Models;
 
 namespace KBot.Modules.Gambling;
 
@@ -10,81 +11,62 @@ namespace KBot.Modules.Gambling;
 public class GamblingCommands : KBotModuleBase
 {
     [SlashCommand("profile", "Szerencsejáték statjaid lekérése")]
-    public async Task SendGamblingProfileAsync(GambleProfileType profileType = GambleProfileType.General, SocketUser vuser = null)
+    public async Task SendGamblingProfileAsync(SocketUser vuser = null)
     {
         var user = vuser ?? Context.User;
         var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        var gambleProfile = dbUser.GamblingProfile;
+        await RespondAsync(embed: dbUser.Gambling.ToEmbedBuilder().Build(), ephemeral:true).ConfigureAwait(false);
+    }
 
-        switch (profileType)
-        {
-            case GambleProfileType.General:
-            {
-                await RespondAsync(embed: gambleProfile.ToEmbedBuilder().Build()).ConfigureAwait(false);
-                break;
-            }
-            case GambleProfileType.HighLow:
-            {
-                await RespondAsync(embed: gambleProfile.HighLow.ToEmbedBuilder().Build()).ConfigureAwait(false);
-                break;
-            }
-            case GambleProfileType.BlackJack:
-            {
-                await RespondAsync(embed: gambleProfile.BlackJack.ToEmbedBuilder().Build()).ConfigureAwait(false);
-                break;
-            }
-            case GambleProfileType.Crash:
-            {
-                await RespondAsync(embed: gambleProfile.Crash.ToEmbedBuilder().Build()).ConfigureAwait(false);
-                break;
-            }
-        }
+    [SlashCommand("transactions", "Tranzakciók lekérése")]
+    public async Task SendTransactionsAsync(SocketUser user = null)
+    {
+        var dbUser = await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false);
+        var transactions = dbUser.Transactions;
+        var embed = new EmbedBuilder()
+            .WithTitle($"{user?.Username ?? Context.User.Username} tranzakciói")
+            .WithColor(Color.Blue)
+            .WithDescription(transactions.Count == 0 ? "Nincsenek tranzakciók" : string.Join("\n\n", transactions));
+        await RespondAsync(embed: embed.Build(), ephemeral:true).ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("changemoney", "Pénz addolása/csökkentése (admin)")]
     public async Task ChangeMoneyAsync(SocketUser user, int offset)
     {
-        await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        dbUser.GamblingProfile.Money += offset;
-        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        var dbUser = await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        {
+            x.Gambling.Money += offset;
+            x.Transactions.Add(new Transaction("-", TransactionType.Correction, offset, $"{Context.User.Mention} által"));
+        }).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Pénz beállítva!",
-            $"{user.Mention} mostantól {dbUser.GamblingProfile.Money.ToString()} 🪙KCoin-al rendelkezik!").ConfigureAwait(false);
+            $"{user.Mention} mostantól {dbUser.Gambling.Money.ToString()} 🪙KCoin-al rendelkezik!").ConfigureAwait(false);
     }
 
-    [RequireOwner]
-    [SlashCommand("reset", "Szerencsejáték statisztikák törlése (admin)")]
-    public async Task Reset()
-    {
-        await DeferAsync().ConfigureAwait(false);
-        await Database.Update(Context.Guild).ConfigureAwait(false);
-        await FollowupAsync("Kész").ConfigureAwait(false);
-    }
-    [SlashCommand("transfer", "Pénz átadása (szerencsejáték)")]
-    public async Task TrasnferMoneyAsync(SocketUser user, int amount)
+    [SlashCommand("transfer", "Pénz küldése más személynek")]
+    public async Task TransferMoneyAsync(SocketUser user, [MinValue(1)]int amount)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var sourceUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (sourceUser.GamblingProfile.Money < amount)
+        if (sourceUser.Gambling.Money < amount)
         {
             await FollowupAsync("Nincs elég 🪙KCoin-od ehhez a művelethez!").ConfigureAwait(false);
             return;
         }
-        var destUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        sourceUser.GamblingProfile.Money -= amount;
-        destUser.GamblingProfile.Money += amount;
-        await Database.UpdateUserAsync(Context.Guild.Id, sourceUser).ConfigureAwait(false);
-        await Database.UpdateUserAsync(Context.Guild.Id, destUser).ConfigureAwait(false);
+        
+        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        {
+            x.Gambling.Money -= amount;
+            x.Transactions.Add(new Transaction("-", TransactionType.TransferSend, amount, $"Neki: {user.Mention}"));
+        }).ConfigureAwait(false);
+        await Database.UpdateUserAsync(Context.Guild, user, x =>
+        {
+            x.Gambling.Money += amount;
+            x.Transactions.Add(new Transaction("-", TransactionType.TransferReceive, amount, $"Tőle: {Context.User.Mention}"));
+        }).ConfigureAwait(false);
+        
         await FollowupAsync($"Sikeresen elküldtél {amount} 🪙KCoin-t {user.Mention} felhasználónak!").ConfigureAwait(false);
-
-        var channel = await user.CreateDMChannelAsync().ConfigureAwait(false);
-        var eb = new EmbedBuilder()
-            .WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
-            .WithTitle("🪙KCoin-t kaptál!")
-            .WithDescription($"{Context.User.Mention} {amount} 🪙KCoin-t küldött neked!")
-            .Build();
-        await channel.SendMessageAsync(embed: eb).ConfigureAwait(false);
     }
 
     [SlashCommand("daily", "Napi bónusz KCoin begyűjtése")]
@@ -92,14 +74,17 @@ public class GamblingCommands : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        var lastDaily = dbUser.GamblingProfile.LastDailyClaim;
+        var lastDaily = dbUser.Gambling.LastDailyClaim;
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
-            var money = new Random().Next(100, 500);
-            dbUser.GamblingProfile.LastDailyClaim = DateTime.UtcNow;
-            dbUser.GamblingProfile.Money += money;
-            await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+            var money = new Random().Next(1000, 10000);
+            await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+            {
+                x.Gambling.LastDailyClaim = DateTime.UtcNow;
+                x.Gambling.Money += money;
+                x.Transactions.Add(new Transaction("-", TransactionType.DailyClaim, money));
+            }).ConfigureAwait(false);
             await FollowupWithEmbedAsync(Color.Green, "Sikeresen begyűjtetted a napi KCoin-od!", $"A begyűjtött KCoin mennyisége: {money.ToString()}", ephemeral: true).ConfigureAwait(false);
         }
         else
@@ -110,13 +95,47 @@ public class GamblingCommands : KBotModuleBase
                 .ConfigureAwait(false);
         }
     }
-
-    public enum GambleProfileType
+    
+    [SlashCommand("shop", "Szerencsejáték piac")]
+    public async Task SendGambleShopAsync()
     {
-        General,
-        HighLow,
-        BlackJack,
-        Crash,
-        Mines
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
+            .WithTitle("Szerencsejáték piac")
+            .WithDescription($"Kérlek válassz az alábbi lehetőségek közül!\nAz árat a kiválasztás után láthatod!\nElérhető egyenleg: **{dbUser.Gambling.Money}** 🪙KCoin")
+            .WithColor(Color.Gold)
+            .Build();
+        var selectMenu = new SelectMenuBuilder()
+                .WithCustomId($"gamble-shop:{Context.User.Id}")
+                .WithPlaceholder("Kérlek válassz!")
+                .WithMinValues(1)
+                .WithMaxValues(6)
+                //.AddOption("Lottószelvény", "lottery", "Egy lottószelvény", new Emoji("🎟️"))
+                .AddOption("+1 Szint", "PlusOneLevel", "Egy szint a szintrendszerben", new Emoji("1️⃣"))
+                .AddOption("+10 Szint", "PlusTenLevel", "Tíz szint kedvezőbb áron.", new Emoji("🔟"))
+                .AddOption("Saját rang", "OwnRank","Egy saját rang általad választott névvel és színnel.", new Emoji("🏆"));
+        if (!dbUser.BoughtChannels.Exists(x => x.ChannelType == DiscordChannelType.Category))
+        {
+            selectMenu.AddOption("Saját kategória", "OwnCategory",
+                "Egy saját kategória (csak egyszer megvehető).", new Emoji("🔠"));
+        }
+
+        selectMenu.AddOption("Saját hangcsatorna", "OwnVoiceChannel",
+                "Általad választott névvel és teljes hozzáféréssel.", new Emoji("🎤"))
+            .AddOption("Saját szövegcsatorna", "OwnTextChannel",
+                "Általad választott névvel és teljes hozzáféréssel.", new Emoji("💬"))
+            .AddOption("Full Csomag", "FullPackage",
+                "Magába foglalja az összes fentebbi dolgot.", new Emoji("📦"));
+        await RespondAsync(embed: eb, components: new ComponentBuilder().WithSelectMenu(selectMenu).Build()).ConfigureAwait(false);
+    }
+
+    [RequireOwner]
+    [SlashCommand("reset", "Szerencsejáték statisztikák törlése (admin)")]
+    public async Task Reset()
+    {
+        await DeferAsync().ConfigureAwait(false);
+        await Database.Update(Context.Guild).ConfigureAwait(false);
+        await FollowupAsync("Kész").ConfigureAwait(false);
     }
 }

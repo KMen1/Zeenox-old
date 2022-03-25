@@ -12,17 +12,20 @@ public class MineCommands : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        dbUser.GamblingProfile ??= new GamblingProfile();
-        dbUser.GamblingProfile.Mines ??= new MinesProfile();
-        if (dbUser.GamblingProfile.Money < bet)
+        if (dbUser.Gambling.Money < bet)
         {
             await FollowupAsync("Nincs elég 🪙KCoin-od ekkora tét rakásához.").ConfigureAwait(false);
             return;
         }
-        dbUser.GamblingProfile.Money -= bet;
-        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+        
         var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
         var game = GamblingService.CreateMinesGame(Context.User, msg, bet, mines);
+        
+        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        {
+            x.Gambling.Money -= bet;
+            x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, bet, "MN - Tétrakás"));
+        }).ConfigureAwait(false);
         await game.StartAsync().ConfigureAwait(false);
     }
 
@@ -41,19 +44,22 @@ public class MineCommands : KBotModuleBase
             await FollowupAsync("Egy mezőt meg kell nyomnod mielőtt kiszállhatnál.").ConfigureAwait(false);
             return;
         }
-        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         var reward = await game.StopAsync().ConfigureAwait(false);
         if (reward is { } i)
         {
-            dbUser.GamblingProfile.Money += i;
-            dbUser.GamblingProfile.Mines.MoneyWon += i;
-            dbUser.GamblingProfile.Mines.Wins++;
-            
+            await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+            {
+                x.Gambling.Money += i;
+                x.Gambling.MoneyWon += i;
+                x.Gambling.Wins++;
+                x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, i, "MN - WIN"));
+            }).ConfigureAwait(false);
         }
-
-        dbUser.GamblingProfile.Mines.Losses++;
-        dbUser.GamblingProfile.Mines.MoneyLost += game.Bet;
-        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        {
+            x.Gambling.MoneyLost += game.Bet;
+            x.Gambling.Losses++;
+        }).ConfigureAwait(false);
         await FollowupAsync("Leállítva").ConfigureAwait(false);
     }
 }

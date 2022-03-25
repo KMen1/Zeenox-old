@@ -50,8 +50,8 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
         return await Context.Interaction.FollowupAsync(embed: embed, ephemeral: ephemeral).ConfigureAwait(false);
     }
 
-    protected async ValueTask<GuildConfig> GetGuildConfigAsync()
+    protected Task<GuildConfig> GetGuildConfigAsync()
     {
-        return await Database.GetGuildConfigAsync(Context.Guild.Id).ConfigureAwait(false);
+        return Database.GetGuildConfigAsync(Context.Guild);
     }
 }

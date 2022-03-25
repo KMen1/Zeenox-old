@@ -1,6 +1,6 @@
 ﻿namespace KBot.Enums;
 
-public enum EventEmbedType
+public enum EventState
 {
     Scheduled,
     Updated,

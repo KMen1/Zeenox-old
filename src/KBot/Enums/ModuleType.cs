@@ -1,6 +1,6 @@
 ﻿namespace KBot.Enums;
 
-public enum GuildModules
+public enum ModuleType
 {
     Announcements,
     TemporaryVoice,

@@ -17,10 +17,13 @@ public class WarnModule : KBotModuleBase
     public async Task WarnAsync(SocketUser user, string reason)
     {
         var moderatorId = Context.User.Id;
-        await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        dbUser.Warns.Add(new Warn(moderatorId, reason, DateTime.UtcNow));
-        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        /*if (Context.Guild.GetUser(user.Id).GuildPermissions.KickMembers)
+        {
+            await FollowupWithEmbedAsync(Color.Red,"Sikertelen figyelmeztetés", "Más moderátort nem tudsz figyelmeztetni").ConfigureAwait(false);
+            return;
+        }*/
+        await Database.UpdateUserAsync(Context.Guild, user, x => x.Warns.Add(new Warn(moderatorId, reason, DateTime.UtcNow))).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} sikeresen figyelmeztetve!",
             $"A következő indokkal: `{reason}`").ConfigureAwait(false);
 
@@ -31,25 +34,28 @@ public class WarnModule : KBotModuleBase
             .WithDescription($"{Context.User.Mention} moderátor által \n A következő indokkal: `{reason}`")
             .WithCurrentTimestamp()
             .Build();
-        await channel.SendMessageAsync(embed:eb).ConfigureAwait(false);
+        try
+        {
+            await channel.SendMessageAsync(embed:eb).ConfigureAwait(false);
+        }
+        catch
+        {
+            // ignored
+        }
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("unwarn", "Figyelmeztetést ad az adott felhasználónak.")]
-    public async Task RemoveWarnAsync(SocketUser user, string reason, int warnId)
+    public async Task RemoveWarnAsync(SocketUser user, string reason, [MinValue(1)]int warnId)
     {
-        await DeferAsync().ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        try
+        if (warnId > dbUser.Warns.Count)
         {
-            dbUser.Warns.RemoveAt(warnId - 1);
-        }
-        catch
-        {
-            await FollowupWithEmbedAsync(Color.Red, "Nem sikerült a figyelmeztetés törlése!",
-                "Ehhez a `warnid`-hez nem tartozik figyelmeztetés!").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red,"Hiba", "Nincs ilyen figyelmeztetés!").ConfigureAwait(false);
             return;
         }
+        await Database.UpdateUserAsync(Context.Guild, user, x => x.Warns.RemoveAt(warnId - 1)).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green,
                 $"{user.Username} {warnId} számú figyelmeztetése eltávolítva!", $"A következő indokkal: `{reason}`")
             .ConfigureAwait(false);
@@ -60,16 +66,22 @@ public class WarnModule : KBotModuleBase
             .WithDescription($"{Context.User.Mention} moderátor által \n A következő indokkal: `{reason}`")
             .WithCurrentTimestamp()
             .Build();
-        await channel.SendMessageAsync(embed:eb).ConfigureAwait(false);
+        try
+        {
+            await channel.SendMessageAsync(embed:eb).ConfigureAwait(false);
+        }
+        catch
+        {
+            // ignored
+        }
     }
 
     [SlashCommand("warns", "A felhasználó figyelmeztetéseinek listája.")]
     public async Task WarnsAsync(SocketUser user)
     {
-        var userId = user.Id;
         await DeferAsync(true).ConfigureAwait(false);
         var warns = (await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false)).Warns;
-        if (warns.Count is 0)
+        if (warns.Count == 0)
         {
             await FollowupWithEmbedAsync(Color.Gold, "😎 Szép munka!",
                 $"{user.Mention} még nem rendelkezik figyelmeztetéssel. Maradjon is így!").ConfigureAwait(false);

@@ -13,17 +13,18 @@ public class CrashCommands : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        dbUser.GamblingProfile ??= new GamblingProfile();
-        dbUser.GamblingProfile.Crash ??= new CrashProfile();
-        if (dbUser.GamblingProfile.Money < bet)
+        if (dbUser.Gambling.Money < bet)
         {
             await FollowupAsync("Nincs elég 🪙KCoin-od ekkora tét rakásához.").ConfigureAwait(false);
             return;
         }
-        dbUser.GamblingProfile.Money -= bet;
-        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
         var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
         var game = GamblingService.CreateCrashGame(Context.User, msg, bet);
+        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        {
+            x.Gambling.Money -= bet;
+            x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, -bet, "CR - Tétrakás"));
+        }).ConfigureAwait(false);
         await game.StartAsync().ConfigureAwait(false);
     }
 

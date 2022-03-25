@@ -30,9 +30,7 @@ public class Osu : KBotModuleBase
 
         await DeferAsync(true).ConfigureAwait(false);
         var osuId = Convert.ToUInt64(link.Split("/").Last());
-        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        dbUser.OsuId = osuId;
-        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+        await Database.UpdateUserAsync(Context.Guild, Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Red, "Sikeresen beállítottad az osu! profilod!",
             "https://osu.ppy.sh/u/" + osuId).ConfigureAwait(false);
     }

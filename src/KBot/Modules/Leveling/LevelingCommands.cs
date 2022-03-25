@@ -17,7 +17,7 @@ public class Levels : KBotModuleBase
         var dbUser = await Database.GetUserAsync(Context.Guild, setUser).ConfigureAwait(false);
         var level = dbUser.Level;
         var requiredXP = Math.Pow(level * 4, 2);
-        var xp = dbUser.Points;
+        var xp = dbUser.XP;
         var embed = new EmbedBuilder()
             .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
             .WithColor(Color.Gold)
@@ -32,15 +32,15 @@ public class Levels : KBotModuleBase
     public async Task GetTopAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var top = await Database.GetTopAsync(Context.Guild.Id, 10).ConfigureAwait(false);
+        var top = await Database.GetTopAsync(Context.Guild, 10).ConfigureAwait(false);
 
         var userColumn = "";
         var levelColumn = "";
 
         foreach (var user in top)
         {
-            userColumn += $"{top.IndexOf(user) +1 }. {Context.Guild.GetUser(user.UserId).Mention}\n";
-            levelColumn += $"{user.Level} ({user.Points} XP)\n";
+            userColumn += $"{top.IndexOf(user) +1 }. {Context.Guild.GetUser(user.Id).Mention}\n";
+            levelColumn += $"{user.Level} ({user.XP} XP)\n";
         }
 
         await FollowupAsync(embed: new EmbedBuilder()
@@ -61,9 +61,11 @@ public class Levels : KBotModuleBase
         if (lastDaily == DateTime.MinValue || canClaim)
         {
             var xp = new Random().Next(100, 500);
-            dbUser.LastDailyClaim = DateTime.UtcNow;
-            dbUser.Points += xp;
-            await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+            await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+            {
+                x.LastDailyClaim = DateTime.UtcNow;
+                x.XP += xp;
+            }).ConfigureAwait(false);
             await FollowupWithEmbedAsync(Color.Green, "Sikeresen begyűjtetted a napi XP-d!", $"A begyűjtött XP mennyisége: {xp.ToString()}", ephemeral: true).ConfigureAwait(false);
         }
         else
@@ -76,25 +78,21 @@ public class Levels : KBotModuleBase
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
-    [SlashCommand("changepoints", "XP hozzáadása/csökkentése (admin)")]
-    public async Task AddPointsAsync(SocketUser user, int xp)
+    [SlashCommand("changexp", "XP hozzáadása/csökkentése (admin)")]
+    public async Task AddPointsAsync(SocketUser user, int offset)
     {
-        await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        dbUser.Points += xp;
-        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.XP += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Pontok beállítva!",
-            $"{user.Mention} mostantól {dbUser.Points.ToString()} XP-vel rendelkezik!").ConfigureAwait(false);
+            $"{user.Mention} mostantól {dbUser.XP.ToString()} XP-vel rendelkezik!").ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("changelevel", "Szint hozzáadása/csökkentése (admin)")]
-    public async Task AddLevelAsync(SocketUser user, int levels)
+    public async Task AddLevelAsync(SocketUser user, int offset)
     {
-        await DeferAsync().ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        dbUser.Level += levels;
-        await Database.UpdateUserAsync(Context.Guild.Id, dbUser).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.Level += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Szint hozzáadva!",
             $"{user.Mention} mostantól {dbUser.Level.ToString()} szintű!").ConfigureAwait(false);
     }

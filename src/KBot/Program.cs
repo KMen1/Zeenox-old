@@ -13,8 +13,8 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Fergun.Interactive;
 using KBot.Models;
-using KBot.Modules.Announcements;
 using KBot.Modules.DeadByDaylight;
+using KBot.Modules.Events;
 using KBot.Modules.Gambling;
 using KBot.Modules.Leveling;
 using KBot.Modules.Music;
@@ -117,17 +117,15 @@ public static class Program
                 services.AddSingleton<DatabaseService>();
                 services.AddSingleton<OsuClient>();
                 services.AddSingleton<LoggingService>();
-                services.AddHostedService<AnnouncementsModule>();
-                services.AddHostedService<MovieModule>();
-                services.AddHostedService<TourModule>();
-                services.AddHostedService<TemporaryVoiceModule>();
-                services.AddHostedService<LevelingModule>();
+                services.AddSingleton<GuildEvents>();
+                services.AddSingleton<LevelingModule>();
                 services.AddSingleton<DbDService>();
                 services.AddSingleton<GamblingService>();
                 services.AddSingleton(new Cloudinary(new Account(
                     context.Configuration.GetSection("Cloudinary").GetValue<string>("CloudName"),
                     context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiKey"),
                     context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiSecret"))));
+                services.AddHostedService<TemporaryVoiceModule>();
                 services.AddMemoryCache();
             })
             .UseSerilog()

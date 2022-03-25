@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -10,6 +9,7 @@ using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Discord;
 using Discord.WebSocket;
+using KBot.Models;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
 using Color = Discord.Color;
@@ -40,10 +40,6 @@ public class HighLowService
     {
         return Games.Find(x => x.Id == id);
     }
-    public void RemoveGame(string id)
-    {
-        Games.RemoveAll(x => x.Id == id);
-    }
 }
 
 public class HighLowGame : IGamblingGame
@@ -55,16 +51,24 @@ public class HighLowGame : IGamblingGame
     private Deck Deck { get; }
     private Card PlayerHand { get; set; }
     private Card DealerHand { get; set; }
-    private int Stake { get; set; }
-    private int HighStake { get; set; }
-    private decimal HighMultiplier { get; set; }
-    private int LowStake { get; set; }
-    private decimal LowMultiplier { get; set; }
+    public int Stake { get; private set; }
+    public int HighStake { get; private set; }
+    public decimal HighMultiplier { get; private set; }
+    public int LowStake { get; private set; }
+    public decimal LowMultiplier { get; private set; }
+    private bool Hidden { get; set; }
     private Cloudinary CloudinaryClient { get; }
     private DatabaseService Database { get; }
     private List<HighLowGame> Container { get; }
 
-    public HighLowGame(string id, SocketUser user, IUserMessage message, int stake, Cloudinary cloudinary, DatabaseService databaseService, List<HighLowGame> container)
+    public HighLowGame(
+        string id,
+        SocketUser user,
+        IUserMessage message,
+        int stake,
+        Cloudinary cloudinary,
+        DatabaseService databaseService,
+        List<HighLowGame> container)
     {
         Id = id;
         User = user;
@@ -73,36 +77,26 @@ public class HighLowGame : IGamblingGame
         CloudinaryClient = cloudinary;
         Database = databaseService;
         Container = container;
+        Hidden = false;
         Deck = new Deck();
-        Draw();
     }
 
     public Task StartAsync()
     {
-        var eb = new EmbedBuilder()
-            .WithTitle("High/Low")
-            .WithDescription($"Tét: **{Stake} kredit**")
-            .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
-                                 $"Nyeremény: **{HighStake.ToString()} kredit**", true)
-            .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
-                                $"Nyeremény: **{LowStake.ToString()}** kredit", true)
-            .WithColor(Color.Gold)
-            .WithImageUrl(GetTablePicUrl())
-            .Build();
-        var comp = new ComponentBuilder()
-            .WithButton(" ", $"highlow-high:{Id}", emote: new Emoji("⬆"))
-            .WithButton(" ", $"highlow-low:{Id}", emote: new Emoji("⬇"))
-            .WithButton(" ", "highlow-cancel", emote: new Emoji("❌"), disabled:true)
-            .Build();
+        Draw();
         return Message.ModifyAsync(x =>
         {
             x.Content = string.Empty;
-            x.Embed = eb;
-            x.Components = comp;
+            x.Embed = new EmbedBuilder().HighLowEmbed(this);
+            x.Components = new ComponentBuilder()
+                .WithButton(" ", $"highlow-high:{Id}", emote: new Emoji("⬆"))
+                .WithButton(" ", $"highlow-low:{Id}", emote: new Emoji("⬇"))
+                .WithButton(" ", "highlow-cancel", emote: new Emoji("❌"))
+                .Build();
         });
     }
 
-    private string Draw()
+    private void Draw()
     {
         PlayerHand = Deck.Draw();
         DealerHand = Deck.Draw();
@@ -113,28 +107,16 @@ public class HighLowGame : IGamblingGame
         var cards = Deck.Cards.Count;
         var lowerCards = Deck.Cards.Count(x => x.Value < PlayerHand.Value);
         var higherCards = Deck.Cards.Count(x => x.Value > PlayerHand.Value);
-        if (higherCards == 0)
+        while (lowerCards == 0 || higherCards == 0)
         {
-            HighMultiplier = 0;
-            HighStake = 0;
-            LowMultiplier = 1;
-            LowStake = Stake;
+            DealerHand = Deck.Draw();
+            lowerCards = Deck.Cards.Count(x => x.Value < PlayerHand.Value);
+            higherCards = Deck.Cards.Count(x => x.Value > PlayerHand.Value);
         }
-        else if (lowerCards == 0)
-        {
-            LowMultiplier = 0;
-            LowStake = 0;
-            HighMultiplier = 1;
-            HighStake = Stake;
-        }
-        else
-        {
-            HighMultiplier = Math.Round((decimal)cards / higherCards, 2);
-            HighStake = (int)(Stake * HighMultiplier);
-            LowMultiplier = Math.Round((decimal)cards / lowerCards, 2);
-            LowStake = (int)(Stake * LowMultiplier);
-        }
-        return GetTablePicUrl();
+        HighMultiplier = Math.Round((decimal)cards / higherCards, 2);
+        HighStake = (int)(Stake * HighMultiplier);
+        LowMultiplier = Math.Round((decimal)cards / lowerCards, 2);
+        LowStake = (int)(Stake * LowMultiplier);
     }
 
     public async Task GuessHigherAsync()
@@ -143,47 +125,19 @@ public class HighLowGame : IGamblingGame
         if (result)
         {
             Stake = HighStake;
-            var imgUrl = Draw();
-            var eb = new EmbedBuilder()
-                .WithTitle("Higher/Lower")
-                .WithDescription($"Tét: **{Stake} kredit**")
-                .WithImageUrl(imgUrl)
-                .WithColor(Color.Gold)
-                .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
-                                     $"Nyeremény: **{HighStake.ToString()} kredit**", true)
-                .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
-                                    $"Nyeremény: **{LowStake.ToString()}** kredit", true)
-                .Build();
-            var components = new ComponentBuilder()
-                .WithButton(" ", $"highlow-high:{Id}", emote: new Emoji("⬆"))
-                .WithButton(" ", $"highlow-low:{Id}", emote: new Emoji("⬇"))
-                .WithButton(" ", $"highlow-finish:{Id}", emote: new Emoji("❌"), disabled:false)
-                .Build();
-            await Message.ModifyAsync(x =>
-            {
-                x.Embed = eb;
-                x.Components = components;
-            }).ConfigureAwait(false);
+            Draw();
+            await Message.ModifyAsync(x => x.Embed = new EmbedBuilder().HighLowEmbed(this)).ConfigureAwait(false);
             return;
         }
-
-        var fEb = new EmbedBuilder()
-            .WithTitle("Higher/Lower")
-            .WithDescription($"Nem találtad el! Vesztettél **{Stake}** kreditet!")
-            .WithColor(Color.Red)
-            .WithImageUrl(GetTablePicUrl(true))
-            .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
-                                 $"Nyeremény: **{HighStake.ToString()} kredit**", true)
-            .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
-                                $"Nyeremény: **{LowStake.ToString()}** kredit", true)
-            .Build();
-        var dbUser = await Database.GetUserAsync(Guild, User).ConfigureAwait(false);
-        dbUser.GamblingProfile.HighLow.MoneyLost += Stake;
-        dbUser.GamblingProfile.HighLow.Losses++;
-        await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
+        Hidden = false;
+        await Database.UpdateUserAsync(Guild, User, x =>
+        {
+            x.Gambling.MoneyLost += Stake;
+            x.Gambling.Losses++;
+        }).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            x.Embed = fEb;
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Stake}** kreditet!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);
@@ -195,79 +149,48 @@ public class HighLowGame : IGamblingGame
         if (result)
         {
             Stake = LowStake;
-            var imgUrl = Draw();
-            var eb = new EmbedBuilder()
-                .WithTitle("Higher/Lower")
-                .WithDescription($"Tét: **{Stake} kredit**")
-                .WithColor(Color.Gold)
-                .WithImageUrl(imgUrl)
-                .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
-                                     $"Nyeremény: **{HighStake.ToString()} kredit**", true)
-                .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
-                                    $"Nyeremény: **{LowStake.ToString()}** kredit", true)
-                .Build();
-            var components = new ComponentBuilder()
-                .WithButton(" ", $"highlow-high:{Id}", emote: new Emoji("⬆"))
-                .WithButton(" ", $"highlow-low:{Id}", emote: new Emoji("⬇"))
-                .WithButton(" ", $"highlow-finish:{Id}", emote: new Emoji("❌"), disabled:false)
-                .Build();
-            await Message.ModifyAsync(x =>
-            {
-                x.Embed = eb;
-                x.Components = components;
-            }).ConfigureAwait(false);
+            Draw();
+            await Message.ModifyAsync(x => x.Embed = new EmbedBuilder().HighLowEmbed(this)).ConfigureAwait(false);
             return;
         }
-        var fEb = new EmbedBuilder()
-            .WithTitle("Higher/Lower")
-            .WithDescription($"Nem találtad el! Vesztettél **{Stake}** kreditet!")
-            .WithColor(Color.Red)
-            .WithImageUrl(GetTablePicUrl(true))
-            .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
-                                 $"Nyeremény: **{HighStake.ToString()} kredit**", true)
-            .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
-                                $"Nyeremény: **{LowStake.ToString()}** kredit", true)
-            .Build();
-        var dbUser = await Database.GetUserAsync(Guild, User).ConfigureAwait(false);
-        dbUser.GamblingProfile.HighLow.MoneyLost += Stake;
-        dbUser.GamblingProfile.HighLow.Losses++;
-        await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
+        Hidden = false;
+        await Database.UpdateUserAsync(Guild, User, x =>
+        {
+            x.Gambling.MoneyLost += Stake;
+            x.Gambling.Losses++;
+        }).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            x.Embed = fEb;
-            x.Components = new ComponentBuilder().Build(); 
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Stake}** kreditet!", Color.Red);
+            x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);
     }
 
     public async Task FinishAsync()
     {
-        var eb = new EmbedBuilder()
-            .WithTitle("Higher/Lower")
-            .WithDescription($"A játék véget ért! **{Stake}** kreditet szereztél!")
-            .WithColor(Color.Green)
-            .WithImageUrl(GetTablePicUrl(true))
-            .AddField("Nagyobb", $"Szorzó: **{HighMultiplier.ToString()}**\n" +
-                                 $"Nyeremény: **{HighStake.ToString()} kredit**", true)
-            .AddField("Kisebb", $"Szorzó: **{LowMultiplier.ToString()}**\n" +
-                                $"Nyeremény: **{LowStake.ToString()}** kredit", true)
-            .Build();
-        var dbUser = await Database.GetUserAsync(Guild, User).ConfigureAwait(false);
-        dbUser.GamblingProfile.Money += Stake;
-        dbUser.GamblingProfile.HighLow.MoneyWon += Stake;
-        dbUser.GamblingProfile.HighLow.Wins++;
-        await Database.UpdateUserAsync(Guild.Id, dbUser).ConfigureAwait(false);
+        Hidden = false;
+        await Database.UpdateUserAsync(Guild, User, x =>
+        {
+            x.Gambling.Money += Stake;
+            x.Gambling.MoneyWon += Stake;
+            x.Gambling.Wins++;
+            x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "HL - WIN"));
+        }).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            x.Embed = eb;
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"A játék véget ért! **{Stake}** kreditet szereztél!", Color.Green);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);
     }
 
-    private string GetTablePicUrl(bool reveal = false)
+    public string GetTablePicUrl()
     {
-        var merged = MergePlayerAndDealer(PlayerHand.GetImage(), reveal ? DealerHand.GetImage() : (Bitmap) Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.empty.png")!));
+        var merged = MergePlayerAndDealer(PlayerHand.GetImage(), 
+            Hidden ?
+                (Bitmap)Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.empty.png")!) :
+                DealerHand.GetImage());
         var stream = new MemoryStream();
         merged.Save(stream, ImageFormat.Png);
         stream.Position = 0;

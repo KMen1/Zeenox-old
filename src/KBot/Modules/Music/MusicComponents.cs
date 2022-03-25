@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Interactions;
-using KBot.Modules.Music.Enums;
+using KBot.Enums;
 
 namespace KBot.Modules.Music;
 

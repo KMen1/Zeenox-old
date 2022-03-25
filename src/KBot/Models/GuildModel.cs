@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using Discord;
 using Discord.WebSocket;
+using KBot.Enums;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -19,9 +21,9 @@ public class GuildModel
 
     public List<User> Users { get; set; }
 
-    public GuildModel(ulong guildId, List<SocketGuildUser> users)
+    public GuildModel(List<SocketGuildUser> users)
     {
-        GuildId = guildId;
+        GuildId = users[0].Guild.Id;
         Config = new GuildConfig();
         Users = new List<User>();
         foreach (var user in users)
@@ -69,13 +71,15 @@ public class Suggestions
 
 public class User
 {
-    public ulong UserId { get; set; }
-
-    public int Points { get; set; }
+    [BsonElement("UserId")]
+    public ulong Id { get; set; }
+    [BsonElement("Points")]
+    public int XP { get; set; }
 
     public int Level { get; set; }
 
-    public GamblingProfile GamblingProfile { get; set; }
+    [BsonElement("GamblingProfile")]
+    public GamblingProfile Gambling { get; set; }
     public ulong OsuId { get; set; }
 
     public DateTime LastDailyClaim { get; set; }
@@ -83,6 +87,10 @@ public class User
     public DateTime LastVoiceChannelJoin { get; set; }
 
     public List<Warn> Warns { get; set; }
+    public List<ulong> Roles { get; set; }
+    public List<Transaction> Transactions { get; set; }
+    public List<DiscordChannel> BoughtChannels { get; set; }
+    public List<ulong> BoughtRoles { get; set; }
 
     [BsonIgnore]
     public int TotalXp
@@ -98,74 +106,90 @@ public class User
         }
     }
 
+    [BsonIgnore]
+    public int RequiredXp => (int)Math.Pow(Level * 4, 2);
+
+    [BsonIgnore]
+    public int Money
+    {
+        get => Gambling.Money;
+        set => Gambling.Money = value;
+    }
+
+    public int MoneyToBuyLevel(int level)
+    {
+        var tlevel = Level;
+        var total = 0;
+        for (int i = 0; i < level; i++)
+        {
+            total += (int)Math.Pow((Level + i) * 4, 2);
+        }
+        return (int)Math.Round((decimal)(total * 2) - XP);
+    }
+
     public User(ulong userId)
     {
-        UserId = userId;
-        Points = 0;
+        Id = userId;
+        XP = 0;
         Level = 0;
-        GamblingProfile = new GamblingProfile();
+        Gambling = new GamblingProfile();
         OsuId = 0;
         Warns = new List<Warn>();
+        Roles = new List<ulong>();
+        BoughtChannels = new List<DiscordChannel>();
+        BoughtRoles = new List<ulong>();
+        Transactions = new List<Transaction>();
         LastDailyClaim = DateTime.MinValue;
         LastVoiceChannelJoin = DateTime.MinValue;
     }
+}
+
+public class DiscordChannel
+{
+    public DiscordChannel(ulong channelId, DiscordChannelType channelType)
+    {
+        ChannelId = channelId;
+        ChannelType = channelType;
+    }
+
+    public DiscordChannelType ChannelType { get; set; }
+    public ulong ChannelId { get; set; }
+}
+
+public enum DiscordChannelType
+{
+    Voice,
+    Text,
+    Category
 }
 
 public class GamblingProfile
 {
     public int Money { get; set; }
     public DateTime LastDailyClaim { get; set; }
-    public BlackJackProfile BlackJack { get; set; }
-    public CoinFlipProfile CoinFlip { get; set; }
-    public HighLowProfile HighLow { get; set; }
-    public CrashProfile Crash { get; set; }
-    public MinesProfile Mines { get; set; }
+    public int GamesPlayed => Wins + Losses;
+    public int Wins { get; set; }
+    public int Losses { get; set; }
+    public int MoneyWon { get; set; }
+    public int MoneyLost { get; set; }
 
-    [BsonIgnore]
-    public int TotalPlayed => BlackJack.GamesPlayed + CoinFlip.GamesPlayed + HighLow.GamesPlayed + Crash.GamesPlayed + Mines.GamesPlayed;
-
-    [BsonIgnore]
-    public int TotalWon => BlackJack.Wins + CoinFlip.Wins + HighLow.Wins + Crash.Wins + Mines.Wins;
-
-    [BsonIgnore]
-    public int TotalLost => BlackJack.Losses + CoinFlip.Losses + HighLow.Losses + Crash.Losses + Mines.Losses;
-
-    [BsonIgnore]
-    public int TotalMoneyWon => BlackJack.MoneyWon + CoinFlip.MoneyWon + HighLow.MoneyWon + Crash.MoneyWon + Mines.MoneyWon;
-
-    [BsonIgnore]
-    public int TotalMoneyLost => BlackJack.MoneyLost + CoinFlip.MoneyLost + HighLow.MoneyLost + Crash.MoneyLost + Mines.MoneyLost;
-
-    [BsonIgnore]
-    public double TotalWinRate
+    public double WinRate
     {
         get
         {
-            var total = TotalWon;
-            return Math.Round(total / (double)(TotalPlayed) * 100, 2);
+            var total = Wins;
+            return Math.Round(total / (double)(GamesPlayed) * 100, 2);
         }
     }
 
     public GamblingProfile()
     {
         Money = 1000;
-        BlackJack = new BlackJackProfile();
-        CoinFlip = new CoinFlipProfile();
-        HighLow = new HighLowProfile();
-        Crash = new CrashProfile();
-        Mines = new MinesProfile();
-    }
-
-    public override string ToString()
-    {
-        var s = "";
-        s += $"Elérhető egyenleg: **{Money}**\n";
-        s += $"Összes győzelem: **{TotalWon}**\n";
-        s += $"Összes vereség: **{TotalLost}**\n";
-        s += $"Összes győzelmi ráta: **{TotalWinRate}%**\n";
-        s += $"Összes nyert pénz: **{TotalMoneyWon}**\n";
-        s += $"Összes vesztett pénz: **{TotalMoneyLost}**";
-        return s;
+        LastDailyClaim = DateTime.MinValue;
+        Wins = 0;
+        Losses = 0;
+        MoneyWon = 0;
+        MoneyLost = 0;
     }
 
     public EmbedBuilder ToEmbedBuilder()
@@ -174,272 +198,53 @@ public class GamblingProfile
             .WithTitle("Szerencsejáték profil")
             .WithColor(Color.Gold)
             .AddField("💳 Egyenleg", $"`{Money.ToString()} 🪙KCoin`", true)
-            .AddField("🏆 Győzelmek", $"`{TotalWon.ToString()}`", true)
-            .AddField("🚫 Vereségek", $"`{TotalLost.ToString()}`", true)
-            .AddField("📈 Győzelmi ráta", $"`{TotalWinRate.ToString()}% ({TotalWon.ToString()}W/{TotalLost.ToString()}L)`", true)
-            .AddField("💰 Nyert pénz", $"`{TotalMoneyWon.ToString()} 🪙KCoin`", true)
-            .AddField("💸 Vesztett pénz", $"`{TotalMoneyLost.ToString()} 🪙KCoin`", true);
+            .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
+            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true)
+            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}% ({Wins.ToString()}W/{Losses.ToString()}L)`", true)
+            .AddField("💰 Nyert pénz", $"`{MoneyWon.ToString()} 🪙KCoin`", true)
+            .AddField("💸 Vesztett pénz", $"`{MoneyLost.ToString()} 🪙KCoin`", true);
     }
 }
 
-public class MinesProfile
+public class Transaction
 {
-    public int Wins { get; set; }
-    public int Losses { get; set; }
-    public int MoneyWon { get; set; }
-    public int MoneyLost { get; set; }
-
-    [BsonIgnore]
-    public int GamesPlayed => Wins + Losses;
-
-    [BsonIgnore]
-    public double WinRate
+    public string Id { get; set; }
+    public TransactionType Type { get; set; }
+    public int Amount { get; set; }
+    public DateTime Date { get; set; }
+    public string Description { get; set; }
+    
+    public Transaction(string id, TransactionType type, int amount, string description = "")
     {
-        get
-        {
-            var total = Wins;
-            return Math.Round(total / (double)GamesPlayed * 100, 2);
-        }
-    }
-
-    public MinesProfile()
-    {
-        Wins = 0;
-        Losses = 0;
-        MoneyWon = 0;
-        MoneyLost = 0;
+        Id = id;
+        Type = type;
+        Amount = amount;
+        Description = description;
+        Date = DateTime.UtcNow;
     }
 
     public override string ToString()
     {
-        var s = "";
-        s += $"Győzelmek: **{Wins}**\n";
-        s += $"Vereségek: **{Losses}**\n";
-        s += $"Győzelem ráta: **{WinRate}%**\n";
-        s += $"Nyert pénz: **{MoneyWon}**\n";
-        s += $"Vesztett pénz: **{MoneyLost}**";
-        return s;
-    }
-
-    public EmbedBuilder ToEmbedBuilder()
-    {
-        return new EmbedBuilder()
-            .WithTitle("Crash statisztikák")
-            .WithColor(Color.Gold)
-            .AddField("💰 Nyert pénz", $"`{MoneyWon.ToString()} 🪙KCoin`", true)
-            .AddField("💸 Vesztett pénz", $"`{MoneyLost.ToString()} 🪙KCoin`", true)
-            .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
-            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true)
-            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}% ({Wins.ToString()}W/{Losses.ToString()}L)`", true);
+        return $"ID: `{Id}` ({Date.ToString("yyyy.MM.dd")}): **{Type.GetDescription()}** ({Amount.ToString()} KCoin)" + (string.IsNullOrEmpty(Description) ? "" : $" - {Description}");
     }
 }
 
-public class CrashProfile
+public enum TransactionType
 {
-    public int Wins { get; set; }
-    public int Losses { get; set; }
-    public int MoneyWon { get; set; }
-    public int MoneyLost { get; set; }
-
-    [BsonIgnore]
-    public int GamesPlayed => Wins + Losses;
-
-    [BsonIgnore]
-    public double WinRate
-    {
-        get
-        {
-            var total = Wins;
-            return Math.Round(total / (double)GamesPlayed * 100, 2);
-        }
-    }
-
-    public CrashProfile()
-    {
-        Wins = 0;
-        Losses = 0;
-        MoneyWon = 0;
-        MoneyLost = 0;
-    }
-
-    public override string ToString()
-    {
-        var s = "";
-        s += $"Győzelmek: **{Wins}**\n";
-        s += $"Vereségek: **{Losses}**\n";
-        s += $"Győzelem ráta: **{WinRate}%**\n";
-        s += $"Nyert pénz: **{MoneyWon}**\n";
-        s += $"Vesztett pénz: **{MoneyLost}**";
-        return s;
-    }
-
-    public EmbedBuilder ToEmbedBuilder()
-    {
-        return new EmbedBuilder()
-            .WithTitle("Crash statisztikák")
-            .WithColor(Color.Gold)
-            .AddField("💰 Nyert pénz", $"`{MoneyWon.ToString()} 🪙KCoin`", true)
-            .AddField("💸 Vesztett pénz", $"`{MoneyLost.ToString()} 🪙KCoin`", true)
-            .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
-            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true)
-            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}% ({Wins.ToString()}W/{Losses.ToString()}L)`", true);
-    }
-}
-
-public class HighLowProfile
-{
-    public int Wins { get; set; }
-    public int Losses { get; set; }
-    public int MoneyWon { get; set; }
-    public int MoneyLost { get; set; }
-
-    [BsonIgnore]
-    public int GamesPlayed => Wins + Losses;
-
-    [BsonIgnore]
-    public double WinRate
-    {
-        get
-        {
-            var total = Wins;
-            return Math.Round(total / (double)GamesPlayed * 100, 2);
-        }
-    }
-
-    public HighLowProfile()
-    {
-        Wins = 0;
-        Losses = 0;
-        MoneyWon = 0;
-        MoneyLost = 0;
-    }
-
-    public override string ToString()
-    {
-        var s = "";
-        s += $"Győzelmek: **{Wins}**\n";
-        s += $"Vereségek: **{Losses}**\n";
-        s += $"Győzelem ráta: **{WinRate}%**\n";
-        s += $"Nyert pénz: **{MoneyWon}**\n";
-        s += $"Vesztett pénz: **{MoneyLost}**";
-        return s;
-    }
-
-    public EmbedBuilder ToEmbedBuilder()
-    {
-        return new EmbedBuilder()
-            .WithTitle("High/Low profil")
-            .WithColor(Color.Gold)
-            .AddField("💰 Nyert pénz", $"`{MoneyWon.ToString()} 🪙KCoin`", true)
-            .AddField("💸 Vesztett pénz", $"`{MoneyLost.ToString()} 🪙KCoin`", true)
-            .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
-            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true)
-            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}% ({Wins.ToString()}W/{Losses.ToString()}L)`", true);
-    }
-}
-
-public class CoinFlipProfile
-{
-    public int Wins { get; set; }
-    public int Losses { get; set; }
-    public int MoneyWon { get; set; }
-    public int MoneyLost { get; set; }
-
-    [BsonIgnore]
-    public int GamesPlayed => Wins + Losses;
-
-    [BsonIgnore]
-    public double WinRate
-    {
-        get
-        {
-            var total = Wins;
-            return Math.Round(total / (double)GamesPlayed * 100, 2);
-        }
-    }
-
-    public CoinFlipProfile()
-    {
-        Wins = 0;
-        Losses = 0;
-        MoneyWon = 0;
-        MoneyLost = 0;
-    }
-
-    public override string ToString()
-    {
-        var s = "";
-        s += $"Győzelmek: **{Wins}**\n";
-        s += $"Vereségek: **{Losses}**\n";
-        s += $"Győzelem ráta: **{WinRate}%**\n";
-        s += $"Nyert pénz: **{MoneyWon}**\n";
-        s += $"Vesztett pénz: **{MoneyLost}**";
-        return s;
-    }
-
-    public EmbedBuilder ToEmbedBuilder()
-    {
-        return new EmbedBuilder()
-            .WithTitle("CoinFlip profil")
-            .WithColor(Color.Gold)
-            .AddField("💰 Nyert pénz", $"`{MoneyWon.ToString()} 🪙KCoin`", true)
-            .AddField("💸 Vesztett pénz", $"`{MoneyLost.ToString()} 🪙KCoin`", true)
-            .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
-            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true)
-            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}% ({Wins.ToString()}W/{Losses.ToString()}L)`", true);
-    }
-}
-
-public class BlackJackProfile
-{
-    public int Wins { get; set; }
-    public int Losses { get; set; }
-    public int MoneyWon { get; set; }
-    public int MoneyLost { get; set; }
-
-    [BsonIgnore]
-    public int GamesPlayed => Wins + Losses;
-
-    [BsonIgnore]
-    public double WinRate
-    {
-        get
-        {
-            var total = Wins;
-            return Math.Round(total / (double)GamesPlayed * 100, 2);
-        }
-    }
-
-    public BlackJackProfile()
-    {
-        Wins = 0;
-        Losses = 0;
-        MoneyWon = 0;
-        MoneyLost = 0;
-    }
-
-    public override string ToString()
-    {
-        var s = "";
-        s += $"Győzelmek: **{Wins}**\n";
-        s += $"Vereségek: **{Losses}**\n";
-        s += $"Győzelem ráta: **{WinRate}%**\n";
-        s += $"Nyert pénz: **{MoneyWon}**\n";
-        s += $"Vesztett pénz: **{ MoneyLost}**";
-        return s;
-    }
-
-    public EmbedBuilder ToEmbedBuilder()
-    {
-        return new EmbedBuilder()
-            .WithTitle("BlackJack profil")
-            .WithColor(Color.Gold)
-            .AddField("💰 Nyert pénz", $"`{MoneyWon.ToString()} 🪙KCoin`", true)
-            .AddField("💸 Vesztett pénz", $"`{MoneyLost.ToString()} 🪙KCoin`", true)
-            .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
-            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true)
-            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}% ({Wins.ToString()}W/{Losses.ToString()}L)`", true);
-    }
+    [Description("Ismeretlen")]
+    Unknown,
+    [Description("Korrekció")]
+    Correction,
+    [Description("Szerencsejáték")]
+    Gambling,
+    [Description("Utalás küldés")]
+    TransferSend,
+    [Description("Utalás fogadás")]
+    TransferReceive,
+    [Description("Napi begyűjtés")]
+    DailyClaim,
+    [Description("Vásárlás")]
+    ShopPurchase,
 }
 
 public class Warn

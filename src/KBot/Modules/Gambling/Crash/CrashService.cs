@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using KBot.Models;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
 
@@ -19,14 +20,6 @@ public class CrashService
     {
         Database = database;
     }
-    
-    public async Task StopGameAsync(string id)
-    {
-        var game = Games.Find(x => x.Id == id);
-        if (game == null)
-            return;
-        await game.StopAsync().ConfigureAwait(false);
-    }
 
     public CrashGame CreateGame(string id, SocketUser user, IUserMessage msg, int bet)
     {
@@ -40,6 +33,14 @@ public class CrashService
     {
         return Games.FirstOrDefault(x => x.Id == id);
     }
+
+    public async Task StopGameAsync(string id)
+    {
+        var game = Games.Find(x => x.Id == id);
+        if (game == null)
+            return;
+        await game.StopAsync().ConfigureAwait(false);
+    }
 }
 
 public class CrashGame : IGamblingGame
@@ -48,14 +49,23 @@ public class CrashGame : IGamblingGame
     public SocketUser User { get; }
     private IUserMessage Message { get; }
     private IGuild Guild => ((ITextChannel) Message.Channel).Guild;
-    private int Bet { get; }
+    public int Bet { get; }
     private decimal CrashPoint { get; }
-    private decimal Multiplier { get; set; }
+    public decimal Multiplier { get; private set; }
+    public int Profit => (int)((Bet * Multiplier) - Bet);
     private DatabaseService Db { get; }
     private List<CrashGame> Container { get; }
-    private CancellationTokenSource CancellationTokenSource { get; } = new();
-    
-    public CrashGame(string id, SocketUser user, IUserMessage message, int bet, decimal crashPoint,  List<CrashGame> container, DatabaseService db)
+    private CancellationTokenSource TokenSource { get; } = new();
+    private CancellationToken StoppingToken => TokenSource.Token;
+
+    public CrashGame(
+        string id,
+        SocketUser user,
+        IUserMessage message,
+        int bet,
+        decimal crashPoint,
+        List<CrashGame> container,
+        DatabaseService db)
     {
         Id = id;
         User = user;
@@ -71,75 +81,49 @@ public class CrashGame : IGamblingGame
         await Message.ModifyAsync(x =>
         {
             x.Content = string.Empty;
-            x.Embed = new EmbedBuilder()
-                .WithTitle("Crash")
-                .WithColor(Color.Gold)
-                .AddField("Szorzó", "`1.0x`", true)
-                .AddField("Profit", "`0`", true)
-                .Build();
+            x.Embed = new EmbedBuilder().CrashEmbed(this);
             x.Components = new ComponentBuilder()
                 .WithButton(" ", $"crash:{Id}", ButtonStyle.Danger, new Emoji("🛑"))
                 .Build();
         }).ConfigureAwait(false);
-        for (Multiplier = 1.0M; Multiplier < 1000000000; Multiplier += 0.1M)
+        Multiplier = 1.0M;
+        while (!StoppingToken.IsCancellationRequested)
         {
-            if (CancellationTokenSource.Token.IsCancellationRequested)
-            {
-                CancellationTokenSource.Dispose();
-                return;
-            }
-            await Message.ModifyAsync(x =>
-            {
-                var embed = new EmbedBuilder()
-                    .WithTitle("Crash")
-                    .WithColor(Color.Gold)
-                    .AddField("Szorzó", $"`{Multiplier:0.0}x`", true)
-                    .AddField("Profit", $"`{Bet * Multiplier-Bet:0}`", true)
-                    .Build();
-                x.Embed = embed;
-            }).ConfigureAwait(false);
+            Multiplier += 0.1M;
+            await Message.ModifyAsync(x => x.Embed = new EmbedBuilder().CrashEmbed(this)).ConfigureAwait(false);
 
             if (Multiplier >= CrashPoint)
             {
-                var dbUser = await Db.GetUserAsync(Guild, User).ConfigureAwait(false);
-                dbUser.GamblingProfile.Crash.Losses++;
-                dbUser.GamblingProfile.Crash.MoneyLost += Bet;
-                await Db.UpdateUserAsync(((SocketTextChannel)Message.Channel).Guild.Id, dbUser).ConfigureAwait(false);
+                await Db.UpdateUserAsync(Guild, User, x =>
+                {
+                    x.Gambling.Losses++;
+                    x.Gambling.MoneyLost += Bet;
+                }).ConfigureAwait(false);
                 await Message.ModifyAsync(x =>
                 {
-                    var embed = new EmbedBuilder()
-                        .WithTitle("Crash")
-                        .WithColor(Color.Red)
-                        .AddField("Crashelt", $"`{Multiplier:0.0}x`", true)
-                        .AddField("Profit", $"`-{Bet:0}`", true)
-                        .Build();
-                    x.Embed = embed;
+                    x.Embed = new EmbedBuilder().CrashEmbed(this, $"Crashelt itt: {Multiplier:0.0}x\nVesztettél {Bet} kreditet", Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
                 Container.Remove(this);
                 break;
             }
-            await Task.Delay(2000).ConfigureAwait(false);
+            await Task.Delay(2000, StoppingToken).ConfigureAwait(false);
         }
     }
 
     public async Task StopAsync()
     {
-        CancellationTokenSource.Cancel();
-        var dbUser = await Db.GetUserAsync(Guild, User).ConfigureAwait(false);
-        dbUser.GamblingProfile.Money += (int)Math.Round(Bet*Multiplier);
-        dbUser.GamblingProfile.Crash.Wins++;
-        dbUser.GamblingProfile.Crash.MoneyWon += (int)((Bet * Multiplier) - Bet);
-        await Db.UpdateUserAsync(((SocketTextChannel)Message.Channel).Guild.Id, dbUser).ConfigureAwait(false);
+        TokenSource.Cancel();
+        await Db.UpdateUserAsync(Guild, User, x =>
+        {
+            x.Gambling.Money += (int)Math.Round(Bet * Multiplier);
+            x.Gambling.Wins++;
+            x.Gambling.MoneyWon += (int)((Bet * Multiplier) - Bet);
+            x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, (int)Math.Round(Bet * Multiplier), $"CR - {Multiplier:0.0}x"));
+        }).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            var embed = new EmbedBuilder()
-                .WithTitle("Crash")
-                .WithColor(Color.Green)
-                .AddField("Kivéve", $"`{Multiplier:0.0}x`", true)
-                .AddField("Profit", $"`{Bet * Multiplier - Bet:0}`", true)
-                .Build();
-            x.Embed = embed;
+            x.Embed = new EmbedBuilder().CrashEmbed(this, $"Kivetted itt: {Multiplier:0.0}x\nNyertél {Profit:0} kreditet", Color.Green);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);

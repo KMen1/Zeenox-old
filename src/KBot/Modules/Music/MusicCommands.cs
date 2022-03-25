@@ -30,7 +30,7 @@ public class MusicCommands : KBotModuleBase
         await DeferAsync().ConfigureAwait(false);
         if (((IVoiceState)Context.User).VoiceChannel is null)
         {
-            await FollowupAsync(embed: Embeds.ErrorEmbed("Nem vagy hangcsatornában!")).ConfigureAwait(false);
+            await FollowupAsync(embed: new EmbedBuilder().ErrorEmbed("Nem vagy hangcsatornában!")).ConfigureAwait(false);
             return;
         }
         await AudioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);

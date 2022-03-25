@@ -23,7 +23,7 @@ public class GamblingService
         BlackJack = new BlackJackService(database, cloudinary);
         Crash = new CrashService(database);
         HighLow = new HighLowService(database, cloudinary);
-        Mines = new MinesService(database);
+        Mines = new MinesService();
     }
 
     public BlackJackGame GetBlackJackGame(string id)

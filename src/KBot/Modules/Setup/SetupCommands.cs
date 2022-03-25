@@ -15,7 +15,7 @@ public class SetupCommands : KBotModuleBase
 {
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("setup", "Bot beállítása ehhez a szerverhez")]
-    public async Task SetupCommandsAsync(GuildModules module)
+    public async Task SetupCommandsAsync(ModuleType module)
     {
         await DeferAsync().ConfigureAwait(false);
         var embed = new EmbedBuilder
@@ -36,7 +36,7 @@ public class SetupCommands : KBotModuleBase
             .WithMinValues(1);
         var config = await GetGuildConfigAsync().ConfigureAwait(false);
         config ??= new GuildConfig();
-        var moduleconfig = Converters.GetModuleConfigFromGuildConfig(module, config);
+        var moduleconfig = config.GetModuleConfigFromGuildConfig(module);
         foreach (var property in moduleconfig.GetType().GetProperties())
         {
             var value = property.GetValue(moduleconfig);
@@ -85,7 +85,7 @@ public class SetupCommands : KBotModuleBase
             selectMenu.AddOption(title, $"{module.ToString()}:{property.Name}");
         }
 
-        if (module is GuildModules.Leveling)
+        if (module is ModuleType.Leveling)
         {
             components.WithButton("Auto Rang", "setupaddlevelrole", ButtonStyle.Success, new Emoji("➕"));
             components.WithButton("Auto Rang", "setupremovelevelrole", ButtonStyle.Danger, new Emoji("➖"));

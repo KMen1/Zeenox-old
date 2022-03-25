@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using KBot.Modules.Music.Enums;
+using KBot.Enums;
 using KBot.Modules.Music.Helpers;
 using Lavalink4NET;
 using Lavalink4NET.Filters;
@@ -69,7 +69,7 @@ public class AudioService
 
         await player.NowPlayingMessage.DeleteAsync().ConfigureAwait(false);
         await player!.DisconnectAsync().ConfigureAwait(false);
-        return Embeds.LeaveEmbed(player.VoiceChannel);
+        return new EmbedBuilder().LeaveEmbed(player.VoiceChannel);
     }
 
     public async Task<Embed> MoveAsync(IGuild guild, SocketUser user)
@@ -86,7 +86,7 @@ public class AudioService
 
         var player = _lavaNode.GetPlayer(guild.Id);
         await player!.ConnectAsync(voiceChannel.Id).ConfigureAwait(false);
-        return Embeds.MoveEmbed(voiceChannel);
+        return new EmbedBuilder().MoveEmbed(voiceChannel);
     }
     public async Task PlayAsync(IGuild guild, SocketInteraction interaction, string query)
     {
@@ -123,24 +123,27 @@ public class AudioService
             Embed qeueEmbed;
             if (isPlaylist)
             {
-                qeueEmbed = Embeds.AddedToQueueEmbed(searchResponse.Tracks.ToList());
+                qeueEmbed = new EmbedBuilder().AddedToQueueEmbed(searchResponse.Tracks.ToList());
             }
             else
             {
-                qeueEmbed = Embeds.AddedToQueueEmbed(new List<LavalinkTrack>(new[] { firstTrack }));
+                qeueEmbed = new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack>(new[] { firstTrack }));
                 queue.Add(firstTrack);
             }
 
-            var msg = await interaction.FollowupAsync(embed: qeueEmbed).ConfigureAwait(false);
-            await Task.Delay(1750).ConfigureAwait(false);
-            await msg.DeleteAsync().ConfigureAwait(false);
+            _ = Task.Run(async () =>
+            {
+                var msg = await interaction.FollowupAsync(embed: qeueEmbed).ConfigureAwait(false);
+                await Task.Delay(1750).ConfigureAwait(false);
+                await msg.DeleteAsync().ConfigureAwait(false);
+            });
             await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
             return;
         }
         player.NowPlayingMessage = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
         await player!.PlayAsync(firstTrack).ConfigureAwait(false);
         await interaction.FollowupAsync(
-            embed: Embeds.NowPlayingEmbed(user, player),
+            embed: new EmbedBuilder().NowPlayingEmbed(user, player),
             components: Components.NowPlayingComponents(player)).ConfigureAwait(false);
     }
     public async Task PlayAsync(IGuild guild, SocketInteraction interaction, LavalinkTrack track)
@@ -162,10 +165,15 @@ public class AudioService
             player!.Queue.Add(track);
             await interactionMessage.DeleteAsync().ConfigureAwait(false);
 
-            var msg = await interaction.FollowupAsync(embed: Embeds.AddedToQueueEmbed(new List<LavalinkTrack>(new[] { track }))).ConfigureAwait(false);
-            await Task.Delay(1750).ConfigureAwait(false);
-            await msg.DeleteAsync().ConfigureAwait(false);
-
+            _ = Task.Run(async () =>
+            {
+                var msg = await interaction
+                    .FollowupAsync(embed: new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack>(new[] {track})))
+                    .ConfigureAwait(false);
+                await Task.Delay(1750).ConfigureAwait(false);
+                await msg.DeleteAsync().ConfigureAwait(false);
+            });
+            
             await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
             return;
         }
@@ -173,7 +181,7 @@ public class AudioService
         await player!.PlayAsync(track).ConfigureAwait(false);
         await interactionMessage.ModifyAsync(x =>
         {
-            x.Embed = Embeds.NowPlayingEmbed(user, player);
+            x.Embed = new EmbedBuilder().NowPlayingEmbed(user, player);
             x.Components = Components.NowPlayingComponents(player);
         }).ConfigureAwait(false);
         player.NowPlayingMessage = interactionMessage;
@@ -300,7 +308,7 @@ public class AudioService
         }
         await player.SetVolumeAsync(volume).ConfigureAwait(false);
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
-        return Embeds.VolumeEmbed(player);
+        return new EmbedBuilder().VolumeEmbed(player);
     }
 
     public async Task SetFiltersAsync(IGuild guild, SocketUser user, FilterType filterType)
@@ -445,7 +453,7 @@ public class AudioService
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         return player is null ?
             new EmbedBuilder().WithColor(Color.Red).WithTitle("Ezen a szerveren nem található lejátszó!").Build() :
-            Embeds.QueueEmbed(player);
+            new EmbedBuilder().QueueEmbed(player);
     }
 
     public async Task<Embed> ClearQueueAsync(IGuild guild)
@@ -457,7 +465,7 @@ public class AudioService
         }
         player.Queue.Clear();
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
-        return Embeds.QueueEmbed(player, true);
+        return new EmbedBuilder().QueueEmbed(player, true);
     }
 
     private static bool IsPlaying(LavalinkPlayer player)

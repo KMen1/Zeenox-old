@@ -61,37 +61,37 @@ public class InteractionHandler : DiscordClientService
             case InteractionCommandError.Exception:
             {
                 await interaction.FollowupAsync(embed:
-                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                    new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ConvertFailed:
             {
                 await interaction.FollowupAsync(embed:
-                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                    new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.BadArgs:
             {
                 await interaction.FollowupAsync(embed:
-                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                    new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.Unsuccessful:
             {
                 await interaction.FollowupAsync(embed:
-                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                    new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.UnmetPrecondition:
             {
                 await interaction.FollowupAsync(embed:
-                    Embeds.ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
+                    new EmbedBuilder().ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ParseFailed:
             {
                 await interaction.FollowupAsync(embed:
-                    Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                    new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
         }
@@ -108,32 +108,32 @@ public class InteractionHandler : DiscordClientService
         {
             case InteractionCommandError.Exception:
             {
-                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ConvertFailed:
             {
-                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.BadArgs:
             {
-                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.Unsuccessful:
             {
-                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.UnmetPrecondition:
             {
-                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ParseFailed:
             {
-                await interaction.FollowupAsync(embed: Embeds.ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
                 break;
             }
         }

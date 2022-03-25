@@ -36,7 +36,7 @@ public class TemporaryVoiceModule : DiscordClientService
         {
             return;
         }
-        var config = await _database.GetGuildConfigAsync(guild!.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigAsync(guild!).ConfigureAwait(false);
         if (!config.TemporaryChannels.Enabled)
         {
             return;

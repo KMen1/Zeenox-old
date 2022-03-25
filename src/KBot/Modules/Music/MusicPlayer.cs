@@ -12,7 +12,7 @@ namespace KBot.Modules.Music;
 public class MusicPlayer : LavalinkPlayer
 {
     public readonly IVoiceChannel VoiceChannel;
-    public readonly ITextChannel _textChannel;
+    private readonly ITextChannel _textChannel;
     
     public bool LoopEnabled { get; set; }
     public string FilterEnabled { get; set; }
@@ -48,7 +48,7 @@ public class MusicPlayer : LavalinkPlayer
     {
         var message = NowPlayingMessage;
         var user = LastRequestedBy ?? message.Interaction.User as SocketUser;
-        var embed = Embeds.NowPlayingEmbed(user, this);
+        var embed = new EmbedBuilder().NowPlayingEmbed(user, this);
         var components = Components.NowPlayingComponents(this);
         return message.ModifyAsync(x =>
          {
@@ -86,10 +86,16 @@ public class MusicPlayer : LavalinkPlayer
 
     public override async Task OnTrackExceptionAsync(TrackExceptionEventArgs args)
     {
-        await _textChannel.SendMessageAsync(embed: Embeds.ErrorEmbed(args.ErrorMessage)).ConfigureAwait(false);
+        await _textChannel.SendMessageAsync(embed: new EmbedBuilder().ErrorEmbed(args.ErrorMessage)).ConfigureAwait(false);
         await args.Player.DisconnectAsync().ConfigureAwait(false);
         await NowPlayingMessage.DeleteAsync().ConfigureAwait(false);
         NowPlayingMessage = null;
         await base.OnTrackExceptionAsync(args).ConfigureAwait(false);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        NowPlayingMessage?.DeleteAsync().Wait();
+        base.Dispose(disposing);
     }
 }

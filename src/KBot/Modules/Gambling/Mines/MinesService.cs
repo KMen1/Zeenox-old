@@ -10,13 +10,7 @@ namespace KBot.Modules.Gambling.Mines;
 
 public class MinesService
 {
-    private readonly DatabaseService Database;
     private readonly List<MinesGame> Games = new();
-
-    public MinesService(DatabaseService database)
-    {
-        Database = database;
-    }
 
     public MinesGame CreateGame(SocketUser user, IUserMessage message, int bet, int size, int mines)
     {
@@ -46,7 +40,7 @@ public class MinesGame : IGamblingGame
     public SocketUser User { get; }
     public int Bet { get; }
     private bool Lost { get; set; }
-    public bool CanStop { get; set; }
+    public bool CanStop { get; private set; }
     private int Mines => Points.Count(x => x.IsMine);
     private int Clicked => Points.Count(x => x.IsClicked && !x.IsMine);
     private List<MinesGame> Container { get; }
@@ -63,14 +57,21 @@ public class MinesGame : IGamblingGame
         }
     }
         
-    public MinesGame(List<MinesGame> container, string id, IUserMessage message, SocketUser user, int bet, int size, int mines)
+    public MinesGame(
+        List<MinesGame> container,
+        string id,
+        IUserMessage message,
+        SocketUser user,
+        int bet,
+        int size,
+        int mines)
     {
         Id = id;
         Message = message;
         User = user;
         Container = container;
         Bet = bet;
-        var Random = new Random();
+        var random = new Random();
         for (var i = 0; i < size; i++)
         {
             for (var j = 0; j < size; j++)
@@ -81,10 +82,10 @@ public class MinesGame : IGamblingGame
         
         for (var i = 0; i < mines ; i++)
         {
-            var index = Random.Next(0, Points.Count);
+            var index = random.Next(0, Points.Count);
             while (Points[index].IsMine)
             {
-                index = Random.Next(0, Points.Count);
+                index = random.Next(0, Points.Count);
             }
             Points[index].IsMine = true;
             Points[index].Emoji = new Emoji("💣");

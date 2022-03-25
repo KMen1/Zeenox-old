@@ -12,7 +12,7 @@ public static class Generators
         var ans = DateTime.Now.Ticks - ticks;
         return ans.ToString("x");
     }
-    
+
     public static int RandomNumberBetween(int minimumValue, int maximumValue)
     {
         var randomNumber = new byte[1];

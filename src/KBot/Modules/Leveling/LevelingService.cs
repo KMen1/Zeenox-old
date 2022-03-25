@@ -12,21 +12,16 @@ using Serilog;
 
 namespace KBot.Modules.Leveling;
 
-public class LevelingModule : DiscordClientService
+public class LevelingModule
 {
     private readonly DatabaseService _database;
 
-    public LevelingModule(DiscordSocketClient client, ILogger<LevelingModule> logger, DatabaseService database) : base(client, logger)
+    public LevelingModule(DiscordSocketClient client, DatabaseService database)
     {
         _database = database;
-    }
-
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        Client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
-        Client.MessageReceived += OnMessageReceivedAsync;
+        client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
+        client.MessageReceived += OnMessageReceivedAsync;
         Log.Logger.Information("Leveling Module Loaded");
-        return Task.CompletedTask;
     }
 
     private async Task OnMessageReceivedAsync(SocketMessage message)
@@ -40,7 +35,7 @@ public class LevelingModule : DiscordClientService
         {
             return;
         }
-        var config = await _database.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
         if (config is null)
         {
             return;
@@ -64,7 +59,7 @@ public class LevelingModule : DiscordClientService
             return;
         }
         var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
-        var config = await _database.GetGuildConfigAsync(guild!.Id).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigAsync(guild!).ConfigureAwait(false);
         if (!config.Leveling.Enabled)
         {
             return;
@@ -75,9 +70,7 @@ public class LevelingModule : DiscordClientService
             {
                 return;
             }
-            var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
-            dbUser.LastVoiceChannelJoin = DateTime.UtcNow;
-            await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);
+            await _database.UpdateUserAsync(guild, user, x => x.LastVoiceChannelJoin = DateTime.UtcNow).ConfigureAwait(false);
             Log.Logger.Information("Set Join Date for {0} by JoinedChannel", user.Username);
         }
         else if (LeftChannel(after))
@@ -106,16 +99,12 @@ public class LevelingModule : DiscordClientService
             {
                 return;
             }
-            var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
-            dbUser.LastVoiceChannelJoin = DateTime.UtcNow;
-            await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);
+            await _database.UpdateUserAsync(guild, user, x => x.LastVoiceChannelJoin = DateTime.UtcNow).ConfigureAwait(false);
             Log.Logger.Information("Set Join Date {0} by Unmuted", user.Username);
         }
         else if (SwitchedChannelFromAfk(before, after, config))
         {
-            var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
-            dbUser.LastVoiceChannelJoin = DateTime.UtcNow;
-            await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);
+            await _database.UpdateUserAsync(guild, user, x => x.LastVoiceChannelJoin = DateTime.UtcNow).ConfigureAwait(false);
             Log.Logger.Information("Set Join Date for {0} by SwitchedChannelFromAfk", user.Username);
         }
         else if (JoinedOrLeftAfkChannel(after, config))
@@ -130,12 +119,10 @@ public class LevelingModule : DiscordClientService
     {
         var currentLevel = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).Level;
         var currentRequiredPoints = Math.Pow(currentLevel * 4, 2);
-        var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
-        dbUser.Points += points;
-        await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);
-        if (dbUser.Points >= currentRequiredPoints)
+        var dbUser = await _database.UpdateUserAsync(guild, user, x => x.XP += points).ConfigureAwait(false);
+        if (dbUser.XP >= currentRequiredPoints)
         {
-            await HandleLevelUpAsync(guild, guild.GetUser(user.Id), config, dbUser.Points, currentLevel).ConfigureAwait(false);
+            await HandleLevelUpAsync(guild, guild.GetUser(user.Id), config, dbUser.XP, currentLevel).ConfigureAwait(false);
         }
     }
 
@@ -207,10 +194,11 @@ public class LevelingModule : DiscordClientService
                 break;
             }
         }
-        var dbUser = await _database.GetUserAsync(guild, user).ConfigureAwait(false);
-        dbUser.Level += levelsToAdd;
-        dbUser.Points = newPoints;
-        await _database.UpdateUserAsync(guild.Id, dbUser).ConfigureAwait(false);
+        var dbUser = await _database.UpdateUserAsync(guild, user, x =>
+        {
+            x.Level += levelsToAdd;
+            x.XP = newPoints;
+        }).ConfigureAwait(false);
 
         var levelRoles = config.Leveling.LevelRoles.FindAll(x => x.Level <= dbUser.Level);
 

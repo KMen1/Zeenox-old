@@ -19,14 +19,13 @@ public class SetupComponents : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var moduleName = selection[0].Split(":")[0];
-        var moduleEnum = Enum.Parse<GuildModules>(moduleName);
+        var moduleEnum = Enum.Parse<ModuleType>(moduleName);
         var selectedproperty = selection[0].Split(":")[1];
 
         var config = await GetGuildConfigAsync().ConfigureAwait(false);
-        config ??= new GuildConfig();
-        var module = Converters.GetModuleConfigFromGuildConfig(moduleEnum, config);
+        var module = config.GetModuleConfigFromGuildConfig(moduleEnum);
 
-        var msg = await Context.Interaction.GetOriginalResponseAsync().ConfigureAwait(false);
+        var msg = ((SocketMessageComponent)Context.Interaction).Message;
         var embed = msg.Embeds.First().ToEmbedBuilder();
 
         var property = module.GetType().GetProperty(selectedproperty);
@@ -35,7 +34,7 @@ public class SetupComponents : KBotModuleBase
         {
             property.SetValue(module, !enabled);
             embed.Fields.First(x => x.Name == Converters.GetTitleFromPropertyName(selectedproperty)).Value = enabled ? "`Nem`" : "`Igen`";
-            await Database.SaveGuildConfigAsync(Context.Guild.Id, config).ConfigureAwait(false);
+            await Database.UpdateGuildConfigAsync(Context.Guild, config).ConfigureAwait(false);
         }
         else
         {
@@ -71,7 +70,7 @@ public class SetupComponents : KBotModuleBase
                 embed.Fields.First(x => x.Name == Converters.GetTitleFromPropertyName(selectedproperty)).Value = $"`{id}`";
             }
 
-            await Database.SaveGuildConfigAsync(Context.Guild.Id, config).ConfigureAwait(false);
+            await Database.UpdateGuildConfigAsync(Context.Guild, config).ConfigureAwait(false);
             await reqMsg.DeleteAsync().ConfigureAwait(false);
         }
 
@@ -114,7 +113,7 @@ public class SetupComponents : KBotModuleBase
             await newValue.Value.DeleteAsync().ConfigureAwait(false);
             await role.Value.DeleteAsync().ConfigureAwait(false);
             embed.Fields.First(x => x.Name == "Auto Rangok").Value += $"\n Lvl. {level} - {roleObj.Mention}";
-            await Database.SaveGuildConfigAsync(Context.Guild.Id, config).ConfigureAwait(false);
+            await Database.UpdateGuildConfigAsync(Context.Guild, config).ConfigureAwait(false);
             await msg.ModifyAsync(x => x.Embed = embed.Build()).ConfigureAwait(false);
         }
         else

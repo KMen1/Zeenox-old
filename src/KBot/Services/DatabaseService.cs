@@ -13,22 +13,15 @@ using MongoDB.Driver;
 
 namespace KBot.Services;
 
-public class DatabaseService : DiscordClientService
+public class DatabaseService
 {
-    private readonly DiscordSocketClient _client;
     private readonly IMemoryCache _cache;
     private readonly IMongoCollection<GuildModel> _collection;
 
-    public DatabaseService(DiscordSocketClient client, ILogger<DatabaseService> logger, BotConfig config, IMemoryCache cache, IMongoDatabase database) : base(client, logger)
+    public DatabaseService(BotConfig config, IMemoryCache cache, IMongoDatabase database)
     {
-        _client = client;
         _cache = cache;
         _collection = database.GetCollection<GuildModel>(config.MongoDb.Collection);
-    }
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        Client.JoinedGuild += RegisterNewGuildAsync;
-        return Task.CompletedTask;
     }
 
     public async Task Update(SocketGuild vguild)
@@ -36,61 +29,61 @@ public class DatabaseService : DiscordClientService
         var guild = (await _collection.FindAsync(x => x.GuildId == vguild.Id).ConfigureAwait(false)).First();
         foreach (var guildUser in guild.Users)
         {
-            guildUser.GamblingProfile = new GamblingProfile();
+            guildUser.Gambling = new GamblingProfile();
         }
         await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
     }
-    
-    private async Task RegisterNewGuildAsync(SocketGuild guild)
+
+    public Task AddGuildAsync(List<SocketGuildUser> users)
     {
-        var isGuildInDb = await (await _collection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false))
-            .AnyAsync().ConfigureAwait(false);
-        if (!isGuildInDb)
-        {
-            await RegisterGuildAsync(guild.Id).ConfigureAwait(false);
-        }
+        var guild = new GuildModel(users);
+        return _collection.InsertOneAsync(guild);
     }
-    private async Task<GuildModel> RegisterGuildAsync(ulong guildId)
+
+    public Task<GuildConfig> GetGuildConfigAsync(IGuild guild)
     {
-        var users = _client.GetGuild(guildId).Users.Where(x => !x.IsBot).ToList();
-        var guild = new GuildModel(guildId, users);
-        await _collection.InsertOneAsync(guild).ConfigureAwait(false);
-        return guild;
-    }
-    public async ValueTask<GuildConfig> GetGuildConfigAsync(ulong guildId)
-    {
-        return await _cache.GetOrCreateAsync(guildId.ToString(), async x =>
+        return _cache.GetOrCreateAsync(guild.Id.ToString(), async x =>
         {
             x.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
-            return ((await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false)).Config;
-        }).ConfigureAwait(false);
+            return (await _collection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false)).First().Config;
+        });
     }
-    private async ValueTask<User> RegisterUserAsync(ulong guildId, ulong userId)
+    public async Task AddUserAsync(IGuild vGuild, SocketUser user)
     {
-        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        guild.Users.Add(new User(userId));
-        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
-        return guild.Users.Find(x => x.UserId == userId);
+        var guild = (await _collection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).First();
+        guild.Users.Add(new User(user.Id));
+        var filter = Builders<GuildModel>.Filter.Eq(x => x.GuildId, vGuild.Id);
+        var update = Builders<GuildModel>.Update.Set(x => x.Users, guild.Users);
+        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
     }
+
+    public async Task<bool> CheckIfGuildIsInDbAsync(IGuild guild)
+    {
+        return await (await _collection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false))
+            .AnyAsync().ConfigureAwait(false);
+    }
+    
     public async ValueTask<User> GetUserAsync(IGuild vGuild, SocketUser vUser)
     {
-        var guild = (await _collection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(vGuild.Id).ConfigureAwait(false);
-        var user = guild.Users.Find(x => x.UserId == vUser.Id) ??
-                   await RegisterUserAsync(vGuild.Id, vUser.Id).ConfigureAwait(false);
-        return user;
+        var guild = (await _collection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).First();
+        return guild.Users.Find(x => x.Id == vUser.Id);
     }
-    public async Task UpdateUserAsync(ulong guildId, User user)
+    public async Task<User> UpdateUserAsync(IGuild vGuild, SocketUser user, Action<User> action)
     {
-        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        var index = guild.Users.FindIndex(x => x.UserId == user.UserId);
-        guild.Users[index] = user;
-        await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
+        var guild = (await _collection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).First();
+        var index = guild.Users.FindIndex(x => x.Id == user.Id);
+        var dbUser = guild.Users[index];
+        action(dbUser);
+        var filter = Builders<GuildModel>.Filter.Eq(x => x.GuildId, vGuild.Id);
+        var update = Builders<GuildModel>.Update.Set(x => x.Users[index], dbUser);
+        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
+        return dbUser;
     }
-    public async Task<List<User>> GetTopAsync(ulong guildId, int users)
+    public async Task<List<User>> GetTopAsync(IGuild vGuild, int users)
     {
-        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-        guild.Users.ForEach(x => x.Points += GetTotalXP(x.Level));
-        return guild.Users.OrderByDescending(x => x.Points).Take(users).ToList();
+        var guild = (await _collection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).First();
+        guild.Users.ForEach(x => x.XP += GetTotalXP(x.Level));
+        return guild.Users.OrderByDescending(x => x.XP).Take(users).ToList();
     }
     private static int GetTotalXP(int level)
     {
@@ -104,16 +97,15 @@ public class DatabaseService : DiscordClientService
 
     public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(ulong guildId, int limit)
     {
-        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
-
-        return guild.Users.Where(x => x.OsuId != 0).Select(x => (x.UserId, x.OsuId)).Take(limit).ToList();
+        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).First();
+        return guild.Users.Where(x => x.OsuId != 0).Select(x => (x.Id, x.OsuId)).Take(limit).ToList();
     }
 
-    public async Task SaveGuildConfigAsync(ulong guildId, GuildConfig config)
+    public async Task UpdateGuildConfigAsync(IGuild vGuild, GuildConfig config)
     {
-        var guild = (await _collection.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false)).First() ?? await RegisterGuildAsync(guildId).ConfigureAwait(false);
+        var guild = (await _collection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).First();
         guild.Config = config;
         await _collection.ReplaceOneAsync(x => x.Id == guild.Id, guild).ConfigureAwait(false);
-        _cache.Remove(guildId.ToString());
+        _cache.Remove(vGuild.Id.ToString());
     }
 }
