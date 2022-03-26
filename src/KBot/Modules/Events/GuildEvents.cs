@@ -13,7 +13,7 @@ public class GuildEvents
 {
     private readonly DiscordSocketClient _client;
     private readonly DatabaseService _database;
-    private readonly List<(SocketUser user, ulong channelId)> _channels;
+    private List<(SocketUser user, ulong channelId)> _channels;
 
     public GuildEvents(DiscordSocketClient client, DatabaseService database)
     {
@@ -29,10 +29,10 @@ public class GuildEvents
         client.GuildScheduledEventUpdated += (_, after) => HandleScheduledEventAsync(after, EventState.Updated);
         client.GuildScheduledEventStarted += guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Started);
         client.GuildScheduledEventCancelled += guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Cancelled);
-        _channels = new List<(SocketUser user, ulong channelId)>();
+        //_channels = new List<(SocketUser user, ulong channelId)>();
         Log.Logger.Information("GuildEvents Module Loaded");
     }
-
+    
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
         var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
@@ -41,16 +41,16 @@ public class GuildEvents
             return;
         }
         var config = await _database.GetGuildConfigAsync(guild!).ConfigureAwait(false);
-        if (!config.TemporaryChannels.Enabled)
+        if (!config.TemporaryVoice.Enabled)
         {
             return;
         }
-        if (after.VoiceChannel is not null && after.VoiceChannel.Id == config.TemporaryChannels.CreateChannelId)
+        if (after.VoiceChannel is not null && after.VoiceChannel.Id == config.TemporaryVoice.CreateChannelId)
         {
             var voiceChannel = await guild!.CreateVoiceChannelAsync($"{user.Username} Társalgója", x =>
             {
                 x.UserLimit = 2;
-                x.CategoryId = config.TemporaryChannels.CategoryId;
+                x.CategoryId = config.TemporaryVoice.CategoryId;
                 x.Bitrate = 96000;
                 x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
                 {
@@ -92,9 +92,9 @@ public class GuildEvents
             return;
         }
 
-        var streamingChannelId = config.MovieEvents.StreamingChannelId;
+        var streamingChannelId = config.MovieEvents.StreamChannelId;
         var movieRoleId = config.MovieEvents.RoleId;
-        var movieEventAnnouncementChannelId = config.MovieEvents.AnnouncementChannelId;
+        var movieEventAnnouncementChannelId = config.MovieEvents.AnnounceChannelId;
         if (eventChannel is not null && eventChannel.Id == streamingChannelId)
         {
             var movieRole = guildEvent.Guild.GetRole(movieRoleId);
@@ -106,7 +106,7 @@ public class GuildEvents
         }
         
         var tourRoleId = config.TourEvents.RoleId;
-        var tourEventAnnouncementChannelId = config.TourEvents.AnnouncementChannelId;
+        var tourEventAnnouncementChannelId = config.TourEvents.AnnounceChannelId;
         if (eventChannel is null && guildEvent.Location.Contains("goo.gl/maps"))
         {
             var tourRole = guildEvent.Guild.GetRole(tourRoleId);
@@ -133,7 +133,7 @@ public class GuildEvents
         {
             await _database.AddUserAsync(user.Guild, user).ConfigureAwait(false);
         }
-        var channel = user.Guild.GetTextChannel(config.Announcements.UserJoinedChannelId);
+        var channel = user.Guild.GetTextChannel(config.Announcements.JoinChannelId);
         await user.AddRoleAsync(config.Announcements.JoinRoleId).ConfigureAwait(false);
         await channel.SendMessageAsync($":wave: Üdv a szerveren {user.Mention}, érezd jól magad!").ConfigureAwait(false);
     }
@@ -149,7 +149,7 @@ public class GuildEvents
         {
             return;
         }
-        var channel = guild.GetTextChannel(config.Announcements.UserLeftChannelId);
+        var channel = guild.GetTextChannel(config.Announcements.LeftChannelId);
         await channel.SendMessageAsync($":cry: {user.Mention} elhagyta a szervert.").ConfigureAwait(false);
     }
 
@@ -164,7 +164,7 @@ public class GuildEvents
         {
             return;
         }
-        var channel = guild.GetTextChannel(config.Announcements.UserBannedChannelId);
+        var channel = guild.GetTextChannel(config.Announcements.BanChannelId);
         await channel.SendMessageAsync($":no_entry: {user.Mention} ki lett tiltva a szerverről.").ConfigureAwait(false);
     }
 
@@ -179,7 +179,7 @@ public class GuildEvents
         {
             return;
         }
-        var channel = guild.GetTextChannel(config.Announcements.UserUnbannedChannelId);
+        var channel = guild.GetTextChannel(config.Announcements.UnbanChannelId);
         await channel.SendMessageAsync($":grinning: {user.Mention} kitiltása vissza lett vonva.").ConfigureAwait(false);
     }
 }

@@ -32,7 +32,7 @@ public class HighLowService
 
     public HighLowGame CreateGame(SocketUser user, IUserMessage message, int stake)
     {
-        var game = new HighLowGame(Generators.GenerateID(), user, message, stake, Cloudinary, Database, Games);
+        var game = new HighLowGame(Guid.NewGuid().ToString().Split("-")[0], user, message, stake, Cloudinary, Database, Games);
         Games.Add(game);
         return game;
     }
@@ -172,7 +172,7 @@ public class HighLowGame : IGamblingGame
         Hidden = false;
         await Database.UpdateUserAsync(Guild, User, x =>
         {
-            x.Gambling.Money += Stake;
+            x.Gambling.Balance += Stake;
             x.Gambling.MoneyWon += Stake;
             x.Gambling.Wins++;
             x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "HL - WIN"));

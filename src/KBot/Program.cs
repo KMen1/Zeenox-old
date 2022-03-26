@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using CloudinaryDotNet;
@@ -16,12 +17,14 @@ using KBot.Models;
 using KBot.Modules.DeadByDaylight;
 using KBot.Modules.Events;
 using KBot.Modules.Gambling;
+using KBot.Modules.Gambling.Objects;
 using KBot.Modules.Leveling;
 using KBot.Modules.Music;
 using KBot.Services;
 using Lavalink4NET;
 using Lavalink4NET.DiscordNet;
 using Lavalink4NET.Logging;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -138,6 +141,21 @@ public static class Program
         file.Save(Path.Combine(startupPath, "KBot.lnk"), false);
 #endif
         return host.RunAsync();
+        //[(E*100 - H)/(E-H)]/100
+        /*double e = Math.Pow(2, 256);
+        var c = 0;
+
+        for (int i = 0; i < 10000; i++)
+        {
+            
+            double h = Generator.NextDouble(0, e - 1);
+            var f = 0.80 * e / (e-h);
+            if (f < 1.10)
+                c++;
+            Console.WriteLine(f);
+        }
+        Console.WriteLine(c);
+        return Task.CompletedTask;*/
     }
 
     [ComImport]

@@ -19,40 +19,14 @@ namespace KBot.Modules.Music;
 
 public class AudioService
 {
-    private readonly DiscordSocketClient _client;
     private readonly LavalinkNode _lavaNode;
 
     public AudioService(DiscordSocketClient client, LavalinkNode lavaNode, ILogger logger)
     {
         _lavaNode = lavaNode;
-        _client = client;
-        _client.Ready += async () => await _lavaNode.InitializeAsync().ConfigureAwait(false);
-        _client.UserVoiceStateUpdated += HandleDisconnectAsync;
+        client.Ready += async () => await _lavaNode.InitializeAsync().ConfigureAwait(false);
         var log = logger as EventLogger;
         log!.LogMessage += (_, args) => Log.Information(args.Message);
-    }
-
-    private async Task HandleDisconnectAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
-    {
-        if (user.Id != _client.CurrentUser.Id)
-        {
-            return;
-        }
-        if (before.VoiceChannel is null)
-        {
-            return;
-        }
-
-        var player = _lavaNode.GetPlayer<MusicPlayer>(before.VoiceChannel.Guild.Id);
-        if (player is null)
-        {
-            return;
-        }
-        if (after.VoiceChannel is null && player!.NowPlayingMessage is not null)
-        {
-            await player.DisconnectAsync().ConfigureAwait(false);
-            await player.NowPlayingMessage.DeleteAsync().ConfigureAwait(false);
-        }
     }
 
     public async Task<Embed> DisconnectAsync(IGuild guild, SocketUser user)
@@ -68,6 +42,7 @@ public class AudioService
         }
 
         await player.NowPlayingMessage.DeleteAsync().ConfigureAwait(false);
+        player.NowPlayingMessage = null;
         await player!.DisconnectAsync().ConfigureAwait(false);
         return new EmbedBuilder().LeaveEmbed(player.VoiceChannel);
     }

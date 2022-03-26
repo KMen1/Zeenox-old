@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Enums;
 using KBot.Models;
 using ModalBuilder = Discord.ModalBuilder;
 
@@ -58,17 +59,17 @@ public class GamblingComponents : KBotModuleBase
             requiredMoney += 1000000;
             choice += "`Saját hangcsatorna`\n";
         }
-        if (requiredMoney > dbUser.Gambling.Money)
+        if (requiredMoney > dbUser.Gambling.Balance)
         {
             var dmsg = ((SocketMessageComponent) Context.Interaction).Message as IUserMessage;
-            await FollowupAsync($"Nincs elég KCoin-od a vásárláshoz! (Kell még: {requiredMoney - dbUser.Gambling.Money} KCoin)")
+            await FollowupAsync($"Nincs elég KCoin-od a vásárláshoz! (Kell még: {requiredMoney - dbUser.Gambling.Balance} KCoin)")
                 .ConfigureAwait(false);
             await dmsg.DeleteAsync().ConfigureAwait(false);
             return;
         }
         eb.AddField("Kiválasztva", choice);
         eb.AddField("Összeg", $"`{requiredMoney.ToString("N0", CultureInfo.CurrentCulture)} KCoin`");
-        eb.AddField("Egyenleg", $"**{dbUser.Gambling.Money}** KCoin -> **{dbUser.Gambling.Money - requiredMoney}**");
+        eb.AddField("Egyenleg", $"**{dbUser.Gambling.Balance}** KCoin -> **{dbUser.Gambling.Balance - requiredMoney}**");
         eb.WithDescription("Biztosan megveszed a kiválasztottakat?");
         
         var comp = new ComponentBuilder()
@@ -163,9 +164,9 @@ public class GamblingComponents : KBotModuleBase
         var ownRank = (selection & ShopItem.OwnRank) == ShopItem.OwnRank;
         var ownCategory = (selection & ShopItem.OwnCategory) == ShopItem.OwnCategory;
         ulong ownCategoryId = 0;
-        if (dbUser.BoughtChannels.Exists(x => x.ChannelType == DiscordChannelType.Category))
+        if (dbUser.BoughtChannels.Exists(x => x.Type == DiscordChannelType.Category))
         {
-            ownCategoryId = dbUser.BoughtChannels.First(x => x.ChannelType == DiscordChannelType.Category).ChannelId;
+            ownCategoryId = dbUser.BoughtChannels.First(x => x.Type == DiscordChannelType.Category).Id;
             ownCategory = true;
         }
         var ownTextChannel = (selection & ShopItem.OwnTextChannel) == ShopItem.OwnTextChannel;
@@ -245,19 +246,6 @@ public class GamblingComponents : KBotModuleBase
         await DeferAsync(true).ConfigureAwait(false);
         var msg = ((SocketMessageComponent) Context.Interaction).Message as IUserMessage;
         await msg.DeleteAsync().ConfigureAwait(false);
-    }
-    
-    [Flags]
-    private enum ShopItem
-    {
-        None = 0,
-        PlusOneLevel = 1,
-        PlusTenLevel = 2,
-        OwnRank = 4,
-        OwnCategory = 8,
-        OwnTextChannel = 16,
-        OwnVoiceChannel = 32,
-        FullPackage = PlusOneLevel | PlusTenLevel | OwnRank | OwnCategory | OwnTextChannel | OwnVoiceChannel
     }
 
     public class ShopModal : IModal

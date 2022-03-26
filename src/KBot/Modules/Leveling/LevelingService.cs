@@ -70,7 +70,7 @@ public class LevelingModule
             {
                 return;
             }
-            await _database.UpdateUserAsync(guild, user, x => x.LastVoiceChannelJoin = DateTime.UtcNow).ConfigureAwait(false);
+            await _database.UpdateUserAsync(guild, user, x => x.LastVoiceActivityDate = DateTime.UtcNow).ConfigureAwait(false);
             Log.Logger.Information("Set Join Date for {0} by JoinedChannel", user.Username);
         }
         else if (LeftChannel(after))
@@ -79,7 +79,7 @@ public class LevelingModule
             {
                 return;
             }
-            var joinDate = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).LastVoiceChannelJoin;
+            var joinDate = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).LastVoiceActivityDate;
             await HandleGivePointsAsync(user, guild, config, (int)(DateTime.UtcNow - joinDate).TotalSeconds).ConfigureAwait(false);
             Log.Logger.Information("Gave points to {0} by LeftChannel", user.Username);
         }
@@ -89,7 +89,7 @@ public class LevelingModule
             {
                 return;
             }
-            var joinDate = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).LastVoiceChannelJoin;
+            var joinDate = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).LastVoiceActivityDate;
             await HandleGivePointsAsync(user, guild, config, (int)(DateTime.UtcNow - joinDate).TotalSeconds).ConfigureAwait(false);
             Log.Logger.Information("Gave points to {0} by Muted", user.Username);
         }
@@ -99,17 +99,17 @@ public class LevelingModule
             {
                 return;
             }
-            await _database.UpdateUserAsync(guild, user, x => x.LastVoiceChannelJoin = DateTime.UtcNow).ConfigureAwait(false);
+            await _database.UpdateUserAsync(guild, user, x => x.LastVoiceActivityDate = DateTime.UtcNow).ConfigureAwait(false);
             Log.Logger.Information("Set Join Date {0} by Unmuted", user.Username);
         }
         else if (SwitchedChannelFromAfk(before, after, config))
         {
-            await _database.UpdateUserAsync(guild, user, x => x.LastVoiceChannelJoin = DateTime.UtcNow).ConfigureAwait(false);
+            await _database.UpdateUserAsync(guild, user, x => x.LastVoiceActivityDate = DateTime.UtcNow).ConfigureAwait(false);
             Log.Logger.Information("Set Join Date for {0} by SwitchedChannelFromAfk", user.Username);
         }
         else if (JoinedOrLeftAfkChannel(after, config))
         {
-            var joinDate = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).LastVoiceChannelJoin;
+            var joinDate = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).LastVoiceActivityDate;
             await HandleGivePointsAsync(user, guild, config, (int)(DateTime.UtcNow - joinDate).TotalSeconds).ConfigureAwait(false);
             Log.Logger.Information("Gave points to {0} by JoinedOrLeftAfkChannel", user.Username);
         }
@@ -206,9 +206,9 @@ public class LevelingModule
         {
             var roles = levelRoles.OrderByDescending(x => x.Level).ToList();
             var highestRole = roles[0];
-            if (!user.Roles.Any(x => x.Id == highestRole.RoleId))
+            if (!user.Roles.Any(x => x.Id == highestRole.Id))
             {
-                var role = guild.GetRole(highestRole.RoleId);
+                var role = guild.GetRole(highestRole.Id);
                 await user.AddRoleAsync(role).ConfigureAwait(false);
                 var embed = new EmbedBuilder
                 {
@@ -225,13 +225,13 @@ public class LevelingModule
                 await dmchannel.SendMessageAsync(embed: embed).ConfigureAwait(false);
             }
 
-            foreach (var roleToRemove in roles.Skip(1).Select(x => guild.GetRole(x.RoleId)).Where(x => user.Roles.Contains(x)))
+            foreach (var roleToRemove in roles.Skip(1).Select(x => guild.GetRole(x.Id)).Where(x => user.Roles.Contains(x)))
             {
                 await user.RemoveRoleAsync(roleToRemove).ConfigureAwait(false);
             }
         }
 
-        if (guild.GetChannel(config.Leveling.AnnouncementChannelId) is SocketTextChannel channel)
+        if (guild.GetChannel(config.Leveling.AnnounceChannelId) is SocketTextChannel channel)
         {
             await channel.SendMessageAsync($"🥳 Gratulálok {user.Mention}, elérted a **{dbUser.Level}** szintet!").ConfigureAwait(false);
         }

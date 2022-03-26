@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using KBot.Enums;
 
 namespace KBot.Modules.Gambling.Objects;
 
 public class Deck
 {
     public List<Card> Cards { get; }
-    public int MaxValue { get; }
     public Deck()
     {
         Cards = new List<Card>();
@@ -24,7 +23,6 @@ public class Deck
             var r = rnd.Next(i, Cards.Count);
             (Cards[i], Cards[r]) = (Cards[r], Cards[i]);
         }
-        MaxValue = Cards.Sum(c => c.Value);
     }
 
     public Card Draw()

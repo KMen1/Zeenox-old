@@ -12,7 +12,7 @@ using KBot.Models;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
 using Color = Discord.Color;
-using Face = KBot.Modules.Gambling.Objects.Face;
+using Face = KBot.Enums.Face;
 using Image = System.Drawing.Image;
 using ImageFormat = System.Drawing.Imaging.ImageFormat;
 
@@ -126,7 +126,7 @@ public class BlackJackGame : IGamblingGame
                 Stake = (int)(Stake * 2.5);
                 await Database.UpdateUserAsync(Guild, User, x =>
                 {
-                    x.Gambling.Money += Stake;
+                    x.Gambling.Balance += Stake;
                     x.Gambling.Wins++;
                     x.Gambling.MoneyWon += Stake;
                     x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "BL - BlackJack"));
@@ -160,7 +160,7 @@ public class BlackJackGame : IGamblingGame
                 Stake *= 2;
                 await Database.UpdateUserAsync(Guild, User, x =>
                 {
-                    x.Gambling.Money += Stake;
+                    x.Gambling.Balance += Stake;
                     x.Gambling.Wins++;
                     x.Gambling.MoneyWon += Stake;
                     x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "BL - DEALERBUST"));
@@ -201,7 +201,7 @@ public class BlackJackGame : IGamblingGame
             Stake = (int)(Stake * 2.5);
             await Database.UpdateUserAsync(Guild, User, x =>
             {
-                x.Gambling.Money += Stake;
+                x.Gambling.Balance += Stake;
                 x.Gambling.Wins++;
                 x.Gambling.MoneyWon += Stake;
                 x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "BL - BLACKJACK"));
@@ -222,7 +222,7 @@ public class BlackJackGame : IGamblingGame
             Stake *= 2;
             await Database.UpdateUserAsync(Guild, User, x =>
             {
-                x.Gambling.Money += Stake;
+                x.Gambling.Balance += Stake;
                 x.Gambling.Wins++;
                 x.Gambling.MoneyWon += Stake;
                 x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "BL - WIN"));
@@ -256,7 +256,7 @@ public class BlackJackGame : IGamblingGame
             Container.Remove(this);
             return;
         }
-        await Database.UpdateUserAsync(Guild, User, x => x.Gambling.Money += Stake).ConfigureAwait(false);
+        await Database.UpdateUserAsync(Guild, User, x => x.Gambling.Balance += Stake).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().BlackJackEmbed(

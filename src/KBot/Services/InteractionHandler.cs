@@ -9,6 +9,9 @@ using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
 using Discord.WebSocket;
 using KBot.Models;
+using KBot.Modules.Events;
+using KBot.Modules.Leveling;
+using KBot.Modules.Music;
 using KBot.Modules.Music.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -32,7 +35,9 @@ public class InteractionHandler : DiscordClientService
         Client.GuildAvailable += ClientOnGuildAvailableAsync;
         _interactionService.SlashCommandExecuted += HandleSlashCommandResultAsync;
         _interactionService.ComponentCommandExecuted += HandleComponentCommandResultAsync;
-
+        _provider.GetRequiredService<GuildEvents>();
+        _provider.GetRequiredService<LoggingService>();
+        _provider.GetRequiredService<LevelingModule>();
         try
         {
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _provider).ConfigureAwait(false);
@@ -44,6 +49,7 @@ public class InteractionHandler : DiscordClientService
         await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
         await Client.SetGameAsync("/" + _provider.GetRequiredService<BotConfig>().Client.Game, type: ActivityType.Listening).ConfigureAwait(false);
         await Client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
+        
     }
 
     private Task ClientOnGuildAvailableAsync(SocketGuild arg)

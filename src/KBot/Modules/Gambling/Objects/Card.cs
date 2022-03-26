@@ -1,12 +1,12 @@
-﻿using System.Diagnostics;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Reflection;
+using KBot.Enums;
 
 namespace KBot.Modules.Gambling.Objects;
 
 public class Card
 {
-    public Suit Suit { get; }
+    private Suit Suit { get; }
     public Face Face { get; }
     public int Value { get; }
     public Card(Suit suit, Face face)
@@ -44,28 +44,4 @@ public class Card
         g.DrawImage(source, new Rectangle(0, 0, width, height), new Rectangle(x, y, width, height), GraphicsUnit.Pixel);
         return img;
     }
-}
-
-public enum Suit
-{
-    Clubs,
-    Spades,
-    Diamonds,
-    Hearts
-}
-public enum Face
-{
-    Ace,
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King
 }

@@ -14,7 +14,7 @@ public class MinesService
 
     public MinesGame CreateGame(SocketUser user, IUserMessage message, int bet, int size, int mines)
     {
-        var game = new MinesGame(Games, CreateId(), message, user, bet, size, mines);
+        var game = new MinesGame(Games, Guid.NewGuid().ToString().Split("-")[0], message, user, bet, size, mines);
         Games.Add(game);
         return game;
     }
@@ -22,13 +22,6 @@ public class MinesService
     public MinesGame GetGame(string id)
     {
         return Games.Find(x => x.Id == id);
-    }
-
-    private static string CreateId()
-    {
-        var ticks = new DateTime(2016, 1, 1).Ticks;
-        var ans = DateTime.Now.Ticks - ticks;
-        return ans.ToString("x");
     }
 }
 

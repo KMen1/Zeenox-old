@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using Discord;
 using Discord.WebSocket;
@@ -48,21 +49,7 @@ public static class Extensions
             result = result.AddDays(1);
         return result;
     }
-    
-    public static object GetModuleConfigFromGuildConfig(this GuildConfig config, ModuleType module)
-    {
-        return module switch
-        {
-            ModuleType.Announcements => config.Announcements,
-            ModuleType.TemporaryVoice => config.TemporaryChannels,
-            ModuleType.Leveling => config.Leveling,
-            ModuleType.MovieEvents => config.MovieEvents,
-            ModuleType.TourEvents => config.TourEvents,
-            ModuleType.Suggestions => config.Suggestions,
-            _ => throw new ArgumentOutOfRangeException(nameof(module), module, null)
-        };
-    }
-    
+
     public static Embed MovieEventEmbed(this EmbedBuilder builder, SocketGuildEvent guildEvent, EventState embedType)
     {
         builder.WithTitle(guildEvent.Name)
@@ -160,7 +147,7 @@ public static class Extensions
         return builder.WithTitle($"Crash - {game.Id}")
             .WithDescription($"Tét: **{game.Bet} kredit**\n{desc}")
             .WithColor(color == default ? Color.Gold : color)
-            .AddField("Szorzó", $"`{game.Multiplier:0.0}x`", true)
+            .AddField("Szorzó", $"`{game.Multiplier:0.00}x`", true)
             .AddField("Profit", $"`{game.Profit:0}`", true)
             .Build();
     }
@@ -289,5 +276,15 @@ public static class Extensions
             Grade.XH => Color.LightGrey,
             _ => Color.Default
         };
+    }
+
+    public static double NextDouble(this RandomNumberGenerator generator, double minimumValue, double maximumValue)
+    {
+        var randomNumber = new byte[1];
+        generator.GetBytes(randomNumber);
+        var multiplier = Math.Max(0, (randomNumber[0] / 255d) - 0.00000000001d);
+        var range = maximumValue - minimumValue + 1;
+        var randomValueInRange = Math.Floor(multiplier * range);
+        return minimumValue + randomValueInRange;
     }
 }

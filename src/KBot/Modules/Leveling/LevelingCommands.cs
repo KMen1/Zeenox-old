@@ -56,14 +56,14 @@ public class Levels : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        var lastDaily = dbUser.LastDailyClaim;
+        var lastDaily = dbUser.DailyClaimDate;
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
             var xp = new Random().Next(100, 500);
             await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
             {
-                x.LastDailyClaim = DateTime.UtcNow;
+                x.DailyClaimDate = DateTime.UtcNow;
                 x.XP += xp;
             }).ConfigureAwait(false);
             await FollowupWithEmbedAsync(Color.Green, "Sikeresen begyűjtetted a napi XP-d!", $"A begyűjtött XP mennyisége: {xp.ToString()}", ephemeral: true).ConfigureAwait(false);

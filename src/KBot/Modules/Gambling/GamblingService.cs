@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using CloudinaryDotNet;
 using Discord;
 using Discord.WebSocket;
@@ -40,7 +41,7 @@ public class GamblingService
     }
     public BlackJackGame CreateBlackJackGame(SocketUser user, IUserMessage message, int stake)
     {
-        return BlackJack.CreateGame(Generators.GenerateID(), user, message, stake);
+        return BlackJack.CreateGame(Guid.NewGuid().ToString().Split("-")[0], user, message, stake);
     }
     public HighLowGame CreateHighLowGame(SocketUser user, IUserMessage message, int stake)
     {
@@ -58,7 +59,7 @@ public class GamblingService
 
     public CrashGame CreateCrashGame(SocketUser user, IUserMessage msg, int bet)
     {
-        return Crash.CreateGame(Generators.GenerateID(), user, msg, bet);
+        return Crash.CreateGame(Guid.NewGuid().ToString().Split("-")[0], user, msg, bet);
     }
 
     public CrashGame GetCrashGame(string id)

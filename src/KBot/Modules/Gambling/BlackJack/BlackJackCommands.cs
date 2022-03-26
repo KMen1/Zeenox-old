@@ -11,7 +11,7 @@ public class BlackJackCommands : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (dbUser.Gambling.Money < bet)
+        if (dbUser.Gambling.Balance < bet)
         {
             await FollowupAsync("Nincs elég 🪙KCoin-od ekkora tét rakásához.").ConfigureAwait(false);
             return;
@@ -20,9 +20,9 @@ public class BlackJackCommands : KBotModuleBase
         var game = GamblingService.CreateBlackJackGame(Context.User, msg, bet);
         await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
         {
-            x.Gambling.Money -= bet;
+            x.Gambling.Balance -= bet;
             x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, -bet, "BL - Tétrakás"));
         }).ConfigureAwait(false);
-        await game.StartAsync().ConfigureAwait(false);
+        _ = Task.Run(async () => await game.StartAsync().ConfigureAwait(false));
     }
 }

@@ -29,7 +29,7 @@ public class SuggestionCommands : KBotModuleBase
             await FollowupAsync("Ezen a szerveren az ötletek nincsenek engedélyezve.").ConfigureAwait(false);
             return;
         }
-        var suggestionChannel = Context.Guild.GetTextChannel(config.Suggestions.AnnouncementChannelId);
+        var suggestionChannel = Context.Guild.GetTextChannel(config.Suggestions.AnnounceChannelId);
         await suggestionChannel.SendMessageAsync(embed: embed, components: comp).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Ötlet létrehozva", $"Ebben a csatornában: {suggestionChannel.Mention}").ConfigureAwait(false);
     }

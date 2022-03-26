@@ -31,25 +31,25 @@ public class GamblingCommands : KBotModuleBase
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
-    [SlashCommand("changemoney", "Pénz addolása/csökkentése (admin)")]
-    public async Task ChangeMoneyAsync(SocketUser user, int offset)
+    [SlashCommand("changeBalance", "Pénz addolása/csökkentése (admin)")]
+    public async Task ChangeBalanceAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
         {
-            x.Gambling.Money += offset;
+            x.Gambling.Balance += offset;
             x.Transactions.Add(new Transaction("-", TransactionType.Correction, offset, $"{Context.User.Mention} által"));
         }).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Pénz beállítva!",
-            $"{user.Mention} mostantól {dbUser.Gambling.Money.ToString()} 🪙KCoin-al rendelkezik!").ConfigureAwait(false);
+            $"{user.Mention} mostantól {dbUser.Gambling.Balance.ToString()} 🪙KCoin-al rendelkezik!").ConfigureAwait(false);
     }
 
     [SlashCommand("transfer", "Pénz küldése más személynek")]
-    public async Task TransferMoneyAsync(SocketUser user, [MinValue(1)]int amount)
+    public async Task TransferBalanceAsync(SocketUser user, [MinValue(1)]int amount)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var sourceUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (sourceUser.Gambling.Money < amount)
+        if (sourceUser.Gambling.Balance < amount)
         {
             await FollowupAsync("Nincs elég 🪙KCoin-od ehhez a művelethez!").ConfigureAwait(false);
             return;
@@ -57,12 +57,12 @@ public class GamblingCommands : KBotModuleBase
         
         await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
         {
-            x.Gambling.Money -= amount;
+            x.Gambling.Balance -= amount;
             x.Transactions.Add(new Transaction("-", TransactionType.TransferSend, amount, $"Neki: {user.Mention}"));
         }).ConfigureAwait(false);
         await Database.UpdateUserAsync(Context.Guild, user, x =>
         {
-            x.Gambling.Money += amount;
+            x.Gambling.Balance += amount;
             x.Transactions.Add(new Transaction("-", TransactionType.TransferReceive, amount, $"Tőle: {Context.User.Mention}"));
         }).ConfigureAwait(false);
         
@@ -74,18 +74,18 @@ public class GamblingCommands : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        var lastDaily = dbUser.Gambling.LastDailyClaim;
+        var lastDaily = dbUser.Gambling.DailyClaimDate;
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
-            var money = new Random().Next(1000, 10000);
+            var Balance = new Random().Next(1000, 10000);
             await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
             {
-                x.Gambling.LastDailyClaim = DateTime.UtcNow;
-                x.Gambling.Money += money;
-                x.Transactions.Add(new Transaction("-", TransactionType.DailyClaim, money));
+                x.Gambling.DailyClaimDate = DateTime.UtcNow;
+                x.Gambling.Balance += Balance;
+                x.Transactions.Add(new Transaction("-", TransactionType.DailyClaim, Balance));
             }).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(Color.Green, "Sikeresen begyűjtetted a napi KCoin-od!", $"A begyűjtött KCoin mennyisége: {money.ToString()}", ephemeral: true).ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Green, "Sikeresen begyűjtetted a napi KCoin-od!", $"A begyűjtött KCoin mennyisége: {Balance.ToString()}", ephemeral: true).ConfigureAwait(false);
         }
         else
         {
@@ -103,7 +103,7 @@ public class GamblingCommands : KBotModuleBase
         var eb = new EmbedBuilder()
             .WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
             .WithTitle("Szerencsejáték piac")
-            .WithDescription($"Kérlek válassz az alábbi lehetőségek közül!\nAz árat a kiválasztás után láthatod!\nElérhető egyenleg: **{dbUser.Gambling.Money}** 🪙KCoin")
+            .WithDescription($"Kérlek válassz az alábbi lehetőségek közül!\nAz árat a kiválasztás után láthatod!\nElérhető egyenleg: **{dbUser.Gambling.Balance}** 🪙KCoin")
             .WithColor(Color.Gold)
             .Build();
         var selectMenu = new SelectMenuBuilder()
@@ -115,7 +115,7 @@ public class GamblingCommands : KBotModuleBase
                 .AddOption("+1 Szint", "PlusOneLevel", "Egy szint a szintrendszerben", new Emoji("1️⃣"))
                 .AddOption("+10 Szint", "PlusTenLevel", "Tíz szint kedvezőbb áron.", new Emoji("🔟"))
                 .AddOption("Saját rang", "OwnRank","Egy saját rang általad választott névvel és színnel.", new Emoji("🏆"));
-        if (!dbUser.BoughtChannels.Exists(x => x.ChannelType == DiscordChannelType.Category))
+        if (!dbUser.BoughtChannels.Exists(x => x.Type == DiscordChannelType.Category))
         {
             selectMenu.AddOption("Saját kategória", "OwnCategory",
                 "Egy saját kategória (csak egyszer megvehető).", new Emoji("🔠"));
@@ -125,7 +125,7 @@ public class GamblingCommands : KBotModuleBase
                 "Általad választott névvel és teljes hozzáféréssel.", new Emoji("🎤"))
             .AddOption("Saját szövegcsatorna", "OwnTextChannel",
                 "Általad választott névvel és teljes hozzáféréssel.", new Emoji("💬"))
-            .AddOption("Full Csomag", "FullPackage",
+            .AddOption("Full Csomag", "All",
                 "Magába foglalja az összes fentebbi dolgot.", new Emoji("📦"));
         await RespondAsync(embed: eb, components: new ComponentBuilder().WithSelectMenu(selectMenu).Build()).ConfigureAwait(false);
     }
