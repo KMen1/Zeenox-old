@@ -84,11 +84,9 @@ public class GamblingComponents : KBotModuleBase
     }
 
     [ComponentInteraction("gamble-shop-accept:*:*:*")]
-    public async Task HandleShopAcceptAsync(string userId, string type, string requiredMoney)
+    public async Task HandleShopAcceptAsync(string userId, string type, int requiredMoney)
     {
         if (Context.User.Id != Convert.ToUInt64(userId)) return;
-        
-        var req = int.Parse(requiredMoney);
         var selection = (ShopItem)int.Parse(type);
         
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
@@ -107,7 +105,7 @@ public class GamblingComponents : KBotModuleBase
                 if (plusOneLevel)
                 {
                     var moneyToBuyOneLevel = dbUser.MoneyToBuyLevel(1);
-                    req -= moneyToBuyOneLevel;
+                    requiredMoney -= moneyToBuyOneLevel;
                     x.Level++;
                     x.Money -= moneyToBuyOneLevel;
                     x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -moneyToBuyOneLevel, "+1 Szint"));
@@ -115,7 +113,7 @@ public class GamblingComponents : KBotModuleBase
 
                 if (!plusTenLevel) return;
                 var moneyToBuyTenLevel = dbUser.MoneyToBuyLevel(10);
-                req -= moneyToBuyTenLevel;
+                requiredMoney -= moneyToBuyTenLevel;
                 x.Level += 10;
                 x.Money -= moneyToBuyTenLevel;
                 x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -moneyToBuyTenLevel, "+10 Szint"));
@@ -129,7 +127,7 @@ public class GamblingComponents : KBotModuleBase
             return;
         }
 
-        var modal = new ModalBuilder().WithTitle("Vásárlás").WithCustomId($"gamble-shop-accept-modal:{type}:{req}");
+        var modal = new ModalBuilder().WithTitle("Vásárlás").WithCustomId($"gamble-shop-accept-modal:{type}:{requiredMoney}");
 
         if (ownRank)
         {

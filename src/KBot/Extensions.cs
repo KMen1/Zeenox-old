@@ -12,6 +12,7 @@ using KBot.Models;
 using KBot.Modules.Gambling.BlackJack;
 using KBot.Modules.Gambling.Crash;
 using KBot.Modules.Gambling.HighLow;
+using KBot.Modules.Gambling.Towers;
 using KBot.Modules.Music;
 using Lavalink4NET.Player;
 
@@ -149,6 +150,14 @@ public static class Extensions
             .WithColor(color == default ? Color.Gold : color)
             .AddField("Szorzó", $"`{game.Multiplier:0.00}x`", true)
             .AddField("Profit", $"`{game.Profit:0}`", true)
+            .Build();
+    }
+
+    public static Embed TowersEmbed(this EmbedBuilder builder, TowersGame game, string desc = "", Color color = default)
+    {
+        return builder.WithTitle($"Towers - {game.Id}")
+            .WithDescription($"Tét: **{game.Bet} kredit**\nNehézség: **{game.Difficulty.GetDescription()}**\n{desc}")
+            .WithColor(color == default ? Color.Gold : color)
             .Build();
     }
     

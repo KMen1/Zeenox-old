@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using KBot.Services;
 
 namespace KBot.Modules.Gambling.Mines;
 
@@ -99,7 +98,7 @@ public class MinesGame : IGamblingGame
             var row = new ActionRowBuilder();
             for (var y = 0; y < size; y++)
             {
-                row.AddComponent(new ButtonBuilder(" ", $"mine:{Id}:{x}:{y}", emote: new Emoji("🪙")).Build());
+                row.AddComponent(new ButtonBuilder("", $"mine:{Id}:{x}:{y}", emote: new Emoji("🪙")).Build());
             }
 
             comp.AddRow(row);

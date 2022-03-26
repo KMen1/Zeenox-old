@@ -8,6 +8,7 @@ using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Discord;
 using Discord.WebSocket;
+using KBot.Enums;
 using KBot.Models;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;

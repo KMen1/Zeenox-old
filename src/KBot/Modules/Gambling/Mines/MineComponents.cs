@@ -6,7 +6,7 @@ namespace KBot.Modules.Gambling.Mines;
 public class MineComponents : KBotModuleBase
 {
     [ComponentInteraction("mine:*:*:*")]
-    public async Task HandleMineAsync(string id, string x, string y)
+    public async Task HandleMineAsync(string id, int x, int y)
     {
         await DeferAsync().ConfigureAwait(false);
         var game = GamblingService.GetMinesGame(id);
@@ -14,6 +14,6 @@ public class MineComponents : KBotModuleBase
         {
             return;
         }
-        await game.ClickFieldAsync(int.Parse(x), int.Parse(y)).ConfigureAwait(false);
+        await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }
 }

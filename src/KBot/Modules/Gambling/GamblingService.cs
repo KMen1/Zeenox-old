@@ -8,6 +8,7 @@ using KBot.Modules.Gambling.Crash;
 using KBot.Modules.Gambling.HighLow;
 using KBot.Modules.Gambling.Mines;
 using KBot.Modules.Gambling.Objects;
+using KBot.Modules.Gambling.Towers;
 using KBot.Services;
 
 namespace KBot.Modules.Gambling;
@@ -18,6 +19,7 @@ public class GamblingService
     private readonly HighLowService HighLow;
     private readonly CrashService Crash;
     private readonly MinesService Mines;
+    private readonly TowersService Towers;
 
     public GamblingService(Cloudinary cloudinary, DatabaseService database)
     {
@@ -25,6 +27,7 @@ public class GamblingService
         Crash = new CrashService(database);
         HighLow = new HighLowService(database, cloudinary);
         Mines = new MinesService();
+        Towers = new TowersService();
     }
 
     public BlackJackGame GetBlackJackGame(string id)
@@ -65,5 +68,15 @@ public class GamblingService
     public CrashGame GetCrashGame(string id)
     {
         return Crash.GetGame(id);
+    }
+
+    public TowersGame CreateTowersGame(SocketUser contextUser, IUserMessage msg, int bet, Difficulty diff)
+    {
+        return Towers.CreateGame(contextUser, msg, bet, diff);
+    }
+    
+    public TowersGame GetTowersGame(string id)
+    {
+        return Towers.GetGame(id);
     }
 }

@@ -52,9 +52,17 @@ public class InteractionHandler : DiscordClientService
         
     }
 
-    private Task ClientOnGuildAvailableAsync(SocketGuild arg)
+    private async Task ClientOnGuildAvailableAsync(SocketGuild arg)
     {
-        return _interactionService.AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray());
+        try
+        {
+            await _interactionService.AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray());
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     private static async Task HandleComponentCommandResultAsync(ComponentCommandInfo componentInfo, IInteractionContext interactionContext, IResult result)

@@ -134,10 +134,10 @@ public class ReactionRoleComponents : KBotModuleBase
     }
 
     [ComponentInteraction("rrtr:*")]
-    public async Task ReactionRoleTriggerAsync(string roleId)
+    public async Task ReactionRoleTriggerAsync(ulong roleId)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var role = Context.Guild.GetRole(Convert.ToUInt64(roleId));
+        var role = Context.Guild.GetRole(roleId);
         var user = Context.Guild.GetUser(Context.User.Id);
         if (user.Roles.Contains(role))
         {

@@ -3,13 +3,13 @@ using Discord.Interactions;
 using KBot.Enums;
 using KBot.Models;
 
-namespace KBot.Modules.Gambling.Mines;
+namespace KBot.Modules.Gambling.Towers;
 
-[Group("mine", "Roobet Mine-hoz hasonló játék")]
-public class MineCommands : KBotModuleBase
+[Group("towers", "Roobet towers játék")]
+public class TowersCommands : KBotModuleBase
 {
-    [SlashCommand("start", "Elindít egy új játékot")]
-    public async Task StartMinesAsync([MinValue(100), MaxValue(1000000)]int bet, [MinValue(5), MaxValue(24)]int mines)
+    [SlashCommand("start", "Towers indítása")]
+    public async Task CreateTowersGameAsync([MinValue(100), MaxValue(1000000)] int bet, Difficulty diff)
     {
         await DeferAsync().ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
@@ -18,45 +18,41 @@ public class MineCommands : KBotModuleBase
             await FollowupAsync("Nincs elég 🪙KCoin-od ekkora tét rakásához.").ConfigureAwait(false);
             return;
         }
-        
+
         var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
-        var game = GamblingService.CreateMinesGame(Context.User, msg, bet, mines);
-        
+        var game = GamblingService.CreateTowersGame(Context.User, msg, bet, diff);
+
         await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
         {
             x.Gambling.Balance -= bet;
-            x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, bet, "MN - Tétrakás"));
+            x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, bet, "TW - Tétrakás"));
         }).ConfigureAwait(false);
         _ = Task.Run(async () => await game.StartAsync().ConfigureAwait(false));
     }
 
-    [SlashCommand("stop", "Leállítja a játékot")]
-    public async Task StopMinesAsync(string id)
+    [SlashCommand("stop", "Towers leállítása")]
+    public async Task StopTowersGameAsync(string id)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var game = GamblingService.GetMinesGame(id);
+        var game = GamblingService.GetTowersGame(id);
         if (game is null)
         {
             await FollowupAsync("Nem található ilyen id-jű játék").ConfigureAwait(false);
             return;
         }
         if (game.User.Id != Context.User.Id)
-            await FollowupAsync("Ez nem a te játékod!").ConfigureAwait(false);
-        if (!game.CanStop)
-        {
-            await FollowupAsync("Egy mezőt meg kell nyomnod mielőtt kiszállhatnál.").ConfigureAwait(false);
             return;
-        }
         var reward = await game.StopAsync().ConfigureAwait(false);
-        if (reward is { } i)
+        if (reward != 0)
         {
             await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
             {
-                x.Gambling.Balance += i;
-                x.Gambling.MoneyWon += i;
+                x.Gambling.Balance += reward;
+                x.Gambling.MoneyWon += reward;
                 x.Gambling.Wins++;
-                x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, i, "MN - WIN"));
+                x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, reward, "TW - WIN"));
             }).ConfigureAwait(false);
+            return;
         }
         await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
         {
@@ -65,4 +61,5 @@ public class MineCommands : KBotModuleBase
         }).ConfigureAwait(false);
         await FollowupAsync("Leállítva").ConfigureAwait(false);
     }
+
 }

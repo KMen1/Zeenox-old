@@ -11,7 +11,7 @@ public class SuggestionComponents : KBotModuleBase
 {
     [RequireUserPermission(GuildPermission.KickMembers)]
     [ComponentInteraction("suggest-accept:*")]
-    public async Task AcceptSuggestionAsync(string userId)
+    public async Task AcceptSuggestionAsync(ulong userId)
     {
         var message = ((SocketMessageComponent) Context.Interaction).Message;
         var embed = message.Embeds.First();
@@ -25,7 +25,7 @@ public class SuggestionComponents : KBotModuleBase
             x.Components = null;
         }).ConfigureAwait(false);
 
-        var user = await Context.Client.GetUserAsync(Convert.ToUInt64(userId)).ConfigureAwait(false);
+        var user = await Context.Client.GetUserAsync(userId).ConfigureAwait(false);
 
         var userEb = new EmbedBuilder()
             .WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
@@ -39,7 +39,7 @@ public class SuggestionComponents : KBotModuleBase
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [ComponentInteraction("suggest-decline:*")]
-    public async Task DeclineSuggestionAsync(string userId)
+    public async Task DeclineSuggestionAsync(ulong userId)
     {
         var message = ((SocketMessageComponent) Context.Interaction).Message;
         var embed = message.Embeds.First();
@@ -53,7 +53,7 @@ public class SuggestionComponents : KBotModuleBase
             x.Components = null;
         }).ConfigureAwait(false);
 
-        var user = await Context.Client.GetUserAsync(Convert.ToUInt64(userId)).ConfigureAwait(false);
+        var user = await Context.Client.GetUserAsync(userId).ConfigureAwait(false);
 
         var userEb = new EmbedBuilder()
             .WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)

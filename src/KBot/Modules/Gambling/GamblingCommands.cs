@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Enums;
 using KBot.Models;
 
 namespace KBot.Modules.Gambling;
@@ -31,7 +32,7 @@ public class GamblingCommands : KBotModuleBase
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
-    [SlashCommand("changeBalance", "Pénz addolása/csökkentése (admin)")]
+    [SlashCommand("changebalance", "Pénz addolása/csökkentése (admin)")]
     public async Task ChangeBalanceAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);

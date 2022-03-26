@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord.Interactions;
+using KBot.Enums;
 using KBot.Models;
 
 namespace KBot.Modules.Gambling.BlackJack;

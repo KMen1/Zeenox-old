@@ -15,7 +15,7 @@ public class GuildModel
     [BsonRepresentation(BsonType.ObjectId)]
     public string DocId { get; set; }
 
-    [BsonElement("guildid")] public ulong Id { get; set; }
+    [BsonElement("id")] public ulong Id { get; set; }
 
     [BsonElement("config")] public GuildConfig Config { get; set; }
 
@@ -141,13 +141,6 @@ public class DiscordChannel
     [BsonElement("id")] public ulong Id { get; set; }
 }
 
-public enum DiscordChannelType
-{
-    Voice,
-    Text,
-    Category
-}
-
 public class GamblingProfile
 {
     [BsonElement("balance")] public int Balance { get; set; }
@@ -213,24 +206,6 @@ public class Transaction
     {
         return $"ID: `{Id}` ({Date.ToString("yyyy.MM.dd")}): **{Type.GetDescription()}** ({Amount.ToString()} KCoin)" + (string.IsNullOrEmpty(Description) ? "" : $" - {Description}");
     }
-}
-
-public enum TransactionType
-{
-    [Description("Ismeretlen")]
-    Unknown,
-    [Description("Korrekció")]
-    Correction,
-    [Description("Szerencsejáték")]
-    Gambling,
-    [Description("Utalás küldés")]
-    TransferSend,
-    [Description("Utalás fogadás")]
-    TransferReceive,
-    [Description("Napi begyűjtés")]
-    DailyClaim,
-    [Description("Vásárlás")]
-    ShopPurchase,
 }
 
 public class Warn

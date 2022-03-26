@@ -11,13 +11,13 @@ namespace KBot.Modules.Forms;
 public class FormComponents : KBotModuleBase
 {
     [ModalInteraction("appeal:*:*")]
-    public async Task HandleAppealAsync(string adminId, string warnId, AppealModal submission)
+    public async Task HandleAppealAsync(ulong adminId, int warnId, AppealModal submission)
     {
-        var admin = Context.Guild.GetUser(ulong.Parse(adminId));
+        var admin = Context.Guild.GetUser(adminId);
         Warn warn = null;
-        if (warnId != "0")
+        if (warnId != 0)
         {
-            warn = (await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false)).Warns[int.Parse(warnId) - 1];
+            warn = (await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false)).Warns[warnId - 1];
         }
 
         var eb = new EmbedBuilder()
@@ -40,9 +40,9 @@ public class FormComponents : KBotModuleBase
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [ComponentInteraction("appeal-accept:*:*")]
-    public async Task AcceptAppealAsync(string userId, string adminId)
+    public async Task AcceptAppealAsync(ulong userId, ulong adminId)
     {
-        if (Context.User.Id == ulong.Parse(adminId))
+        if (Context.User.Id == adminId)
         {
             await RespondAsync("Az ellened szóló fellebezéseket nem tudod elfogadni...", ephemeral: true)
                 .ConfigureAwait(false);
@@ -59,9 +59,9 @@ public class FormComponents : KBotModuleBase
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [ComponentInteraction("appeal-decline:*:*")]
-    public async Task DeclineAppealAsync(string userId, string adminId)
+    public async Task DeclineAppealAsync(ulong userId, ulong adminId)
     {
-        if (Context.User.Id == ulong.Parse(adminId))
+        if (Context.User.Id == adminId)
         {
             await RespondAsync("Az ellened szóló fellebezéseket nem tudod elutasítani...", ephemeral: true)
                 .ConfigureAwait(false);
@@ -77,11 +77,11 @@ public class FormComponents : KBotModuleBase
     }
 
     [ModalInteraction("appeal-decision:*:*:*:*")]
-    public async Task AppealDecisionAsync(string userId, string adminId, string messageId, string decision, ReasonModal modal)
+    public async Task AppealDecisionAsync(ulong userId, ulong adminId, ulong messageId, string decision, ReasonModal modal)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var msg =
-            (IUserMessage)await Context.Channel.GetMessageAsync(ulong.Parse(messageId)).ConfigureAwait(false);
+            (IUserMessage)await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
         var admin = Context.Guild.GetUser(Convert.ToUInt64(adminId));
         var user = Context.Guild.GetUser(Convert.ToUInt64(userId));
         var embed = msg.Embeds.First().ToEmbedBuilder();
