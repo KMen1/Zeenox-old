@@ -156,7 +156,7 @@ public static class Extensions
     public static Embed TowersEmbed(this EmbedBuilder builder, TowersGame game, string desc = "", Color color = default)
     {
         return builder.WithTitle($"Towers - {game.Id}")
-            .WithDescription($"Tét: **{game.Bet} kredit**\nNehézség: **{game.Difficulty.GetDescription()}**\n{desc}")
+            .WithDescription($"Tét: **{game.Bet} kredit**\nNehézség: **{game.Difficulty.GetDescription()}**\nKilépéshez: `/towers stop {game.Id}`\n{desc}")
             .WithColor(color == default ? Color.Gold : color)
             .Build();
     }
