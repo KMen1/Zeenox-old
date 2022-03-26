@@ -8,7 +8,6 @@ using Discord;
 using Discord.WebSocket;
 using Humanizer;
 using KBot.Enums;
-using KBot.Models;
 using KBot.Modules.Gambling.BlackJack;
 using KBot.Modules.Gambling.Crash;
 using KBot.Modules.Gambling.HighLow;
