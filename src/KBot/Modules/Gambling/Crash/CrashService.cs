@@ -91,10 +91,10 @@ public class CrashGame : IGamblingGame
                 .WithButton(" ", $"crash:{Id}", ButtonStyle.Danger, new Emoji("🛑"))
                 .Build();
         }).ConfigureAwait(false);
-        Multiplier = 1.0;
+        Multiplier = 1.00;
         while (!StoppingToken.IsCancellationRequested)
         {
-            Multiplier += 0.1;
+            Multiplier += 0.10;
             await Message.ModifyAsync(x => x.Embed = new EmbedBuilder().CrashEmbed(this)).ConfigureAwait(false);
 
             if (Multiplier >= CrashPoint)

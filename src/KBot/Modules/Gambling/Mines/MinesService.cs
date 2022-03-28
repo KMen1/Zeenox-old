@@ -87,7 +87,7 @@ public class MinesGame : IGamblingGame
     public Task StartAsync()
     {
         var eb = new EmbedBuilder()
-            .WithTitle("Mines")
+            .WithTitle($"Mines | {Id}")
             .WithColor(Color.Gold)
             .WithDescription($"Tét: **{Bet}**\nAknák száma: **{Mines}**\nKilépéshez: `/mine stop {Id}`")
             .Build();
@@ -140,8 +140,22 @@ public class MinesGame : IGamblingGame
         await Message.ModifyAsync(x => x.Components = comp.Build()).ConfigureAwait(false);
     }
 
-    private Task RevealAsync()
+    private static double Factorial(int n)
     {
+        if (n == 0)
+            return 1;
+        return n * Factorial(n - 1);
+    }
+
+    public async Task<int?> StopAsync()
+    {
+        var prize = Lost ? 0 : (Bet * Multiplier) - Bet;
+        var eb = new EmbedBuilder()
+            .WithTitle($"Mines | {Id}")
+            .WithColor(Color.Gold)
+            .WithDescription($"Tét: **{Bet}**\nAknák száma: **{Mines}**\nNyeremény: **{Math.Round(prize)} KCoin**")
+            .Build();
+        
         var revealComponents = new ComponentBuilder();
         for (var i = 0; i < Math.Sqrt(Points.Count); i++)
         {
@@ -155,27 +169,11 @@ public class MinesGame : IGamblingGame
 
             revealComponents.AddRow(row);
         }
-
-        return Message.ModifyAsync(x => x.Components = revealComponents.Build());
-    }
-
-    private static double Factorial(int n)
-    {
-        if (n == 0)
-            return 1;
-        return n * Factorial(n - 1);
-    }
-
-    public async Task<int?> StopAsync()
-    {
-        var prize = Lost ? 0 : (Bet * Multiplier) - Bet;
-        var eb = new EmbedBuilder()
-            .WithTitle("Mines")
-            .WithColor(Color.Gold)
-            .WithDescription($"Tét: **{Bet}**\nAknák száma: **{Mines}**\nNyeremény: **{Math.Round(prize)} KCoin**")
-            .Build();
-        await RevealAsync().ConfigureAwait(false);
-        await Message.ModifyAsync(x => x.Embed = eb).ConfigureAwait(false);
+        await Message.ModifyAsync(x =>
+        {
+            x.Embed = eb;
+            x.Components = revealComponents.Build();
+        }).ConfigureAwait(false);
         return Lost ? null : (int)Math.Round(Bet * Multiplier);
     }
 }

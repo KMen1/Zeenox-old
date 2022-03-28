@@ -13,7 +13,7 @@ public class GuildEvents
 {
     private readonly DiscordSocketClient _client;
     private readonly DatabaseService _database;
-    private List<(SocketUser user, ulong channelId)> _channels;
+    private readonly List<(SocketUser user, ulong channelId)> _channels;
 
     public GuildEvents(DiscordSocketClient client, DatabaseService database)
     {
@@ -29,7 +29,7 @@ public class GuildEvents
         client.GuildScheduledEventUpdated += (_, after) => HandleScheduledEventAsync(after, EventState.Updated);
         client.GuildScheduledEventStarted += guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Started);
         client.GuildScheduledEventCancelled += guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Cancelled);
-        //_channels = new List<(SocketUser user, ulong channelId)>();
+        _channels = new List<(SocketUser user, ulong channelId)>();
         Log.Logger.Information("GuildEvents Module Loaded");
     }
     
@@ -104,7 +104,7 @@ public class GuildEvents
                 .ConfigureAwait(false);
             return;
         }
-        
+
         var tourRoleId = config.TourEvents.RoleId;
         var tourEventAnnouncementChannelId = config.TourEvents.AnnounceChannelId;
         if (eventChannel is null && guildEvent.Location.Contains("goo.gl/maps"))
@@ -115,23 +115,37 @@ public class GuildEvents
                 embed: new EmbedBuilder().TourEventEmbed(guildEvent, type)).ConfigureAwait(false);
         }
     }
-    
+
     private async Task AnnounceUserJoinedAsync(SocketGuildUser user)
     {
         if (user.IsBot || user.IsWebhook)
         {
             return;
         }
-
+        var dbUser = await _database.GetUserAsync(user.Guild, user).ConfigureAwait(false);
         var config = await _database.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
+        if (dbUser is not null)
+        {
+            foreach (var roleId in dbUser.Roles)
+            {
+                var guild = user.Guild;
+                var role = guild.GetRole(roleId);
+                if (role is null)
+                {
+                    continue;
+                }
+                await user.AddRoleAsync(role).ConfigureAwait(false);
+            }
+        }
+        else
+        {
+            await _database.AddUserAsync(user.Guild, user).ConfigureAwait(false);
+        }
+        await user.AddRoleAsync(config.Announcements.JoinRoleId).ConfigureAwait(false);
+
         if (!config.Announcements.Enabled)
         {
             return;
-        }
-        var dbUser = await _database.GetUserAsync(user.Guild, user).ConfigureAwait(false);
-        if (dbUser is null)
-        {
-            await _database.AddUserAsync(user.Guild, user).ConfigureAwait(false);
         }
         var channel = user.Guild.GetTextChannel(config.Announcements.JoinChannelId);
         await user.AddRoleAsync(config.Announcements.JoinRoleId).ConfigureAwait(false);

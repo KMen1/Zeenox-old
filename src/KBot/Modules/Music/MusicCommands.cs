@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using KBot.Modules.Music.Helpers;
 
 namespace KBot.Modules.Music;
 

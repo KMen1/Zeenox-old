@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Linq;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
@@ -15,7 +15,7 @@ public class GuildModel
     [BsonRepresentation(BsonType.ObjectId)]
     public string DocId { get; set; }
 
-    [BsonElement("id")] public ulong Id { get; set; }
+    [BsonElement("guildid")] public ulong Id { get; set; }
 
     [BsonElement("config")] public GuildConfig Config { get; set; }
 
@@ -26,10 +26,7 @@ public class GuildModel
         Id = users[0].Guild.Id;
         Config = new GuildConfig();
         Users = new List<User>();
-        foreach (var user in users)
-        {
-            Users.Add(new User(user.Id));
-        }
+        users.ConvertAll(x => new User(x)).ForEach(x => Users.Add(x));
     }
 }
 
@@ -59,8 +56,7 @@ public class GuildConfig
 
 public class User
 {
-    [BsonElement("id")] public ulong Id { get; set; }
-    
+    [BsonElement("userid")] public ulong Id { get; set; }
     [BsonElement("xp")] public int XP { get; set; }
 
     [BsonElement("level")] public int Level { get; set; }
@@ -105,22 +101,23 @@ public class User
     {
         var tlevel = Level;
         var total = 0;
-        for (int i = 0; i < level; i++)
+        for (var i = 0; i < level; i++)
         {
             total += (int)Math.Pow((Level + i) * 4, 2);
         }
         return (int)Math.Round((decimal)(total * 2) - XP);
     }
 
-    public User(ulong userId)
+    public User(SocketGuildUser user)
     {
-        Id = userId;
+        Id = user.Id;
         XP = 0;
         Level = 0;
         Gambling = new GamblingProfile();
         OsuId = 0;
         Warns = new List<Warn>();
         Roles = new List<ulong>();
+        user.Roles.Select(x=> x.Id).ToList().ForEach(x => Roles.Add(x));
         BoughtChannels = new List<DiscordChannel>();
         BoughtRoles = new List<ulong>();
         Transactions = new List<Transaction>();
@@ -138,7 +135,7 @@ public class DiscordChannel
     }
 
     [BsonElement("type")] public DiscordChannelType Type { get; set; }
-    [BsonElement("id")] public ulong Id { get; set; }
+    [BsonElement("channelid")] public ulong Id { get; set; }
 }
 
 public class GamblingProfile
@@ -176,12 +173,12 @@ public class GamblingProfile
         return new EmbedBuilder()
             .WithTitle("Szerencsejáték profil")
             .WithColor(Color.Gold)
-            .AddField("💳 Egyenleg", $"`{Balance.ToString()} 🪙KCoin`", true)
+            .AddField("💳 Egyenleg", $"`{Balance.ToString()} KCoin`", true)
             .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
             .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true)
             .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}% ({Wins.ToString()}W/{Losses.ToString()}L)`", true)
-            .AddField("💰 Nyert pénz", $"`{MoneyWon.ToString()} 🪙KCoin`", true)
-            .AddField("💸 Vesztett pénz", $"`{MoneyLost.ToString()} 🪙KCoin`", true);
+            .AddField("💰 Nyereség", $"`{MoneyWon.ToString()} KCoin`", true)
+            .AddField("💸 Veszteség", $"`{MoneyLost.ToString()} KCoin`", true);
     }
 }
 
@@ -325,7 +322,7 @@ public class LevelRole
         Level = level;
         Id = role.Id;
     }
-
+    [BsonElement("roleid")] public ulong Id { get; }
     [BsonElement("level")] public int Level { get; }
-    [BsonElement("id")] public ulong Id { get; }
+    
 }

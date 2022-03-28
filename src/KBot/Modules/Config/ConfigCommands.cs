@@ -26,6 +26,13 @@ public class SetupCommands : KBotModuleBase
             await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
         }
         
+        [SlashCommand("autorole", "Szerverre való csatlakozás bejelentő csatornája")]
+        public async Task SetAutoRoleAsync(IRole role)
+        {
+            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.JoinRoleId = role.Id).ConfigureAwait(false);
+            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
+        }
+        
         [SlashCommand("leave", "Szerverről való kilépés bejelentő csatornája")]
         public async Task SetLeaveAsync(ITextChannel channel)
         {

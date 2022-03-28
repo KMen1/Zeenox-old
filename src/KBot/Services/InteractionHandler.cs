@@ -11,8 +11,6 @@ using Discord.WebSocket;
 using KBot.Models;
 using KBot.Modules.Events;
 using KBot.Modules.Leveling;
-using KBot.Modules.Music;
-using KBot.Modules.Music.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

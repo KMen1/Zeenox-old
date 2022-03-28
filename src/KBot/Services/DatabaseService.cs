@@ -29,7 +29,10 @@ public class DatabaseService
         var guild = (await _collection.FindAsync(x => x.Id == vguild.Id).ConfigureAwait(false)).First();
         foreach (var guildUser in guild.Users)
         {
-            guildUser.Gambling = new GamblingProfile();
+            guildUser.Transactions = new List<Transaction>();
+            guildUser.Roles = new List<ulong>();
+            guildUser.BoughtChannels = new List<DiscordChannel>();
+            guildUser.BoughtRoles = new List<ulong>();
         }
         await _collection.ReplaceOneAsync(x => x.DocId == guild.DocId, guild).ConfigureAwait(false);
     }
@@ -48,10 +51,10 @@ public class DatabaseService
             return (await _collection.FindAsync(x => x.Id == guild.Id).ConfigureAwait(false)).First().Config;
         });
     }
-    public async Task AddUserAsync(IGuild vGuild, SocketUser user)
+    public async Task AddUserAsync(IGuild vGuild, SocketGuildUser user)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        guild.Users.Add(new User(user.Id));
+        guild.Users.Add(new User(user));
         var filter = Builders<GuildModel>.Filter.Eq(x => x.Id, vGuild.Id);
         var update = Builders<GuildModel>.Update.Set(x => x.Users, guild.Users);
         await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
@@ -116,5 +119,6 @@ public class DatabaseService
         var filter = Builders<GuildModel>.Filter.Eq(x => x.Id, guild.Id);
         var update = Builders<GuildModel>.Update.Set(x => x.Config, config);
         await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
+        _cache.Remove(guild.Id.ToString());
     }
 }

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
-using KBot.Modules.Music.Helpers;
 using Lavalink4NET;
 using Lavalink4NET.Filters;
 using Lavalink4NET.Logging;
@@ -20,6 +19,24 @@ namespace KBot.Modules.Music;
 public class AudioService
 {
     private readonly LavalinkNode _lavaNode;
+    private readonly Dictionary<FilterType, Func<PlayerFilterMap, string>> _filterActions = new()
+    {
+        {FilterType.Bassboost, x => x.EnableBassBoost()},
+        {FilterType.Pop, x => x.EnablePop()},
+        {FilterType.Soft, x => x.EnableSoft()},
+        {FilterType.Treblebass, x => x.EnableTreblebass()},
+        {FilterType.Nightcore, x => x.EnableNightcore()},
+        {FilterType.Eightd, x => x.EnableEightd()},
+        {FilterType.Vaporwave, x => x.EnableVaporwave()},
+        {FilterType.Doubletime, x => x.EnableDoubletime()},
+        {FilterType.Slowmotion, x => x.EnableSlowmotion()},
+        {FilterType.Chipmunk, x => x.EnableChipmunk()},
+        {FilterType.Darthvader, x => x.EnableDarthvader()},
+        {FilterType.Dance, x => x.EnableDance()},
+        {FilterType.China, x => x.EnableChina()},
+        {FilterType.Vibrato, x => x.EnableVibrato()},
+        {FilterType.Tremolo, x => x.EnableTremolo()}
+    };
 
     public AudioService(DiscordSocketClient client, LavalinkNode lavaNode, ILogger logger)
     {
@@ -66,7 +83,6 @@ public class AudioService
     public async Task PlayAsync(IGuild guild, SocketInteraction interaction, string query)
     {
         var user = interaction.User;
-        var textChannel = (ITextChannel)interaction.Channel;
         var voiceChannel = ((IVoiceState)user).VoiceChannel;
         var searchResponse = await SearchAsync(query).ConfigureAwait(false);
         if (searchResponse is null)
@@ -76,79 +92,92 @@ public class AudioService
         }
         var player = _lavaNode.HasPlayer(guild.Id) ?
             _lavaNode.GetPlayer<MusicPlayer>(guild.Id) :
-            await _lavaNode.JoinAsync(() => new MusicPlayer(voiceChannel, textChannel), guild.Id, voiceChannel.Id).ConfigureAwait(false);
-        var queue = player!.Queue;
-
+            await _lavaNode.JoinAsync(() => new MusicPlayer(voiceChannel), guild.Id, voiceChannel.Id).ConfigureAwait(false);
         var isPlaylist = searchResponse.PlaylistInfo?.Name is not null;
-        var firstTrack = searchResponse.Tracks?[0];
 
-        if (isPlaylist)
+        if (player!.IsPlaying)
         {
-            var tracks = IsPlaying(player) ? searchResponse.Tracks!.ToList() : searchResponse.Tracks!.Skip(1).ToList();
-            foreach (var track in tracks)
-            {
-                track.Context = new MusicPlayer.TrackContext(user);
-            }
-            queue.AddRange(tracks);
-        }
-        firstTrack!.Context = new MusicPlayer.TrackContext(user);
-
-        if (IsPlaying(player))
-        {
-            Embed qeueEmbed;
             if (isPlaylist)
             {
-                qeueEmbed = new EmbedBuilder().AddedToQueueEmbed(searchResponse.Tracks.ToList());
+                foreach (var track in searchResponse.Tracks!)
+                {
+                    track.Context = new TrackContext(user);
+                }
+                player.Enqueue(searchResponse.Tracks);
+                _ = Task.Run(async () =>
+                {
+                    var msg = await interaction.FollowupAsync(embed:
+                        new EmbedBuilder().AddedToQueueEmbed(searchResponse.Tracks)).ConfigureAwait(false);
+                    await Task.Delay(1750).ConfigureAwait(false);
+                    await msg.DeleteAsync().ConfigureAwait(false);
+                });
+                await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
+                return;
             }
-            else
-            {
-                qeueEmbed = new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack>(new[] { firstTrack }));
-                queue.Add(firstTrack);
-            }
-
+            searchResponse.Tracks![0].Context = new TrackContext(user);
+            player.Enqueue(searchResponse.Tracks![0]);
             _ = Task.Run(async () =>
             {
-                var msg = await interaction.FollowupAsync(embed: qeueEmbed).ConfigureAwait(false);
+                var msg = await interaction.FollowupAsync(embed:
+                    new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack> {searchResponse.Tracks[0]})).ConfigureAwait(false);
                 await Task.Delay(1750).ConfigureAwait(false);
                 await msg.DeleteAsync().ConfigureAwait(false);
             });
             await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
             return;
         }
+        
+        if (isPlaylist)
+        {
+            foreach (var track in searchResponse.Tracks!)
+            {
+                track.Context = new TrackContext(user);
+            }
+            await player.PlayAsync(searchResponse.Tracks![0]).ConfigureAwait(false);
+            player.Enqueue(searchResponse.Tracks.Skip(1));
+        }
+        else
+        {
+            searchResponse.Tracks![0].Context = new TrackContext(user);
+            await player.PlayAsync(searchResponse.Tracks![0]).ConfigureAwait(false);
+        }
         player.NowPlayingMessage = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
-        await player!.PlayAsync(firstTrack).ConfigureAwait(false);
         await interaction.FollowupAsync(
-            embed: new EmbedBuilder().NowPlayingEmbed(user, player),
-            components: Components.NowPlayingComponents(player)).ConfigureAwait(false);
+            embed: new EmbedBuilder().NowPlayingEmbed(player),
+            components: new ComponentBuilder().NowPlayerComponents(player)).ConfigureAwait(false);
     }
     public async Task PlayAsync(IGuild guild, SocketInteraction interaction, LavalinkTrack track)
     {
         var user = interaction.User;
-        var textChannel = (ITextChannel)interaction.Channel;
         var voiceChannel = ((IVoiceState)user).VoiceChannel;
         if (voiceChannel is null)
         {
-            await interaction.FollowupAsync(embed: new EmbedBuilder().WithColor(Color.Red).WithTitle("Nem vagy hangcsatornában").Build()).ConfigureAwait(false);
+            await interaction.FollowupAsync(embed:
+                new EmbedBuilder()
+                    .WithColor(Color.Red)
+                    .WithTitle("Nem vagy hangcsatornában")
+                    .Build())
+                .ConfigureAwait(false);
             return;
         }
         var player = _lavaNode.HasPlayer(guild.Id) ?
             _lavaNode.GetPlayer<MusicPlayer>(guild.Id) :
-            await _lavaNode.JoinAsync(() => new MusicPlayer(voiceChannel, textChannel), guild.Id, voiceChannel.Id).ConfigureAwait(false);
+            await _lavaNode.JoinAsync(() => new MusicPlayer(voiceChannel), guild.Id, voiceChannel.Id).ConfigureAwait(false);
         var interactionMessage = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
-        if (IsPlaying(player))
+
+        if (player!.IsPlaying)
         {
-            player!.Queue.Add(track);
+            player!.Enqueue(track);
             await interactionMessage.DeleteAsync().ConfigureAwait(false);
 
             _ = Task.Run(async () =>
             {
                 var msg = await interaction
-                    .FollowupAsync(embed: new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack>(new[] {track})))
+                    .FollowupAsync(embed: new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack>{track}))
                     .ConfigureAwait(false);
                 await Task.Delay(1750).ConfigureAwait(false);
                 await msg.DeleteAsync().ConfigureAwait(false);
             });
-            
             await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
             return;
         }
@@ -156,8 +185,8 @@ public class AudioService
         await player!.PlayAsync(track).ConfigureAwait(false);
         await interactionMessage.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().NowPlayingEmbed(user, player);
-            x.Components = Components.NowPlayingComponents(player);
+            x.Embed = new EmbedBuilder().NowPlayingEmbed(player);
+            x.Components = new ComponentBuilder().NowPlayerComponents(player);
         }).ConfigureAwait(false);
         player.NowPlayingMessage = interactionMessage;
     }
@@ -179,37 +208,22 @@ public class AudioService
     public async Task PlayNextTrackAsync(IGuild guild, SocketUser user)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        var nextTrack = player?.Queue.FirstOrDefault();
-        if (player is null || nextTrack is null)
+        if (player is null || player.LastRequestedBy.Id != user.Id)
         {
             return;
         }
-        if (player.LastRequestedBy.Id != user.Id)
-        {
-            return;
-        }
-        var queuehistory = player.QueueHistory;
-        queuehistory.Add(player.CurrentTrack);
-        player.Queue.RemoveAt(0);
-        await player.PlayAsync(nextTrack).ConfigureAwait(false);
+        await player.SkipAsync().ConfigureAwait(false);
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
 
     public async Task PlayPreviousTrackAsync(IGuild guild, SocketUser user)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        var prev = player?.QueueHistory.LastOrDefault();
-        if (prev is null)
-        {
-            await player!.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
-            return;
-        }
-        if (player.LastRequestedBy.Id != user.Id)
+        if (player is null || player.LastRequestedBy.Id != user.Id)
         {
             return;
         }
-        await player!.PlayAsync(prev).ConfigureAwait(false);
-        player.QueueHistory.Remove(prev);
+        await player!.PlayPreviousAsync().ConfigureAwait(false);
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
 
@@ -297,103 +311,9 @@ public class AudioService
         {
             return;
         }
-        PlayerFiltersPayload t = new PlayerFiltersPayload(guild.Id, new Dictionary<string, IFilterOptions>());
-        await _lavaNode.SendPayloadAsync(t).ConfigureAwait(false);
-        player.Filters.Equalizer = new EqualizerFilterOptions();
-        switch (filterType)
-        {
-            case FilterType.Bassboost:
-            {
-                player.Filters.Equalizer.Bands = Filters.BassBoost();
-                player.FilterEnabled = "Basszus Erősítés";
-                break;
-            }
-            case FilterType.Pop:
-            {
-                player.Filters.Equalizer.Bands = Filters.Pop();
-                player.FilterEnabled = "Pop";
-                break;
-            }
-            case FilterType.Soft:
-            {
-                player.Filters.Equalizer.Bands = Filters.Soft();
-                player.FilterEnabled = "Lágy";
-                break;
-            }
-            case FilterType.Treblebass:
-            {
-                player.Filters.Equalizer.Bands = Filters.TrebleBass();
-                player.FilterEnabled = "Hangos";
-                break;
-            }
-            case FilterType.Nightcore:
-            {
-                player.Filters.Timescale = Filters.NightCore();
-                player.FilterEnabled = "Nightcore";
-                break;
-            }
-            case FilterType.Eightd:
-            {
-                player.Filters.Rotation = Filters.EightD();
-                player.FilterEnabled = "8D";
-                break;
-            }
-            case FilterType.Vaporwave:
-            {
-                player.Filters.Timescale = Filters.VaporWave();
-                player.FilterEnabled = "Vaporwave";
-                break;
-            }
-            case FilterType.Doubletime:
-            {
-                player.Filters.Timescale = Filters.Doubletime();
-                player.FilterEnabled = "Gyorsítás";
-                break;
-            }
-            case FilterType.Slowmotion:
-            {
-                player.Filters.Timescale = Filters.Slowmotion();
-                player.FilterEnabled = "Lassítás";
-                break;
-            }
-            case FilterType.Chipmunk:
-            {
-                player.Filters.Timescale = Filters.Chipmunk();
-                player.FilterEnabled = "Alvin és a mókusok";
-                break;
-            }
-            case FilterType.Darthvader:
-            {
-                player.Filters.Timescale = Filters.Darthvader();
-                player.FilterEnabled = "Darth Vader";
-                break;
-            }
-            case FilterType.Dance:
-            {
-                player.Filters.Timescale = Filters.Dance();
-                player.FilterEnabled = "Tánc";
-                break;
-            }
-            case FilterType.China:
-            {
-                player.Filters.Timescale = Filters.China();
-                player.FilterEnabled = "Kínai";
-                break;
-            }
-            case FilterType.Vibrato:
-            {
-                player.Filters.Vibrato = Filters.Vibrato();
-                player.FilterEnabled = "Vibrato";
-                break;
-            }
-            case FilterType.Tremolo:
-            {
-                player.Filters.Tremolo = Filters.Tremolo();
-                player.FilterEnabled = "Tremolo";
-                break;
-            }
-        }
-
+        var noFiltersPayload = new PlayerFiltersPayload(guild.Id, new Dictionary<string, IFilterOptions>());
+        await _lavaNode.SendPayloadAsync(noFiltersPayload).ConfigureAwait(false);
+        player.FilterEnabled = _filterActions[filterType](player.Filters);
         await player.Filters.CommitAsync().ConfigureAwait(false);
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
@@ -417,8 +337,8 @@ public class AudioService
             return;
         }
 
-        PlayerFiltersPayload t = new PlayerFiltersPayload(guild.Id, new Dictionary<string, IFilterOptions>());
-        await _lavaNode.SendPayloadAsync(t).ConfigureAwait(false);
+        var noFiltersPayload = new PlayerFiltersPayload(guild.Id, new Dictionary<string, IFilterOptions>());
+        await _lavaNode.SendPayloadAsync(noFiltersPayload).ConfigureAwait(false);
         player.FilterEnabled = null;
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
@@ -438,15 +358,9 @@ public class AudioService
         {
             return new EmbedBuilder().WithColor(Color.Red).WithTitle("Ezen a szerveren nem található lejátszó!").Build();
         }
-        player.Queue.Clear();
+        player.ClearQueue();
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
         return new EmbedBuilder().QueueEmbed(player, true);
-    }
-
-    private static bool IsPlaying(LavalinkPlayer player)
-    {
-        return (player.CurrentTrack is not null && player.State is PlayerState.Playing) ||
-               player.State is PlayerState.Paused;
     }
 
     public async Task<TrackLoadResponsePayload> SearchAsync(string query)
