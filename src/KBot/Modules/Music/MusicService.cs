@@ -38,12 +38,10 @@ public class AudioService
         {FilterType.Tremolo, x => x.EnableTremolo()}
     };
 
-    public AudioService(DiscordSocketClient client, LavalinkNode lavaNode, ILogger logger)
+    public AudioService(DiscordSocketClient client, LavalinkNode lavaNode)
     {
         _lavaNode = lavaNode;
         client.Ready += async () => await _lavaNode.InitializeAsync().ConfigureAwait(false);
-        var log = logger as EventLogger;
-        log!.LogMessage += (_, args) => Log.Information(args.Message);
     }
 
     public async Task<Embed> DisconnectAsync(IGuild guild, SocketUser user)
@@ -90,9 +88,12 @@ public class AudioService
             await interaction.FollowupAsync(embed: new EmbedBuilder().WithColor(Color.Red).WithTitle("Nincs találat! Kérlek próbáld újra másképp!").Build()).ConfigureAwait(false);
             return;
         }
+
+        var users = await voiceChannel.GetUsersAsync().FlattenAsync().ConfigureAwait(false);
+        var skipVotesNeeded = users.Count(x => !x.IsBot) / 2;
         var player = _lavaNode.HasPlayer(guild.Id) ?
             _lavaNode.GetPlayer<MusicPlayer>(guild.Id) :
-            await _lavaNode.JoinAsync(() => new MusicPlayer(voiceChannel), guild.Id, voiceChannel.Id).ConfigureAwait(false);
+            await _lavaNode.JoinAsync(() => new MusicPlayer(voiceChannel, skipVotesNeeded), guild.Id, voiceChannel.Id).ConfigureAwait(false);
         var isPlaylist = searchResponse.PlaylistInfo?.Name is not null;
 
         if (player!.IsPlaying)
@@ -160,9 +161,10 @@ public class AudioService
                 .ConfigureAwait(false);
             return;
         }
+        var skipVotesNeeded = await voiceChannel.GetUsersAsync().CountAsync().ConfigureAwait(false) / 2;
         var player = _lavaNode.HasPlayer(guild.Id) ?
             _lavaNode.GetPlayer<MusicPlayer>(guild.Id) :
-            await _lavaNode.JoinAsync(() => new MusicPlayer(voiceChannel), guild.Id, voiceChannel.Id).ConfigureAwait(false);
+            await _lavaNode.JoinAsync(() => new MusicPlayer(voiceChannel, skipVotesNeeded), guild.Id, voiceChannel.Id).ConfigureAwait(false);
         var interactionMessage = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
 
         if (player!.IsPlaying)
@@ -194,24 +196,17 @@ public class AudioService
     public async Task StopAsync(IGuild guild, SocketUser user)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        if (player is null)
-        {
-            return;
-        }
-        if (player.LastRequestedBy.Id != user.Id)
-        {
-            return;
-        }
+        if (player is null) return;
+        if (player.LastRequestedBy.Id != user.Id) return;
         await player.StopAsync().ConfigureAwait(false);
     }
 
     public async Task PlayNextTrackAsync(IGuild guild, SocketUser user)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        if (player is null || player.LastRequestedBy.Id != user.Id)
-        {
-            return;
-        }
+        if (player is null) return;
+        if (player.LastRequestedBy.Id != user.Id)
+            await player.VoteSkipAsync(user).ConfigureAwait(false);
         await player.SkipAsync().ConfigureAwait(false);
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
@@ -219,10 +214,7 @@ public class AudioService
     public async Task PlayPreviousTrackAsync(IGuild guild, SocketUser user)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        if (player is null || player.LastRequestedBy.Id != user.Id)
-        {
-            return;
-        }
+        if (player is null || player.LastRequestedBy.Id != user.Id) return;
         await player!.PlayPreviousAsync().ConfigureAwait(false);
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
@@ -230,14 +222,8 @@ public class AudioService
     public async Task PauseOrResumeAsync(IGuild guild, SocketUser user)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        if (player is null)
-        {
-            return;
-        }
-        if (player.LastRequestedBy.Id != user.Id)
-        {
-            return;
-        }
+        if (player is null) return;
+        if (player.LastRequestedBy.Id != user.Id) return;
         switch (player.State)
         {
             case PlayerState.Playing:
@@ -258,14 +244,8 @@ public class AudioService
     public async Task SetVolumeAsync(IGuild guild, SocketUser user, VoiceButtonType buttonType)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        if (player is null)
-        {
-            return;
-        }
-        if (player.LastRequestedBy.Id != user.Id)
-        {
-            return;
-        }
+        if (player is null) return;
+        if (player.LastRequestedBy.Id != user.Id) return;
         var currentVolume = player.Volume;
         if (currentVolume == 0f && buttonType == VoiceButtonType.VolumeDown || currentVolume == 1f && buttonType == VoiceButtonType.VolumeUp)
         {
@@ -328,14 +308,8 @@ public class AudioService
     public async Task ClearFiltersAsync(IGuild guild, SocketUser user)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        if (player is not {State: PlayerState.Playing})
-        {
-            return;
-        }
-        if (player.LastRequestedBy.Id != user.Id)
-        {
-            return;
-        }
+        if (player is not {State: PlayerState.Playing}) return;
+        if (player.LastRequestedBy.Id != user.Id) return;
 
         var noFiltersPayload = new PlayerFiltersPayload(guild.Id, new Dictionary<string, IFilterOptions>());
         await _lavaNode.SendPayloadAsync(noFiltersPayload).ConfigureAwait(false);

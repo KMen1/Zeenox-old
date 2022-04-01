@@ -9,22 +9,24 @@ namespace KBot.Modules.Music;
 [Group("music", "Audio parancsok")]
 public class MusicCommands : KBotModuleBase
 {
+    public AudioService AudioService { get; set; }
+    
     [SlashCommand("move", "Átlép abba a hangcsatornába, amelyben tartózkodsz")]
-    public async Task Move()
+    public async Task MovePlayerAsync()
     {
         await RespondAsync(embed: await AudioService.MoveAsync(Context.Guild, Context.User).ConfigureAwait(false))
             .ConfigureAwait(false);
     }
 
     [SlashCommand("leave", "Elhagyja azt a hangcsatornát, amelyben a bot éppen tartózkodik")]
-    public async Task Leave()
+    public async Task DisconnectPlayerAsync()
     {
         await RespondAsync(embed: await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false))
             .ConfigureAwait(false);
     }
 
     [SlashCommand("play", "Lejátssza a kívánt zenét")]
-    public async Task Play([Summary("query", "Zene linkje vagy címe (YouTube, SoundCloud, Twitch)")] string query)
+    public async Task PlayAsync([Summary("query", "Zene linkje vagy címe (YouTube, SoundCloud, Twitch)")] string query)
     {
         await DeferAsync().ConfigureAwait(false);
         if (((IVoiceState)Context.User).VoiceChannel is null)
@@ -36,7 +38,7 @@ public class MusicCommands : KBotModuleBase
     }
 
     [SlashCommand("search", "Keres egy zenét a YouTube-on")]
-    public async Task Search([Summary("query", "Zene címe")] string query)
+    public async Task SearchAsync([Summary("query", "Zene címe")] string query)
     {
         await DeferAsync().ConfigureAwait(false);
         if (Uri.IsWellFormedUriString(query, UriKind.Absolute))
@@ -86,7 +88,7 @@ public class MusicCommands : KBotModuleBase
     }
 
     [SlashCommand("volume", "Hangerő beállítása")]
-    public async Task Volume(
+    public async Task ChangeVolumeAsync(
         [Summary("volume", "Hangerő számban megadva (1-100)"), MinValue(1), MaxValue(100)] ushort volume)
     {
         await RespondAsync(embed: await AudioService.SetVolumeAsync(Context.Guild, volume).ConfigureAwait(false),
@@ -94,13 +96,13 @@ public class MusicCommands : KBotModuleBase
     }
 
     [SlashCommand("queue", "A sorban lévő zenék listája")]
-    public Task Queue()
+    public Task SendQueueAsync()
     {
         return RespondAsync(embed: AudioService.GetQueue(Context.Guild), ephemeral: true);
     }
 
     [SlashCommand("clearqueue", "A sorban lévő zenék törlése")]
-    public async Task ClearQueue()
+    public async Task ClearQueueAsync()
     {
         await RespondAsync(embed: await AudioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false)).ConfigureAwait(false);
         await Task.Delay(5000).ConfigureAwait(false);

@@ -13,6 +13,7 @@ using KBot.Enums;
 using KBot.Models;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
+using Serilog;
 using Color = Discord.Color;
 using Image = System.Drawing.Image;
 using ImageFormat = System.Drawing.Imaging.ImageFormat;
@@ -33,7 +34,7 @@ public class HighLowService
 
     public HighLowGame CreateGame(SocketUser user, IUserMessage message, int stake)
     {
-        var game = new HighLowGame(Guid.NewGuid().ToString().Split("-")[0], user, message, stake, Cloudinary, Database, Games);
+        var game = new HighLowGame(user, message, stake, Cloudinary, Database, Games);
         Games.Add(game);
         return game;
     }
@@ -49,10 +50,12 @@ public class HighLowGame : IGamblingGame
     public SocketUser User { get; }
     private IUserMessage Message { get; }
     private IGuild Guild => ((ITextChannel)Message.Channel).Guild;
-    private Deck Deck { get; }
+    private Deck Deck { get; set; }
+    public int RemainCards => Deck.Cards.Count;
     private Card PlayerHand { get; set; }
     private Card DealerHand { get; set; }
     public int Stake { get; private set; }
+    public int Bet { get; private set; }
     public int HighStake { get; private set; }
     public decimal HighMultiplier { get; private set; }
     public int LowStake { get; private set; }
@@ -63,7 +66,6 @@ public class HighLowGame : IGamblingGame
     private List<HighLowGame> Container { get; }
 
     public HighLowGame(
-        string id,
         SocketUser user,
         IUserMessage message,
         int stake,
@@ -71,14 +73,15 @@ public class HighLowGame : IGamblingGame
         DatabaseService databaseService,
         List<HighLowGame> container)
     {
-        Id = id;
+        Id = Guid.NewGuid().ConvertToGameId();
         User = user;
         Message = message;
         Stake = stake;
+        Bet = stake;
         CloudinaryClient = cloudinary;
         Database = databaseService;
         Container = container;
-        Hidden = false;
+        Hidden = true;
         Deck = new Deck();
     }
 
@@ -99,21 +102,17 @@ public class HighLowGame : IGamblingGame
 
     private void Draw()
     {
+        if (Deck.Cards.Count == 0) Deck = new Deck();
         PlayerHand = Deck.Draw();
         DealerHand = Deck.Draw();
-        while (PlayerHand.Value == DealerHand.Value)
+        while (PlayerHand.Value is 10 or 1 || PlayerHand.Value == DealerHand.Value)
         {
-            DealerHand = Deck.Draw();
+            if (Deck.Cards.Count == 0) Deck = new Deck();
+            PlayerHand = Deck.Draw();
         }
         var cards = Deck.Cards.Count;
         var lowerCards = Deck.Cards.Count(x => x.Value < PlayerHand.Value);
         var higherCards = Deck.Cards.Count(x => x.Value > PlayerHand.Value);
-        while (lowerCards == 0 || higherCards == 0)
-        {
-            DealerHand = Deck.Draw();
-            lowerCards = Deck.Cards.Count(x => x.Value < PlayerHand.Value);
-            higherCards = Deck.Cards.Count(x => x.Value > PlayerHand.Value);
-        }
         HighMultiplier = Math.Round((decimal)cards / higherCards, 2);
         HighStake = (int)(Stake * HighMultiplier);
         LowMultiplier = Math.Round((decimal)cards / lowerCards, 2);
@@ -138,7 +137,7 @@ public class HighLowGame : IGamblingGame
         }).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Stake}** kreditet!", Color.Red);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Bet}** kreditet!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);
@@ -157,12 +156,12 @@ public class HighLowGame : IGamblingGame
         Hidden = false;
         await Database.UpdateUserAsync(Guild, User, x =>
         {
-            x.Gambling.MoneyLost += Stake;
+            x.Gambling.MoneyLost += Bet;
             x.Gambling.Losses++;
         }).ConfigureAwait(false);
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Stake}** kreditet!", Color.Red);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Bet}** kreditet!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);
@@ -171,13 +170,14 @@ public class HighLowGame : IGamblingGame
     public async Task FinishAsync()
     {
         Hidden = false;
-        await Database.UpdateUserAsync(Guild, User, x =>
+        _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
         {
             x.Gambling.Balance += Stake;
-            x.Gambling.MoneyWon += Stake;
+            x.Gambling.MoneyWon += Stake - Bet;
             x.Gambling.Wins++;
             x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "HL - WIN"));
-        }).ConfigureAwait(false);
+        }).ConfigureAwait(false));
+        _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Stake).ConfigureAwait(false));
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().HighLowEmbed(this, $"A játék véget ért! **{Stake}** kreditet szereztél!", Color.Green);

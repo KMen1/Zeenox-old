@@ -117,7 +117,7 @@ public static class Extensions
     public static Embed BlackJackEmbed(this EmbedBuilder builder, BlackJackGame game, string desc = null, Color color = default)
     {
         return builder.WithTitle($"Blackjack | {game.Id}")
-            .WithDescription($"Tét: **{game.Stake} kredit**\n{desc}")
+            .WithDescription($"Tét: **{game.Bet} kredit**\n{desc}")
             .WithColor(color == default ? Color.Gold : color)
             .WithImageUrl(game.GetTablePicUrl())
             .AddField("Játékos", $"Érték: `{game.PlayerScore.ToString()}`", true)
@@ -151,7 +151,7 @@ public static class Extensions
     public static Embed TowersEmbed(this EmbedBuilder builder, TowersGame game, string desc = "", Color color = default)
     {
         return builder.WithTitle($"Towers | {game.Id}")
-            .WithDescription($"Tét: **{game.Bet} kredit**\nNehézség: **{game.Difficulty.GetDescription()}**\nKilépéshez: `/towers stop {game.Id}`\n{desc}")
+            .WithDescription($"Tét: **{game.Bet} kredit**\nNehézség: **{game.Difficulty.GetDescription()}**\n{desc}")
             .WithColor(color == default ? Color.Gold : color)
             .Build();
     }
@@ -175,7 +175,7 @@ public static class Extensions
     public static Embed NowPlayingEmbed(this EmbedBuilder builder, MusicPlayer player)
     {
         builder.WithAuthor("MOST JÁTSZOTT", PlayingGif)
-            .WithTitle(player.CurrentTrack.Title)
+            .WithTitle(player.CurrentTrack!.Title)
             .WithUrl(player.CurrentTrack.Source)
             .WithImageUrl($"https://img.youtube.com/vi/{player.CurrentTrack.TrackIdentifier}/maxresdefault.jpg")
             .WithColor(Color.Green)
@@ -186,7 +186,8 @@ public static class Extensions
             .AddField("🔁 Ismétlés", player.LoopEnabled ? "`Igen`" : "`Nem`", true)
             .AddField("🔊 Hangerő", $"`{Math.Round(player.Volume * 100).ToString()}%`", true)
             .AddField("📝 Szűrő", player.FilterEnabled is not null ? $"`{player.FilterEnabled}`" : "`Nincs`", true)
-            .AddField("🎶 Várólistán", $"`{player.QueueCount.ToString()}`", true);
+            .AddField("🎶 Várólistán", $"`{player.QueueCount.ToString()}`", true)
+            .AddField("⏭ Voteskip", $"`{player.SkipVotes.Count.ToString()}/{player.SkipVotesNeeded.ToString()}`", true);
         return builder.Build();
     }
 
@@ -214,10 +215,10 @@ public static class Extensions
         else
         {
             var desc = new StringBuilder();
-            foreach (var track in player.QueueList)
+            foreach (var track in player.GetQueue)
             {
                 desc.AppendLine(//
-                    $":{(player.QueueList.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Source}) | Hozzáadta: {((TrackContext)track.Context)!.AddedBy.Mention}");
+                    $":{(player.GetQueue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Source}) | Hozzáadta: {((TrackContext)track.Context)!.AddedBy.Mention}");
             }
 
             builder.WithDescription(desc.ToString());
@@ -533,5 +534,10 @@ new TremoloFilter()
                 .AddOption("Vibrato hanghatás", "vibrato")
                 .AddOption("Tremolo hanghatás", "tremolo"), 2)
             .Build();
+    }
+
+    public static string ConvertToGameId(this Guid guid)
+    {
+        return guid.ToString().Split("-")[0];
     }
 }

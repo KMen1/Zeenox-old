@@ -7,7 +7,6 @@ using KBot.Modules.Gambling.BlackJack;
 using KBot.Modules.Gambling.Crash;
 using KBot.Modules.Gambling.HighLow;
 using KBot.Modules.Gambling.Mines;
-using KBot.Modules.Gambling.Objects;
 using KBot.Modules.Gambling.Towers;
 using KBot.Services;
 
@@ -44,7 +43,7 @@ public class GamblingService
     }
     public BlackJackGame CreateBlackJackGame(SocketUser user, IUserMessage message, int stake)
     {
-        return BlackJack.CreateGame(Guid.NewGuid().ToString().Split("-")[0], user, message, stake);
+        return BlackJack.CreateGame(user, message, stake);
     }
     public HighLowGame CreateHighLowGame(SocketUser user, IUserMessage message, int stake)
     {
@@ -62,7 +61,7 @@ public class GamblingService
 
     public CrashGame CreateCrashGame(SocketUser user, IUserMessage msg, int bet)
     {
-        return Crash.CreateGame(Guid.NewGuid().ToString().Split("-")[0], user, msg, bet);
+        return Crash.CreateGame(user, msg, bet);
     }
 
     public CrashGame GetCrashGame(string id)

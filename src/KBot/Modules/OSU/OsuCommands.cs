@@ -10,6 +10,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
 using KBot.Enums;
+using OsuSharp;
 using OsuSharp.Domain;
 using OsuSharp.Interfaces;
 using IUser = OsuSharp.Interfaces.IUser;
@@ -19,8 +20,10 @@ namespace KBot.Modules.OSU;
 [Group("osu", "osu! parancsok")]
 public class Osu : KBotModuleBase
 {
+    public OsuClient OsuClient { get; set; }
+    
     [SlashCommand("set", "osu! profil beállítása")]
-    public async Task OsuSetProfile(string link)
+    public async Task SetOSUProfileAsync(string link)
     {
         if (!link.Contains("osu.ppy.sh/users") || !link.Contains("osu.ppy.sh/u"))
         {
@@ -36,7 +39,7 @@ public class Osu : KBotModuleBase
     }
 
     [SlashCommand("recent", "Legutóbbi osu! score-od információi")]
-    public async Task OsuRecent(SocketUser user = null)
+    public async Task SendRecentOSUPlayAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
@@ -60,7 +63,7 @@ public class Osu : KBotModuleBase
     }
 
     [SlashCommand("stats", "osu! statisztikák")]
-    public async Task OsuStats(SocketUser user = null)
+    public async Task SendOSUStatsAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
@@ -96,7 +99,7 @@ public class Osu : KBotModuleBase
     }
 
     [SlashCommand("topserver", "Top 10 osu! játékos a szeveren")]
-    public async Task OsuTop()
+    public async Task SendTopOSUPlayersAsync()
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
@@ -127,7 +130,7 @@ public class Osu : KBotModuleBase
     }
 
     [SlashCommand("topplay", "Legjobb osu! played lekérése")]
-    public async Task OsuTopPlay(SocketUser user = null)
+    public async Task SendOSUTopPlayAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = new Stopwatch();

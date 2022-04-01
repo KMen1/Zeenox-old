@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -17,20 +18,25 @@ public class MusicPlayer : LavalinkPlayer
     public IUserMessage NowPlayingMessage { get; set; }
     private List<LavalinkTrack> Queue { get; }
     public int QueueCount => Queue.Count;
-    public List<LavalinkTrack> QueueList => Queue.ToList();
+    public List<LavalinkTrack> GetQueue => Queue.ToList();
     private List<LavalinkTrack> QueueHistory { get; }
     public int QueueHistoryCount => QueueHistory.Count;
     public bool CanGoBack => QueueHistory.Count > 0;
     public bool CanGoForward => Queue.Count > 0;
     public bool IsPlaying => CurrentTrack != null;
-    public MusicPlayer(IVoiceChannel voiceChannel)
+    public List<ulong> SkipVotes { get; set; }
+    public int SkipVotesNeeded { get; set; }
+
+    public MusicPlayer(IVoiceChannel voiceChannel, int skipVotesNeeded)
     {
         VoiceChannel = voiceChannel;
+        SkipVotesNeeded = skipVotesNeeded;
         LoopEnabled = false;
         FilterEnabled = null;
         NowPlayingMessage = null;
         Queue = new List<LavalinkTrack>();
         QueueHistory = new List<LavalinkTrack>();
+        SkipVotes = new List<ulong>();
     }
 
     public Task UpdateNowPlayingMessageAsync()
@@ -75,8 +81,18 @@ public class MusicPlayer : LavalinkPlayer
     {
         if (CurrentTrack == null || Queue.Count == 0) return Task.CompletedTask;
         QueueHistory.Add(CurrentTrack);
+        var nextTrack = Queue[0];
         Queue.RemoveAt(0);
-        return PlayAsync(Queue[0]);
+        return PlayAsync(nextTrack);
+    }
+
+    public Task VoteSkipAsync(IUser user)
+    {
+        if (SkipVotes.Contains(user.Id)) return Task.CompletedTask;
+        SkipVotes.Add(user.Id);
+        if (SkipVotes.Count < SkipVotesNeeded) return Task.CompletedTask;
+        SkipVotes.Clear();
+        return SkipAsync();
     }
     
     public Task PlayPreviousAsync()
@@ -105,6 +121,8 @@ public class MusicPlayer : LavalinkPlayer
             QueueHistory.Add(Queue[0]);
             Queue.RemoveAt(0);
             await args.Player.PlayAsync(nextTrack).ConfigureAwait(false);
+            var users = await VoiceChannel.GetUsersAsync().FlattenAsync().ConfigureAwait(false);
+            SkipVotesNeeded = users.Count(x => !x.IsBot) / 2;
             await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
             return;
         }

@@ -14,6 +14,8 @@ public enum TransactionType
     TransferSend,
     [Description("Utalás fogadás")]
     TransferReceive,
+    [Description("Utalás díj")]
+    TransferFee,
     [Description("Napi begyűjtés")]
     DailyClaim,
     [Description("Vásárlás")]

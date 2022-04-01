@@ -20,6 +20,7 @@ public class GuildEvents
         _client = client;
         _database = database;
         client.GuildAvailable += ClientOnGuildAvailableAsync;
+        //client.GuildMemberUpdated += ClientOnGuildMemberUpdatedAsync;
         client.UserJoined += AnnounceUserJoinedAsync;
         client.UserLeft += AnnounceUserLeftAsync;
         client.UserBanned += AnnounceUserBannedAsync;
@@ -32,7 +33,12 @@ public class GuildEvents
         _channels = new List<(SocketUser user, ulong channelId)>();
         Log.Logger.Information("GuildEvents Module Loaded");
     }
-    
+
+    /*private Task ClientOnGuildMemberUpdatedAsync(Cacheable<SocketGuildUser, ulong> arg1, SocketGuildUser arg2)
+    {
+        throw new System.NotImplementedException();
+    }*/
+
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
         var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
@@ -78,7 +84,7 @@ public class GuildEvents
     {
         if (!await _database.CheckIfGuildIsInDbAsync(guild).ConfigureAwait(false))
         {
-            var users = _client.GetGuild(guild.Id).Users.Where(x => !x.IsBot).ToList();
+            var users = _client.GetGuild(guild.Id).Users.ToList();
             await _database.AddGuildAsync(users).ConfigureAwait(false);
         }
     }

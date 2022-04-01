@@ -13,7 +13,7 @@ public class MinesService
 
     public MinesGame CreateGame(SocketUser user, IUserMessage message, int bet, int size, int mines)
     {
-        var game = new MinesGame(Games, Guid.NewGuid().ToString().Split("-")[0], message, user, bet, size, mines);
+        var game = new MinesGame(message, user, bet, size, mines, Games);
         Games.Add(game);
         return game;
     }
@@ -50,15 +50,14 @@ public class MinesGame : IGamblingGame
     }
         
     public MinesGame(
-        List<MinesGame> container,
-        string id,
         IUserMessage message,
         SocketUser user,
         int bet,
         int size,
-        int mines)
+        int mines,
+        List<MinesGame> container)
     {
-        Id = id;
+        Id = Guid.NewGuid().ConvertToGameId();
         Message = message;
         User = user;
         Container = container;
@@ -98,7 +97,7 @@ public class MinesGame : IGamblingGame
             var row = new ActionRowBuilder();
             for (var y = 0; y < size; y++)
             {
-                row.AddComponent(new ButtonBuilder("", $"mine:{Id}:{x}:{y}", emote: new Emoji("🪙")).Build());
+                row.AddComponent(new ButtonBuilder(" ", $"mine:{Id}:{x}:{y}", emote: new Emoji("🪙")).Build());
             }
 
             comp.AddRow(row);

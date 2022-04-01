@@ -14,7 +14,7 @@ public class TowersService
 
     public TowersGame CreateGame(SocketUser user, IUserMessage message, int bet, Difficulty difficulty)
     {
-        var game = new TowersGame(Guid.NewGuid().ToString().Split("-")[0], user, message, bet, difficulty, Games);
+        var game = new TowersGame(user, message, bet, difficulty, Games);
         Games.Add(game);
         return game;
     }
@@ -40,9 +40,9 @@ public class TowersGame : IGamblingGame
     private bool Lost { get; set; }
     private int Prize { get; set; }
 
-    public TowersGame(string id, SocketUser user, IUserMessage message, int bet, Difficulty difficulty, List<TowersGame> games)
+    public TowersGame(SocketUser user, IUserMessage message, int bet, Difficulty difficulty, List<TowersGame> games)
     {
-        Id = id;
+        Id = Guid.NewGuid().ConvertToGameId();
         User = user;
         Message = message;
         Bet = bet;
@@ -77,14 +77,14 @@ public class TowersGame : IGamblingGame
             for (var j = Columns; j > 0; j--)
             {
                 var tPonint = Fields.Find(x => x.X == i && x.Y == j);
-                row.AddComponent(new ButtonBuilder($"{tPonint.Label}$", $"towers:{Id}:{i}:{j}", emote: new Emoji("🪙")).Build());
+                row.AddComponent(new ButtonBuilder($"{tPonint.Label}$", $"towers:{Id}:{i}:{j}", emote: new Emoji("🪙"), isDisabled: i != 1).Build());
             }
             comp.AddRow(row);
         }
         return Message.ModifyAsync(x =>
         {
             x.Content = "";
-            x.Embed = new EmbedBuilder().TowersEmbed(this);
+            x.Embed = new EmbedBuilder().TowersEmbed(this, $"Kilépéshez: `/towers stop {Id}`");
             x.Components = comp.Build();
         });
     }
@@ -110,9 +110,9 @@ public class TowersGame : IGamblingGame
                 var tPonint = Fields.Find(x => x.X == i && x.Y == j);
                 row.AddComponent(tPonint!.Disabled
                     ? new ButtonBuilder($"{tPonint.Label}$", $"towers:{Id}:{i}:{j}", emote: tPonint.Emoji,
-                        isDisabled: tPonint.Disabled).Build()
+                        isDisabled: true).Build()
                     : new ButtonBuilder($"{tPonint.Label}$", $"towers:{Id}:{i}:{j}", emote: new Emoji("🪙"),
-                        isDisabled: tPonint.Disabled).Build());
+                        isDisabled: i > x+1).Build());
             }
             comp.AddRow(row);
         }

@@ -141,21 +141,6 @@ public static class Program
         file.Save(Path.Combine(startupPath, "KBot.lnk"), false);
 #endif
         return host.RunAsync();
-        //[(E*100 - H)/(E-H)]/100
-        /*double e = Math.Pow(2, 256);
-        var c = 0;
-
-        for (int i = 0; i < 10000; i++)
-        {
-            
-            double h = Generator.NextDouble(0, e - 1);
-            var f = 0.80 * e / (e-h);
-            if (f < 1.10)
-                c++;
-            Console.WriteLine(f);
-        }
-        Console.WriteLine(c);
-        return Task.CompletedTask;*/
     }
 
     [ComImport]

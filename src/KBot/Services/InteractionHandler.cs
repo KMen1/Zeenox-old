@@ -54,7 +54,7 @@ public class InteractionHandler : DiscordClientService
     {
         try
         {
-            await _interactionService.AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray());
+            await _interactionService.AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray()).ConfigureAwait(false);
         }
         catch (Exception e)
         {

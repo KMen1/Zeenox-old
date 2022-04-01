@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -31,9 +32,9 @@ public class BlackJackService
         Cloudinary = cloudinary;
     }
 
-    public BlackJackGame CreateGame(string id, SocketUser user, IUserMessage message, int stake)
+    public BlackJackGame CreateGame(SocketUser user, IUserMessage message, int stake)
     {
-        var game = new BlackJackGame(id, user, message, stake, Database, Cloudinary, Games);
+        var game = new BlackJackGame(user, message, stake, Database, Cloudinary, Games);
         Games.Add(game);
         return game;
     }
@@ -56,30 +57,29 @@ public class BlackJackGame : IGamblingGame
     public int DealerScore => GetCardsValue(DealerCards);
     private List<Card> PlayerCards { get; }
     public int PlayerScore => GetCardsValue(PlayerCards);
-    public int Stake { get; private set; }
+    public int Bet { get; private set; }
     public bool Hidden { get; private set; }
     private Cloudinary CloudinaryClient { get; }
     private List<BlackJackGame> Container { get; }
     private DatabaseService Database { get; }
 
     public BlackJackGame(
-        string id,
         SocketUser player,
         IUserMessage message,
-        int stake,
+        int bet,
         DatabaseService database,
         Cloudinary cloudinary,
         List<BlackJackGame> container)
     {
-        Container = container;
-        Id = id;
+        Id = Guid.NewGuid().ConvertToGameId();
         Message = message;
         Database = database;
         Deck = new Deck();
         User = player;
-        Stake = stake;
+        Bet = bet;
         Hidden = true;
         CloudinaryClient = cloudinary;
+        Container = container;
         DealerCards = Deck.DealHand();
         PlayerCards = Deck.DealHand();
     }
@@ -108,13 +108,13 @@ public class BlackJackGame : IGamblingGame
                 await Database.UpdateUserAsync(Guild, User, x =>
                 {
                     x.Gambling.Losses++;
-                    x.Gambling.MoneyLost += Stake;
+                    x.Gambling.MoneyLost += Bet;
                 }).ConfigureAwait(false);
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"😭 Az osztó nyert! (PLAYER BUST)\n**{Stake}** 🪙KCoin-t veszítettél!",
+                        $"😭 Az osztó nyert! (PLAYER BUST)\n**{Bet}** 🪙KCoin-t veszítettél!",
                         Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -124,19 +124,22 @@ public class BlackJackGame : IGamblingGame
             case 21:
             {
                 Hidden = false;
-                Stake = (int)(Stake * 2.5);
-                await Database.UpdateUserAsync(Guild, User, x =>
+                Bet = (int)(Bet * 2.5) + Bet;
+
+                _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
                 {
-                    x.Gambling.Balance += Stake;
+                    x.Money += Bet;
                     x.Gambling.Wins++;
-                    x.Gambling.MoneyWon += Stake;
-                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "BL - BlackJack"));
-                }).ConfigureAwait(false);
+                    x.Gambling.MoneyWon += Bet;
+                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Bet, "BL - BlackJack"));
+                }).ConfigureAwait(false));
+                _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
+
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"🥳 Játékos nyert! (PLAYER BLACKJACK)\n**{Stake}** 🪙KCoin-t szereztél!",
+                        $"🥳 Játékos nyert! (PLAYER BLACKJACK)\n**{Bet}** 🪙KCoin-t szereztél!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -158,19 +161,21 @@ public class BlackJackGame : IGamblingGame
         {
             case > 21:
             {
-                Stake *= 2;
-                await Database.UpdateUserAsync(Guild, User, x =>
+                Bet *= 2 + Bet;
+                _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
                 {
-                    x.Gambling.Balance += Stake;
+                    x.Gambling.Balance += Bet;
                     x.Gambling.Wins++;
-                    x.Gambling.MoneyWon += Stake;
-                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "BL - DEALERBUST"));
-                }).ConfigureAwait(false);
+                    x.Gambling.MoneyWon += Bet;
+                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Bet, "BL - DEALERBUST"));
+                }).ConfigureAwait(false));
+                _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
+
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"🥳 A játékos nyert! (DEALER BUST)\n**{Stake}** 🪙KCoin-t szereztél!",
+                        $"🥳 A játékos nyert! (DEALER BUST)\n**{Bet}** 🪙KCoin-t szereztél!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -182,13 +187,13 @@ public class BlackJackGame : IGamblingGame
                 await Database.UpdateUserAsync(Guild, User, x =>
                 {
                     x.Gambling.Losses++;
-                    x.Gambling.MoneyLost += Stake;
+                    x.Gambling.MoneyLost += Bet;
                 }).ConfigureAwait(false);
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"😭 Az osztó nyert! (BLACKJACK)\n**{Stake}** 🪙KCoin-t vesztettél!",
+                        $"😭 Az osztó nyert! (BLACKJACK)\n**{Bet}** 🪙KCoin-t vesztettél!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -199,19 +204,21 @@ public class BlackJackGame : IGamblingGame
 
         if (PlayerScore == 21)
         {
-            Stake = (int)(Stake * 2.5);
-            await Database.UpdateUserAsync(Guild, User, x =>
+            Bet = (int)(Bet * 2.5) + Bet;
+            _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
             {
-                x.Gambling.Balance += Stake;
+                x.Gambling.Balance += Bet;
                 x.Gambling.Wins++;
-                x.Gambling.MoneyWon += Stake;
-                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "BL - BLACKJACK"));
-            }).ConfigureAwait(false);
+                x.Gambling.MoneyWon += Bet;
+                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Bet, "BL - BLACKJACK"));
+            }).ConfigureAwait(false));
+            _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
+
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"🥳 A játékos nyert! (BLACKJACK)\n**{Stake}** 🪙KCoin-t szereztél!",
+                    $"🥳 A játékos nyert! (BLACKJACK)\n**{Bet}** 🪙KCoin-t szereztél!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
@@ -220,19 +227,21 @@ public class BlackJackGame : IGamblingGame
         }
         if (PlayerScore > DealerScore)
         {
-            Stake *= 2;
-            await Database.UpdateUserAsync(Guild, User, x =>
+            Bet = Bet * 2 + Bet;
+            _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
             {
-                x.Gambling.Balance += Stake;
+                x.Gambling.Balance += Bet;
                 x.Gambling.Wins++;
-                x.Gambling.MoneyWon += Stake;
-                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Stake, "BL - WIN"));
-            }).ConfigureAwait(false);
+                x.Gambling.MoneyWon += Bet;
+                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Bet, "BL - WIN"));
+            }).ConfigureAwait(false));
+            _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
+            
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"🥳 A játékos nyert!\n**{Stake}** 🪙KCoin-t szereztél!",
+                    $"🥳 A játékos nyert!\n**{Bet}** 🪙KCoin-t szereztél!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
@@ -244,20 +253,21 @@ public class BlackJackGame : IGamblingGame
             await Database.UpdateUserAsync(Guild, User, x =>
             {
                 x.Gambling.Losses++;
-                x.Gambling.MoneyLost += Stake;
+                x.Gambling.MoneyLost += Bet;
             }).ConfigureAwait(false);
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"😭 Az osztó nyert!\n**{Stake}** 🪙KCoin-t vesztettél!",
+                    $"😭 Az osztó nyert!\n**{Bet}** 🪙KCoin-t vesztettél!",
                     Color.Red);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
             Container.Remove(this);
             return;
         }
-        await Database.UpdateUserAsync(Guild, User, x => x.Gambling.Balance += Stake).ConfigureAwait(false);
+        _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x => x.Gambling.Balance += Bet).ConfigureAwait(false));
+        _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().BlackJackEmbed(

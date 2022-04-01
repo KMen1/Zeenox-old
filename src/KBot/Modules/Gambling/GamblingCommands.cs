@@ -16,6 +16,10 @@ public class GamblingCommands : KBotModuleBase
     public async Task SendGamblingProfileAsync(SocketUser vuser = null)
     {
         var user = vuser ?? Context.User;
+        if (user.IsBot)
+        {
+            await FollowupAsync("Bot profilját nem tudud lekérni.").ConfigureAwait(false);
+        }
         var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
         await RespondAsync(embed: dbUser.Gambling.ToEmbedBuilder().Build(), ephemeral:true).ConfigureAwait(false);
     }
@@ -37,7 +41,11 @@ public class GamblingCommands : KBotModuleBase
     public async Task ChangeBalanceAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        if (user.IsBot)
+        {
+            await FollowupAsync("Bot pénzét nem tudod változtatni.").ConfigureAwait(false);
+        }
+        var dbUser = await UpdateUserAsync(user, x =>
         {
             x.Gambling.Balance += offset;
             x.Transactions.Add(new Transaction("-", TransactionType.Correction, offset, $"{Context.User.Mention} által"));
@@ -56,19 +64,23 @@ public class GamblingCommands : KBotModuleBase
             await FollowupAsync("Nincs elég 🪙KCoin-od ehhez a művelethez!").ConfigureAwait(false);
             return;
         }
-        
-        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        var fee = (int)Math.Round(amount * 0.10);
+        await UpdateUserAsync(Context.User, x =>
         {
-            x.Gambling.Balance -= amount;
-            x.Transactions.Add(new Transaction("-", TransactionType.TransferSend, amount, $"Neki: {user.Mention}"));
+            x.Money -= amount - fee;
+            x.Transactions.Add(new Transaction("-", TransactionType.TransferSend, -amount, $"Neki: {user.Mention}"));
         }).ConfigureAwait(false);
-        await Database.UpdateUserAsync(Context.Guild, user, x =>
+        await UpdateUserAsync(user, x =>
         {
-            x.Gambling.Balance += amount;
+            x.Money += amount - fee;
             x.Transactions.Add(new Transaction("-", TransactionType.TransferReceive, amount, $"Tőle: {Context.User.Mention}"));
         }).ConfigureAwait(false);
-        
-        await FollowupAsync($"Sikeresen elküldtél {amount} 🪙KCoin-t {user.Mention} felhasználónak!").ConfigureAwait(false);
+        await UpdateUserAsync(BotUser,x =>
+        {
+            x.Money += fee;
+            x.Transactions.Add(new Transaction("-", TransactionType.TransferFee, fee));
+        }).ConfigureAwait(false);
+        await FollowupAsync($"Sikeresen elküldtél {amount-fee}({amount}) KCoin-t {user.Mention} felhasználónak!").ConfigureAwait(false);
     }
 
     [SlashCommand("daily", "Napi bónusz KCoin begyűjtése")]
@@ -80,14 +92,14 @@ public class GamblingCommands : KBotModuleBase
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
-            var Balance = new Random().Next(1000, 10000);
-            await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+            var reward = new Random().Next(1000, 10000);
+            await UpdateUserAsync(Context.User, x =>
             {
                 x.Gambling.DailyClaimDate = DateTime.UtcNow;
-                x.Gambling.Balance += Balance;
-                x.Transactions.Add(new Transaction("-", TransactionType.DailyClaim, Balance));
+                x.Gambling.Balance += reward;
+                x.Transactions.Add(new Transaction("-", TransactionType.DailyClaim, reward));
             }).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(Color.Green, "Sikeresen begyűjtetted a napi KCoin-od!", $"A begyűjtött KCoin mennyisége: {Balance.ToString()}", ephemeral: true).ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Green, "Sikeresen begyűjtetted a napi KCoin-od!", $"A begyűjtött KCoin mennyisége: {reward.ToString()}", ephemeral: true).ConfigureAwait(false);
         }
         else
         {
@@ -97,13 +109,34 @@ public class GamblingCommands : KBotModuleBase
                 .ConfigureAwait(false);
         }
     }
+    
+    [SlashCommand("remaining", "Nyerhető pénzmennyiség")]
+    public async Task SendBudgetAsync()
+    {
+        await DeferAsync(true).ConfigureAwait(false);
+        var dbUser = await GetDbUser(BotUser).ConfigureAwait(false);
+        var embed = new EmbedBuilder()
+            .WithTitle("Nyerhető pénzmennyiség")
+            .WithDescription($"{dbUser.Money.ToString()} KCoin")
+            .WithColor(Color.Gold);
+        await FollowupAsync(embed: embed.Build()).ConfigureAwait(false);
+    }
+    
+    [RequireOwner]
+    [SlashCommand("refill", "Nyerhető pénzmennyiség feltöltése")]
+    public async Task SendBudgetAsync(int amount)
+    {
+        await DeferAsync(true).ConfigureAwait(false);
+        await UpdateUserAsync(BotUser, x => x.Money = amount).ConfigureAwait(false);
+        await FollowupAsync("Sikeresen feltöltötted a nyerhető pénzmennyiséget!").ConfigureAwait(false);
+    }
 
     [RequireOwner]
     [SlashCommand("reset", "Szerencsejáték statisztikák törlése (admin)")]
-    public async Task Reset()
+    public async Task ResetAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await Database.Update(Context.Guild).ConfigureAwait(false);
+        await Database.UpdateAsync(Context.Guild).ConfigureAwait(false);
         await FollowupAsync("Kész").ConfigureAwait(false);
     }
 }
@@ -111,25 +144,31 @@ public class GamblingCommands : KBotModuleBase
 [Group("shop", "Szerencsejáték piac")]
 public class Shop : KBotModuleBase
 {
+    private const int CategoryChannelPrice = 10;
+    private const int VoiceChannelPrice = 10;
+    private const int TextChannelPrice = 10;
+    private const int RolePrice = 10;
+
     [SlashCommand("level", "Szint vásárlása")]
     public async Task BuyLevelAsync([MinValue(1)] int levels)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        var req = dbUser.MoneyToBuyLevel(levels);
-        if (dbUser.Money < req)
+        var dbUser = await GetDbUser(Context.User).ConfigureAwait(false);
+        var required = dbUser.MoneyToBuyLevel(levels);
+        if (dbUser.Money < required)
         {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {req})").ConfigureAwait(false);
+            await FollowupAsync($"Nincs elég pénzed! (Kell még: {required})").ConfigureAwait(false);
             return;
         }
 
-        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        await UpdateUserAsync(Context.User, x =>
         {
-            x.Money -= req;
+            x.Money -= required;
             x.Level += levels;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -req, $"+{levels} szint"));
+            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -required, $"+{levels} szint"));
         }).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {req})").ConfigureAwait(false);
+        await UpdateUserAsync(BotUser, x => x.Money += required).ConfigureAwait(false);
+        await FollowupAsync($"Sikeres vásárlás! (Költség: {required})").ConfigureAwait(false);
     }
 
     [SlashCommand("role", "Rang vásárlása")]
@@ -137,21 +176,22 @@ public class Shop : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (dbUser.Money < 15000000)
+        if (dbUser.Money < RolePrice)
         {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {15000000 - dbUser.Money})").ConfigureAwait(false);
+            await FollowupAsync($"Nincs elég pénzed! (Kell még: {RolePrice - dbUser.Money})").ConfigureAwait(false);
             return;
         }
         
         var role = await Context.Guild.CreateRoleAsync(name, GuildPermissions.None, new Color(hexcolor)).ConfigureAwait(false);
         await ((SocketGuildUser) Context.User).AddRoleAsync(role).ConfigureAwait(false);
-        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        await UpdateUserAsync(Context.User, x =>
         {
-            x.Money -= 10000000;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -1000000, $"{role.Mention} rang"));
+            x.Money -= RolePrice;
+            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -15000000, $"{role.Mention} rang"));
             x.BoughtRoles.Add(role.Id);
         }).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {15000000})").ConfigureAwait(false);
+        await UpdateUserAsync(BotUser, x => x.Money += RolePrice).ConfigureAwait(false);
+        await FollowupAsync($"Sikeres vásárlás! (Költség: {RolePrice})").ConfigureAwait(false);
     }
     
     [SlashCommand("category", "Kategória vásárlása")]
@@ -159,9 +199,9 @@ public class Shop : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (dbUser.Money < 25000000)
+        if (dbUser.Money < CategoryChannelPrice)
         {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {25000000 - dbUser.Money})").ConfigureAwait(false);
+            await FollowupAsync($"Nincs elég pénzed! (Kell még: {CategoryChannelPrice - dbUser.Money})").ConfigureAwait(false);
             return;
         }
 
@@ -181,13 +221,14 @@ public class Shop : KBotModuleBase
                     new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
             });
         }).ConfigureAwait(false);
-        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        await UpdateUserAsync(Context.User, x =>
         {
-            x.Money -= 25000000;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -1000000, $"{category.Name} kategória"));
+            x.Money -= CategoryChannelPrice;
+            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -CategoryChannelPrice, $"{category.Name} kategória"));
             x.BoughtChannels.Add(new DiscordChannel(category.Id, DiscordChannelType.Category));
         }).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {25000000})").ConfigureAwait(false);
+        await UpdateUserAsync(BotUser, x => x.Money += CategoryChannelPrice).ConfigureAwait(false);
+        await FollowupAsync($"Sikeres vásárlás! (Költség: {CategoryChannelPrice})").ConfigureAwait(false);
     }
 
     [SlashCommand("textchannel", "Szövegcsatorna vásárlása")]
@@ -195,15 +236,15 @@ public class Shop : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (dbUser.Money < 50000000)
+        if (dbUser.Money < TextChannelPrice)
         {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {50000000 - dbUser.Money})").ConfigureAwait(false);
+            await FollowupAsync($"Nincs elég pénzed! (Kell még: {TextChannelPrice - dbUser.Money})").ConfigureAwait(false);
             return;
         }
         var category = dbUser.BoughtChannels.Find(x => x.Type == DiscordChannelType.Category);
         if (category == null)
         {
-            await FollowupAsync("Nincs saját kategóriád.").ConfigureAwait(false);
+            await FollowupAsync("Nincs saját kategóriád!").ConfigureAwait(false);
             return;
         }
 
@@ -218,13 +259,14 @@ public class Shop : KBotModuleBase
             });
             x.CategoryId = category.Id;
         }).ConfigureAwait(false);
-        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        await UpdateUserAsync(Context.User, x =>
         {
-            x.Money -= 50000000;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -1000000, $"{channel.Mention} szövegcsatorna"));
+            x.Money -= TextChannelPrice;
+            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -TextChannelPrice, $"{channel.Mention} szövegcsatorna"));
             x.BoughtChannels.Add(new DiscordChannel(channel.Id, DiscordChannelType.Text));
         }).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {50000000})").ConfigureAwait(false);
+        await UpdateUserAsync(BotUser, x => x.Money += TextChannelPrice).ConfigureAwait(false);
+        await FollowupAsync($"Sikeres vásárlás! (Költség: {TextChannelPrice})").ConfigureAwait(false);
     }
     
     [SlashCommand("voicechannel", "Hangcsatorna vásárlása")]
@@ -232,9 +274,9 @@ public class Shop : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (dbUser.Money < 50000000)
+        if (dbUser.Money < VoiceChannelPrice)
         {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {50000000 - dbUser.Money})").ConfigureAwait(false);
+            await FollowupAsync($"Nincs elég pénzed! (Kell még: {VoiceChannelPrice - dbUser.Money})").ConfigureAwait(false);
             return;
         }
         var category = dbUser.BoughtChannels.Find(x => x.Type == DiscordChannelType.Category);
@@ -255,13 +297,14 @@ public class Shop : KBotModuleBase
             });
             x.CategoryId = category.Id;
         }).ConfigureAwait(false);
-        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        await UpdateUserAsync(Context.User, x =>
         {
-            x.Money -= 50000000;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -1000000, $"{channel.Mention} hangcsatorna"));
+            x.Money -= VoiceChannelPrice;
+            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -VoiceChannelPrice, $"{channel.Mention} hangcsatorna"));
             x.BoughtChannels.Add(new DiscordChannel(channel.Id, DiscordChannelType.Voice));
         }).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {50000000})").ConfigureAwait(false);
+        await UpdateUserAsync(BotUser, x => x.Money += VoiceChannelPrice).ConfigureAwait(false);
+        await FollowupAsync($"Sikeres vásárlás! (Költség: {VoiceChannelPrice})").ConfigureAwait(false);
     }
 
     [SlashCommand("ultimate", "Minden vásárlása")]
@@ -269,11 +312,11 @@ public class Shop : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        var reqL = (int)Math.Round(dbUser.MoneyToBuyLevel(levels) * 0.75);
-        var req = (int)Math.Round(reqL + (140000000 * 0.75));
-        if (dbUser.Money < req)
+        var levelRequired = dbUser.MoneyToBuyLevel(levels);
+        var required = (int)Math.Round((CategoryChannelPrice + TextChannelPrice + VoiceChannelPrice + RolePrice + levelRequired) * 0.75);
+        if (dbUser.Money < required)
         {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {req - dbUser.Money})").ConfigureAwait(false);
+            await FollowupAsync($"Nincs elég pénzed! (Kell még: {required - dbUser.Money})").ConfigureAwait(false);
             return;
         }
 
@@ -320,10 +363,10 @@ public class Shop : KBotModuleBase
             x.CategoryId = category.Id;
         }).ConfigureAwait(false);
 
-        await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        await UpdateUserAsync(Context.User, x =>
         {
-            x.Money -= req;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -reqL, $"+{levels} szint"));
+            x.Money -= required;
+            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -levelRequired, $"+{levels} szint"));
             x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -11250000, $"{role.Mention} rang"));
             x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -18750000, $"{category.Name} kategória"));
             x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -37500000, $"{text.Mention} szövegcsatorna"));
@@ -333,5 +376,7 @@ public class Shop : KBotModuleBase
             x.BoughtChannels.Add(new DiscordChannel(text.Id, DiscordChannelType.Text));
             x.BoughtChannels.Add(new DiscordChannel(voice.Id, DiscordChannelType.Voice));
         }).ConfigureAwait(false);
+        await UpdateUserAsync(BotUser, x=> x.Money += required).ConfigureAwait(false);
+        await FollowupAsync($"Sikeres vásárlás! (Költség: {required})").ConfigureAwait(false);
     }
 }

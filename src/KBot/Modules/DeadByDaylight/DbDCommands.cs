@@ -8,6 +8,8 @@ namespace KBot.Modules.DeadByDaylight;
 [Group("dbd", "Dead By Daylight parancsok")]
 public class DbDCommands : KBotModuleBase
 {
+    public DbDService DbDService { get; set; }
+    
     [SlashCommand("shrine", "Heti perkek lekérése")]
     public async Task DbdShrineAsync()
     {

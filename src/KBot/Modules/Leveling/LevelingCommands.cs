@@ -14,6 +14,11 @@ public class Levels : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var setUser = user ?? Context.User;
+        if (setUser.IsBot)
+        {
+            await FollowupAsync("Botok szintjét nem tudod lekérdezni.").ConfigureAwait(false);
+            return;
+        }
         var dbUser = await Database.GetUserAsync(Context.Guild, setUser).ConfigureAwait(false);
         var level = dbUser.Level;
         var requiredXP = Math.Pow(level * 4, 2);
@@ -79,7 +84,7 @@ public class Levels : KBotModuleBase
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("changexp", "XP hozzáadása/csökkentése (admin)")]
-    public async Task AddPointsAsync(SocketUser user, int offset)
+    public async Task ChangeXPAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.XP += offset).ConfigureAwait(false);
@@ -89,7 +94,7 @@ public class Levels : KBotModuleBase
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("changelevel", "Szint hozzáadása/csökkentése (admin)")]
-    public async Task AddLevelAsync(SocketUser user, int offset)
+    public async Task ChangeLevelAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.Level += offset).ConfigureAwait(false);
