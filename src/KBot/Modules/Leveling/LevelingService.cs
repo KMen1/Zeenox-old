@@ -119,6 +119,14 @@ public class LevelingModule
     {
         var currentLevel = (await _database.GetUserAsync(guild, user).ConfigureAwait(false)).Level;
         var currentRequiredPoints = Math.Pow(currentLevel * 4, 2);
+        var oXp = points;
+        if (points > 3600)
+        {
+            for (var i = 1; i < oXp / 3600; i++)
+            {
+                points += (int)Math.Round(points * 0.5);
+            }
+        }
         var dbUser = await _database.UpdateUserAsync(guild, user, x => x.XP += points).ConfigureAwait(false);
         if (dbUser.XP >= currentRequiredPoints)
         {
