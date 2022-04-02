@@ -53,17 +53,17 @@ public class MineCommands : KBotModuleBase
             await FollowupAsync("Egy mezőt meg kell nyomnod mielőtt kiszállhatnál.").ConfigureAwait(false);
             return;
         }
-        var reward = await game.StopAsync().ConfigureAwait(false);
-        if (reward is { } i)
+        var reward = await game.StopAsync(false).ConfigureAwait(false);
+        if (reward != 0)
         {
             _ = Task.Run(async () => await UpdateUserAsync(Context.User, x =>
             {
-                x.Gambling.Balance += i;
-                x.Gambling.MoneyWon += i - game.Bet;
+                x.Gambling.Balance += reward;
+                x.Gambling.MoneyWon += reward - game.Bet;
                 x.Gambling.Wins++;
-                x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, i, "MN - WIN"));
+                x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, reward, "MN - WIN"));
             }).ConfigureAwait(false));
-            _ = Task.Run(async () => await UpdateUserAsync(BotUser, x => x.Money -= i).ConfigureAwait(false));
+            _ = Task.Run(async () => await UpdateUserAsync(BotUser, x => x.Money -= reward).ConfigureAwait(false));
         }
         else
         {

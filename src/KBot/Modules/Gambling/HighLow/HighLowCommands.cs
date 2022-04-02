@@ -25,7 +25,7 @@ public class HighLowCommands : KBotModuleBase
         var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
         var game = GamblingService.CreateHighLowGame(Context.User, msg, bet);
         
-        _ = Task.Run(async () => await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+        _ = Task.Run(async () => await UpdateUserAsync(Context.User, x =>
         {
             x.Gambling.Balance -= bet;
             x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, -bet, "HL - Tétrakás"));

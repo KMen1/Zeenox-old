@@ -57,7 +57,7 @@ public class BlackJackGame : IGamblingGame
     public int DealerScore => GetCardsValue(DealerCards);
     private List<Card> PlayerCards { get; }
     public int PlayerScore => GetCardsValue(PlayerCards);
-    public int Bet { get; private set; }
+    public int Bet { get; }
     public bool Hidden { get; private set; }
     private Cloudinary CloudinaryClient { get; }
     private List<BlackJackGame> Container { get; }
@@ -124,22 +124,22 @@ public class BlackJackGame : IGamblingGame
             case 21:
             {
                 Hidden = false;
-                Bet = (int)(Bet * 2.5) + Bet;
+                var reward = (int) (Bet * 2.5);
 
                 _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
                 {
-                    x.Money += Bet;
+                    x.Money += reward;
                     x.Gambling.Wins++;
-                    x.Gambling.MoneyWon += Bet;
-                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Bet, "BL - BlackJack"));
+                    x.Gambling.MoneyWon += reward - Bet;
+                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, reward, "BL - BlackJack"));
                 }).ConfigureAwait(false));
-                _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
+                _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= reward).ConfigureAwait(false));
 
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"🥳 Játékos nyert! (PLAYER BLACKJACK)\n**{Bet}** 🪙KCoin-t szereztél!",
+                        $"🥳 Játékos nyert! (PLAYER BLACKJACK)\n**{reward}** 🪙KCoin-t szereztél!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -161,15 +161,15 @@ public class BlackJackGame : IGamblingGame
         {
             case > 21:
             {
-                Bet *= 2 + Bet;
+                var reward = Bet * 2;
                 _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
                 {
-                    x.Gambling.Balance += Bet;
+                    x.Gambling.Balance += reward;
                     x.Gambling.Wins++;
-                    x.Gambling.MoneyWon += Bet;
-                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Bet, "BL - DEALERBUST"));
+                    x.Gambling.MoneyWon += reward - Bet;
+                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, reward, "BL - DEALERBUST"));
                 }).ConfigureAwait(false));
-                _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
+                _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= reward).ConfigureAwait(false));
 
                 await Message.ModifyAsync(x =>
                 {
@@ -184,11 +184,11 @@ public class BlackJackGame : IGamblingGame
             }
             case 21:
             {
-                await Database.UpdateUserAsync(Guild, User, x =>
+                _ = Task.Run(async () =>await Database.UpdateUserAsync(Guild, User, x =>
                 {
                     x.Gambling.Losses++;
                     x.Gambling.MoneyLost += Bet;
-                }).ConfigureAwait(false);
+                }).ConfigureAwait(false));
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -204,15 +204,15 @@ public class BlackJackGame : IGamblingGame
 
         if (PlayerScore == 21)
         {
-            Bet = (int)(Bet * 2.5) + Bet;
+            var reward = (int)(Bet * 2.5);
             _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
             {
-                x.Gambling.Balance += Bet;
+                x.Gambling.Balance += reward;
                 x.Gambling.Wins++;
-                x.Gambling.MoneyWon += Bet;
-                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Bet, "BL - BLACKJACK"));
+                x.Gambling.MoneyWon += reward - Bet;
+                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, reward, "BL - BLACKJACK"));
             }).ConfigureAwait(false));
-            _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
+            _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= reward).ConfigureAwait(false));
 
             await Message.ModifyAsync(x =>
             {
@@ -227,15 +227,15 @@ public class BlackJackGame : IGamblingGame
         }
         if (PlayerScore > DealerScore)
         {
-            Bet = Bet * 2 + Bet;
+            var reward = Bet * 2;
             _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
             {
-                x.Gambling.Balance += Bet;
+                x.Gambling.Balance += reward;
                 x.Gambling.Wins++;
-                x.Gambling.MoneyWon += Bet;
-                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Bet, "BL - WIN"));
+                x.Gambling.MoneyWon += reward - Bet;
+                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, reward, "BL - WIN"));
             }).ConfigureAwait(false));
-            _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
+            _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= reward).ConfigureAwait(false));
             
             await Message.ModifyAsync(x =>
             {
@@ -250,11 +250,11 @@ public class BlackJackGame : IGamblingGame
         }
         if (PlayerScore < DealerScore)
         {
-            await Database.UpdateUserAsync(Guild, User, x =>
+            _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
             {
                 x.Gambling.Losses++;
                 x.Gambling.MoneyLost += Bet;
-            }).ConfigureAwait(false);
+            }).ConfigureAwait(false));
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(

@@ -23,7 +23,7 @@ public class Osu : KBotModuleBase
     public OsuClient OsuClient { get; set; }
     
     [SlashCommand("set", "osu! profil beállítása")]
-    public async Task SetOSUProfileAsync(string link)
+    public async Task SetOsuProfileAsync(string link)
     {
         if (!link.Contains("osu.ppy.sh/users") || !link.Contains("osu.ppy.sh/u"))
         {
@@ -39,7 +39,7 @@ public class Osu : KBotModuleBase
     }
 
     [SlashCommand("recent", "Legutóbbi osu! score-od információi")]
-    public async Task SendRecentOSUPlayAsync(SocketUser user = null)
+    public async Task SendRecentOsuPlayAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
@@ -63,7 +63,7 @@ public class Osu : KBotModuleBase
     }
 
     [SlashCommand("stats", "osu! statisztikák")]
-    public async Task SendOSUStatsAsync(SocketUser user = null)
+    public async Task SendOsuStatsAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
@@ -99,7 +99,7 @@ public class Osu : KBotModuleBase
     }
 
     [SlashCommand("topserver", "Top 10 osu! játékos a szeveren")]
-    public async Task SendTopOSUPlayersAsync()
+    public async Task SendTopOsuPlayersAsync()
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
@@ -130,7 +130,7 @@ public class Osu : KBotModuleBase
     }
 
     [SlashCommand("topplay", "Legjobb osu! played lekérése")]
-    public async Task SendOSUTopPlayAsync(SocketUser user = null)
+    public async Task SendOsuTopPlayAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = new Stopwatch();

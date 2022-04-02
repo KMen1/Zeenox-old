@@ -37,7 +37,7 @@ public class Levels : KBotModuleBase
     public async Task GetTopAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var top = await Database.GetTopAsync(Context.Guild, 10).ConfigureAwait(false);
+        var top = await Database.GetTopOsuPlayersInGuildAsync(Context.Guild, 10).ConfigureAwait(false);
 
         var userColumn = "";
         var levelColumn = "";

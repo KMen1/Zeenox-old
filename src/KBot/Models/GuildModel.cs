@@ -168,17 +168,17 @@ public class GamblingProfile
         MoneyLost = 0;
     }
 
-    public EmbedBuilder ToEmbedBuilder()
+    public EmbedBuilder ToEmbedBuilder(IUser user)
     {
         return new EmbedBuilder()
-            .WithTitle("Szerencsejáték profil")
+            .WithAuthor(user.Username, user.GetAvatarUrl())
             .WithColor(Color.Gold)
-            .AddField("💳 Egyenleg", $"`{Balance.ToString()} KCoin`", true)
+            .AddField("💳 Egyenleg", $"`{Balance.ToString()}`", true)
+            .AddField("💰 Nyereség", $"`{MoneyWon.ToString()}`", true)
+            .AddField("💸 Veszteség", $"`{MoneyLost.ToString()}`", true)
+            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}%`", true)
             .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
-            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true)
-            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}% ({Wins.ToString()}W/{Losses.ToString()}L)`", true)
-            .AddField("💰 Nyereség", $"`{MoneyWon.ToString()} KCoin`", true)
-            .AddField("💸 Veszteség", $"`{MoneyLost.ToString()} KCoin`", true);
+            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true);
     }
 }
 

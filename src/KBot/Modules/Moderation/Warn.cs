@@ -18,11 +18,11 @@ public class WarnModule : KBotModuleBase
     {
         var moderatorId = Context.User.Id;
         await DeferAsync(true).ConfigureAwait(false);
-        /*if (Context.Guild.GetUser(user.Id).GuildPermissions.KickMembers)
+        if (Context.Guild.GetUser(user.Id).GuildPermissions.KickMembers)
         {
             await FollowupWithEmbedAsync(Color.Red,"Sikertelen figyelmeztetés", "Más moderátort nem tudsz figyelmeztetni").ConfigureAwait(false);
             return;
-        }*/
+        }
         await Database.UpdateUserAsync(Context.Guild, user, x => x.Warns.Add(new Warn(moderatorId, reason, DateTime.UtcNow))).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} sikeresen figyelmeztetve!",
             $"A következő indokkal: `{reason}`").ConfigureAwait(false);

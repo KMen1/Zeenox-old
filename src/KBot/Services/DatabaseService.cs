@@ -99,7 +99,7 @@ public class DatabaseService
         await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
         return dbUser;
     }
-    public async Task<List<User>> GetTopAsync(IGuild vGuild, int users)
+    public async Task<List<User>> GetTopOsuPlayersInGuildAsync(IGuild vGuild, int users)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
         guild.Users.ForEach(x => x.XP += GetTotalXP(x.Level));

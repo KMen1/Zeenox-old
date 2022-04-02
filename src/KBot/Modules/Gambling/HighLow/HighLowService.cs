@@ -95,7 +95,7 @@ public class HighLowGame : IGamblingGame
             x.Components = new ComponentBuilder()
                 .WithButton(" ", $"highlow-high:{Id}", emote: new Emoji("⬆"))
                 .WithButton(" ", $"highlow-low:{Id}", emote: new Emoji("⬇"))
-                .WithButton(" ", "highlow-cancel", emote: new Emoji("❌"))
+                .WithButton(" ", $"highlow-finish:{Id}", emote: new Emoji("❌"))
                 .Build();
         });
     }
@@ -130,11 +130,11 @@ public class HighLowGame : IGamblingGame
             return;
         }
         Hidden = false;
-        await Database.UpdateUserAsync(Guild, User, x =>
+        _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
         {
-            x.Gambling.MoneyLost += Stake;
+            x.Gambling.MoneyLost += Bet;
             x.Gambling.Losses++;
-        }).ConfigureAwait(false);
+        }).ConfigureAwait(false));
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Bet}** kreditet!", Color.Red);
@@ -154,11 +154,11 @@ public class HighLowGame : IGamblingGame
             return;
         }
         Hidden = false;
-        await Database.UpdateUserAsync(Guild, User, x =>
+        _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
         {
             x.Gambling.MoneyLost += Bet;
             x.Gambling.Losses++;
-        }).ConfigureAwait(false);
+        }).ConfigureAwait(false));
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Bet}** kreditet!", Color.Red);

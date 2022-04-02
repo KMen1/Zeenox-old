@@ -21,7 +21,7 @@ public class GamblingCommands : KBotModuleBase
             await FollowupAsync("Bot profilját nem tudud lekérni.").ConfigureAwait(false);
         }
         var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        await RespondAsync(embed: dbUser.Gambling.ToEmbedBuilder().Build(), ephemeral:true).ConfigureAwait(false);
+        await RespondAsync(embed: dbUser.Gambling.ToEmbedBuilder(user).Build(), ephemeral:true).ConfigureAwait(false);
     }
 
     [SlashCommand("transactions", "Tranzakciók lekérése")]

@@ -31,7 +31,6 @@ public class MinesGame : IGamblingGame
     private IUserMessage Message { get; }
     public SocketUser User { get; }
     public int Bet { get; }
-    private bool Lost { get; set; }
     public bool CanStop { get; private set; }
     private int Mines => Points.Count(x => x.IsMine);
     private int Clicked => Points.Count(x => x.IsClicked && !x.IsMine);
@@ -116,8 +115,7 @@ public class MinesGame : IGamblingGame
         var point = Points.Find(point => point.X == x && point.Y == y);
         if (point!.IsMine)
         {
-            Lost = true;
-            await StopAsync().ConfigureAwait(false);
+            await StopAsync(true).ConfigureAwait(false);
             Container.Remove(this);
             return;
         }
@@ -146,15 +144,10 @@ public class MinesGame : IGamblingGame
         return n * Factorial(n - 1);
     }
 
-    public async Task<int?> StopAsync()
+    public async Task<int> StopAsync(bool lost)
     {
-        var prize = Lost ? 0 : (Bet * Multiplier) - Bet;
-        var eb = new EmbedBuilder()
-            .WithTitle($"Mines | {Id}")
-            .WithColor(Color.Gold)
-            .WithDescription($"Tét: **{Bet}**\nAknák száma: **{Mines}**\nNyeremény: **{Math.Round(prize)} KCoin**")
-            .Build();
-        
+        var prize = lost ? 0 : (int)Math.Round(Bet * Multiplier);
+
         var revealComponents = new ComponentBuilder();
         for (var i = 0; i < Math.Sqrt(Points.Count); i++)
         {
@@ -170,10 +163,14 @@ public class MinesGame : IGamblingGame
         }
         await Message.ModifyAsync(x =>
         {
-            x.Embed = eb;
+            x.Embed = new EmbedBuilder()
+                .WithTitle($"Mines | {Id}")
+                .WithColor(lost ? Color.Red : Color.Green)
+                .WithDescription($"Tét: **{Bet}**\nAknák száma: **{Mines}**\nNyeremény: **{prize - Bet} KCoin**")
+                .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
-        return Lost ? null : (int)Math.Round(Bet * Multiplier);
+        return prize;
     }
 }
 public class Point

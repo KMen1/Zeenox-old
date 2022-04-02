@@ -127,15 +127,17 @@ public class CrashGame : IGamblingGame
         TokenSource.Cancel();
         _ = Task.Run(async () => await Db.UpdateUserAsync(Guild, User, x =>
         {
-            x.Gambling.Balance += (int)Math.Round(Bet * Multiplier);
+            x.Gambling.Balance += Bet + Profit;
             x.Gambling.Wins++;
-            x.Gambling.MoneyWon += (int)(Bet * Multiplier - Bet);
-            x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, (int)Math.Round(Bet * Multiplier), $"CR - {Multiplier:0.0}x"));
+            x.Gambling.MoneyWon += Profit;
+            x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, Profit, $"CR - {Multiplier:0.0}x"));
         }).ConfigureAwait(false));
-        _ = Task.Run(async () => await Db.UpdateBotUserAsync(Guild,x => x.Money -= (int)Math.Round(Bet * Multiplier)).ConfigureAwait(false));
+        _ = Task.Run(async () => await Db.UpdateBotUserAsync(Guild,x => x.Money -= Bet + Profit).ConfigureAwait(false));
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().CrashEmbed(this, $"Kivetted itt: `{Multiplier:0.00}x`\nCrashelt volna: `{CrashPoint:0.00}x`\nNyertél: `{Profit:0} kreditet`", Color.Green);
+            x.Embed = new EmbedBuilder().CrashEmbed(this, $"Kivetted itt: `{Multiplier:0.00}x`\n" +
+                                                          $"Crashelt volna: `{CrashPoint:0.00}x`\n" +
+                                                          $"Nyertél: `{Profit:0} kreditet`", Color.Green);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         Container.Remove(this);
