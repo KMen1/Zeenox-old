@@ -32,7 +32,7 @@ public class DatabaseService
             guildUser.Roles = new List<ulong>();
             guildUser.BoughtChannels = new List<DiscordChannel>();
             guildUser.BoughtRoles = new List<ulong>();
-            guildUser.Gambling = new GamblingProfile();
+            //guildUser.Gambling = new GamblingProfile();
         }
         await _collection.ReplaceOneAsync(x => x.DocId == guild.DocId, guild).ConfigureAwait(false);
     }
@@ -48,7 +48,7 @@ public class DatabaseService
         return _cache.GetOrCreateAsync(guild.Id.ToString(), async x =>
         {
             x.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
-            return (await _collection.FindAsync(x => x.Id == guild.Id).ConfigureAwait(false)).First().Config;
+            return (await _collection.FindAsync(y => y.Id == guild.Id).ConfigureAwait(false)).First().Config;
         });
     }
 
@@ -81,6 +81,11 @@ public class DatabaseService
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
         var index = guild.Users.FindIndex(x => x.Id == user.Id);
+        if (index == -1)
+        {
+            guild.Users.Add(new User(user, (await vGuild.GetUserAsync(user.Id).ConfigureAwait(false)).RoleIds.ToList()));
+            index = guild.Users.Count - 1;
+        }
         var dbUser = guild.Users[index];
         action(dbUser);
         var filter = Builders<GuildModel>.Filter.Eq(x => x.Id, vGuild.Id);
@@ -118,7 +123,7 @@ public class DatabaseService
     public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(ulong guildId, int limit)
     {
         var guild = (await _collection.FindAsync(x => x.Id == guildId).ConfigureAwait(false)).First();
-        return guild.Users.Where(x => x.OsuId != 0).Select(x => (Id: x.Id, x.OsuId)).Take(limit).ToList();
+        return guild.Users.Where(x => x.OsuId != 0).Select(x => (x.Id, x.OsuId)).Take(limit).ToList();
     }
 
     public async Task UpdateGuildConfigAsync(IGuild vGuild, GuildConfig config)

@@ -36,7 +36,7 @@ public class CrashService
     {
         var e = Math.Pow(2, 256);
         var h = Generator.NextDouble(0, e - 1);
-        return 0.80 * e / (e - h);
+        return 0.75 * e / (e - h);
     }
 
     public CrashGame GetGame(string id)

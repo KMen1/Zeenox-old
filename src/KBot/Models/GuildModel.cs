@@ -123,6 +123,22 @@ public class User
         Transactions = new List<Transaction>();
         DailyClaimDate = DateTime.MinValue;
         LastVoiceActivityDate = DateTime.MinValue;
+    }    
+    public User(SocketUser user, List<ulong> roles)
+    {
+        Id = user.Id;
+        XP = 0;
+        Level = 0;
+        Gambling = new GamblingProfile();
+        OsuId = 0;
+        Warns = new List<Warn>();
+        Roles = new List<ulong>();
+        Roles.AddRange(roles);
+        BoughtChannels = new List<DiscordChannel>();
+        BoughtRoles = new List<ulong>();
+        Transactions = new List<Transaction>();
+        DailyClaimDate = DateTime.MinValue;
+        LastVoiceActivityDate = DateTime.MinValue;
     }
 }
 

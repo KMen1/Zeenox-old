@@ -207,7 +207,8 @@ public class AudioService
         if (player is null) return;
         if (player.LastRequestedBy.Id != user.Id)
             await player.VoteSkipAsync(user).ConfigureAwait(false);
-        await player.SkipAsync().ConfigureAwait(false);
+        else
+            await player.SkipAsync().ConfigureAwait(false);
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
 

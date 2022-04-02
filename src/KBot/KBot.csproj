@@ -21,8 +21,8 @@
         <PackageProjectUrl>https://github.com/KMen1/KBot</PackageProjectUrl>
         <Configurations>Debug;Release</Configurations>
         <PackageVersion>3.2.0.2</PackageVersion>
-        <AssemblyVersion>3.4.5.0</AssemblyVersion>
-        <FileVersion>3.4.5.0</FileVersion>
+        <AssemblyVersion>3.5.0.0</AssemblyVersion>
+        <FileVersion>3.5.0.0</FileVersion>
         <IsPackable>false</IsPackable>
         <Nullable>disable</Nullable>
         <LangVersion>latestmajor</LangVersion>

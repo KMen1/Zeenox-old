@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -144,10 +145,10 @@ public class GamblingCommands : KBotModuleBase
 [Group("shop", "Szerencsejáték piac")]
 public class Shop : KBotModuleBase
 {
-    private const int CategoryChannelPrice = 10;
-    private const int VoiceChannelPrice = 10;
-    private const int TextChannelPrice = 10;
-    private const int RolePrice = 10;
+    private const int CategoryChannelPrice = 150000000;
+    private const int VoiceChannelPrice = 200000000;
+    private const int TextChannelPrice = 175000000;
+    private const int RolePrice = 125000000;
 
     [SlashCommand("level", "Szint vásárlása")]
     public async Task BuyLevelAsync([MinValue(1)] int levels)
@@ -172,7 +173,7 @@ public class Shop : KBotModuleBase
     }
 
     [SlashCommand("role", "Rang vásárlása")]
-    public async Task BuyRoleAsync(string name, uint hexcolor)
+    public async Task BuyRoleAsync(string name, string hexcolor)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
@@ -181,8 +182,15 @@ public class Shop : KBotModuleBase
             await FollowupAsync($"Nincs elég pénzed! (Kell még: {RolePrice - dbUser.Money})").ConfigureAwait(false);
             return;
         }
+
+        var parsedSuccessfully = VerifyHexColorString(hexcolor, out var color);
+        if (!parsedSuccessfully)
+        {
+            await FollowupAsync("Hibás hex színkód!").ConfigureAwait(false);
+            return;
+        }
         
-        var role = await Context.Guild.CreateRoleAsync(name, GuildPermissions.None, new Color(hexcolor)).ConfigureAwait(false);
+        var role = await Context.Guild.CreateRoleAsync(name, GuildPermissions.None, new Color(color)).ConfigureAwait(false);
         await ((SocketGuildUser) Context.User).AddRoleAsync(role).ConfigureAwait(false);
         await UpdateUserAsync(Context.User, x =>
         {
@@ -193,7 +201,25 @@ public class Shop : KBotModuleBase
         await UpdateUserAsync(BotUser, x => x.Money += RolePrice).ConfigureAwait(false);
         await FollowupAsync($"Sikeres vásárlás! (Költség: {RolePrice})").ConfigureAwait(false);
     }
-    
+
+    private static bool VerifyHexColorString(string hexcolor, out uint color)
+    {
+        if (hexcolor.StartsWith("0x", StringComparison.CurrentCultureIgnoreCase) ||
+            hexcolor.StartsWith("&H", StringComparison.CurrentCultureIgnoreCase))
+        {
+            hexcolor = hexcolor[2..];
+        }
+
+        if (hexcolor.StartsWith("#", StringComparison.CurrentCultureIgnoreCase))
+        {
+            hexcolor = hexcolor[1..];
+        }
+
+        var parsedSuccessfully = uint.TryParse(hexcolor, NumberStyles.HexNumber, CultureInfo.CurrentCulture,
+            out color);
+        return parsedSuccessfully;
+    }
+
     [SlashCommand("category", "Kategória vásárlása")]
     public async Task BuyCategoryAsync(string name)
     {
@@ -308,7 +334,7 @@ public class Shop : KBotModuleBase
     }
 
     [SlashCommand("ultimate", "Minden vásárlása")]
-    public async Task BuyUltimateAsync([MinValue(1)]int levels, string roleName, uint roleColor, string categoryName, string textName, string voiceName)
+    public async Task BuyUltimateAsync([MinValue(1)]int levels, string roleName, string roleColor, string categoryName, string textName, string voiceName)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
@@ -323,6 +349,14 @@ public class Shop : KBotModuleBase
         if (dbUser.BoughtChannels.Exists(x => x.Type == DiscordChannelType.Category))
         {
             await FollowupAsync("Már vásároltál kategóriát ezért nem válthatod be a packot.").ConfigureAwait(false);
+            return;
+        }
+        
+        var parsedSuccessfully = VerifyHexColorString(roleColor, out var color);
+        if (!parsedSuccessfully)
+        {
+            await FollowupAsync("Hibás hex színkód!").ConfigureAwait(false);
+            return;
         }
 
         var category = await Context.Guild.CreateCategoryChannelAsync(categoryName, x =>
@@ -336,7 +370,7 @@ public class Shop : KBotModuleBase
             });
         }).ConfigureAwait(false);
 
-        var role = await Context.Guild.CreateRoleAsync(roleName, GuildPermissions.None, new Color(roleColor)).ConfigureAwait(false);
+        var role = await Context.Guild.CreateRoleAsync(roleName, GuildPermissions.None, new Color(color)).ConfigureAwait(false);
         await ((SocketGuildUser) Context.User).AddRoleAsync(role).ConfigureAwait(false);
 
         var text = await Context.Guild.CreateTextChannelAsync(textName, x =>
