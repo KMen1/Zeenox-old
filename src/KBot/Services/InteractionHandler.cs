@@ -33,9 +33,6 @@ public class InteractionHandler : DiscordClientService
         Client.GuildAvailable += ClientOnGuildAvailableAsync;
         _interactionService.SlashCommandExecuted += HandleSlashCommandResultAsync;
         _interactionService.ComponentCommandExecuted += HandleComponentCommandResultAsync;
-        _provider.GetRequiredService<GuildEvents>();
-        _provider.GetRequiredService<LoggingService>();
-        _provider.GetRequiredService<LevelingModule>();
         try
         {
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _provider).ConfigureAwait(false);

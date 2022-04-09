@@ -6,6 +6,8 @@ using KBot.Models;
 namespace KBot.Modules.Gambling.HighLow;
 public class HighLowCommands : KBotModuleBase
 {
+    public HighLowService HighLowService { get; set; }
+    
     [SlashCommand("highlow", "Döntsd el hogy az osztónál lévő kártya nagyobb vagy kisebb a tiédnél.")]
     public async Task StartHighLowAsync([MinValue(100), MaxValue(1000000)]int bet)
     {
@@ -23,7 +25,7 @@ public class HighLowCommands : KBotModuleBase
         }
         
         var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
-        var game = GamblingService.CreateHighLowGame(Context.User, msg, bet);
+        var game = HighLowService.CreateGame(Context.User, msg, bet);
         
         _ = Task.Run(async () => await UpdateUserAsync(Context.User, x =>
         {

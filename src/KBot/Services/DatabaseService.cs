@@ -10,7 +10,7 @@ using MongoDB.Driver;
 
 namespace KBot.Services;
 
-public class DatabaseService
+public class DatabaseService : IInjectable
 {
     private readonly IMemoryCache _cache;
     private readonly DiscordSocketClient _client;
@@ -26,14 +26,14 @@ public class DatabaseService
     public async Task UpdateAsync(SocketGuild vguild)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vguild.Id).ConfigureAwait(false)).First();
-        foreach (var guildUser in guild.Users)
+        /*foreach (var guildUser in guild.Users)
         {
             guildUser.Transactions = new List<Transaction>();
             guildUser.Roles = new List<ulong>();
             guildUser.BoughtChannels = new List<DiscordChannel>();
             guildUser.BoughtRoles = new List<ulong>();
             //guildUser.Gambling = new GamblingProfile();
-        }
+        }*/
         await _collection.ReplaceOneAsync(x => x.DocId == guild.DocId, guild).ConfigureAwait(false);
     }
 
@@ -57,6 +57,34 @@ public class DatabaseService
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
         return guild;
     }
+
+    public async Task AddReactionRoleMessageAsync(IGuild vGuild, ButtonRoleMessage message)
+    {
+        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
+        guild.ButtonRoles.Add(message);
+        var filter = Builders<GuildModel>.Filter.Eq(x => x.Id, vGuild.Id);
+        var update = Builders<GuildModel>.Update.Set(x => x.ButtonRoles, guild.ButtonRoles);
+        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
+    }
+    
+    public async Task<ButtonRoleMessage> GetReactionRoleMessagesAsync(IGuild vGuild, ulong messageId)
+    {
+        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
+        return guild.ButtonRoles.Find(x => x.MessageId == messageId);
+    }
+
+    public async Task<(bool, ButtonRoleMessage)> UpdateReactionRoleMessageAsync(IGuild vGuild, ulong messageId, Action<ButtonRoleMessage> action)
+    {
+        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
+        var index = guild.ButtonRoles.FindIndex(x => x.MessageId == messageId);
+        if (index == -1) return (false, null);
+        action(guild.ButtonRoles[index]);
+        var filter = Builders<GuildModel>.Filter.Eq(x => x.Id, vGuild.Id);
+        var update = Builders<GuildModel>.Update.Set(x => x.ButtonRoles, guild.ButtonRoles);
+        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
+        return (true, guild.ButtonRoles[index]);
+    }
+    
     public async Task AddUserAsync(IGuild vGuild, SocketGuildUser user)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
@@ -104,7 +132,7 @@ public class DatabaseService
         await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
         return dbUser;
     }
-    public async Task<List<User>> GetTopOsuPlayersInGuildAsync(IGuild vGuild, int users)
+    public async Task<List<User>> GetTopUsersAsync(IGuild vGuild, int users)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
         guild.Users.ForEach(x => x.XP += GetTotalXP(x.Level));
@@ -129,7 +157,7 @@ public class DatabaseService
     public async Task UpdateGuildConfigAsync(IGuild vGuild, GuildConfig config)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        guild.Config = config;
+        guild.ReplaceConfig(config);
         await _collection.ReplaceOneAsync(x => x.DocId == guild.DocId, guild).ConfigureAwait(false);
         _cache.Remove(vGuild.Id.ToString());
     }

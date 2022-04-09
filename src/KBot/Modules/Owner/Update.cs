@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 
-namespace KBot.Modules.Utility;
+namespace KBot.Modules.Owner;
 
 public class Update : KBotModuleBase
 {
@@ -32,7 +32,7 @@ public class Update : KBotModuleBase
                     IconUrl = Context.Client.CurrentUser.GetAvatarUrl()
                 },
                 Title = "Frissítés elérhető",
-                Description = $"- Jelenlegi verzió: `{currentVersion}` \n- Új verzió: `{newVersion}`\n Biztosan frissíted a botot?"
+                Description = $"- Jelenlegi verzió: `{currentVersion}` \n- Új verzió: `{newVersion}`\nBiztosan frissíted a botot?"
             }.Build();
             var comp = new ComponentBuilder()
                 .WithButton("Igen", "update-yes", ButtonStyle.Success, new Emoji("✅"))

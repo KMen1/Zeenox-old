@@ -8,6 +8,8 @@ namespace KBot.Modules.Gambling.BlackJack;
 
 public class BlackJackCommands : KBotModuleBase
 {
+    public BlackJackService BlackJackService { get; set; }
+    
     [SlashCommand("blackjack", "Hagyományos Blackjack, másnéven 21")]
     public async Task StartBlackJackAsync([MinValue(100), MaxValue(1000000)] int bet)
     {
@@ -24,7 +26,7 @@ public class BlackJackCommands : KBotModuleBase
             return;
         }
         var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
-        var game = GamblingService.CreateBlackJackGame(Context.User, msg, bet);
+        var game = BlackJackService.CreateGame(Context.User, msg, bet);
 
         _ = Task.Run(async () => await UpdateUserAsync(Context.User, x =>
         {

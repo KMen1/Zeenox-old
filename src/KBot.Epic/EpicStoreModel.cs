@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace KBot.Models
+namespace KBot.Epic
 {
     public partial class EpicStore
     {

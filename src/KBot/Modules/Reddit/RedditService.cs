@@ -1,47 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using KBot.Models;
 using Newtonsoft.Json;
 
 namespace KBot.Modules.Reddit;
 
-public static class RedditService
+public class RedditService : IInjectable
 {
-    public class SubredditObject
+    private readonly HttpClient _httpClient;
+
+    public RedditService(HttpClient httpClient)
     {
-        [JsonProperty("data")] public SubredditData Data { get; set; }
+        _httpClient = httpClient;
     }
 
-    public class SubredditData
-    {
-        [JsonProperty("children")] public IList<PostObject> Posts { get; set; }
-    }
-
-    public class PostObject
-    {
-        [JsonProperty("data")] private PostData Data { get; set; }
-        
-        public string Title => Data.Title;
-        public string ImageUrl => Data.Url;
-        public string Name => Data.Name;
-        public string Permalink => Data.Permalink;
-    }
-
-    public class PostData
-    {
-        [JsonProperty("url")] public string Url { get; set; }
-        [JsonProperty("title")] public string Title { get; set; }
-        [JsonProperty("name")] public string Name { get; set; }
-        [JsonProperty("permalink")] public string Permalink { get; set; }
-    }
-
-    public static async ValueTask<PostObject> GetRandomPostAsync(string subreddit)
+    public async ValueTask<PostObject> GetRandomPostFromSubredditAsync(string subreddit)
     {
         var url = $"https://www.reddit.com/r/{subreddit}/.json?sort=hot&limit=30";
-        using var webClient = new HttpClient();
-        var jsonString = await webClient.GetStringAsync(url).ConfigureAwait(false);
-        var subredditObject = JsonConvert.DeserializeObject<SubredditObject>(jsonString);
+        var jsonString = await _httpClient.GetStringAsync(url).ConfigureAwait(false);
+        if (jsonString.Contains("{\"message\": \"Not Found\", \"error\": 404}"))
+        {
+            return null;
+        }
+        var subredditObject = JsonConvert.DeserializeObject<RedditModel>(jsonString);
         if (subredditObject is null)
         {
             return null;
@@ -53,7 +35,7 @@ public static class RedditService
         var imageUrl = post.ImageUrl;
         if (!imageUrl.EndsWith(".jpg") && !imageUrl.EndsWith(".png") && !imageUrl.EndsWith(".gif") && !imageUrl.EndsWith(".jpeg"))
         {
-            post = await GetRandomPostAsync(subreddit).ConfigureAwait(false);
+            post = await GetRandomPostFromSubredditAsync(subreddit).ConfigureAwait(false);
         }
 
         return post;

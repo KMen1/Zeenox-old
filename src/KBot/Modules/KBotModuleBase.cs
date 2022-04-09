@@ -3,9 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using Fergun.Interactive;
 using KBot.Models;
-using KBot.Modules.Gambling;
 using KBot.Services;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -14,9 +12,7 @@ namespace KBot.Modules;
 public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionContext>
 {
     public DatabaseService Database { get; set; }
-    public InteractiveService InteractiveService { get; set; }
     public IMemoryCache Cache { get; set; }
-    public GamblingService GamblingService { get; set; }
     public SocketUser BotUser => Context.Client.CurrentUser;
 
     protected async Task<IUserMessage> FollowupWithEmbedAsync(Color color, string title, string description,
@@ -36,13 +32,13 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
     {
         return Database.GetGuildConfigAsync(Context.Guild);
     }
-    
-    public ValueTask<User> GetDbUser(SocketUser user)
+
+    protected ValueTask<User> GetDbUser(SocketUser user)
     {
         return Database.GetUserAsync(Context.Guild, user);
     }
 
-    public Task<User> UpdateUserAsync(SocketUser user, Action<User> action)
+    protected Task<User> UpdateUserAsync(SocketUser user, Action<User> action)
     {
         return Database.UpdateUserAsync(Context.Guild, user, action);
     }

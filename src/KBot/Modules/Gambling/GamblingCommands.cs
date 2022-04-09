@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -30,15 +29,24 @@ public class GamblingCommands : KBotModuleBase
     {
         var dbUser = await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false);
         var transactions = dbUser.Transactions;
-        var embed = new EmbedBuilder()
-            .WithTitle($"{user?.Username ?? Context.User.Username} tranzakciói")
-            .WithColor(Color.Blue)
-            .WithDescription(transactions.Count == 0 ? "Nincsenek tranzakciók" : string.Join("\n\n", transactions));
-        await RespondAsync(embed: embed.Build(), ephemeral:true).ConfigureAwait(false);
+        var embeds = new List<Embed>();
+        for (var i = 0; i < transactions.Count; i++)
+        {
+            i++;
+            if (i % 1000 == 0)
+            {
+                embeds.Add(new EmbedBuilder()
+                    .WithTitle($"{user?.Username ?? Context.User.Username} tranzakciói")
+                    .WithColor(Color.Blue)
+                    .WithDescription(
+                        transactions.Count == 0 ? "Nincsenek tranzakciók" : string.Join("\n", transactions)).Build());
+            }
+        }
+        await RespondAsync(embeds: embeds.ToArray(), ephemeral:true).ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
-    [SlashCommand("changebalance", "Pénz addolása/csökkentése (admin)")]
+    [SlashCommand("changemoney", "Pénz addolása/csökkentése (admin)")]
     public async Task ChangeBalanceAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -122,295 +130,24 @@ public class GamblingCommands : KBotModuleBase
             .WithColor(Color.Gold);
         await FollowupAsync(embed: embed.Build()).ConfigureAwait(false);
     }
+
+    [SlashCommand("rob", "Pénzszállítás eltérítése")]
+    public async Task RobAsync()
+    {
+        await DeferAsync().ConfigureAwait(false);
+
+        if (DateTime.Today.Day != 1)
+        {
+            await FollowupAsync().ConfigureAwait(false);
+        }
+    }
     
     [RequireOwner]
-    [SlashCommand("refill", "Nyerhető pénzmennyiség feltöltése")]
+    [SlashCommand("refill", "Nyerhető pénzmennyiség beállítása")]
     public async Task SendBudgetAsync(int amount)
     {
         await DeferAsync(true).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money = amount).ConfigureAwait(false);
         await FollowupAsync("Sikeresen feltöltötted a nyerhető pénzmennyiséget!").ConfigureAwait(false);
-    }
-
-    [RequireOwner]
-    [SlashCommand("reset", "Szerencsejáték statisztikák törlése (admin)")]
-    public async Task ResetAsync()
-    {
-        await DeferAsync().ConfigureAwait(false);
-        await Database.UpdateAsync(Context.Guild).ConfigureAwait(false);
-        await FollowupAsync("Kész").ConfigureAwait(false);
-    }
-}
-
-[Group("shop", "Szerencsejáték piac")]
-public class Shop : KBotModuleBase
-{
-    private const int CategoryChannelPrice = 150000000;
-    private const int VoiceChannelPrice = 200000000;
-    private const int TextChannelPrice = 175000000;
-    private const int RolePrice = 125000000;
-
-    [SlashCommand("level", "Szint vásárlása")]
-    public async Task BuyLevelAsync([MinValue(1)] int levels)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await GetDbUser(Context.User).ConfigureAwait(false);
-        var required = dbUser.MoneyToBuyLevel(levels);
-        if (dbUser.Money < required)
-        {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {required})").ConfigureAwait(false);
-            return;
-        }
-
-        await UpdateUserAsync(Context.User, x =>
-        {
-            x.Money -= required;
-            x.Level += levels;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -required, $"+{levels} szint"));
-        }).ConfigureAwait(false);
-        await UpdateUserAsync(BotUser, x => x.Money += required).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {required})").ConfigureAwait(false);
-    }
-
-    [SlashCommand("role", "Rang vásárlása")]
-    public async Task BuyRoleAsync(string name, string hexcolor)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (dbUser.Money < RolePrice)
-        {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {RolePrice - dbUser.Money})").ConfigureAwait(false);
-            return;
-        }
-
-        var parsedSuccessfully = VerifyHexColorString(hexcolor, out var color);
-        if (!parsedSuccessfully)
-        {
-            await FollowupAsync("Hibás hex színkód!").ConfigureAwait(false);
-            return;
-        }
-        
-        var role = await Context.Guild.CreateRoleAsync(name, GuildPermissions.None, new Color(color)).ConfigureAwait(false);
-        await ((SocketGuildUser) Context.User).AddRoleAsync(role).ConfigureAwait(false);
-        await UpdateUserAsync(Context.User, x =>
-        {
-            x.Money -= RolePrice;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -15000000, $"{role.Mention} rang"));
-            x.BoughtRoles.Add(role.Id);
-        }).ConfigureAwait(false);
-        await UpdateUserAsync(BotUser, x => x.Money += RolePrice).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {RolePrice})").ConfigureAwait(false);
-    }
-
-    private static bool VerifyHexColorString(string hexcolor, out uint color)
-    {
-        if (hexcolor.StartsWith("0x", StringComparison.CurrentCultureIgnoreCase) ||
-            hexcolor.StartsWith("&H", StringComparison.CurrentCultureIgnoreCase))
-        {
-            hexcolor = hexcolor[2..];
-        }
-
-        if (hexcolor.StartsWith("#", StringComparison.CurrentCultureIgnoreCase))
-        {
-            hexcolor = hexcolor[1..];
-        }
-
-        var parsedSuccessfully = uint.TryParse(hexcolor, NumberStyles.HexNumber, CultureInfo.CurrentCulture,
-            out color);
-        return parsedSuccessfully;
-    }
-
-    [SlashCommand("category", "Kategória vásárlása")]
-    public async Task BuyCategoryAsync(string name)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (dbUser.Money < CategoryChannelPrice)
-        {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {CategoryChannelPrice - dbUser.Money})").ConfigureAwait(false);
-            return;
-        }
-
-        if (dbUser.BoughtChannels.Exists(x => x.Type == DiscordChannelType.Category))
-        {
-            await FollowupAsync("Már van saját kategóriád.").ConfigureAwait(false);
-            return;
-        }
-
-        var category = await Context.Guild.CreateCategoryChannelAsync(name, x =>
-        {
-            x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
-            {
-                new Overwrite(Context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)),
-                new Overwrite(Context.User.Id, PermissionTarget.User,
-                    new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
-            });
-        }).ConfigureAwait(false);
-        await UpdateUserAsync(Context.User, x =>
-        {
-            x.Money -= CategoryChannelPrice;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -CategoryChannelPrice, $"{category.Name} kategória"));
-            x.BoughtChannels.Add(new DiscordChannel(category.Id, DiscordChannelType.Category));
-        }).ConfigureAwait(false);
-        await UpdateUserAsync(BotUser, x => x.Money += CategoryChannelPrice).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {CategoryChannelPrice})").ConfigureAwait(false);
-    }
-
-    [SlashCommand("textchannel", "Szövegcsatorna vásárlása")]
-    public async Task BuyChannelAsync(string name)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (dbUser.Money < TextChannelPrice)
-        {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {TextChannelPrice - dbUser.Money})").ConfigureAwait(false);
-            return;
-        }
-        var category = dbUser.BoughtChannels.Find(x => x.Type == DiscordChannelType.Category);
-        if (category == null)
-        {
-            await FollowupAsync("Nincs saját kategóriád!").ConfigureAwait(false);
-            return;
-        }
-
-        var channel = await Context.Guild.CreateTextChannelAsync(name, x =>
-        {
-            x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
-            {
-                new Overwrite(Context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)),
-                new Overwrite(Context.User.Id, PermissionTarget.User,
-                    new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
-            });
-            x.CategoryId = category.Id;
-        }).ConfigureAwait(false);
-        await UpdateUserAsync(Context.User, x =>
-        {
-            x.Money -= TextChannelPrice;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -TextChannelPrice, $"{channel.Mention} szövegcsatorna"));
-            x.BoughtChannels.Add(new DiscordChannel(channel.Id, DiscordChannelType.Text));
-        }).ConfigureAwait(false);
-        await UpdateUserAsync(BotUser, x => x.Money += TextChannelPrice).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {TextChannelPrice})").ConfigureAwait(false);
-    }
-    
-    [SlashCommand("voicechannel", "Hangcsatorna vásárlása")]
-    public async Task BuyVoiceChannelAsync(string name)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (dbUser.Money < VoiceChannelPrice)
-        {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {VoiceChannelPrice - dbUser.Money})").ConfigureAwait(false);
-            return;
-        }
-        var category = dbUser.BoughtChannels.Find(x => x.Type == DiscordChannelType.Category);
-        if (category == null)
-        {
-            await FollowupAsync("Nincs saját kategóriád.").ConfigureAwait(false);
-            return;
-        }
-
-        var channel = await Context.Guild.CreateVoiceChannelAsync(name, x =>
-        {
-            x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
-            {
-                new Overwrite(Context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)),
-                new Overwrite(Context.User.Id, PermissionTarget.User,
-                    new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
-            });
-            x.CategoryId = category.Id;
-        }).ConfigureAwait(false);
-        await UpdateUserAsync(Context.User, x =>
-        {
-            x.Money -= VoiceChannelPrice;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -VoiceChannelPrice, $"{channel.Mention} hangcsatorna"));
-            x.BoughtChannels.Add(new DiscordChannel(channel.Id, DiscordChannelType.Voice));
-        }).ConfigureAwait(false);
-        await UpdateUserAsync(BotUser, x => x.Money += VoiceChannelPrice).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {VoiceChannelPrice})").ConfigureAwait(false);
-    }
-
-    [SlashCommand("ultimate", "Minden vásárlása")]
-    public async Task BuyUltimateAsync([MinValue(1)]int levels, string roleName, string roleColor, string categoryName, string textName, string voiceName)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        var levelRequired = dbUser.MoneyToBuyLevel(levels);
-        var required = (int)Math.Round((CategoryChannelPrice + TextChannelPrice + VoiceChannelPrice + RolePrice + levelRequired) * 0.75);
-        if (dbUser.Money < required)
-        {
-            await FollowupAsync($"Nincs elég pénzed! (Kell még: {required - dbUser.Money})").ConfigureAwait(false);
-            return;
-        }
-
-        if (dbUser.BoughtChannels.Exists(x => x.Type == DiscordChannelType.Category))
-        {
-            await FollowupAsync("Már vásároltál kategóriát ezért nem válthatod be a packot.").ConfigureAwait(false);
-            return;
-        }
-        
-        var parsedSuccessfully = VerifyHexColorString(roleColor, out var color);
-        if (!parsedSuccessfully)
-        {
-            await FollowupAsync("Hibás hex színkód!").ConfigureAwait(false);
-            return;
-        }
-
-        var category = await Context.Guild.CreateCategoryChannelAsync(categoryName, x =>
-        {
-            x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
-            {
-                new Overwrite(Context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)),
-                new Overwrite(Context.User.Id, PermissionTarget.User,
-                    new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
-            });
-        }).ConfigureAwait(false);
-
-        var role = await Context.Guild.CreateRoleAsync(roleName, GuildPermissions.None, new Color(color)).ConfigureAwait(false);
-        await ((SocketGuildUser) Context.User).AddRoleAsync(role).ConfigureAwait(false);
-
-        var text = await Context.Guild.CreateTextChannelAsync(textName, x =>
-        {
-            x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
-            {
-                new Overwrite(Context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)),
-                new Overwrite(Context.User.Id, PermissionTarget.User,
-                    new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
-            });
-            x.CategoryId = category.Id;
-        }).ConfigureAwait(false);
-
-        var voice = await Context.Guild.CreateVoiceChannelAsync(voiceName, x =>
-        {
-            x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
-            {
-                new Overwrite(Context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)),
-                new Overwrite(Context.User.Id, PermissionTarget.User,
-                    new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
-            });
-            x.CategoryId = category.Id;
-        }).ConfigureAwait(false);
-
-        await UpdateUserAsync(Context.User, x =>
-        {
-            x.Money -= required;
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -levelRequired, $"+{levels} szint"));
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -11250000, $"{role.Mention} rang"));
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -18750000, $"{category.Name} kategória"));
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -37500000, $"{text.Mention} szövegcsatorna"));
-            x.Transactions.Add(new Transaction("-", TransactionType.ShopPurchase, -37500000, $"{voice.Mention} hangcsatorna"));
-            x.BoughtRoles.Add(role.Id);
-            x.BoughtChannels.Add(new DiscordChannel(category.Id, DiscordChannelType.Category));
-            x.BoughtChannels.Add(new DiscordChannel(text.Id, DiscordChannelType.Text));
-            x.BoughtChannels.Add(new DiscordChannel(voice.Id, DiscordChannelType.Voice));
-        }).ConfigureAwait(false);
-        await UpdateUserAsync(BotUser, x=> x.Money += required).ConfigureAwait(false);
-        await FollowupAsync($"Sikeres vásárlás! (Költség: {required})").ConfigureAwait(false);
     }
 }

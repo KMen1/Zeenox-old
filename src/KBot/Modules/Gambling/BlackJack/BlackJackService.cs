@@ -20,12 +20,12 @@ using ImageFormat = System.Drawing.Imaging.ImageFormat;
 
 namespace KBot.Modules.Gambling.BlackJack;
 
-public class BlackJackService
+public class BlackJackService : IInjectable
 {
     private readonly DatabaseService Database;
     private readonly Cloudinary Cloudinary;
     private readonly List<BlackJackGame> Games = new();
-    
+
     public BlackJackService(DatabaseService database, Cloudinary cloudinary)
     {
         Database = database;
@@ -34,24 +34,55 @@ public class BlackJackService
 
     public BlackJackGame CreateGame(SocketUser user, IUserMessage message, int stake)
     {
-        var game = new BlackJackGame(user, message, stake, Database, Cloudinary, Games);
+        var game = new BlackJackGame(user, message, stake, Cloudinary);
         Games.Add(game);
+        game.GameEnded += OnGameEndedAsync;
         return game;
     }
-    
+
+    private async void OnGameEndedAsync(object sender, GameEndedEventArgs e)
+    {
+        var game = (BlackJackGame) sender!;
+        game.GameEnded -= OnGameEndedAsync;
+        Games.Remove(game);
+        await Database.UpdateUserAsync(game.Guild, game.User, x =>
+        {
+            if (e.IsWin)
+            {
+                x.Gambling.Balance += e.Prize;
+                x.Gambling.Wins++;
+                x.Gambling.MoneyWon += e.Prize - game.Bet;
+                x.Transactions.Add(new Transaction(e.GameId, TransactionType.Gambling, e.Prize, e.Description));
+            }
+            else if (e.Prize == -1)
+            {
+                x.Gambling.Balance += game.Bet;
+            }
+            else
+            {
+                x.Gambling.Losses++;
+                x.Gambling.MoneyLost += game.Bet;
+            }
+        }).ConfigureAwait(false);
+        if (e.IsWin || e.Prize == -1)
+        {
+            await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
+        }
+    }
+
     public BlackJackGame GetGame(string id)
     {
-        return Games.FirstOrDefault(x => x.Id == id);
+        return Games.Find(x => x.Id == id);
     }
 }
 
-public class BlackJackGame : IGamblingGame
+public sealed class BlackJackGame : IGamblingGame
 {
     public string Id { get; }
     private Deck Deck { get; }
     public SocketUser User { get; }
     private IUserMessage Message { get; }
-    private IGuild Guild => ((ITextChannel)Message.Channel).Guild;
+    public IGuild Guild => ((ITextChannel)Message.Channel).Guild;
     private List<Card> DealerCards { get; }
 
     public int DealerScore => GetCardsValue(DealerCards);
@@ -60,26 +91,21 @@ public class BlackJackGame : IGamblingGame
     public int Bet { get; }
     public bool Hidden { get; private set; }
     private Cloudinary CloudinaryClient { get; }
-    private List<BlackJackGame> Container { get; }
-    private DatabaseService Database { get; }
+    public event EventHandler<GameEndedEventArgs>? GameEnded;
 
     public BlackJackGame(
         SocketUser player,
         IUserMessage message,
         int bet,
-        DatabaseService database,
-        Cloudinary cloudinary,
-        List<BlackJackGame> container)
+        Cloudinary cloudinary)
     {
-        Id = Guid.NewGuid().ConvertToGameId();
+        Id = Guid.NewGuid().ToShortId();
         Message = message;
-        Database = database;
         Deck = new Deck();
         User = player;
         Bet = bet;
         Hidden = true;
         CloudinaryClient = cloudinary;
-        Container = container;
         DealerCards = Deck.DealHand();
         PlayerCards = Deck.DealHand();
     }
@@ -105,11 +131,6 @@ public class BlackJackGame : IGamblingGame
             case > 21:
             {
                 Hidden = false;
-                await Database.UpdateUserAsync(Guild, User, x =>
-                {
-                    x.Gambling.Losses++;
-                    x.Gambling.MoneyLost += Bet;
-                }).ConfigureAwait(false);
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -118,23 +139,13 @@ public class BlackJackGame : IGamblingGame
                         Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                Container.Remove(this);
+                OnGameEnded(new GameEndedEventArgs(Id, 0, "BL - Lose", false));
                 return;
             }
             case 21:
             {
                 Hidden = false;
                 var reward = (int) (Bet * 2.5);
-
-                _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
-                {
-                    x.Money += reward;
-                    x.Gambling.Wins++;
-                    x.Gambling.MoneyWon += reward - Bet;
-                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, reward, "BL - BlackJack"));
-                }).ConfigureAwait(false));
-                _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= reward).ConfigureAwait(false));
-
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -143,7 +154,7 @@ public class BlackJackGame : IGamblingGame
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                Container.Remove(this);
+                OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - BLACKJACK", true));
                 return;
             }
         }
@@ -162,15 +173,6 @@ public class BlackJackGame : IGamblingGame
             case > 21:
             {
                 var reward = Bet * 2;
-                _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
-                {
-                    x.Gambling.Balance += reward;
-                    x.Gambling.Wins++;
-                    x.Gambling.MoneyWon += reward - Bet;
-                    x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, reward, "BL - DEALERBUST"));
-                }).ConfigureAwait(false));
-                _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= reward).ConfigureAwait(false));
-
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -179,16 +181,11 @@ public class BlackJackGame : IGamblingGame
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                Container.Remove(this);
+                OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - DEALERBUST", true));
                 return;
             }
             case 21:
             {
-                _ = Task.Run(async () =>await Database.UpdateUserAsync(Guild, User, x =>
-                {
-                    x.Gambling.Losses++;
-                    x.Gambling.MoneyLost += Bet;
-                }).ConfigureAwait(false));
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -197,7 +194,7 @@ public class BlackJackGame : IGamblingGame
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                Container.Remove(this);
+                OnGameEnded(new GameEndedEventArgs(Id, 0, "BL - Lose", false));
                 return;
             }
         }
@@ -205,15 +202,6 @@ public class BlackJackGame : IGamblingGame
         if (PlayerScore == 21)
         {
             var reward = (int)(Bet * 2.5);
-            _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
-            {
-                x.Gambling.Balance += reward;
-                x.Gambling.Wins++;
-                x.Gambling.MoneyWon += reward - Bet;
-                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, reward, "BL - BLACKJACK"));
-            }).ConfigureAwait(false));
-            _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= reward).ConfigureAwait(false));
-
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -222,21 +210,12 @@ public class BlackJackGame : IGamblingGame
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            Container.Remove(this);
+            OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - BLACKJACK", true));
             return;
         }
         if (PlayerScore > DealerScore)
         {
             var reward = Bet * 2;
-            _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
-            {
-                x.Gambling.Balance += reward;
-                x.Gambling.Wins++;
-                x.Gambling.MoneyWon += reward - Bet;
-                x.Transactions.Add(new Transaction(Id, TransactionType.Gambling, reward, "BL - WIN"));
-            }).ConfigureAwait(false));
-            _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= reward).ConfigureAwait(false));
-            
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -245,16 +224,11 @@ public class BlackJackGame : IGamblingGame
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            Container.Remove(this);
+            OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - WIN", true));
             return;
         }
         if (PlayerScore < DealerScore)
         {
-            _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x =>
-            {
-                x.Gambling.Losses++;
-                x.Gambling.MoneyLost += Bet;
-            }).ConfigureAwait(false));
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -263,11 +237,11 @@ public class BlackJackGame : IGamblingGame
                     Color.Red);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            Container.Remove(this);
+            OnGameEnded(new GameEndedEventArgs(Id, 0, "BL - Win", false));
             return;
         }
-        _ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x => x.Gambling.Balance += Bet).ConfigureAwait(false));
-        _ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
+        //_ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x => x.Gambling.Balance += Bet).ConfigureAwait(false));
+        //_ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -276,7 +250,7 @@ public class BlackJackGame : IGamblingGame
                 Color.Blue);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        Container.Remove(this);
+        OnGameEnded(new GameEndedEventArgs(Id, -1, "BL - PUSH", false));
     }
 
     public string GetTablePicUrl()
@@ -375,5 +349,10 @@ public class BlackJackGame : IGamblingGame
         g.DrawImage(player, 0, 0);
         g.DrawImage(dealer, 188, 0);
         return bitmap;
+    }
+
+    private void OnGameEnded(GameEndedEventArgs e)
+    {
+        GameEnded?.Invoke(this, e);
     }
 }

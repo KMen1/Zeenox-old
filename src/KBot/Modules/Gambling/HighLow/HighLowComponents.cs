@@ -5,11 +5,13 @@ namespace KBot.Modules.Gambling.HighLow;
 
 public class HighLowComponents : KBotModuleBase
 {
+    public HighLowService HighLowService { get; set; }
+    
     [ComponentInteraction("highlow-high:*")]
     public async Task GuessHigherAsync(string Id)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = GamblingService.GetHighLowGame(Id);
+        var game = HighLowService.GetGame(Id);
         if (game?.User.Id != Context.User.Id)
         {
             return;
@@ -20,7 +22,7 @@ public class HighLowComponents : KBotModuleBase
     public async Task GuessLowerAsync(string Id)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = GamblingService.GetHighLowGame(Id);
+        var game = HighLowService.GetGame(Id);
         if (game?.User.Id != Context.User.Id)
         {
             return;
@@ -32,7 +34,7 @@ public class HighLowComponents : KBotModuleBase
     public async Task FinishAsync(string Id)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = GamblingService.GetHighLowGame(Id);
+        var game = HighLowService.GetGame(Id);
         if (game?.User.Id != Context.User.Id)
         {
             return;

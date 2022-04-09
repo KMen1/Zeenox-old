@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord;
+﻿using System.Threading.Tasks;
 using Discord.Interactions;
 using KBot.Enums;
 using KBot.Models;
@@ -9,6 +7,8 @@ namespace KBot.Modules.Gambling.Crash;
 
 public class CrashCommands : KBotModuleBase
 {
+    public CrashService CrashService { get; set; }
+    
     [SlashCommand("crash", "Szokásos crash játék.")]
     public async Task StartCrashGameAsync([MinValue(100), MaxValue(1000000)]int bet)
     {
@@ -26,7 +26,7 @@ public class CrashCommands : KBotModuleBase
         }
 
         var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
-        var game = GamblingService.CreateCrashGame(Context.User, msg, bet);
+        var game = CrashService.CreateGame(Context.User, msg, bet);
         _ = Task.Run(async () => await UpdateUserAsync(Context.User, x =>
         {
             x.Money -= bet;
@@ -40,9 +40,9 @@ public class CrashCommands : KBotModuleBase
     public async Task StopCrashGameAsync(string id)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = GamblingService.GetCrashGame(id);
+        var game = CrashService.GetGame(id);
         if (Context.User.Id != game.User.Id)
             return;
-        await GamblingService.StopCrashGameAsync(id).ConfigureAwait(false);
+        await CrashService.StopGameAsync(id).ConfigureAwait(false);
     }
 }

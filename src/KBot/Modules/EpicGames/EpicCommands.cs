@@ -11,12 +11,13 @@ namespace KBot.Modules.EpicGames;
 [Group("epic", "Epic Games parancsok")]
 public class EpicCommands : KBotModuleBase
 {
+    public HttpClient HttpClient { get; set; }
+    
     [SlashCommand("free", "Elküldi a jelenleg ingyenes játékot epic games-en.")]
     public async Task GetEpicFreeGameAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        using var client = new HttpClient();
-        var response = await client.GetStringAsync("https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=HU&allowCountries=HU").ConfigureAwait(false);
+        var response = await HttpClient.GetStringAsync("https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=HU&allowCountries=HU").ConfigureAwait(false);
         var search = EpicStore.FromJson(response);
         var embeds = search.CurrentGame.Select(game =>
             new EmbedBuilder()

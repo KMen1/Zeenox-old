@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using Discord.WebSocket;
+using Humanizer;
+using Lavalink4NET.Player;
 
 namespace KBot.Modules.Music;
 
@@ -52,39 +56,42 @@ public class MusicCommands : KBotModuleBase
             await FollowupAsync("Nincs találat! Kérlek próbáld újra másképp!").ConfigureAwait(false);
             return;
         }
-        var tracks = search.Tracks.ToList();//({track.Url})
-        var desc = tracks.Take(10).Aggregate("", (current, track) => current + $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`] | [`{track.Duration}`]");
+        var tracks = search.Tracks.ToList();//
+        var desc = tracks.Take(10).Aggregate("", (current, track) => current + $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Source}) | [`{track.Duration}`]\n");
 
-        var comp = new ComponentBuilder()
-            .WithButton(" ", "0", emote: new Emoji("1️⃣"))
-            .WithButton(" ", "1", emote: new Emoji("2️⃣"))
-            .WithButton(" ", "2", emote: new Emoji("3️⃣"))
-            .WithButton(" ", "3", emote: new Emoji("4️⃣"))
-            .WithButton(" ", "4", emote: new Emoji("5️⃣"))
-            .WithButton(" ", "5", emote: new Emoji("6️⃣"))
-            .WithButton(" ", "6", emote: new Emoji("7️⃣"))
-            .WithButton(" ", "7", emote: new Emoji("8️⃣"))
-            .WithButton(" ", "8", emote: new Emoji("9️⃣"))
-            .WithButton(" ", "9", emote: new Emoji("🔟"))
-            .Build();
-
+        var comp = new ComponentBuilder();
+        for (var i = 0; i < tracks.Take(10).Count(); i++)
+        {
+            var emoji = i switch
+            {
+                0 => "1️⃣",
+                1 => "2️⃣",
+                2 => "3️⃣",
+                3 => "4️⃣",
+                4 => "5️⃣",
+                5 => "6️⃣",
+                6 => "7️⃣",
+                7 => "8️⃣",
+                8 => "9️⃣",
+                9 => "🔟",
+                _ => ""
+            };
+            comp.WithButton(" ", $"search:{tracks[i].TrackIdentifier}", emote: new Emoji(emoji));
+        }
         var eb = new EmbedBuilder()
-            .WithTitle("Válaszd ki a kívánt számot")
+            .WithTitle("Válaszd ki a kívánt zeneszámot")
             .WithColor(Color.Blue)
             .WithDescription(desc)
             .Build();
-
-        await FollowupAsync(embed: eb, components: comp).ConfigureAwait(false);
-
-        var result = await InteractiveService.NextMessageComponentAsync(x => x.User.Id == Context.User.Id).ConfigureAwait(false);
-        if (!result.IsSuccess)
-        {
-            return;
-        }
-
-        await result.Value!.DeferAsync().ConfigureAwait(false);
-        var index = int.Parse(result.Value!.Data.CustomId);
-        await AudioService.PlayAsync(Context.Guild, Context.Interaction, tracks[index]).ConfigureAwait(false);
+        await FollowupAsync(embed: eb, components: comp.Build()).ConfigureAwait(false);
+    }
+    
+    [ComponentInteraction("search:*", true)]
+    public async Task PlaySearchAsync(string identifier)
+    {
+        await DeferAsync().ConfigureAwait(false);
+        await AudioService.PlayFromSearchAsync(Context.Guild, (SocketMessageComponent)Context.Interaction, identifier)
+            .ConfigureAwait(false);
     }
 
     [SlashCommand("volume", "Hangerő beállítása")]

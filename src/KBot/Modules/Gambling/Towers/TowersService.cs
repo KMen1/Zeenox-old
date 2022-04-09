@@ -5,18 +5,54 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using KBot.Enums;
+using KBot.Models;
+using KBot.Services;
 
 namespace KBot.Modules.Gambling.Towers;
 
-public class TowersService
+public class TowersService : IInjectable
 {
     private readonly List<TowersGame> Games = new();
+    private readonly DatabaseService Database;
+
+    public TowersService(DatabaseService database)
+    {
+        Database = database;
+    }
 
     public TowersGame CreateGame(SocketUser user, IUserMessage message, int bet, Difficulty difficulty)
     {
-        var game = new TowersGame(user, message, bet, difficulty, Games);
+        var game = new TowersGame(user, message, bet, difficulty);
         Games.Add(game);
+        game.GameEnded += HandleGameEndedAsync;
         return game;
+    }
+
+    private async void HandleGameEndedAsync(object sender, GameEndedEventArgs e)
+    {
+        var game = (TowersGame)sender!;
+        game.GameEnded -= HandleGameEndedAsync;
+        Games.Remove(game);
+        await Database.UpdateUserAsync(game.Guild, game.User, x =>
+        {
+            if (e.IsWin)
+            {
+                x.Gambling.Balance += e.Prize;
+                x.Gambling.Wins++;
+                x.Gambling.MoneyWon += e.Prize - game.Bet;
+                x.Transactions.Add(new Transaction(e.GameId, TransactionType.Gambling, e.Prize, e.Description));
+            }
+            else
+            {
+                x.Gambling.Losses++;
+                x.Gambling.MoneyLost += game.Bet;
+            }
+        }).ConfigureAwait(false);
+        if (e.IsWin)
+        {
+            await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
+        }
     }
 
     public TowersGame GetGame(string id)
@@ -25,40 +61,49 @@ public class TowersService
     }
 }
 
-public class TowersGame : IGamblingGame
+public sealed class TowersGame : IGamblingGame
 {
     public string Id { get; }
     public SocketUser User { get; }
     private IUserMessage Message { get; }
+    public IGuild Guild => ((ITextChannel)Message.Channel).Guild;
     public int Bet { get; }
     public Difficulty Difficulty { get; }
     private int Columns => Difficulty is Difficulty.Medium ? 2 : 3;
     private int Mines => Difficulty is Difficulty.Hard ? 2 : 1;
-    private double Multiplier => Difficulty is Difficulty.Easy ? 1.455 : Difficulty is Difficulty.Medium ? 1.94 : 2.91;
+    private double Multiplier => Difficulty switch
+    {
+        Difficulty.Easy => 1.455,
+        Difficulty.Medium => 1.94,
+        _ => 2.91
+    };
     private List<Field> Fields { get; }
-    private List<TowersGame> Games { get; }
     private bool Lost { get; set; }
     private int Prize { get; set; }
+    public event EventHandler<GameEndedEventArgs> GameEnded;
 
-    public TowersGame(SocketUser user, IUserMessage message, int bet, Difficulty difficulty, List<TowersGame> games)
+    public TowersGame(
+        SocketUser user,
+        IUserMessage message,
+        int bet,
+        Difficulty difficulty)
     {
-        Id = Guid.NewGuid().ConvertToGameId();
+        Id = Guid.NewGuid().ToShortId();
         User = user;
         Message = message;
         Bet = bet;
         Difficulty = difficulty;
-        Games = games;
         Fields = new List<Field>();
         var rand = new Random();
-        for (int x = 5; x > 0; x--)
+        for (var x = 5; x > 0; x--)
         {
             var row = new List<Field>();
-            for (int y = Columns; y > 0; y--)
+            for (var y = Columns; y > 0; y--)
             {
                 row.Add(new Field { X = x, Y = y, IsMine = false, Label = $"{Math.Round(Bet*x*Multiplier)}", Emoji = new Emoji("🪙")});
             }
 
-            while (row.Count(x => x.IsMine) < Mines)
+            while (row.Count(z => z.IsMine) < Mines)
             {
                 var index = rand.Next(0, row.Count);
                 row[index].IsMine = true;
@@ -77,7 +122,7 @@ public class TowersGame : IGamblingGame
             for (var j = Columns; j > 0; j--)
             {
                 var tPonint = Fields.Find(x => x.X == i && x.Y == j);
-                row.AddComponent(new ButtonBuilder($"{tPonint.Label}$", $"towers:{Id}:{i}:{j}", emote: new Emoji("🪙"), isDisabled: i != 1).Build());
+                row.AddComponent(new ButtonBuilder($"{tPonint?.Label}$", $"towers:{Id}:{i}:{j}", emote: new Emoji("🪙"), isDisabled: i != 1).Build());
             }
             comp.AddRow(row);
         }
@@ -96,10 +141,16 @@ public class TowersGame : IGamblingGame
         {
             Lost = true;
             await StopAsync().ConfigureAwait(false);
-            Games.Remove(this);
             return;
         }
-        Prize = (int)Math.Round(Bet*x*Multiplier);
+        Prize = (int)Math.Round(Bet*Multiplier);
+
+        if (x == 5)
+        {
+            await Message.ModifyAsync(u => u.Embed = new EmbedBuilder().TowersEmbed(this, $"Nyeremény: **{Prize} KCoin**", Lost ? Color.Red : Color.Green)).ConfigureAwait(false);
+            OnGameEnded(new GameEndedEventArgs(Id, Prize, "TW - Win", true));
+        }
+
         var comp = new ComponentBuilder();
         Fields.Where(f => f.X == x).ToList().ForEach(f => f.Disabled = true);
         for (var i = 5; i > 0; i--)
@@ -107,7 +158,7 @@ public class TowersGame : IGamblingGame
             var row = new ActionRowBuilder();
             for (var j = Columns; j > 0; j--)
             {
-                var tPonint = Fields.Find(x => x.X == i && x.Y == j);
+                var tPonint = Fields.Find(t => t.X == i && t.Y == j);
                 row.AddComponent(tPonint!.Disabled
                     ? new ButtonBuilder($"{tPonint.Label}$", $"towers:{Id}:{i}:{j}", emote: tPonint.Emoji,
                         isDisabled: true).Build()
@@ -116,20 +167,13 @@ public class TowersGame : IGamblingGame
             }
             comp.AddRow(row);
         }
-        await Message.ModifyAsync(x => x.Components = comp.Build()).ConfigureAwait(false);
+        await Message.ModifyAsync(z => z.Components = comp.Build()).ConfigureAwait(false);
         
     }
 
     public async Task<int> StopAsync()
     {
         var prize = Lost ? 0 : Prize;
-        await RevealAsync().ConfigureAwait(false);
-        await Message.ModifyAsync(x => x.Embed = new EmbedBuilder().TowersEmbed(this, $"Nyeremény: **{prize} KCoin**", Lost ? Color.Red : Color.Green)).ConfigureAwait(false);
-        return prize;
-    }
-
-    private Task RevealAsync()
-    {
         var revealComponents = new ComponentBuilder();
         for (var i = 5; i > 0; i--)
         {
@@ -143,8 +187,19 @@ public class TowersGame : IGamblingGame
 
             revealComponents.AddRow(row);
         }
+        await Message.ModifyAsync(x =>
+        {
+            x.Embed = new EmbedBuilder().TowersEmbed(this, $"Nyeremény: **{prize} KCoin**",
+                    Lost ? Color.Red : Color.Green);
+            x.Components = revealComponents.Build();
+        }).ConfigureAwait(false);
+        OnGameEnded(new GameEndedEventArgs(Id, prize, "TW - Lose", false));
+        return prize;
+    }
 
-        return Message.ModifyAsync(x => x.Components = revealComponents.Build());
+    private void OnGameEnded(GameEndedEventArgs e)
+    {
+        GameEnded?.Invoke(this, e);
     }
 }
 

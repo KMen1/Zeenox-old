@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -14,17 +15,10 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Fergun.Interactive;
 using KBot.Models;
-using KBot.Modules.DeadByDaylight;
-using KBot.Modules.Events;
-using KBot.Modules.Gambling;
-using KBot.Modules.Gambling.Objects;
-using KBot.Modules.Leveling;
-using KBot.Modules.Music;
 using KBot.Services;
 using Lavalink4NET;
 using Lavalink4NET.DiscordNet;
 using Lavalink4NET.Logging;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -94,12 +88,6 @@ public static class Program
             .ConfigureServices((context, services) =>
             {
                 services.AddSingleton(context.Configuration.Get<BotConfig>());
-                services.AddSingleton(new InteractiveConfig
-                {
-                    DefaultTimeout = new TimeSpan(0, 0, 5, 0),
-                    LogLevel = LogSeverity.Verbose
-                });
-                services.AddSingleton<InteractiveService>();
                 services.AddHostedService<InteractionHandler>();
                 services.AddSingleton<IDiscordClientWrapper, DiscordClientWrapper>();
                 services.AddSingleton<IAudioService, LavalinkNode>();
@@ -113,21 +101,20 @@ public static class Program
                     DisconnectOnStop = false,
                 });
                 services.AddSingleton<ILogger, EventLogger>();
-                services.AddSingleton<AudioService>();
                 services.AddSingleton<IMongoClient>(new MongoClient(context.Configuration.GetSection("MongoDb").GetValue<string>("ConnectionString")));
                 services.AddSingleton(x => x.GetService<IMongoClient>()!.GetDatabase(context.Configuration.Get<BotConfig>().MongoDb.Database));
-                services.AddSingleton<DatabaseService>();
                 services.AddSingleton<OsuClient>();
-                services.AddSingleton<LoggingService>();
-                services.AddSingleton<GuildEvents>();
-                services.AddSingleton<LevelingModule>();
-                services.AddSingleton<DbDService>();
-                services.AddSingleton<GamblingService>();
+                services.Scan(scan => scan.FromAssemblyOf<IInjectable>()
+                    .AddClasses(x => x.AssignableTo(typeof(IInjectable)))
+                    .AsSelfWithInterfaces()
+                    .WithSingletonLifetime());
                 services.AddSingleton(new Cloudinary(new Account(
                     context.Configuration.GetSection("Cloudinary").GetValue<string>("CloudName"),
                     context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiKey"),
                     context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiSecret"))));
                 services.AddMemoryCache();
+                services.AddSingleton<InteractiveService>();
+                services.AddHttpClient();
             })
             .UseSerilog()
             .UseConsoleLifetime()
@@ -140,6 +127,11 @@ public static class Program
         const string startupPath = @"C:\Users\user\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup";
         file.Save(Path.Combine(startupPath, "KBot.lnk"), false);
 #endif
+        foreach (var mytype in Assembly.GetExecutingAssembly().GetTypes()
+                     .Where(mytype => mytype .GetInterfaces().Contains(typeof(IInjectable))))
+        {
+            host.Services.GetService(mytype);
+        }
         return host.RunAsync();
     }
 

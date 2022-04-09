@@ -16,7 +16,7 @@ using ILogger = Lavalink4NET.Logging.ILogger;
 
 namespace KBot.Modules.Music;
 
-public class AudioService
+public class AudioService : IInjectable
 {
     private readonly LavalinkNode _lavaNode;
     private readonly Dictionary<FilterType, Func<PlayerFilterMap, string>> _filterActions = new()
@@ -147,7 +147,7 @@ public class AudioService
             embed: new EmbedBuilder().NowPlayingEmbed(player),
             components: new ComponentBuilder().NowPlayerComponents(player)).ConfigureAwait(false);
     }
-    public async Task PlayAsync(IGuild guild, SocketInteraction interaction, LavalinkTrack track)
+    public async Task PlayFromSearchAsync(IGuild guild, SocketMessageComponent interaction, string id)
     {
         var user = interaction.User;
         var voiceChannel = ((IVoiceState)user).VoiceChannel;
@@ -161,11 +161,13 @@ public class AudioService
                 .ConfigureAwait(false);
             return;
         }
+        var track = await _lavaNode.GetTrackAsync("https://www.youtube.com/watch?v=" + id).ConfigureAwait(false);
+        track.Context = new TrackContext(user);
         var skipVotesNeeded = await voiceChannel.GetUsersAsync().CountAsync().ConfigureAwait(false) / 2;
         var player = _lavaNode.HasPlayer(guild.Id) ?
             _lavaNode.GetPlayer<MusicPlayer>(guild.Id) :
             await _lavaNode.JoinAsync(() => new MusicPlayer(voiceChannel, skipVotesNeeded), guild.Id, voiceChannel.Id).ConfigureAwait(false);
-        var interactionMessage = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
+        var interactionMessage = interaction.Message;
 
         if (player!.IsPlaying)
         {

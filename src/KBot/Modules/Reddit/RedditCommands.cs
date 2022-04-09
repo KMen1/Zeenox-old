@@ -7,31 +7,43 @@ namespace KBot.Modules.Reddit;
 [Group("reddit", "Reddit parancsok")]
 public class Reddit : KBotModuleBase
 {
+    public RedditService RedditService { get; set; }
+
+    [SlashCommand("sub", "Küld egy random post-ot az adott subredditről.")]
+    public async Task SubAsync(string subreddit)
+    {
+        await DeferAsync().ConfigureAwait(false);
+        var post = await RedditService.GetRandomPostFromSubredditAsync(subreddit).ConfigureAwait(false);
+        if (post is null)
+        {
+            await FollowupWithEmbedAsync(Color.Red, "Nem található ilyen subreddit.", "").ConfigureAwait(false);
+            return;
+        }
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
+    }
+
     [SlashCommand("fost", "Küld egy random fost-ot az r/FostTalicska subredditről.")]
     public async Task FostAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostAsync("FostTalicska").ConfigureAwait(false);
-        var postUrl = "https://reddit.com" + post.Permalink;
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
+        var post = await RedditService.GetRandomPostFromSubredditAsync("FostTalicska").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [SlashCommand("meme", "Küld egy random mémet az r/memes subredditről.")]
     public async Task MemeAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostAsync("memes").ConfigureAwait(false);
-        var postUrl = "https://reddit.com" + post.Permalink;
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
+        var post = await RedditService.GetRandomPostFromSubredditAsync("memes").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [SlashCommand("blursed", "Küld egy random elátkozott képet az r/blursedimages subredditről.")]
     public async Task BlursedAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostAsync("blursedimages").ConfigureAwait(false);
-        var postUrl = "https://reddit.com" + post.Permalink;
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
+        var post = await RedditService.GetRandomPostFromSubredditAsync("blursedimages").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [RequireNsfw]
@@ -39,9 +51,8 @@ public class Reddit : KBotModuleBase
     public async Task PussyAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostAsync("pussy").ConfigureAwait(false);
-        var postUrl = "https://reddit.com" + post.Permalink;
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
+        var post = await RedditService.GetRandomPostFromSubredditAsync("pussy").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [RequireNsfw]
@@ -49,9 +60,8 @@ public class Reddit : KBotModuleBase
     public async Task BoobsAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostAsync("boobs").ConfigureAwait(false);
-        var postUrl = "https://reddit.com" + post.Permalink;
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
+        var post = await RedditService.GetRandomPostFromSubredditAsync("boobs").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
     [RequireNsfw]
@@ -59,8 +69,7 @@ public class Reddit : KBotModuleBase
     public async Task AssAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostAsync("ass").ConfigureAwait(false);
-        var postUrl = "https://reddit.com" + post.Permalink;
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, postUrl, post.ImageUrl).ConfigureAwait(false);
+        var post = await RedditService.GetRandomPostFromSubredditAsync("ass").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
     }
 }

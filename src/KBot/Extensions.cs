@@ -484,7 +484,7 @@ new TremoloFilter()
         };
         return "Tremolo";
     }
-    
+
     /*public static IEnumerable<IFilter> Vibrate()
 {
     return new IFilter[]
@@ -536,8 +536,15 @@ new TremoloFilter()
             .Build();
     }
 
-    public static string ConvertToGameId(this Guid guid)
+    public static string ToShortId(this Guid guid)
     {
         return guid.ToString().Split("-")[0];
+    }
+    
+    public static long ToUnixTimeStamp(this DateTime date)
+    {
+        var unixTimestamp = date.Ticks - new DateTime(1970, 1, 1).Ticks;
+        unixTimestamp /= TimeSpan.TicksPerSecond;
+        return unixTimestamp;
     }
 }

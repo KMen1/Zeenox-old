@@ -5,11 +5,13 @@ namespace KBot.Modules.Gambling.Towers;
 
 public class TowersComponents : KBotModuleBase
 {
+    public TowersService TowersService { get; set; }
+    
     [ComponentInteraction("towers:*:*:*")]
     public async Task ClickFieldAsync(string id, int x, int y)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = GamblingService.GetTowersGame(id);
+        var game = TowersService.GetGame(id);
         if (game.User.Id != Context.User.Id)
             return;
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);

@@ -9,7 +9,7 @@ using Serilog;
 
 namespace KBot.Modules.Events;
 
-public class GuildEvents
+public class GuildEvents : IInjectable
 {
     private readonly DiscordSocketClient _client;
     private readonly DatabaseService _database;

@@ -15,19 +15,97 @@ public class GuildModel
     [BsonRepresentation(BsonType.ObjectId)]
     public string DocId { get; set; }
 
-    [BsonElement("guildid")] public ulong Id { get; set; }
+    [BsonElement("guildid")] public ulong Id { get; private set; }
 
-    [BsonElement("config")] public GuildConfig Config { get; set; }
+    [BsonElement("config")] public GuildConfig Config { get; private set; }
 
-    [BsonElement("users")] public List<User> Users { get; set; }
+    [BsonElement("users")] public List<User> Users { get; private set; }
+    
+    [BsonElement("buttonroles")] public List<ButtonRoleMessage> ButtonRoles { get; private set; }
 
     public GuildModel(List<SocketGuildUser> users)
     {
         Id = users[0].Guild.Id;
         Config = new GuildConfig();
         Users = new List<User>();
+        ButtonRoles = new List<ButtonRoleMessage>();
         users.ConvertAll(x => new User(x)).ForEach(x => Users.Add(x));
     }
+    
+    public void AddUser(SocketGuildUser user)
+    {
+        Users.Add(new User(user));
+    }
+    
+    public void ReplaceConfig(GuildConfig config)
+    {
+        Config = config;
+    }
+}
+
+public class ButtonRoleMessage
+{
+    public ButtonRoleMessage(ulong channelId, ulong messageId, string title, string description)
+    {
+        ChannelId = channelId;
+        MessageId = messageId;
+        Title = title;
+        Description = description;
+        Roles = new List<ButtonRole>();
+    }
+
+    public bool AddRole(ButtonRole role)
+    {
+        if (Roles.Exists(x => x.RoleId == role.RoleId))
+            return false;
+        Roles.Add(role);
+        return true;
+    }
+    
+    public bool RemoveRole(IRole role)
+    {
+        if (!Roles.Exists(x => x.RoleId == role.Id))
+            return false;
+        Roles.Remove(Roles.Find(x => x.RoleId == role.Id));
+        return true;
+    }
+    public MessageComponent GetButtons()
+    {
+        var comp = new ComponentBuilder();
+        foreach (var role in Roles)
+        {
+            var emoteResult = Emote.TryParse(role.Emote, out var emote);
+            var emojiResult = Emoji.TryParse(role.Emote, out var emoji);
+            if (emoteResult)
+                comp.WithButton(role.Title, $"rrtr:{role.RoleId}", emote: emote);
+            else if (emojiResult)
+                comp.WithButton(role.Title, $"rrtr:{role.RoleId}", emote: emoji);
+            else
+                comp.WithButton(role.Title, $"rrtr:{role.RoleId}");
+        }
+        return comp.Build();
+    }
+    
+    
+    [BsonElement("title")] public string Title { get; set; }
+    [BsonElement("description")] public string Description { get; set; }
+    [BsonElement("roles")] public List<ButtonRole> Roles { get; private set; }
+    [BsonElement("messageid")] public ulong MessageId { get; private set; }
+    [BsonElement("channelid")] public ulong ChannelId { get; private set; }
+}
+
+public class ButtonRole
+{
+    public ButtonRole(ulong roleId, string title, string emote)
+    {
+        RoleId = roleId;
+        Title = title;
+        Emote = emote;
+    }
+    
+    [BsonElement("emote")] public string Emote { get; private set; }
+    [BsonElement("title")] public string Title { get; private set; }
+    [BsonElement("roleid")] public ulong RoleId { get; private set; }
 }
 
 public class GuildConfig
@@ -56,23 +134,22 @@ public class GuildConfig
 
 public class User
 {
-    [BsonElement("userid")] public ulong Id { get; set; }
+    [BsonElement("userid")] public ulong Id { get; private set; }
     [BsonElement("xp")] public int XP { get; set; }
 
     [BsonElement("level")] public int Level { get; set; }
 
-    [BsonElement("gambling")] public GamblingProfile Gambling { get; set; }
+    [BsonElement("gambling")] public GamblingProfile Gambling { get; private set; }
     [BsonElement("osuid")] public ulong OsuId { get; set; }
 
     [BsonElement("dailyclaimdate")] public DateTime DailyClaimDate { get; set; }
 
     [BsonElement("voiceactivitydate")] public DateTime LastVoiceActivityDate { get; set; }
 
-    [BsonElement("warns")] public List<Warn> Warns { get; set; }
-    [BsonElement("roles")] public List<ulong> Roles { get; set; }
-    [BsonElement("transactions")] public List<Transaction> Transactions { get; set; }
-    [BsonElement("boughtchannels")] public List<DiscordChannel> BoughtChannels { get; set; }
-    [BsonElement("boughtroles")] public List<ulong> BoughtRoles { get; set; }
+    [BsonElement("warns")] public List<Warn> Warns { get; private set; }
+    [BsonElement("roles")] public List<ulong> Roles { get; private set; }
+    [BsonElement("transactions")] public List<Transaction> Transactions { get; private set; }
+    [BsonElement("boughtchannels")] public List<DiscordChannel> BoughtChannels { get; private set; }
 
     [BsonIgnore]
     public int TotalXp
@@ -119,7 +196,6 @@ public class User
         Roles = new List<ulong>();
         user.Roles.Select(x=> x.Id).ToList().ForEach(x => Roles.Add(x));
         BoughtChannels = new List<DiscordChannel>();
-        BoughtRoles = new List<ulong>();
         Transactions = new List<Transaction>();
         DailyClaimDate = DateTime.MinValue;
         LastVoiceActivityDate = DateTime.MinValue;
@@ -135,7 +211,6 @@ public class User
         Roles = new List<ulong>();
         Roles.AddRange(roles);
         BoughtChannels = new List<DiscordChannel>();
-        BoughtRoles = new List<ulong>();
         Transactions = new List<Transaction>();
         DailyClaimDate = DateTime.MinValue;
         LastVoiceActivityDate = DateTime.MinValue;

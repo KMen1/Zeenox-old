@@ -7,39 +7,40 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace KBot.Modules.DeadByDaylight;
 
-public class DbDService
+public class DbDService : IInjectable
 {
     private readonly IMemoryCache _cache;
+    private readonly HttpClient _httpClient;
 
-    public DbDService(IMemoryCache cache)
+    public DbDService(IMemoryCache cache, HttpClient httpClient)
     {
         _cache = cache;
+        _httpClient = httpClient;
     }
 
     public async Task<(List<Perk> Perks, long EndTime)> GetWeeklyShrinesAsync()
     {
         var shrines = await _cache.GetOrCreateAsync("WeeklyShrines", async x =>
         {
-            x.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+            x.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(10);
             return await RefreshWeeklyShrinesAsync().ConfigureAwait(false);
         }).ConfigureAwait(false);
-        if (UnixTimestampFromDateTime(DateTime.UtcNow) > shrines.EndTime)
+        if (DateTime.UtcNow.ToUnixTimeStamp() > shrines.EndTime)
         {
             shrines = await RefreshWeeklyShrinesAsync().ConfigureAwait(false);
         }
         return shrines;
     }
 
-    private static async Task<(List<Perk> Perks, long EndTime)> RefreshWeeklyShrinesAsync()
+    private async Task<(List<Perk> Perks, long EndTime)> RefreshWeeklyShrinesAsync()
     {
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
-        var response = await httpClient.GetStringAsync("https://dbd.onteh.net.au/api/shrine/").ConfigureAwait(false);
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
+        var response = await _httpClient.GetStringAsync("https://dbd.onteh.net.au/api/shrine/").ConfigureAwait(false);
         var shrine = Shrines.FromJson(response);
         var perks = new List<Perk>();
         foreach (var perk in shrine.Perks)
         {
-            var perkresponse = await httpClient.GetStringAsync($"https://dbd.onteh.net.au/api/perkinfo?perk={perk.Id}").ConfigureAwait(false);
+            var perkresponse = await _httpClient.GetStringAsync($"https://dbd.onteh.net.au/api/perkinfo?perk={perk.Id}").ConfigureAwait(false);
             perks.Add(Perk.FromJson(perkresponse));
         }
         return (perks, shrine.End);
@@ -172,19 +173,5 @@ public class DbDService
             268435482 => "K27",
             _ => "Ismeretlen"
         };
-    }
-    
-    private static DateTime TimeFromUnixTimestamp(int unixTimestamp)
-    {
-        DateTime unixYear0 = new DateTime(1970, 1, 1);
-        long unixTimeStampInTicks = unixTimestamp * TimeSpan.TicksPerSecond;
-        DateTime dtUnix = new DateTime(unixYear0.Ticks + unixTimeStampInTicks);
-        return dtUnix;
-    }
-    public static long UnixTimestampFromDateTime(DateTime date)
-    {
-        long unixTimestamp = date.Ticks - new DateTime(1970, 1, 1).Ticks;
-        unixTimestamp /= TimeSpan.TicksPerSecond;
-        return unixTimestamp;
     }
 }

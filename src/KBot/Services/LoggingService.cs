@@ -6,7 +6,7 @@ using Lavalink4NET.Logging;
 
 namespace KBot.Services;
 
-public class LoggingService
+public class LoggingService : IInjectable
 {
     public LoggingService(InteractionService interactionService, ILogger lavaLogger)
     {

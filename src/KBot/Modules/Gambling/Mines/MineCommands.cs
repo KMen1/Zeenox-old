@@ -8,6 +8,8 @@ namespace KBot.Modules.Gambling.Mines;
 [Group("mine", "Roobet Mine-hoz hasonló játék")]
 public class MineCommands : KBotModuleBase
 {
+    public MinesService MinesService { get; set; }
+    
     [SlashCommand("start", "Elindít egy új játékot")]
     public async Task StartMinesAsync([MinValue(100), MaxValue(1000000)]int bet, [MinValue(5), MaxValue(24)]int mines)
     {
@@ -25,7 +27,7 @@ public class MineCommands : KBotModuleBase
         }
         
         var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
-        var game = GamblingService.CreateMinesGame(Context.User, msg, bet, mines);
+        var game = MinesService.CreateGame(Context.User, msg, bet, mines);
         
         _ = Task.Run(async () => await UpdateUserAsync(Context.User, x =>
         {
@@ -40,7 +42,7 @@ public class MineCommands : KBotModuleBase
     public async Task StopMinesAsync(string id)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var game = GamblingService.GetMinesGame(id);
+        var game = MinesService.GetGame(id);
         if (game is null)
         {
             await FollowupAsync("Nem található ilyen id-jű játék").ConfigureAwait(false);
@@ -53,26 +55,7 @@ public class MineCommands : KBotModuleBase
             await FollowupAsync("Egy mezőt meg kell nyomnod mielőtt kiszállhatnál.").ConfigureAwait(false);
             return;
         }
-        var reward = await game.StopAsync(false).ConfigureAwait(false);
-        if (reward != 0)
-        {
-            _ = Task.Run(async () => await UpdateUserAsync(Context.User, x =>
-            {
-                x.Gambling.Balance += reward;
-                x.Gambling.MoneyWon += reward - game.Bet;
-                x.Gambling.Wins++;
-                x.Transactions.Add(new Transaction(game.Id, TransactionType.Gambling, reward, "MN - WIN"));
-            }).ConfigureAwait(false));
-            _ = Task.Run(async () => await UpdateUserAsync(BotUser, x => x.Money -= reward).ConfigureAwait(false));
-        }
-        else
-        {
-            _ = Task.Run(async () => await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
-            {
-                x.Gambling.MoneyLost += game.Bet;
-                x.Gambling.Losses++;
-            }).ConfigureAwait(false));
-        }
+        await game.StopAsync(false).ConfigureAwait(false);
         await FollowupAsync("Leállítva").ConfigureAwait(false);
     }
 }

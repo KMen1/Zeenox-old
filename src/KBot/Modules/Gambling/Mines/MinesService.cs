@@ -4,18 +4,55 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using KBot.Enums;
+using KBot.Models;
+using KBot.Services;
 
 namespace KBot.Modules.Gambling.Mines;
 
-public class MinesService
+public class MinesService : IInjectable
 {
-    private readonly List<MinesGame> Games = new();
+    private readonly List<MinesGame> Games;
+    private readonly DatabaseService Database;
 
-    public MinesGame CreateGame(SocketUser user, IUserMessage message, int bet, int size, int mines)
+    public MinesService(DatabaseService database)
     {
-        var game = new MinesGame(message, user, bet, size, mines, Games);
+        Database = database;
+        Games = new List<MinesGame>();
+    }
+
+    public MinesGame CreateGame(SocketUser user, IUserMessage message, int bet, int mines)
+    {
+        var game = new MinesGame(message, user, bet, mines);
+        game.GameEnded += OnGameEndedAsync;
         Games.Add(game);
         return game;
+    }
+
+    private async void OnGameEndedAsync(object sender, GameEndedEventArgs e)
+    {
+        var game = (MinesGame)sender!;
+        game.GameEnded -= OnGameEndedAsync;
+        Games.Remove(game);
+        await Database.UpdateUserAsync(game.Guild, game.User, x =>
+        {
+            if (e.IsWin)
+            {
+                x.Gambling.Balance += e.Prize;
+                x.Gambling.Wins++;
+                x.Gambling.MoneyWon += e.Prize - game.Bet;
+                x.Transactions.Add(new Transaction(e.GameId, TransactionType.Gambling, e.Prize, e.Description));
+            }
+            else
+            {
+                x.Gambling.Losses++;
+                x.Gambling.MoneyLost += game.Bet;
+            }
+        }).ConfigureAwait(false);
+        if (e.IsWin)
+        {
+            await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
+        }
     }
 
     public MinesGame GetGame(string id)
@@ -24,18 +61,18 @@ public class MinesService
     }
 }
 
-public class MinesGame : IGamblingGame
+public sealed class MinesGame : IGamblingGame
 {
     public string Id { get; }
     private readonly List<Point> Points = new();
     private IUserMessage Message { get; }
+    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
     public SocketUser User { get; }
     public int Bet { get; }
     public bool CanStop { get; private set; }
     private int Mines => Points.Count(x => x.IsMine);
     private int Clicked => Points.Count(x => x.IsClicked && !x.IsMine);
-    private List<MinesGame> Container { get; }
-    
+    public event EventHandler<GameEndedEventArgs> GameEnded;
 
     private decimal Multiplier
     {
@@ -52,19 +89,16 @@ public class MinesGame : IGamblingGame
         IUserMessage message,
         SocketUser user,
         int bet,
-        int size,
-        int mines,
-        List<MinesGame> container)
+        int mines)
     {
-        Id = Guid.NewGuid().ConvertToGameId();
+        Id = Guid.NewGuid().ToShortId();
         Message = message;
         User = user;
-        Container = container;
         Bet = bet;
         var random = new Random();
-        for (var i = 0; i < size; i++)
+        for (var i = 0; i < 5; i++)
         {
-            for (var j = 0; j < size; j++)
+            for (var j = 0; j < 5; j++)
             {
                 Points.Add(new Point { X = i, Y = j, Emoji = new Emoji("🪙"), IsClicked = false, Label = " "});
             }
@@ -108,7 +142,7 @@ public class MinesGame : IGamblingGame
             x.Components = comp.Build();
         });
     }
-    
+
     public async Task ClickFieldAsync(int x, int y)
     {
         CanStop = true;
@@ -116,7 +150,7 @@ public class MinesGame : IGamblingGame
         if (point!.IsMine)
         {
             await StopAsync(true).ConfigureAwait(false);
-            Container.Remove(this);
+            OnGameEnded(new GameEndedEventArgs(Id, 0, "MN - LOSE", false));
             return;
         }
         point!.IsClicked = true;
@@ -134,7 +168,7 @@ public class MinesGame : IGamblingGame
 
             comp.AddRow(row);
         }
-        await Message.ModifyAsync(x => x.Components = comp.Build()).ConfigureAwait(false);
+        await Message.ModifyAsync(z => z.Components = comp.Build()).ConfigureAwait(false);
     }
 
     private static double Factorial(int n)
@@ -144,7 +178,7 @@ public class MinesGame : IGamblingGame
         return n * Factorial(n - 1);
     }
 
-    public async Task<int> StopAsync(bool lost)
+    public async Task StopAsync(bool lost)
     {
         var prize = lost ? 0 : (int)Math.Round(Bet * Multiplier);
 
@@ -170,7 +204,12 @@ public class MinesGame : IGamblingGame
                 .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
-        return prize;
+        OnGameEnded(new GameEndedEventArgs(Id, prize, lost ? "MN - LOSE" : "MN - WIN", !lost));
+    }
+
+    private void OnGameEnded(GameEndedEventArgs e)
+    {
+        GameEnded?.Invoke(this, e);
     }
 }
 public class Point

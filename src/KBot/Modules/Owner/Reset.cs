@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Interactions;
 
-namespace KBot.Modules.Utility;
+namespace KBot.Modules.Owner;
 
 public class Reset : KBotModuleBase
 {

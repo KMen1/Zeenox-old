@@ -8,6 +8,8 @@ namespace KBot.Modules.Gambling.Towers;
 [Group("towers", "Roobet towers játék")]
 public class TowersCommands : KBotModuleBase
 {
+    public TowersService TowersService { get; set; }
+    
     [SlashCommand("start", "Towers indítása")]
     public async Task CreateTowersGameAsync([MinValue(100), MaxValue(1000000)] int bet, Difficulty diff)
     {
@@ -25,7 +27,7 @@ public class TowersCommands : KBotModuleBase
         }
 
         var msg = await FollowupAsync("Létrehozás...").ConfigureAwait(false);
-        var game = GamblingService.CreateTowersGame(Context.User, msg, bet, diff);
+        var game = TowersService.CreateGame(Context.User, msg, bet, diff);
 
         _ = Task.Run(async () => await UpdateUserAsync(Context.User, x =>
         {
@@ -40,7 +42,7 @@ public class TowersCommands : KBotModuleBase
     public async Task StopTowersGameAsync(string id)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var game = GamblingService.GetTowersGame(id);
+        var game = TowersService.GetGame(id);
         if (game is null)
         {
             await FollowupAsync("Nem található ilyen id-jű játék").ConfigureAwait(false);
