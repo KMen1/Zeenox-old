@@ -10,7 +10,10 @@ using CloudinaryDotNet.Actions;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
+using KBot.Extensions;
 using KBot.Models;
+using KBot.Models.Guild;
+using KBot.Models.User;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
 using Color = Discord.Color;
@@ -91,7 +94,7 @@ public sealed class BlackJackGame : IGamblingGame
     public int Bet { get; }
     public bool Hidden { get; private set; }
     private Cloudinary CloudinaryClient { get; }
-    public event EventHandler<GameEndedEventArgs>? GameEnded;
+    public event EventHandler<GameEndedEventArgs> GameEnded;
 
     public BlackJackGame(
         SocketUser player,
@@ -135,7 +138,7 @@ public sealed class BlackJackGame : IGamblingGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"😭 Az osztó nyert! (PLAYER BUST)\n**{Bet}** 🪙KCoin-t veszítettél!",
+                        $"😭 Dealer Wins! (PLAYER BUST)\nYou lost **{Bet}** credits!",
                         Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -150,7 +153,7 @@ public sealed class BlackJackGame : IGamblingGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"🥳 Játékos nyert! (PLAYER BLACKJACK)\n**{reward}** 🪙KCoin-t szereztél!",
+                        $"🥳 Player Wins! (PLAYER BLACKJACK)\nYou won **{reward}** credits!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -177,7 +180,7 @@ public sealed class BlackJackGame : IGamblingGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"🥳 A játékos nyert! (DEALER BUST)\n**{Bet}** 🪙KCoin-t szereztél!",
+                        $"🥳 Player Wins! (DEALER BUST)\nYou won **{Bet}** credits!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -190,7 +193,7 @@ public sealed class BlackJackGame : IGamblingGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"😭 Az osztó nyert! (BLACKJACK)\n**{Bet}** 🪙KCoin-t vesztettél!",
+                        $"😭 Dealer Wins! (BLACKJACK)\nYou lost **{Bet}** credits!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -206,7 +209,7 @@ public sealed class BlackJackGame : IGamblingGame
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"🥳 A játékos nyert! (BLACKJACK)\n**{Bet}** 🪙KCoin-t szereztél!",
+                    $"🥳 Player Wins! (BLACKJACK)\nYou won **{Bet}** credits!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
@@ -220,7 +223,7 @@ public sealed class BlackJackGame : IGamblingGame
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"🥳 A játékos nyert!\n**{Bet}** 🪙KCoin-t szereztél!",
+                    $"🥳 Player Wins!\nYou won **{Bet}** credits!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
@@ -233,20 +236,18 @@ public sealed class BlackJackGame : IGamblingGame
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"😭 Az osztó nyert!\n**{Bet}** 🪙KCoin-t vesztettél!",
+                    $"😭 Dealer Wins!\nYou lost **{Bet}** credits!",
                     Color.Red);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
             OnGameEnded(new GameEndedEventArgs(Id, 0, "BL - Win", false));
             return;
         }
-        //_ = Task.Run(async () => await Database.UpdateUserAsync(Guild, User, x => x.Gambling.Balance += Bet).ConfigureAwait(false));
-        //_ = Task.Run(async () => await Database.UpdateBotUserAsync(Guild, x => x.Money -= Bet).ConfigureAwait(false));
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().BlackJackEmbed(
                 this,
-                "😕 Döntetlen! (PUSH)\n**A tét visszaadásra került!**",
+                "😕 Tie! (PUSH)\n**The bet has been given back!**",
                 Color.Blue);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using KBot.Extensions;
 using KBot.Modules.DeadByDaylight.Models;
 using Microsoft.Extensions.Caching.Memory;
 

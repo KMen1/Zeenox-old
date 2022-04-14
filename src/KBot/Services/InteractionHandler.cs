@@ -8,6 +8,7 @@ using Discord.Addons.Hosting;
 using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Extensions;
 using KBot.Models;
 using KBot.Modules.Events;
 using KBot.Modules.Leveling;

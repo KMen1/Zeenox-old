@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
+using Humanizer;
 
 namespace KBot.Modules.Owner;
 
 public class Reset : KBotModuleBase
 {
     [RequireOwner]
-    [SlashCommand("reset", "Újraindítja a botot")]
+    [SlashCommand("reset", "Restarts the bot")]
     public async Task ResetAsync()
     {
         var psi = new ProcessStartInfo("cmd.exe");

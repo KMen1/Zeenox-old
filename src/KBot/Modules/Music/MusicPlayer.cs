@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using KBot.Extensions;
 using Lavalink4NET.Events;
 using Lavalink4NET.Player;
 
@@ -16,16 +16,15 @@ public class MusicPlayer : LavalinkPlayer
     public string FilterEnabled { get; set; }
     public SocketUser LastRequestedBy => (CurrentTrack!.Context as TrackContext)!.AddedBy;
     public IUserMessage NowPlayingMessage { get; set; }
-    private List<LavalinkTrack> Queue { get; }
+    public List<LavalinkTrack> Queue { get; }
     public int QueueCount => Queue.Count;
-    public List<LavalinkTrack> GetQueue => Queue.ToList();
     private List<LavalinkTrack> QueueHistory { get; }
     public int QueueHistoryCount => QueueHistory.Count;
     public bool CanGoBack => QueueHistory.Count > 0;
     public bool CanGoForward => Queue.Count > 0;
     public bool IsPlaying => CurrentTrack != null;
     public List<ulong> SkipVotes { get; set; }
-    public int SkipVotesNeeded { get; set; }
+    public int SkipVotesNeeded { get; private set; }
 
     public MusicPlayer(IVoiceChannel voiceChannel, int skipVotesNeeded)
     {

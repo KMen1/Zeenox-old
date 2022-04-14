@@ -5,12 +5,12 @@ using Discord.Interactions;
 
 namespace KBot.Modules.DeadByDaylight;
 
-[Group("dbd", "Dead By Daylight parancsok")]
+[Group("dbd", "Commands related to Dead by Daylight")]
 public class DbDCommands : KBotModuleBase
 {
     public DbDService DbDService { get; set; }
-    
-    [SlashCommand("shrine", "Heti perkek lekérése")]
+
+    [SlashCommand("shrine", "Gets the current weekly shrines")]
     public async Task DbdShrineAsync()
     {
         var sw = Stopwatch.StartNew();

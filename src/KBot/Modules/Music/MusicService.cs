@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
+using KBot.Extensions;
 using Lavalink4NET;
 using Lavalink4NET.Filters;
 using Lavalink4NET.Logging;
@@ -48,7 +49,7 @@ public class AudioService : IInjectable
     {
         if (!_lavaNode.HasPlayer(guild.Id))
         {
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Ezen a szerveren nem található lejátszó!").Build();
+            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
         }
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player!.LastRequestedBy.Id != user.Id)
@@ -62,21 +63,16 @@ public class AudioService : IInjectable
         return new EmbedBuilder().LeaveEmbed(player.VoiceChannel);
     }
 
-    public async Task<Embed> MoveAsync(IGuild guild, SocketUser user)
+    public async Task<Embed> MoveAsync(IGuild guild, IVoiceChannel channel)
     {
         if (!_lavaNode.HasPlayer(guild.Id))
         {
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Ezen a szerveren nem található lejátszó!").Build();
-        }
-        var voiceChannel = ((IVoiceState) user).VoiceChannel;
-        if (voiceChannel is null)
-        {
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Nem vagy hangcsatornában").Build();
+            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
         }
 
         var player = _lavaNode.GetPlayer(guild.Id);
-        await player!.ConnectAsync(voiceChannel.Id).ConfigureAwait(false);
-        return new EmbedBuilder().MoveEmbed(voiceChannel);
+        await player!.ConnectAsync(channel.Id).ConfigureAwait(false);
+        return new EmbedBuilder().MoveEmbed(channel);
     }
     public async Task PlayAsync(IGuild guild, SocketInteraction interaction, string query)
     {
@@ -85,7 +81,7 @@ public class AudioService : IInjectable
         var searchResponse = await SearchAsync(query).ConfigureAwait(false);
         if (searchResponse is null)
         {
-            await interaction.FollowupAsync(embed: new EmbedBuilder().WithColor(Color.Red).WithTitle("Nincs találat! Kérlek próbáld újra másképp!").Build()).ConfigureAwait(false);
+            await interaction.FollowupAsync(embed: new EmbedBuilder().WithColor(Color.Red).WithTitle("No matches!").Build()).ConfigureAwait(false);
             return;
         }
 
@@ -151,18 +147,8 @@ public class AudioService : IInjectable
     {
         var user = interaction.User;
         var voiceChannel = ((IVoiceState)user).VoiceChannel;
-        if (voiceChannel is null)
-        {
-            await interaction.FollowupAsync(embed:
-                new EmbedBuilder()
-                    .WithColor(Color.Red)
-                    .WithTitle("Nem vagy hangcsatornában")
-                    .Build())
-                .ConfigureAwait(false);
-            return;
-        }
         var track = await _lavaNode.GetTrackAsync("https://www.youtube.com/watch?v=" + id).ConfigureAwait(false);
-        track.Context = new TrackContext(user);
+        track!.Context = new TrackContext(user);
         var skipVotesNeeded = await voiceChannel.GetUsersAsync().CountAsync().ConfigureAwait(false) / 2;
         var player = _lavaNode.HasPlayer(guild.Id) ?
             _lavaNode.GetPlayer<MusicPlayer>(guild.Id) :
@@ -276,7 +262,7 @@ public class AudioService : IInjectable
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player is null)
         {
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Ezen a szerveren nem található lejátszó!").Build();
+            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
         }
         await player.SetVolumeAsync(volume).ConfigureAwait(false);
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
@@ -296,6 +282,7 @@ public class AudioService : IInjectable
         }
         var noFiltersPayload = new PlayerFiltersPayload(guild.Id, new Dictionary<string, IFilterOptions>());
         await _lavaNode.SendPayloadAsync(noFiltersPayload).ConfigureAwait(false);
+        
         player.FilterEnabled = _filterActions[filterType](player.Filters);
         await player.Filters.CommitAsync().ConfigureAwait(false);
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
@@ -324,7 +311,7 @@ public class AudioService : IInjectable
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         return player is null ?
-            new EmbedBuilder().WithColor(Color.Red).WithTitle("Ezen a szerveren nem található lejátszó!").Build() :
+            new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build() :
             new EmbedBuilder().QueueEmbed(player);
     }
 
@@ -333,7 +320,7 @@ public class AudioService : IInjectable
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player is null)
         {
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Ezen a szerveren nem található lejátszó!").Build();
+            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
         }
         player.ClearQueue();
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);

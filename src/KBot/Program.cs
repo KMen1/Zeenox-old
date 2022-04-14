@@ -30,7 +30,6 @@ using Serilog.Events;
 using ILogger = Lavalink4NET.Logging.ILogger;
 
 namespace KBot;
-
 public static class Program
 {
     private static Task Main()
@@ -48,10 +47,16 @@ public static class Program
                 x.AttachStacktrace = true;
                 x.SendDefaultPii = true;
                 x.TracesSampleRate = 1.0;
+                x.Release = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+#if DEBUG
+                x.Environment = "debug";
+#else
+                x.Environment = "production";
+#endif
             })
             .CreateLogger();
 
-        var host = Host.CreateDefaultBuilder()
+            var host = Host.CreateDefaultBuilder()
             .ConfigureAppConfiguration(x =>
             {
                 x.AddConfiguration(new ConfigurationBuilder()

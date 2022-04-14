@@ -1,197 +1,171 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using KBot.Models;
+using KBot.Models.Guild;
 
 namespace KBot.Modules.Config;
 
 [RequireUserPermission(GuildPermission.Administrator)]
-[Group("config", "Bot beállításai")]
-public class SetupCommands : KBotModuleBase
+[Group("announcements", "Setup announcements for your server")]
+public class Announcements : KBotModuleBase
 {
-    [Group("announcements", "Bejelentések beállításai")]
-    public class Announcements : KBotModuleBase
+    [SlashCommand("enable", "Enable announcements for this server")]
+    public async Task EnableAnnouncementsAsync(bool setting)
     {
-        [SlashCommand("enable", "Bejelentések engedélyezése/letiltása")]
-        public async Task EnableAnnouncementsAsync(bool enable)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.Enabled = enable).ConfigureAwait(false);
-            await RespondAsync(enable ? "Bejelentések bekapcsolva!" : "Bejelentések kikapcsolva!", ephemeral: true).ConfigureAwait(false);
-        }
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.Enabled = setting).ConfigureAwait(false);
+        await RespondAsync(setting ? "Announcements enabled!" : "Announcements disabled!", ephemeral: true).ConfigureAwait(false);
+    }
         
-        [SlashCommand("join", "Szerverre való csatlakozás bejelentő csatornája")]
-        public async Task SetJoinAsync(ITextChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.JoinChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+    [SlashCommand("join", "Set the join message channel")]
+    public async Task SetJoinAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.JoinChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
         
-        [SlashCommand("autorole", "Szerverre való csatlakozás bejelentő csatornája")]
-        public async Task SetAutoRoleAsync(IRole role)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.JoinRoleId = role.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+    [SlashCommand("autorole", "Set the auto-role for new members")]
+    public async Task SetAutoRoleAsync(IRole role)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.JoinRoleId = role.Id).ConfigureAwait(false);
+        await RespondAsync("Role set!", ephemeral: true).ConfigureAwait(false);
+    }
         
-        [SlashCommand("leave", "Szerverről való kilépés bejelentő csatornája")]
-        public async Task SetLeaveAsync(ITextChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.LeftChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
-
-        [SlashCommand("ban", "Szerverről való kitiltás bejelentő csatornája")]
-        public async Task SetBanAsync(ITextChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.BanChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
-        
-        [SlashCommand("unban", "Szerverről való kitiltás megszüntetésének bejelentő csatornája")]
-        public async Task SetUnbanAsync(ITextChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.UnbanChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+    [SlashCommand("leave", "Set the leave message channel")]
+    public async Task SetLeaveAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.LeftChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
     }
 
-    [Group("temporaryvoice", "Ideiglenes hangcsatornák beállításai")]
-    public class TemporaryVoice : KBotModuleBase
+    [SlashCommand("ban", "Set the ban message channel")]
+    public async Task SetBanAsync(ITextChannel channel)
     {
-        [SlashCommand("enable", "Ideiglenes hangcsatornák engedélyezése/letiltása")]
-        public async Task EnableTemporaryVoiceAsync(bool enable)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TemporaryVoice.Enabled = enable).ConfigureAwait(false);
-            await RespondAsync(enable ? "Ideiglenes hangcsatornák bekapcsolva!" : "Ideiglenes hangcsatornák kikapcsolva!", ephemeral: true).ConfigureAwait(false);
-        }
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.BanChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
+        
+    [SlashCommand("unban", "Set the unban message channel")]
+    public async Task SetUnbanAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.UnbanChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
+}
 
-        [SlashCommand("category", "Ideiglenes hangcsatornák kategóriája")]
-        public async Task SetCategoryAsync(ICategoryChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TemporaryVoice.CategoryId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Kategória beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+[RequireUserPermission(GuildPermission.Administrator)]
+[Group("temporaryvoice", "Setup temporary voice channels")]
+public class TemporaryVoice : KBotModuleBase
+{
+    [SlashCommand("enable", "Enable temporary voice channels")]
+    public async Task EnableTemporaryVoiceAsync(bool setting)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TemporaryVoice.Enabled = setting).ConfigureAwait(false);
+        await RespondAsync(setting ? "Temporary voice channels enabled!" : "Temporary voice channels disabled!", ephemeral: true).ConfigureAwait(false);
+    }
 
-        [SlashCommand("channel", "Ideiglenes hangcsatornák létrehozás csatonája")]
-        public async Task SetChannelAsync(IVoiceChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TemporaryVoice.CreateChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
-    }
-    
-    [Group("leveling", "Szintrendszer beállításai")]
-    public class Leveling : KBotModuleBase
+    [SlashCommand("category", "Set the category for temporary voice channels")]
+    public async Task SetCategoryAsync(ICategoryChannel channel)
     {
-        [SlashCommand("enable", "Szintrendszer engedélyezése/letiltása")]
-        public async Task EnableLevelingAsync(bool enable)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.Enabled = enable).ConfigureAwait(false);
-            await RespondAsync(enable ? "Szintrendszer bekapcsolva!" : "Szintrendszer kikapcsolva!", ephemeral: true).ConfigureAwait(false);
-        }
-        
-        [SlashCommand("channel", "Szintlépések csatornája")]
-        public async Task SetChannelAsync(ITextChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AnnounceChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TemporaryVoice.CategoryId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Category set!", ephemeral: true).ConfigureAwait(false);
+    }
 
-        [SlashCommand("afk", "AFK csatorna")]
-        public async Task SetAfkChannelAsync(IVoiceChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AfkChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
-        
-        [SlashCommand("addrole", "Szintlépések esetén hozzáadandó rang hozzáadása")]
-        public async Task AddRoleAsync(IRole role, [MinValue(1)]int level)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.Add(new LevelRole(role, level))).ConfigureAwait(false);
-            await RespondAsync($"Rang hozzáadva! ({level} szint)", ephemeral: true).ConfigureAwait(false);
-        }
-        
-        [SlashCommand("removerole", "Szintlépések esetén hozzáadandó rang eltávolítása")]
-        public async Task RemoveRoleAsync(IRole role, [MinValue(1)]int level)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.RemoveAll(x => x.Id == role.Id)).ConfigureAwait(false);
-            await RespondAsync($"Rang eltávolítva! ({level} szint)", ephemeral: true).ConfigureAwait(false);
-        }
-        
-    }
-    
-    [Group("suggestions", "Javaslatok beállításai")]
-    public class Suggestions : KBotModuleBase
+    [SlashCommand("channel", "Set the channel for creating temporary voice channels")]
+    public async Task SetChannelAsync(IVoiceChannel channel)
     {
-        [SlashCommand("enable", "Javaslatok engedélyezése/letiltása")]
-        public async Task EnableSuggestionsAsync(bool enable)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.Enabled = enable).ConfigureAwait(false);
-            await RespondAsync(enable ? "Javaslatok bekapcsolva!" : "Javaslatok kikapcsolva!", ephemeral: true).ConfigureAwait(false);
-        }
-        
-        [SlashCommand("channel", "Javaslatok csatornája")]
-        public async Task SetChannelAsync(ITextChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.AnnounceChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TemporaryVoice.CreateChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
     }
-    
-    [Group("tourevents", "Túra események beállításai")]
-    public class TourEvents : KBotModuleBase
+}
+
+[RequireUserPermission(GuildPermission.Administrator)]
+[Group("leveling", "Setup leveling")]
+public class Leveling : KBotModuleBase
+{
+    [SlashCommand("enable", "Enable leveling")]
+    public async Task EnableLevelingAsync(bool enable)
     {
-        [SlashCommand("enable", "Túra események engedélyezése/letiltása")]
-        public async Task EnableTourEventsAsync(bool enable)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TourEvents.Enabled = enable).ConfigureAwait(false);
-            await RespondAsync(enable ? "Túra események bekapcsolva!" : "Túra események kikapcsolva!", ephemeral: true).ConfigureAwait(false);
-        }
-        
-        [SlashCommand("channel", "Túra események bejelentő csatornája")]
-        public async Task SetChannelAsync(ITextChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TourEvents.AnnounceChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
-        
-        [SlashCommand("role", "Túra rang")]
-        public async Task SetRoleAsync(IRole role)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TourEvents.RoleId = role.Id).ConfigureAwait(false);
-            await RespondAsync("Rang beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.Enabled = enable).ConfigureAwait(false);
+        await RespondAsync(enable ? "Leveling Enabled!" : "Leveling Disabled!", ephemeral: true).ConfigureAwait(false);
     }
-    
-    [Group("movieevents", "Film események beállításai")]
-    public class MovieEvents : KBotModuleBase
+        
+    [SlashCommand("channel", "Set the channel for level up messages")]
+    public async Task SetChannelAsync(ITextChannel channel)
     {
-        [SlashCommand("enable", "Film események engedélyezése/letiltása")]
-        public async Task EnableMovieEventsAsync(bool enable)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.MovieEvents.Enabled = enable).ConfigureAwait(false);
-            await RespondAsync(enable ? "Film események bekapcsolva!" : "Film események kikapcsolva!", ephemeral: true).ConfigureAwait(false);
-        }
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AnnounceChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
+
+    [SlashCommand("afk", "Set the AFK channel")]
+    public async Task SetAfkChannelAsync(IVoiceChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AfkChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
         
-        [SlashCommand("channel", "Film események bejelentő csatornája")]
-        public async Task SetChannelAsync(ITextChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.MovieEvents.AnnounceChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+    [SlashCommand("addrole", "Add a role to the leveling roles")]
+    public async Task AddRoleAsync(IRole role, [MinValue(1)]int level)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.Add(new LevelRole(role.Id, level))).ConfigureAwait(false);
+        await RespondAsync("Role Added!", ephemeral: true).ConfigureAwait(false);
+    }
         
-        [SlashCommand("role", "Film rang")]
-        public async Task SetRoleAsync(IRole role)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.MovieEvents.RoleId = role.Id).ConfigureAwait(false);
-            await RespondAsync("Rang beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+    [SlashCommand("removerole", "Remove a role from the leveling roles")]
+    public async Task RemoveRoleAsync(IRole role)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.RemoveAll(y => y.Id == role.Id)).ConfigureAwait(false);
+        await RespondAsync("Role Removed", ephemeral: true).ConfigureAwait(false);
+    }
+}
+
+[RequireUserPermission(GuildPermission.Administrator)]
+[Group("suggestions", "Setup suggestions")]
+public class Suggestions : KBotModuleBase
+{
+    [SlashCommand("enable", "Enable suggestions")]
+    public async Task EnableSuggestionsAsync(bool enable)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.Enabled = enable).ConfigureAwait(false);
+        await RespondAsync(enable ? "Javaslatok bekapcsolva!" : "Javaslatok kikapcsolva!", ephemeral: true).ConfigureAwait(false);
+    }
         
-        [SlashCommand("streamchannel", "Film események stream csatornája")]
-        public async Task SetStreamChannelAsync(ITextChannel channel)
-        {
-            await Database.UpdateGuildConfigAsync(Context.Guild, x => x.MovieEvents.StreamChannelId = channel.Id).ConfigureAwait(false);
-            await RespondAsync("Csatorna beállítva!", ephemeral: true).ConfigureAwait(false);
-        }
+    [SlashCommand("channel", "Set the channel for suggestion messages")]
+    public async Task SetChannelAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.AnnounceChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
+}
+
+[RequireUserPermission(GuildPermission.Administrator)]
+[Group("movieevents", "Setup movie events")]
+public class MovieEvents : KBotModuleBase
+{
+    [SlashCommand("enable", "Enable movie events")]
+    public async Task EnableMovieEventsAsync(bool setting)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.MovieEvents.Enabled = setting).ConfigureAwait(false);
+        await RespondAsync(setting ? "Movie Events Enabled!" : "Movie Events Disabled!", ephemeral: true).ConfigureAwait(false);
+    }
+        
+    [SlashCommand("channel", "Set the channel for movie event messages")]
+    public async Task SetChannelAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.MovieEvents.AnnounceChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
+        
+    [SlashCommand("role", "Set the movie role for notifications")]
+    public async Task SetRoleAsync(IRole role)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.MovieEvents.RoleId = role.Id).ConfigureAwait(false);
+        await RespondAsync("Role Set!", ephemeral: true).ConfigureAwait(false);
+    }
+        
+    [SlashCommand("streamchannel", "Set the channel for movie streaming")]
+    public async Task SetStreamChannelAsync(IVoiceChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.MovieEvents.StreamChannelId = channel.Id).ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
     }
 }

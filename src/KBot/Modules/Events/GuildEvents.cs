@@ -1,9 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using Humanizer;
 using KBot.Enums;
+using KBot.Extensions;
 using KBot.Services;
 using Serilog;
 
@@ -39,21 +42,19 @@ public class GuildEvents : IInjectable
         throw new System.NotImplementedException();
     }*/
 
-    private async Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState before, SocketVoiceState after)
+    private async Task OnUserVoiceStateUpdatedAsync(SocketUser argUser, SocketVoiceState before, SocketVoiceState after)
     {
-        var guild = after.VoiceChannel?.Guild ?? before.VoiceChannel?.Guild;
+        var user = (SocketGuildUser) argUser;
+        var guild = user.Guild;
         if (user.IsBot)
-        {
             return;
-        }
-        var config = await _database.GetGuildConfigAsync(guild!).ConfigureAwait(false);
+        var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
         if (!config.TemporaryVoice.Enabled)
-        {
             return;
-        }
+        
         if (after.VoiceChannel is not null && after.VoiceChannel.Id == config.TemporaryVoice.CreateChannelId)
         {
-            var voiceChannel = await guild!.CreateVoiceChannelAsync($"{user.Username} Társalgója", x =>
+            var voiceChannel = await guild.CreateVoiceChannelAsync($"{user.Username} Társalgója", x =>
             {
                 x.UserLimit = 2;
                 x.CategoryId = config.TemporaryVoice.CategoryId;
@@ -69,13 +70,13 @@ public class GuildEvents : IInjectable
                             connect: PermValue.Allow, moveMembers: PermValue.Allow))
                 });
             }).ConfigureAwait(false);
-            await guild.GetUser(user.Id).ModifyAsync(x => x.Channel = voiceChannel).ConfigureAwait(false);
+            await user.ModifyAsync(x => x.Channel = voiceChannel).ConfigureAwait(false);
             _channels.Add((user, voiceChannel.Id));
         }
-        else if (_channels.Contains((user, before.VoiceChannel?.Id ?? 0)))
+        else if (before.VoiceChannel is not null && _channels.Contains((user, before.VoiceChannel.Id)))
         {
             var (puser, channelId) = _channels.First(x => x.user == user && x.channelId == before.VoiceChannel.Id);
-            await guild!.GetVoiceChannel(channelId).DeleteAsync().ConfigureAwait(false);
+            await guild.GetVoiceChannel(channelId).DeleteAsync().ConfigureAwait(false);
             _channels.Remove((puser, channelId));
         }
     }
@@ -93,7 +94,7 @@ public class GuildEvents : IInjectable
     {
         var eventChannel = guildEvent.Channel;
         var config = await _database.GetGuildConfigAsync(guildEvent.Guild).ConfigureAwait(false);
-        if (!config.MovieEvents.Enabled && !config.TourEvents.Enabled)
+        if (!config.MovieEvents.Enabled)
         {
             return;
         }
@@ -108,17 +109,6 @@ public class GuildEvents : IInjectable
             await notifyChannel.SendMessageAsync(movieRole.Mention,
                     embed: new EmbedBuilder().MovieEventEmbed(guildEvent, type))
                 .ConfigureAwait(false);
-            return;
-        }
-
-        var tourRoleId = config.TourEvents.RoleId;
-        var tourEventAnnouncementChannelId = config.TourEvents.AnnounceChannelId;
-        if (eventChannel is null && guildEvent.Location.Contains("goo.gl/maps"))
-        {
-            var tourRole = guildEvent.Guild.GetRole(tourRoleId);
-            var notifyChannel = guildEvent.Guild.GetTextChannel(tourEventAnnouncementChannelId);
-            await notifyChannel.SendMessageAsync(tourRole.Mention,
-                embed: new EmbedBuilder().TourEventEmbed(guildEvent, type)).ConfigureAwait(false);
         }
     }
 
@@ -154,8 +144,16 @@ public class GuildEvents : IInjectable
             return;
         }
         var channel = user.Guild.GetTextChannel(config.Announcements.JoinChannelId);
-        await user.AddRoleAsync(config.Announcements.JoinRoleId).ConfigureAwait(false);
-        await channel.SendMessageAsync($":wave: Üdv a szerveren {user.Mention}, érezd jól magad!").ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
+            .WithColor(Color.Green)
+            .WithDescription($"Welcome to **{user.Guild.Name}** {user.Mention}!\n" +
+                             $"You are the **{user.Guild.Users.Count.Ordinalize()}** member!\n" +
+                             $"Account created: **{user.CreatedAt.Humanize()}**")
+            .WithCurrentTimestamp()
+            .WithThumbnailUrl(user.GetAvatarUrl())
+            .Build();
+        await channel.SendMessageAsync(embed: eb).ConfigureAwait(false);
     }
 
     private async Task AnnounceUserLeftAsync(SocketGuild guild, SocketUser user)

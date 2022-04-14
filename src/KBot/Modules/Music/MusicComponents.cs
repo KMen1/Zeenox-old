@@ -13,9 +13,7 @@ public class MusicComponents : KBotModuleBase
     [ComponentInteraction("filterselectmenu")]
     public async Task ApplyFilterAsync(params string[] selections)
     {
-        var selection = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(selections[0].ToLower());
-
-        var result = Enum.TryParse(selection, out FilterType filterType);
+        var result = Enum.TryParse(selections[0], out FilterType filterType);
         if (result)
         {
             await DeferAsync().ConfigureAwait(false);

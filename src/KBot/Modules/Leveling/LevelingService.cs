@@ -13,7 +13,7 @@ namespace KBot.Modules.Leveling;
 public class LevelingModule : IInjectable
 {
     private readonly DatabaseService _database;
-    private readonly ConcurrentQueue<(SocketGuildUser, int)> _xpQueue = new();
+    private readonly ConcurrentQueue<(SocketGuildUser, int)> _XpQueue = new();
 
     public LevelingModule(DiscordSocketClient client, DatabaseService database)
     {
@@ -31,38 +31,38 @@ public class LevelingModule : IInjectable
             await Task.Delay(5000).ConfigureAwait(false);
             
             var usersToUpdate = new List<(SocketGuildUser, int)>();
-            while (_xpQueue.TryDequeue(out var user)) usersToUpdate.Add(user);
+            while (_XpQueue.TryDequeue(out var user)) usersToUpdate.Add(user);
 
             if (usersToUpdate.Count == 0)
                 continue;
 
             var config = await _database.GetGuildConfigAsync(usersToUpdate[0].Item1.Guild).ConfigureAwait(false);
             var toNotify = new List<(SocketGuildUser, int)>();
-            foreach (var (user, xp) in usersToUpdate)
+            foreach (var (user, Xp) in usersToUpdate)
             {
                 var oldUserData = await _database.GetUserAsync(user.Guild, user).ConfigureAwait(false);
                 var newUserData = await _database.UpdateUserAsync(user.Guild, user, x =>
                 {
-                    x.XP += xp;
+                    x.Xp += Xp;
 
-                    if (x.XP < x.RequiredXp) return;
-                    switch (xp % x.RequiredXp)
+                    if (x.Xp < x.XpNeeded) return;
+                    switch (Xp % x.XpNeeded)
                     {
                         case 0:
                         {
-                            x.Level += x.XP / x.RequiredXp;
-                            x.XP = 0;
+                            x.Level += x.Xp / x.XpNeeded;
+                            x.Xp = 0;
                             break;
                         }
                         case > 0:
                         {
-                            x.Level += x.XP / x.RequiredXp;
+                            x.Level += x.Xp / x.XpNeeded;
                             var total = 0;
-                            for (var i = x.Level; i < x.Level + (x.XP / x.RequiredXp); i++)
+                            for (var i = x.Level; i < x.Level + (x.Xp / x.XpNeeded); i++)
                             {
                                 total += (int)Math.Pow(i * 4, 2);
                             }
-                            x.XP -= total;
+                            x.Xp -= total;
                             break;
                         }
                     }
@@ -85,7 +85,7 @@ public class LevelingModule : IInjectable
                     await user.AddRoleAsync(role).ConfigureAwait(false);
                     var embed = new EmbedBuilder()
                         .WithAuthor(user.Guild.Name, user.Guild.IconUrl)
-                        .WithTitle("Új jutalmat szereztél!")
+                        .WithTitle("You got a reward!")
                         .WithDescription(role.Mention)
                         .WithColor(Color.Gold)
                         .Build();
@@ -105,7 +105,7 @@ public class LevelingModule : IInjectable
             await Task.WhenAll(toNotify.Select(async x =>
             {
                 var (user, level) = x;
-                await notifyChannel.SendMessageAsync($"🥳 Gratulálok {user.Mention}, elérted a **{level}** szintet!").ConfigureAwait(false);
+                await notifyChannel.SendMessageAsync($"🥳 Congrats {user.Mention}, you reached level **{level}** ").ConfigureAwait(false);
             })).ConfigureAwait(false);
         }
     }
@@ -127,7 +127,7 @@ public class LevelingModule : IInjectable
             var msgLength = message.Content.Length;
             var pointsToGive = (int)Math.Floor((rate * 100) + (msgLength / 2));
             
-            _xpQueue.Enqueue((user, pointsToGive));
+            _XpQueue.Enqueue((user, pointsToGive));
         }).ConfigureAwait(false);
     }
 
@@ -170,15 +170,15 @@ public class LevelingModule : IInjectable
     {
         var dbUser = await _database.GetUserAsync(user.Guild, user).ConfigureAwait(false);
 
-        var joinDate = dbUser.LastVoiceActivityDate;
+        var joinDate = dbUser.LastVoiceActivityDate ?? DateTime.MinValue;
         var minutes = (int)(DateTime.UtcNow - joinDate).TotalMinutes;
         if (minutes < 1)
             return;
-        var xp = minutes * 100;
-        _xpQueue.Enqueue((user, xp));
+        var Xp = minutes * 100;
+        _XpQueue.Enqueue((user, Xp));
     }
 
-    private static bool IsActive(SocketGuildUser user)
+    private static bool IsActive(IVoiceState user)
     {
         return !user.IsMuted && !user.IsDeafened && !user.IsSelfMuted && !user.IsSelfDeafened;
     }

@@ -7,10 +7,13 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Fergun.Interactive;
 using KBot.Enums;
+using KBot.Extensions;
 using KBot.Models;
+using KBot.Models.Guild;
+using KBot.Models.User;
 
 namespace KBot.Modules.Gambling;
-[Group("shop", "Szerencsejáték piac")]
+[Group("shop", "Stuff to buy with your money")]
 public class ShopCommands : KBotModuleBase
 {
     private const int CategoryPrice = 150000000;
@@ -20,7 +23,7 @@ public class ShopCommands : KBotModuleBase
 
     public InteractiveService Interactive { get; set; }
 
-    [SlashCommand("level", "Extra szint vásárlása")]
+    [SlashCommand("level", "Buy extra levels")]
     public async Task BuyLevelAsync([MinValue(1)] int levels)
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -28,22 +31,22 @@ public class ShopCommands : KBotModuleBase
         var required = dbUser.MoneyToBuyLevel(levels);
 
         var eb = new EmbedBuilder()
-            .WithTitle("Bolt")
+            .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Egyenleg: `{dbUser.Money.ToString()}`")
-            .AddField("Kiválasztva", $"`+{levels.ToString()} Szint`", true)
-            .AddField("Összeg", $"`{required.ToString()}`", true);
+            .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
+            .AddField("Levels", $"`{levels.ToString()}`", true)
+            .AddField("Price", $"`{required.ToString()}`", true);
 
         if (dbUser.Money < required)
         {
-            eb.WithDescription("Nincs elég pénzed! 😭");
+            eb.WithDescription("Insufficient funds! 😭");
             await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
             return;
         }
 
         var id = Guid.NewGuid().ToShortId();
         var comp = new ComponentBuilder()
-            .WithButton("Vásárlás", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
+            .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
         
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
@@ -55,7 +58,7 @@ public class ShopCommands : KBotModuleBase
         {
             await ModifyOriginalResponseAsync(x =>
             {
-                x.Embed = eb.WithDescription("Lejárt az idő!").WithColor(Color.Red).Build();
+                x.Embed = eb.WithDescription("Time is up!").WithColor(Color.Red).Build();
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
             return;
@@ -65,48 +68,48 @@ public class ShopCommands : KBotModuleBase
         {
             x.Money -= required;
             x.Level += levels;
-            x.Transactions.Add(new Transaction(id, TransactionType.ShopPurchase, -required, $"+{levels} szint"));
+            x.Transactions.Add(new Transaction(id, TransactionType.ShopPurchase, -required, $"+{levels} levels"));
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += required).ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
         {
-            x.Embed = eb.WithDescription($"Sikeres vásárlás! 😎\nMegmaradt egyenleg: `{dbUser.Money - required}`")
+            x.Embed = eb.WithDescription($"Successful purchase! 😎\nRemaining balance: `{dbUser.Money - required}`")
                 .WithColor(Color.Green).Build();
             x.Components = new ComponentBuilder().Build();
         });
     }
 
-    [SlashCommand("role", "Saját rang vásárlása")]
+    [SlashCommand("role", "Buy your own role")]
     public async Task BuyRoleAsync(string name, string hexcolor)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
 
         var eb = new EmbedBuilder()
-            .WithTitle("Bolt")
+            .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Egyenleg: `{dbUser.Money.ToString()}`")
-            .AddField("Kiválasztva", $"`{name} rang`", true)
-            .AddField("Összeg", $"`{RolePrice.ToString()}`", true);
+            .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
+            .AddField("Role", $"`{name}`", true)
+            .AddField("Price", $"`{RolePrice.ToString()}`", true);
         
         if (dbUser.Money < RolePrice)
         {
-            await FollowupAsync(embed: eb.WithDescription("Nincs elég pénzed! 😭").Build()).ConfigureAwait(false);
+            await FollowupAsync(embed: eb.WithDescription("Insufficient Funds! 😭").Build()).ConfigureAwait(false);
             return;
         }
 
         var parsedSuccessfully = VerifyHexColorString(hexcolor, out var color);
         if (!parsedSuccessfully)
         {
-            await FollowupAsync(embed: eb.WithDescription("Hibás hex színkód (ilyen formákban adhatod meg: #32a852, 32a852)! 😭").Build()).ConfigureAwait(false);
+            await FollowupAsync(embed: eb.WithDescription("Wrong hex code (try like this: #32a852, 32a852)! 😭").Build()).ConfigureAwait(false);
             return;
         }
         
         var id = Guid.NewGuid().ToShortId();
 
         var comp = new ComponentBuilder()
-            .WithButton("Vásárlás", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
+            .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
         
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
@@ -119,7 +122,7 @@ public class ShopCommands : KBotModuleBase
         {
             await ModifyOriginalResponseAsync(x =>
             {
-                x.Embed = eb.WithDescription("Lejárt az idő!").WithColor(Color.Red).Build();
+                x.Embed = eb.WithDescription("Time is up!").WithColor(Color.Red).Build();
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
             return;
@@ -133,48 +136,42 @@ public class ShopCommands : KBotModuleBase
         {
             x.Money -= RolePrice;
             x.Transactions.Add(
-                new Transaction(id, TransactionType.ShopPurchase, -RolePrice, $"{role.Mention} rang"));
+                new Transaction(id, TransactionType.ShopPurchase, -RolePrice, $"{role.Mention} role"));
             x.Roles.Add(role.Id);
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += RolePrice).ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
         {
-            x.Embed = eb.WithDescription($"Sikeres vásárlás! 😎\nMegmaradt egyenleg: `{dbUser.Money - RolePrice}`")
+            x.Embed = eb.WithDescription($"Successful purchase! 😎\nRemaining Balance: `{dbUser.Money - RolePrice}`")
                 .WithColor(Color.Green).Build();
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
     }
 
-    [SlashCommand("category", "Saját kategória vásárlása")]
+    [SlashCommand("category", "Buy your own category")]
     public async Task BuyCategoryAsync(string name)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         
         var eb = new EmbedBuilder()
-            .WithTitle("Bolt")
+            .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Egyenleg: `{dbUser.Money.ToString()}`")
-            .AddField("Kiválasztva", $"`{name} kategória`", true)
-            .AddField("Összeg", $"`{CategoryPrice.ToString()}`", true);
+            .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
+            .AddField("Category", $"`{name}`", true)
+            .AddField("Price", $"`{CategoryPrice.ToString()}`", true);
         
         if (dbUser.Money < CategoryPrice)
         {
-            await FollowupAsync(embed: eb.WithDescription("Nincs elég pénzed! 😭").Build()).ConfigureAwait(false);
-            return;
-        }
-
-        if (dbUser.BoughtChannels.Exists(x => x.Type == DiscordChannelType.Category))
-        {
-            await FollowupAsync(embed: eb.WithDescription("Már vásároltál egy kategóriát! 😭").Build()).ConfigureAwait(false);
+            await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
             return;
         }
 
         var id = Guid.NewGuid().ToShortId();
         
         var comp = new ComponentBuilder()
-            .WithButton("Vásárlás", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
+            .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
         
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
@@ -187,7 +184,7 @@ public class ShopCommands : KBotModuleBase
         {
             await ModifyOriginalResponseAsync(x =>
             {
-                x.Embed = eb.WithDescription("Lejárt az idő!").WithColor(Color.Red).Build();
+                x.Embed = eb.WithDescription("Time is up!").WithColor(Color.Red).Build();
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
             return;
@@ -208,49 +205,41 @@ public class ShopCommands : KBotModuleBase
         {
             x.Money -= CategoryPrice;
             x.Transactions.Add(new Transaction(id, TransactionType.ShopPurchase, -CategoryPrice,
-                $"{category.Name} kategória"));
-            x.BoughtChannels.Add(new DiscordChannel(category.Id, DiscordChannelType.Category));
+                $"{category.Name} category"));
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += CategoryPrice).ConfigureAwait(false);
         
         await ModifyOriginalResponseAsync(x =>
         {
-            x.Embed = eb.WithDescription($"Sikeres vásárlás! 😎\nMegmaradt egyenleg: `{dbUser.Money - CategoryPrice}`")
+            x.Embed = eb.WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Money - CategoryPrice}`")
                 .WithColor(Color.Green).Build();
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
     }
 
-    [SlashCommand("text", "Saját szövegcsatorna vásárlása")]
+    [SlashCommand("text", "Buy your own text channel")]
     public async Task BuyTextChannelAsync(string name)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         
         var eb = new EmbedBuilder()
-            .WithTitle("Bolt")
+            .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Egyenleg: `{dbUser.Money.ToString()}`")
-            .AddField("Kiválasztva", $"`{name} szövegcsatorna`", true)
-            .AddField("Összeg", $"`{TextPrice.ToString()}`", true);
+            .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
+            .AddField("Csatorna", $"`{name}`", true)
+            .AddField("Price", $"`{TextPrice.ToString()}`", true);
         
         if (dbUser.Money < TextPrice)
         {
-            await FollowupAsync(embed: eb.WithDescription("Nincs elég pénzed! 😭").Build()).ConfigureAwait(false);
+            await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
             return;
         }
 
-        var category = dbUser.BoughtChannels.Find(x => x.Type == DiscordChannelType.Category);
-        if (category is null)
-        {
-            await FollowupAsync(embed: eb.WithDescription("Nem vásároltál kategóriát! 😭").Build()).ConfigureAwait(false);
-            return;
-        }
-        
         var id = Guid.NewGuid().ToShortId();
         
         var comp = new ComponentBuilder()
-            .WithButton("Vásárlás", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
+            .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
         
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
@@ -263,7 +252,7 @@ public class ShopCommands : KBotModuleBase
         {
             await ModifyOriginalResponseAsync(x =>
             {
-                x.Embed = eb.WithDescription("Lejárt az idő!").WithColor(Color.Red).Build();
+                x.Embed = eb.WithDescription("Time is up!").WithColor(Color.Red).Build();
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
             return;
@@ -278,56 +267,47 @@ public class ShopCommands : KBotModuleBase
                 new Overwrite(Context.User.Id, PermissionTarget.User,
                     new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
             });
-            x.CategoryId = category.Id;
         }).ConfigureAwait(false);
         
         await UpdateUserAsync(Context.User, x =>
         {
             x.Money -= TextPrice;
             x.Transactions.Add(new Transaction(id, TransactionType.ShopPurchase, -TextPrice,
-                $"{channel.Mention} szövegcsatorna"));
-            x.BoughtChannels.Add(new DiscordChannel(channel.Id, DiscordChannelType.Text));
+                $"{channel.Mention} text channel"));
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += TextPrice).ConfigureAwait(false);
         
         await ModifyOriginalResponseAsync(x =>
         {
-            x.Embed = eb.WithDescription($"Sikeres vásárlás! 😎\nMegmaradt egyenleg: `{dbUser.Money - TextPrice}`")
+            x.Embed = eb.WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Money - TextPrice}`")
                 .WithColor(Color.Green).Build();
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
     }
 
-    [SlashCommand("voice", "Saját hangcsatorna vásárlása")]
+    [SlashCommand("voice", "Buy your own voice channel")]
     public async Task BuyVoiceChannelAsync(string name)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
         
         var eb = new EmbedBuilder()
-            .WithTitle("Bolt")
+            .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Egyenleg: `{dbUser.Money.ToString()}`")
-            .AddField("Kiválasztva", $"`{name} hangcsatorna`", true)
-            .AddField("Összeg", $"`{VoicePrice.ToString()}`", true);
+            .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
+            .AddField("Channel", $"`{name}`", true)
+            .AddField("Price", $"`{VoicePrice.ToString()}`", true);
         
         if (dbUser.Money < VoicePrice)
         {
-            await FollowupAsync(embed: eb.WithDescription("Nincs elég pénzed! 😭").Build()).ConfigureAwait(false);
+            await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
             return;
         }
 
-        var category = dbUser.BoughtChannels.Find(x => x.Type == DiscordChannelType.Category);
-        if (category is null)
-        {
-            await FollowupAsync(embed: eb.WithDescription("Nem vásároltál kategóriát! 😭").Build()).ConfigureAwait(false);
-            return;
-        }
-        
         var id = Guid.NewGuid().ToShortId();
         
         var comp = new ComponentBuilder()
-            .WithButton("Vásárlás", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
+            .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
         
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
@@ -340,7 +320,7 @@ public class ShopCommands : KBotModuleBase
         {
             await ModifyOriginalResponseAsync(x =>
             {
-                x.Embed = eb.WithDescription("Lejárt az idő!").WithColor(Color.Red).Build();
+                x.Embed = eb.WithDescription("Time is up!").WithColor(Color.Red).Build();
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
         }
@@ -354,27 +334,25 @@ public class ShopCommands : KBotModuleBase
                 new Overwrite(Context.User.Id, PermissionTarget.User,
                     new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
             });
-            x.CategoryId = category.Id;
         }).ConfigureAwait(false);
         
         await UpdateUserAsync(Context.User, x =>
         {
             x.Money -= VoicePrice;
             x.Transactions.Add(new Transaction(id, TransactionType.ShopPurchase, -VoicePrice,
-                $"{channel.Mention} hangcsatorna"));
-            x.BoughtChannels.Add(new DiscordChannel(channel.Id, DiscordChannelType.Voice));
+                $"{channel.Mention} voice channel"));
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += VoicePrice).ConfigureAwait(false);
         
         await ModifyOriginalResponseAsync(x =>
         {
-            x.Embed = eb.WithDescription($"Sikeres vásárlás! 😎\nMegmaradt egyenleg: `{dbUser.Money - VoicePrice}`")
+            x.Embed = eb.WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Money - VoicePrice}`")
                 .WithColor(Color.Green).Build();
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
     }
 
-    [SlashCommand("kpack", "Minden vásárlása akciós csomagként")]
+    [SlashCommand("kpack", "Buy everything")]
     public async Task BuyUltimateAsync([MinValue(1)] int levels, string roleName, string roleHexColor,
         string categoryName, string textName, string voiceName)
     {
@@ -386,37 +364,33 @@ public class ShopCommands : KBotModuleBase
                               levelRequired) * 0.75);
         
         var eb = new EmbedBuilder()
-            .WithTitle("Bolt")
+            .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Egyenleg: `{dbUser.Money.ToString()}`")
-            .AddField("Kiválasztva", $"`+{levels.ToString()} szint\n{roleName} rang\n{categoryName} kategória\n{textName} szövegcs.\n{voiceName} hangcs.` ", true)
-            .AddField("Összeg", $"`{required}`", true);
+            .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
+            .AddField("Choice", $"`+{levels.ToString()} level\n{roleName} role\n{categoryName} category\n{textName} text.\n{voiceName} voice.` ", true)
+            .AddField("Price", $"`{required}`", true);
         
         if (dbUser.Money < required)
         {
-            await FollowupAsync(embed: eb.WithDescription("Nincs elég pénzed! 😭").Build()).ConfigureAwait(false);
-            return;
-        }
-
-        if (dbUser.BoughtChannels.Exists(x => x.Type == DiscordChannelType.Category))
-        {
-            await FollowupAsync(embed: eb.WithDescription("Már vásároltál kategóriát ezért nem válthatod be! 😭").Build()).ConfigureAwait(false);
+            await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
             return;
         }
 
         var parsedSuccessfully = VerifyHexColorString(roleHexColor, out var color);
         if (!parsedSuccessfully)
         {
-            await FollowupAsync(embed: eb.WithDescription("Hibás hex színkód (ilyen formákban adhatod meg: #32a852, 32a852)! 😭").Build()).ConfigureAwait(false);
+            await FollowupAsync(embed: eb.WithDescription("Wrong hex code (try like this: #32a852, 32a852)! 😭").Build()).ConfigureAwait(false);
             return;
         }
         
         var id = Guid.NewGuid().ToString();
 
         var comp = new ComponentBuilder()
-            .WithButton("Vásárlás", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
+            .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
 
+        await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
+        
         var result = await Interactive
             .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
@@ -425,7 +399,7 @@ public class ShopCommands : KBotModuleBase
         {
             await ModifyOriginalResponseAsync(x =>
             {
-                x.Embed = eb.WithDescription("Lejárt az idő! 😭").WithColor(Color.Red).Build();
+                x.Embed = eb.WithDescription("Time is up! 😭").WithColor(Color.Red).Build();
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
         }
@@ -473,25 +447,22 @@ public class ShopCommands : KBotModuleBase
         {
             x.Money -= required;
             x.Transactions.Add(new Transaction(id, TransactionType.ShopPurchase, -levelRequired,
-                $"+{levels} szint"));
+                $"+{levels} level"));
             x.Transactions.Add(
-                new Transaction(id, TransactionType.ShopPurchase, -11250000, $"{role.Mention} rang"));
+                new Transaction(id, TransactionType.ShopPurchase, -11250000, $"{role.Mention} role"));
             x.Transactions.Add(new Transaction(id, TransactionType.ShopPurchase, -18750000,
-                $"{category.Name} kategória"));
+                $"{category.Name} category"));
             x.Transactions.Add(new Transaction(id, TransactionType.ShopPurchase, -37500000,
-                $"{text.Mention} szövegcsatorna"));
+                $"{text.Mention} text channel"));
             x.Transactions.Add(new Transaction(id, TransactionType.ShopPurchase, -37500000,
-                $"{voice.Mention} hangcsatorna"));
+                $"{voice.Mention} voice channel"));
             x.Roles.Add(role.Id);
-            x.BoughtChannels.Add(new DiscordChannel(category.Id, DiscordChannelType.Category));
-            x.BoughtChannels.Add(new DiscordChannel(text.Id, DiscordChannelType.Text));
-            x.BoughtChannels.Add(new DiscordChannel(voice.Id, DiscordChannelType.Voice));
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += required).ConfigureAwait(false);
         
         await ModifyOriginalResponseAsync(x =>
         {
-            x.Embed = eb.WithDescription("Sikeres vásárlás 😎!").WithColor(Color.Green).Build();
+            x.Embed = eb.WithDescription("Successful Purchase 😎!").WithColor(Color.Green).Build();
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
     }

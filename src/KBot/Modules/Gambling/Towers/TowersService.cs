@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
+using KBot.Extensions;
 using KBot.Models;
+using KBot.Models.Guild;
+using KBot.Models.User;
 using KBot.Services;
 
 namespace KBot.Modules.Gambling.Towers;
@@ -129,7 +132,7 @@ public sealed class TowersGame : IGamblingGame
         return Message.ModifyAsync(x =>
         {
             x.Content = "";
-            x.Embed = new EmbedBuilder().TowersEmbed(this, $"Kilépéshez: `/towers stop {Id}`");
+            x.Embed = new EmbedBuilder().TowersEmbed(this, $"Exit: `/towers stop {Id}`");
             x.Components = comp.Build();
         });
     }
@@ -147,7 +150,7 @@ public sealed class TowersGame : IGamblingGame
 
         if (x == 5)
         {
-            await Message.ModifyAsync(u => u.Embed = new EmbedBuilder().TowersEmbed(this, $"Nyeremény: **{Prize} KCoin**", Lost ? Color.Red : Color.Green)).ConfigureAwait(false);
+            await Message.ModifyAsync(u => u.Embed = new EmbedBuilder().TowersEmbed(this, Lost ? $"You lost **{Bet}** credits" : $"You won **{Prize}** credits", Lost ? Color.Red : Color.Green)).ConfigureAwait(false);
             OnGameEnded(new GameEndedEventArgs(Id, Prize, "TW - Win", true));
         }
 
@@ -189,7 +192,7 @@ public sealed class TowersGame : IGamblingGame
         }
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().TowersEmbed(this, $"Nyeremény: **{prize} KCoin**",
+            x.Embed = new EmbedBuilder().TowersEmbed(this, Lost ? $"You lost **{Bet}** credits" : $"You won **{Prize}** credits",
                     Lost ? Color.Red : Color.Green);
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);

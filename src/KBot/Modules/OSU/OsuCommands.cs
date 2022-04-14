@@ -10,6 +10,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
 using KBot.Enums;
+using KBot.Extensions;
 using OsuSharp;
 using OsuSharp.Domain;
 using OsuSharp.Interfaces;
@@ -22,23 +23,23 @@ public class Osu : KBotModuleBase
 {
     public OsuClient OsuClient { get; set; }
     
-    [SlashCommand("set", "osu! profil beállítása")]
+    [SlashCommand("set", "Link your osu! profile")]
     public async Task SetOsuProfileAsync(string link)
     {
         if (!link.Contains("osu.ppy.sh/users") || !link.Contains("osu.ppy.sh/u"))
         {
-            await RespondAsync("Kérlek adj meg egy valós osu! profil linket!", ephemeral: true).ConfigureAwait(false);
+            await RespondAsync("That's not a osu! profile link!", ephemeral: true).ConfigureAwait(false);
             return;
         }
 
         await DeferAsync(true).ConfigureAwait(false);
         var osuId = Convert.ToUInt64(link.Split("/").Last());
         await Database.UpdateUserAsync(Context.Guild, Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.Red, "Sikeresen beállítottad az osu! profilod!",
+        await FollowupWithEmbedAsync(Color.Red, "Succesfully linked your osu! profile!",
             "https://osu.ppy.sh/u/" + osuId).ConfigureAwait(false);
     }
 
-    [SlashCommand("recent", "Legutóbbi osu! score-od információi")]
+    [SlashCommand("recent", "Gets the recent play of a user")]
     public async Task SendRecentOsuPlayAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
@@ -46,23 +47,23 @@ public class Osu : KBotModuleBase
         var osuId = (await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
-            await FollowupWithEmbedAsync(Color.Red, "Nincs osu! profil beállítva!",
-                "Kérlek állítsd be osu! profilodat a `osu set` parancs segítségével!").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked!",
+                "Please link your osu! profile using **/osu set**!").ConfigureAwait(false);
             return;
         }
 
         var score = await OsuClient.GetUserScoresAsync((long)osuId, ScoreType.Recent, true, GameMode.Osu, 1).ConfigureAwait(false);
         if (score.Count == 0)
         {
-            await FollowupWithEmbedAsync(Color.Red, "Az elmúlt 24 órában nincs osu! scoreod!",
-                "Kérlek próbáld meg később!").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "No recent plays in the last 24 hours!",
+                "Come back after playing!").ConfigureAwait(false);
             return;
         }
 
         await FollowUpWithScoreAsync(score[0], sw).ConfigureAwait(false);
     }
 
-    [SlashCommand("stats", "osu! statisztikák")]
+    [SlashCommand("stats", "osu! statictics")]
     public async Task SendOsuStatsAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
@@ -70,35 +71,35 @@ public class Osu : KBotModuleBase
         var osuId = (await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
-            await FollowupWithEmbedAsync(Color.Red, "Nincs osu! profil beállítva!",
-                "Kérlek állítsd be osu! profilodat a `osu set` parancs segítségével!").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked!",
+                "Please link your osu! profile using **/osu set**").ConfigureAwait(false);
             return;
         }
 
         var osuUser = await OsuClient.GetUserAsync((long)osuId, GameMode.Osu).ConfigureAwait(false);
-        var playStyle = osuUser.Playstyle[0] == "mouse" ? "Egér, Billentyűzet" : "Rajztábla";
+        var playStyle = osuUser.Playstyle[0] == "mouse" ? "Mouse" : "Tablet";
         var eb = new EmbedBuilder()
             .WithAuthor(osuUser.Username, osuUser.AvatarUrl.ToString(), $"https://osu.ppy.sh/users/{osuUser.Id}")
             .WithColor(Color.Gold)
-            .AddField("📅 Regisztrált", $"`{osuUser.JoinDate.Humanize()}`", true)
-            .AddField("🌍 Ország", $"`{osuUser.Country.Name}`", true)
-            .AddField("🎚️ Szint", $"`{osuUser.Statistics.UserLevel.Current.ToString()}`", true)
-            .AddField("🥇 Globál Rank",
+            .AddField("📅 Registered", $"`{osuUser.JoinDate.Humanize()}`", true)
+            .AddField("🌍 Country", $"`{osuUser.Country.Name}`", true)
+            .AddField("🎚️ Level", $"`{osuUser.Statistics.UserLevel.Current.ToString()}`", true)
+            .AddField("🥇 Global Rank",
                 $"`# {osuUser.Statistics.GlobalRank.ToString("n0")} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)}PP)`",
                 true)
-            .AddField("🥇 Országos Rank", $"`# {osuUser.Statistics.CountryRank.ToString("n0")}`", true)
-            .AddField("🎯 Pontosság", $"`{Math.Round(osuUser.Statistics.HitAccuracy, 1).ToString()} %`", true)
-            .AddField("🕐 Játékidő",
+            .AddField("🥇 Country Rank", $"`# {osuUser.Statistics.CountryRank.ToString("n0")}`", true)
+            .AddField("🎯 Accuracy", $"`{Math.Round(osuUser.Statistics.HitAccuracy, 1).ToString()} %`", true)
+            .AddField("🕐 Playtime",
                 $"`{TimeSpan.FromSeconds(osuUser.Statistics.PlayTime).Humanize()} ({osuUser.Statistics.PlayCount.ToString()} játék)`",
                 true)
-            .AddField("🎮 Max Combó", $"`{osuUser.Statistics.MaximumCombo.ToString()} x`", true)
-            .AddField("🎹 Ezzel játszik", $"`{playStyle}`", true);
+            .AddField("🎮 Max Combo", $"`{osuUser.Statistics.MaximumCombo.ToString()} x`", true)
+            .AddField("🎹 Plays with", $"`{playStyle}`", true);
         sw.Stop();
         eb.WithDescription($"{sw.ElapsedMilliseconds} ms");
         await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
     }
 
-    [SlashCommand("topserver", "Top 10 osu! játékos a szeveren")]
+    [SlashCommand("topserver", "Sends the top 10 osu! players in the server")]
     public async Task SendTopOsuPlayersAsync()
     {
         await DeferAsync().ConfigureAwait(false);
@@ -114,7 +115,7 @@ public class Osu : KBotModuleBase
         userOsuPairList.Sort((x, y) => x.Value.Statistics.GlobalRank.CompareTo(y.Value.Statistics.GlobalRank));
         var eb = new EmbedBuilder()
             .WithColor(Color.Gold)
-            .WithTitle("Top 10 osu! játékos a szerveren");
+            .WithTitle("Top 10 osu! players in the server");
         var desc = new StringBuilder();
         var i = 0;
         foreach (var (user, osuUser) in userOsuPairList)
@@ -129,7 +130,7 @@ public class Osu : KBotModuleBase
         await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
     }
 
-    [SlashCommand("topplay", "Legjobb osu! played lekérése")]
+    [SlashCommand("topplay", "Sends the top play of a user")]
     public async Task SendOsuTopPlayAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
@@ -137,8 +138,8 @@ public class Osu : KBotModuleBase
         var osuId = (await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
-            await FollowupWithEmbedAsync(Color.Red, "Nincs osu! profil beállítva!",
-                "Kérlek állítsd be osu! profilodat a `osu set` parancs segítségével!").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked",
+                "Please link your osu! profile using **/osu set**").ConfigureAwait(false);
             return;
         }
 

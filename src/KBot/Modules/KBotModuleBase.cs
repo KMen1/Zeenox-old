@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Models;
+using KBot.Models.Guild;
+using KBot.Models.User;
 using KBot.Services;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -42,5 +43,4 @@ public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionCo
     {
         return Database.UpdateUserAsync(Context.Guild, user, action);
     }
-
 }

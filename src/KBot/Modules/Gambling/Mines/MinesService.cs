@@ -5,27 +5,28 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
-using KBot.Models;
+using KBot.Extensions;
+using KBot.Models.User;
 using KBot.Services;
 
 namespace KBot.Modules.Gambling.Mines;
 
 public class MinesService : IInjectable
 {
-    private readonly List<MinesGame> Games;
-    private readonly DatabaseService Database;
+    private readonly List<MinesGame> _games;
+    private readonly DatabaseService _database;
 
     public MinesService(DatabaseService database)
     {
-        Database = database;
-        Games = new List<MinesGame>();
+        _database = database;
+        _games = new List<MinesGame>();
     }
 
     public MinesGame CreateGame(SocketUser user, IUserMessage message, int bet, int mines)
     {
         var game = new MinesGame(message, user, bet, mines);
         game.GameEnded += OnGameEndedAsync;
-        Games.Add(game);
+        _games.Add(game);
         return game;
     }
 
@@ -33,8 +34,8 @@ public class MinesService : IInjectable
     {
         var game = (MinesGame)sender!;
         game.GameEnded -= OnGameEndedAsync;
-        Games.Remove(game);
-        await Database.UpdateUserAsync(game.Guild, game.User, x =>
+        _games.Remove(game);
+        await _database.UpdateUserAsync(game.Guild, game.User, x =>
         {
             if (e.IsWin)
             {
@@ -51,13 +52,13 @@ public class MinesService : IInjectable
         }).ConfigureAwait(false);
         if (e.IsWin)
         {
-            await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
+            await _database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
         }
     }
 
     public MinesGame GetGame(string id)
     {
-        return Games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id == id);
     }
 }
 
@@ -121,7 +122,7 @@ public sealed class MinesGame : IGamblingGame
         var eb = new EmbedBuilder()
             .WithTitle($"Mines | {Id}")
             .WithColor(Color.Gold)
-            .WithDescription($"Tét: **{Bet}**\nAknák száma: **{Mines}**\nKilépéshez: `/mine stop {Id}`")
+            .WithDescription($"Bet: **{Bet}**\nMines: **{Mines}**\nExit: `/mine stop {Id}`")
             .Build();
         var comp = new ComponentBuilder();
         var size = Math.Sqrt(Points.Count);
@@ -200,7 +201,7 @@ public sealed class MinesGame : IGamblingGame
             x.Embed = new EmbedBuilder()
                 .WithTitle($"Mines | {Id}")
                 .WithColor(lost ? Color.Red : Color.Green)
-                .WithDescription($"Tét: **{Bet}**\nAknák száma: **{Mines}**\nNyeremény: **{prize - Bet} KCoin**")
+                .WithDescription($"Bet: **{Bet}**\nMines: **{Mines}**\n" + (lost ? $"You lost **{Bet}**" : $"You won **{prize - Bet}** credits"))
                 .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);

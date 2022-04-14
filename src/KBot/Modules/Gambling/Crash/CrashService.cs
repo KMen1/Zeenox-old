@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
+using KBot.Extensions;
 using KBot.Models;
+using KBot.Models.Guild;
+using KBot.Models.User;
 using KBot.Services;
 
 namespace KBot.Modules.Gambling.Crash;
@@ -31,7 +34,7 @@ public class CrashService : IInjectable
         return game;
     }
 
-    private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
+    private async void OnGameEndedAsync(object sender, GameEndedEventArgs e)
     {
         var game = (CrashGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
@@ -129,7 +132,7 @@ public sealed class CrashGame : IGamblingGame
                 OnGameEnded(new GameEndedEventArgs(Id, 0, "", false));
                 await Message.ModifyAsync(x =>
                 {
-                    x.Embed = new EmbedBuilder().CrashEmbed(this, $"Crashelt itt: `{CrashPoint:0.00}x`\nVesztettél: `{Bet} kreditet`", Color.Red);
+                    x.Embed = new EmbedBuilder().CrashEmbed(this, $"Crashed at: `{CrashPoint:0.00}x`\nYou lost **{Bet}** credits`", Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
                 break;
@@ -144,9 +147,9 @@ public sealed class CrashGame : IGamblingGame
         OnGameEnded(new GameEndedEventArgs(Id, Bet+Profit, $"CR - {Multiplier:0.0}x", false));
         return Message.ModifyAsync(x =>
         {
-             x.Embed = new EmbedBuilder().CrashEmbed(this, $"Kivetted itt: `{Multiplier:0.00}x`\n" +
-                                                           $"Crashelt volna: `{CrashPoint:0.00}x`\n" +
-                                                           $"Nyertél: `{Profit:0} kreditet`", Color.Green);
+             x.Embed = new EmbedBuilder().CrashEmbed(this, $"Stopped at: `{Multiplier:0.00}x`\n" +
+                                                           $"Crashpoint: `{CrashPoint:0.00}x`\n" +
+                                                           $"You won **{Profit:0}** credits", Color.Green);
              x.Components = new ComponentBuilder().Build();
         });
     }

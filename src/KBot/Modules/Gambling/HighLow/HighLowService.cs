@@ -10,7 +10,10 @@ using CloudinaryDotNet.Actions;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
+using KBot.Extensions;
 using KBot.Models;
+using KBot.Models.Guild;
+using KBot.Models.User;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
 using Color = Discord.Color;
@@ -155,7 +158,7 @@ public sealed class HighLowGame : IGamblingGame
         OnGameEnded(new GameEndedEventArgs(Id, 0, "", false));
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Bet}** kreditet!", Color.Red);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Wrong choice! You lost **{Bet}** credits!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
     }
@@ -174,7 +177,7 @@ public sealed class HighLowGame : IGamblingGame
         OnGameEnded(new GameEndedEventArgs(Id, 0, "", false));
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Nem találtad el! Vesztettél **{Bet}** kreditet!", Color.Red);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Wrong choice! You lost **{Bet}** credits!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
     }
@@ -185,7 +188,7 @@ public sealed class HighLowGame : IGamblingGame
         OnGameEnded(new GameEndedEventArgs(Id, Stake, "HL - WIN", false));
         return Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"A játék véget ért! **{Stake}** kreditet szereztél!", Color.Green);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"The game is over! You won **{Stake}** credits!", Color.Green);
             x.Components = new ComponentBuilder().Build();
         });
     }

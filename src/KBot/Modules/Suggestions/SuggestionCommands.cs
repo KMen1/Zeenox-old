@@ -4,33 +4,33 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Suggestions;
 
-[Group("suggestion", "Ötletekkel kapcsolatos parancsok")]
+[Group("suggestion", "Suggestions")]
 public class SuggestionCommands : KBotModuleBase
 {
-    [SlashCommand("create", "Ötlet létrehozása")]
-    public async Task CreateSuggestionAsync(string description)
+    [SlashCommand("create", "Create a new suggestion")]
+    public async Task CreateSuggestionAsync(string title, string description)
     {
         await DeferAsync().ConfigureAwait(false);
 
         var embed = new EmbedBuilder()
             .WithAuthor(Context.User.Username, Context.User.GetAvatarUrl())
-            .WithTitle("Ötlet")
+            .WithTitle(title)
             .WithDescription(description)
             .WithColor(Color.Blue)
             .Build();
         var comp = new ComponentBuilder()
-            .WithButton("Elfogadás", $"suggest-accept:{Context.User.Id}", ButtonStyle.Success, new Emoji("✅"))
-            .WithButton("Elutasítás", $"suggest-decline:{Context.User.Id}", ButtonStyle.Danger, new Emoji("❌"))
+            .WithButton("Accept", $"suggest-accept:{Context.User.Id}", ButtonStyle.Success, new Emoji("✅"))
+            .WithButton("Deny", $"suggest-decline:{Context.User.Id}", ButtonStyle.Danger, new Emoji("❌"))
             .Build();
 
         var config = await GetGuildConfigAsync().ConfigureAwait(false);
         if (!config.Suggestions.Enabled)
         {
-            await FollowupAsync("Ezen a szerveren az ötletek nincsenek engedélyezve.").ConfigureAwait(false);
+            await FollowupAsync("Suggestions are not enabled on this server.").ConfigureAwait(false);
             return;
         }
         var suggestionChannel = Context.Guild.GetTextChannel(config.Suggestions.AnnounceChannelId);
         await suggestionChannel.SendMessageAsync(embed: embed, components: comp).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.Green, "Ötlet létrehozva", $"Ebben a csatornában: {suggestionChannel.Mention}").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Green, "Suggestion Created", $"In Channel: {suggestionChannel.Mention}").ConfigureAwait(false);
     }
 }

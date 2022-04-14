@@ -16,7 +16,7 @@ public class SuggestionComponents : KBotModuleBase
         var message = ((SocketMessageComponent) Context.Interaction).Message;
         var embed = message.Embeds.First();
         var eb = embed.ToEmbedBuilder()
-            .WithTitle($"Ötlet elfogadva {Context.User.Username} által")
+            .AddField("Accepted by", Context.User.Mention)
             .WithColor(Color.Green)
             .Build();
         await message.ModifyAsync(x =>
@@ -26,10 +26,9 @@ public class SuggestionComponents : KBotModuleBase
         }).ConfigureAwait(false);
 
         var user = await Context.Client.GetUserAsync(userId).ConfigureAwait(false);
-
         var userEb = new EmbedBuilder()
             .WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
-            .WithTitle($"{Context.User.Username} Elfogadta az ötletedet!")
+            .WithTitle($"{Context.User.Username} accepted your suggestion!")
             .WithColor(Color.Green)
             .WithDescription(embed.Description)
             .Build();
@@ -44,7 +43,7 @@ public class SuggestionComponents : KBotModuleBase
         var message = ((SocketMessageComponent) Context.Interaction).Message;
         var embed = message.Embeds.First();
         var eb = embed.ToEmbedBuilder()
-            .WithTitle($"Ötlet elutasítva {Context.User.Username} által")
+            .AddField("Denied by", Context.User.Mention)
             .WithColor(Color.Red)
             .Build();
         await message.ModifyAsync(x =>
@@ -57,7 +56,7 @@ public class SuggestionComponents : KBotModuleBase
 
         var userEb = new EmbedBuilder()
             .WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
-            .WithTitle($"{Context.User.Username} Elutasította az ötletedet!")
+            .WithTitle($"{Context.User.Username} denied your suggestion!")
             .WithDescription(embed.Description)
             .WithColor(Color.Red)
             .Build();

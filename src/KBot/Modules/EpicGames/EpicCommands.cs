@@ -4,16 +4,16 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using KBot.Extensions;
 using KBot.Models;
 
 namespace KBot.Modules.EpicGames;
 
-[Group("epic", "Epic Games parancsok")]
 public class EpicCommands : KBotModuleBase
 {
     public HttpClient HttpClient { get; set; }
-    
-    [SlashCommand("free", "Elküldi a jelenleg ingyenes játékot epic games-en.")]
+
+    [SlashCommand("epicfree", "Send the current free games on the Epic Games Store.")]
     public async Task GetEpicFreeGameAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);

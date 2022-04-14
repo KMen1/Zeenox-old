@@ -3,37 +3,38 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Humanizer;
 
 namespace KBot.Modules.Leveling;
 
-[Group("level", "Szintrendszer parancsok")]
+[Group("level", "Leveling system commands")]
 public class Levels : KBotModuleBase
 {
-    [SlashCommand("rank", "Saját/más szint és xp lekérése")]
+    [SlashCommand("rank", "Gets a users level")]
     public async Task GetLevelAsync(SocketUser user = null)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var setUser = user ?? Context.User;
         if (setUser.IsBot)
         {
-            await FollowupAsync("Botok szintjét nem tudod lekérdezni.").ConfigureAwait(false);
+            await FollowupAsync("You can't check the rank of a bot.").ConfigureAwait(false);
             return;
         }
         var dbUser = await Database.GetUserAsync(Context.Guild, setUser).ConfigureAwait(false);
         var level = dbUser.Level;
         var requiredXP = Math.Pow(level * 4, 2);
-        var xp = dbUser.XP;
+        var xp = dbUser.Xp;
         var embed = new EmbedBuilder()
             .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
             .WithColor(Color.Gold)
             .WithDescription(
-                $"**XP: **`{xp.ToString()}/{requiredXP}` ({dbUser.TotalXp} Összesen) \n**Szint: **`{level.ToString()}`")
+                $"**XP: **`{xp.ToString()}/{requiredXP}` ({dbUser.TotalXp} Total) \n**Level: **`{level.ToString()}`")
             .Build();
 
         await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
-    [SlashCommand("top", "Top 10 szintjei")]
+    [SlashCommand("top", "Sends the top 10 users")]
     public async Task GetTopAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -45,23 +46,23 @@ public class Levels : KBotModuleBase
         foreach (var user in top)
         {
             userColumn += $"{top.IndexOf(user) +1 }. {Context.Guild.GetUser(user.Id).Mention}\n";
-            levelColumn += $"{user.Level} ({user.XP} XP)\n";
+            levelColumn += $"{user.Level} ({user.Xp} XP)\n";
         }
 
         await FollowupAsync(embed: new EmbedBuilder()
-            .WithTitle("Top 10 szintjei")
+            .WithTitle("Top 10 Users")
             .WithColor(Color.Green)
-            .AddField("Felhasználó", userColumn, true)
-            .AddField("Szint", levelColumn, true)
+            .AddField("User", userColumn, true)
+            .AddField("Level", levelColumn, true)
             .Build(), ephemeral: true).ConfigureAwait(false);
     }
 
-    [SlashCommand("daily", "Napi XP begyűjtése")]
+    [SlashCommand("daily", "Collects your daily XP")]
     public async Task GetDailyAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        var lastDaily = dbUser.DailyClaimDate;
+        var lastDaily = dbUser.DailyClaimDate ?? DateTime.MinValue;
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
@@ -69,36 +70,36 @@ public class Levels : KBotModuleBase
             await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
             {
                 x.DailyClaimDate = DateTime.UtcNow;
-                x.XP += xp;
+                x.Xp += xp;
             }).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(Color.Green, "Sikeresen begyűjtetted a napi XP-d!", $"A begyűjtött XP mennyisége: {xp.ToString()}", ephemeral: true).ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Green, $"Successfully collected your daily XP of {xp}", "", ephemeral: true).ConfigureAwait(false);
         }
         else
         {
             var timeLeft = lastDaily.AddDays(1) - DateTime.UtcNow;
-            await FollowupWithEmbedAsync(Color.Green, "Sikertelen begyűjtés",
-                    $"Gyere vissza {timeLeft.Days.ToString()} nap, {timeLeft.Hours.ToString()} óra, {timeLeft.Minutes.ToString()} perc és {timeLeft.Seconds.ToString()} másodperc múlva!", ephemeral: true)
+            await FollowupWithEmbedAsync(Color.Green, "Unable to collect",
+                    $"Come back in {timeLeft.Humanize()}", ephemeral: true)
                 .ConfigureAwait(false);
         }
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
-    [SlashCommand("changexp", "XP hozzáadása/csökkentése (admin)")]
+    [SlashCommand("changexp", "Change someone's XP")]
     public async Task ChangeXPAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.XP += offset).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.Green, "Pontok beállítva!",
-            $"{user.Mention} mostantól {dbUser.XP.ToString()} XP-vel rendelkezik!").ConfigureAwait(false);
+        var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.Xp += offset).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Green, "XP set!",
+            $"{user.Mention} now has an XP of **{dbUser.Xp.ToString()}**").ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
-    [SlashCommand("changelevel", "Szint hozzáadása/csökkentése (admin)")]
+    [SlashCommand("changelevel", "Change someone's level")]
     public async Task ChangeLevelAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.Level += offset).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.Green, "Szint hozzáadva!",
-            $"{user.Mention} mostantól {dbUser.Level.ToString()} szintű!").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Green, "Level set!",
+            $"{user.Mention} now has a level of **{dbUser.Level.ToString()}**").ConfigureAwait(false);
     }
 }

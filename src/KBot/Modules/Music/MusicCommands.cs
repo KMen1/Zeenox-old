@@ -1,48 +1,52 @@
 ﻿using System;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using Humanizer;
-using Lavalink4NET.Player;
+using KBot.Extensions;
 
 namespace KBot.Modules.Music;
 
-[Group("music", "Audio parancsok")]
+[Group("music", "Music")]
 public class MusicCommands : KBotModuleBase
 {
     public AudioService AudioService { get; set; }
     
-    [SlashCommand("move", "Átlép abba a hangcsatornába, amelyben tartózkodsz")]
+    [SlashCommand("move", "Moves the bot to the channel you are in")]
     public async Task MovePlayerAsync()
     {
-        await RespondAsync(embed: await AudioService.MoveAsync(Context.Guild, Context.User).ConfigureAwait(false))
+        var channel = ((IVoiceState) Context.User).VoiceChannel;
+        if (channel is null)
+        {
+            await RespondAsync("You are not in a voice channel", ephemeral: true);
+            return;
+        }
+        await RespondAsync(embed: await AudioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false))
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("leave", "Elhagyja azt a hangcsatornát, amelyben a bot éppen tartózkodik")]
+    [SlashCommand("leave", "Leaves the voice channel the bot is in")]
     public async Task DisconnectPlayerAsync()
     {
         await RespondAsync(embed: await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false))
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("play", "Lejátssza a kívánt zenét")]
-    public async Task PlayAsync([Summary("query", "Zene linkje vagy címe (YouTube, SoundCloud, Twitch)")] string query)
+    [SlashCommand("play", "Plays a song")]
+    public async Task PlayAsync(string query)
     {
         await DeferAsync().ConfigureAwait(false);
         if (((IVoiceState)Context.User).VoiceChannel is null)
         {
-            await FollowupAsync(embed: new EmbedBuilder().ErrorEmbed("Nem vagy hangcsatornában!")).ConfigureAwait(false);
+            await FollowupAsync(embed: new EmbedBuilder().ErrorEmbed("You are not in a voice channel!")).ConfigureAwait(false);
             return;
         }
         await AudioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
     }
 
-    [SlashCommand("search", "Keres egy zenét a YouTube-on")]
-    public async Task SearchAsync([Summary("query", "Zene címe")] string query)
+    [SlashCommand("search", "Searches for a song")]
+    public async Task SearchAsync(string query)
     {
         await DeferAsync().ConfigureAwait(false);
         if (Uri.IsWellFormedUriString(query, UriKind.Absolute))
@@ -53,7 +57,7 @@ public class MusicCommands : KBotModuleBase
         var search = await AudioService.SearchAsync(query).ConfigureAwait(false);
         if (search is null)
         {
-            await FollowupAsync("Nincs találat! Kérlek próbáld újra másképp!").ConfigureAwait(false);
+            await FollowupAsync("No matches!").ConfigureAwait(false);
             return;
         }
         var tracks = search.Tracks.ToList();//
@@ -79,7 +83,7 @@ public class MusicCommands : KBotModuleBase
             comp.WithButton(" ", $"search:{tracks[i].TrackIdentifier}", emote: new Emoji(emoji));
         }
         var eb = new EmbedBuilder()
-            .WithTitle("Válaszd ki a kívánt zeneszámot")
+            .WithTitle("Search Results")
             .WithColor(Color.Blue)
             .WithDescription(desc)
             .Build();
@@ -89,26 +93,32 @@ public class MusicCommands : KBotModuleBase
     [ComponentInteraction("search:*", true)]
     public async Task PlaySearchAsync(string identifier)
     {
+        var channel = ((IVoiceState)Context.User).VoiceChannel;
+        if (channel is null)
+        {
+            await RespondAsync("You are not in a voice channel", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
         await DeferAsync().ConfigureAwait(false);
         await AudioService.PlayFromSearchAsync(Context.Guild, (SocketMessageComponent)Context.Interaction, identifier)
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("volume", "Hangerő beállítása")]
+    [SlashCommand("volume", "Sets the volume")]
     public async Task ChangeVolumeAsync(
-        [Summary("volume", "Hangerő számban megadva (1-100)"), MinValue(1), MaxValue(100)] ushort volume)
+        [Summary("volume"), MinValue(1), MaxValue(100)] ushort volume)
     {
         await RespondAsync(embed: await AudioService.SetVolumeAsync(Context.Guild, volume).ConfigureAwait(false),
             ephemeral: true).ConfigureAwait(false);
     }
 
-    [SlashCommand("queue", "A sorban lévő zenék listája")]
+    [SlashCommand("queue", "Shows the current queue")]
     public Task SendQueueAsync()
     {
         return RespondAsync(embed: AudioService.GetQueue(Context.Guild), ephemeral: true);
     }
 
-    [SlashCommand("clearqueue", "A sorban lévő zenék törlése")]
+    [SlashCommand("clearqueue", "Clears the current queue")]
     public async Task ClearQueueAsync()
     {
         await RespondAsync(embed: await AudioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false)).ConfigureAwait(false);

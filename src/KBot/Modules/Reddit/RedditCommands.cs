@@ -4,12 +4,12 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Reddit;
 
-[Group("reddit", "Reddit parancsok")]
+[Group("reddit", "Reddit commands")]
 public class Reddit : KBotModuleBase
 {
     public RedditService RedditService { get; set; }
 
-    [SlashCommand("sub", "Küld egy random post-ot az adott subredditről.")]
+    [SlashCommand("sub", "Sends a random post from the specified subreddit.")]
     public async Task SubAsync(string subreddit)
     {
         await DeferAsync().ConfigureAwait(false);
@@ -22,7 +22,7 @@ public class Reddit : KBotModuleBase
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
-    [SlashCommand("fost", "Küld egy random fost-ot az r/FostTalicska subredditről.")]
+    [SlashCommand("fost", "Sends a random post from r/FostTalicska.")]
     public async Task FostAsync()
     {
         await DeferAsync().ConfigureAwait(false);
@@ -30,7 +30,7 @@ public class Reddit : KBotModuleBase
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
-    [SlashCommand("meme", "Küld egy random mémet az r/memes subredditről.")]
+    [SlashCommand("meme", "Sends a random post from r/memes.")]
     public async Task MemeAsync()
     {
         await DeferAsync().ConfigureAwait(false);
@@ -38,7 +38,7 @@ public class Reddit : KBotModuleBase
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
     }
 
-    [SlashCommand("blursed", "Küld egy random elátkozott képet az r/blursedimages subredditről.")]
+    [SlashCommand("blursed", "Sends a random post from r/blursedimages.")]
     public async Task BlursedAsync()
     {
         await DeferAsync().ConfigureAwait(false);
@@ -47,7 +47,7 @@ public class Reddit : KBotModuleBase
     }
 
     [RequireNsfw]
-    [SlashCommand("pussy", "Küld egy random női nemi szervet az r/pussy subredditről.")]
+    [SlashCommand("pussy", "Sends a random post from r/pussy.")]
     public async Task PussyAsync()
     {
         await DeferAsync().ConfigureAwait(false);
@@ -56,7 +56,7 @@ public class Reddit : KBotModuleBase
     }
 
     [RequireNsfw]
-    [SlashCommand("boobs", "Küld egy random női mellet az r/boobs subredditről.")]
+    [SlashCommand("boobs", "Sends a random post from r/boobs.")]
     public async Task BoobsAsync()
     {
         await DeferAsync().ConfigureAwait(false);
@@ -65,7 +65,7 @@ public class Reddit : KBotModuleBase
     }
 
     [RequireNsfw]
-    [SlashCommand("ass", "Küld egy random popsi képet az r/ass subredditről.")]
+    [SlashCommand("ass", "Sends a random post from r/ass.")]
     public async Task AssAsync()
     {
         await DeferAsync().ConfigureAwait(false);

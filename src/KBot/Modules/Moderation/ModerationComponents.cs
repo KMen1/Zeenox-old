@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Models;
+using KBot.Models.User;
 
-namespace KBot.Modules.Forms;
+namespace KBot.Modules.Moderation;
 
-public class FormComponents : KBotModuleBase
+public class ModerationComponents : KBotModuleBase
 {
     [ModalInteraction("appeal:*:*")]
     public async Task HandleAppealAsync(ulong adminId, int warnId, AppealModal submission)
@@ -22,20 +22,20 @@ public class FormComponents : KBotModuleBase
 
         var eb = new EmbedBuilder()
             .WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
-            .WithTitle("A fellebezés döntésre vár")
-            .WithDescription($"Kérelmezte: {Context.User.Mention}")
+            .WithTitle("Appeal waiting for review")
+            .WithDescription($"Requested by: {Context.User.Mention}")
             .WithColor(Color.Orange)
-            .AddField("Ki adta a büntetést?", $"{admin.Mention}")
-            .AddField("Milyen büntetést kaptál?", submission.PunishType)
-            .AddField("Milyen okból kaptál büntetést?", warn is null ? submission.PunishReason : warn.Reason)
-            .AddField("Miért gondolod, hogy helytelenül kaptál büntetést?", submission.AppealReason)
+            .AddField("Who gave the punishment?", $"{admin.Mention}")
+            .AddField("What kind of punishment?", submission.PunishType)
+            .AddField("Reason for punishment", warn is null ? submission.PunishReason : warn.Reason)
+            .AddField("Reason for appeal", submission.AppealReason)
             .Build();
         var comp = new ComponentBuilder()
-            .WithButton("Elfogadás", $"appeal-accept:{Context.User.Id}:{admin.Id}", ButtonStyle.Success, new Emoji("✅"))
-            .WithButton("Elutasítás", $"appeal-decline:{Context.User.Id}:{admin.Id}", ButtonStyle.Danger, new Emoji("❌"))
+            .WithButton("Accept", $"appeal-accept:{Context.User.Id}:{admin.Id}", ButtonStyle.Success, new Emoji("✅"))
+            .WithButton("Deny", $"appeal-decline:{Context.User.Id}:{admin.Id}", ButtonStyle.Danger, new Emoji("❌"))
             .Build();
         await Context.Guild.GetTextChannel(941750604345270333).SendMessageAsync("@here",embed: eb, components: comp).ConfigureAwait(false);
-        await RespondAsync("Az illetékesek megkapták fellebezésed. Amint elfogadják/elutasítják értesítve leszel!", ephemeral: true).ConfigureAwait(false);
+        await RespondAsync("The mod team received your appeal, once the make a decision you will get a message", ephemeral: true).ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
@@ -44,15 +44,15 @@ public class FormComponents : KBotModuleBase
     {
         if (Context.User.Id == adminId)
         {
-            await RespondAsync("Az ellened szóló fellebezéseket nem tudod elfogadni...", ephemeral: true)
+            await RespondAsync("You cannot accept appeals against you...", ephemeral: true)
                 .ConfigureAwait(false);
         }
         var msgId = ((SocketMessageComponent) Context.Interaction).Message.Id;
         var modal = new ModalBuilder()
-            .WithTitle("Döntés indoklása")
+            .WithTitle("Justify Decision")
             .WithCustomId($"appeal-decision:{userId}:{adminId}:{msgId}:1")
-            .AddTextInput("Kérlek indokold meg a döntésed:", "reason-input", TextInputStyle.Paragraph,
-                "Véletlen adtam, nem fenyegetett halállal...")
+            .AddTextInput("Please justify your decision", "reason-input", TextInputStyle.Paragraph,
+                "Accident...")
             .Build();
         await RespondWithModalAsync(modal).ConfigureAwait(false);
     }
@@ -63,15 +63,15 @@ public class FormComponents : KBotModuleBase
     {
         if (Context.User.Id == adminId)
         {
-            await RespondAsync("Az ellened szóló fellebezéseket nem tudod elutasítani...", ephemeral: true)
+            await RespondAsync("You cannot deny appeals against you...", ephemeral: true)
                 .ConfigureAwait(false);
         }
         var msgId = ((SocketMessageComponent) Context.Interaction).Message.Id;
         var modal = new ModalBuilder()
-            .WithTitle("Döntés indoklása")
+            .WithTitle("Justify Decision")
             .WithCustomId($"appeal-decision:{userId}:{adminId}:{msgId}:0")
-            .AddTextInput("Kérlek indokold meg a döntésed:", "reason-input", TextInputStyle.Paragraph,
-                "Véletlen adtam, nem fenyegetett halállal...")
+            .AddTextInput("Please justify your decision:", "reason-input", TextInputStyle.Paragraph,
+                "Accident...")
             .Build();
         await RespondWithModalAsync(modal).ConfigureAwait(false);
     }
@@ -90,30 +90,30 @@ public class FormComponents : KBotModuleBase
         if (decision == "1")
         {
             userEb.WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
-                .WithTitle("Elfogadott fellebezés")
-                .WithDescription($"{Context.User.Mention} elfogadta a fellebezésedet.\nIndok: `{modal.Reason}`")
+                .WithTitle("Appeal Accepted")
+                .WithDescription($"{Context.User.Mention} accepted you appeal with reason: `{modal.Reason}`")
                 .WithColor(Color.Green);
             foreach (var field in embed.Fields)
             {
                 userEb.AddField(field.Name, field.Value);
             }
             embed.Color = Color.Green;
-            embed.Title = "Elfogadott fellebbezés";
-            embed.Description += $"\nElfogadta: {Context.User.Mention}\nIndok: `{modal.Reason}`";
+            embed.Title = "Appeal Accepted";
+            embed.Description += $"\nAccepted by: {Context.User.Mention}\nReason: `{modal.Reason}`";
         }
         else
         {
             userEb.WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
-                .WithTitle("Elutasított fellebezés")
-                .WithDescription($"{Context.User.Mention} elutasította a fellebezésedet.\nIndok: `{modal.Reason}`")
+                .WithTitle("Appeal Denied")
+                .WithDescription($"{Context.User.Mention} denied you appeal with reason: `{modal.Reason}`")
                 .WithColor(Color.Green);
             foreach (var field in embed.Fields)
             {
                 userEb.AddField(field.Name, field.Value);
             }
             embed.Color = Color.Green;
-            embed.Title = "Elutasított fellebbezés";
-            embed.Description += $"\nElutasította: {Context.User.Mention}\nIndok: `{modal.Reason}`";
+            embed.Title = "Appeal Denied";
+            embed.Description += $"\nDenied by: {Context.User.Mention}\nReason: `{modal.Reason}`";
         }
         
         if (user is not null)
@@ -127,6 +127,6 @@ public class FormComponents : KBotModuleBase
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
         
-        await FollowupAsync("Sikeres döntés!", ephemeral: true).ConfigureAwait(false);
+        await FollowupAsync("Success!", ephemeral: true).ConfigureAwait(false);
     }
 }

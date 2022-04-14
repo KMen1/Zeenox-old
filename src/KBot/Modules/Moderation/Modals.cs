@@ -1,10 +1,10 @@
 ﻿using Discord.Interactions;
 
-namespace KBot.Modules.Forms;
+namespace KBot.Modules.Moderation;
 
 public class AppealModal : IModal
 {
-    public string Title => "Büntetés fellebezés";
+    public string Title => "Warn appeal";
 
     [ModalTextInput("appeal-moderator")]
     public string Moderator { get; set; }
@@ -21,7 +21,7 @@ public class AppealModal : IModal
 
 public class ReasonModal : IModal
 {
-    public string Title => "Döntés indoklása";
+    public string Title => "Justify Decision";
     
     [ModalTextInput("reason-input")]
     public string Reason { get; set; }
