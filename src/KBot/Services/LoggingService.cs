@@ -1,5 +1,4 @@
-﻿#nullable enable
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Lavalink4NET.Logging;
@@ -14,7 +13,7 @@ public class LoggingService : IInjectable
         ((EventLogger)lavaLogger).LogMessage += Log;
     }
 
-    private void Log(object? sender, LogMessageEventArgs arg)
+    private static void Log(object sender, LogMessageEventArgs arg)
     {
         switch (arg.Level)
         {

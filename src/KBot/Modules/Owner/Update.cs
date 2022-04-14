@@ -31,19 +31,17 @@ public class Update : KBotModuleBase
                     Name = Context.Client.CurrentUser.Username,
                     IconUrl = Context.Client.CurrentUser.GetAvatarUrl()
                 },
-                Title = "Frissítés elérhető",
-                Description = $"- Jelenlegi verzió: `{currentVersion}` \n- Új verzió: `{newVersion}`\nBiztosan frissíted a botot?"
+                Title = "Update available",
+                Description = $"- Current version: `{currentVersion}` \n- New Version: `{newVersion}`\nAre you sure you want to update?"
             }.Build();
             var comp = new ComponentBuilder()
-                .WithButton("Igen", "update-yes", ButtonStyle.Success, new Emoji("✅"))
-                .WithButton("Nem", "update-no", ButtonStyle.Danger, new Emoji("❌"))
+                .WithButton("Confirm", "update-yes", ButtonStyle.Success, new Emoji("✅"))
+                .WithButton("Cancel", "update-no", ButtonStyle.Danger, new Emoji("❌"))
                 .Build();
             await FollowupAsync(embed: eb, components: comp).ConfigureAwait(false);
+            return;
         }
-        else
-        {
-            await FollowupAsync("Nem érhető el új verzió.").ConfigureAwait(false);
-        }
+        await FollowupAsync($"The current version is the latest ({currentVersion})").ConfigureAwait(false);
     }
     [ComponentInteraction("update-yes")]
     public async Task UpdateYesAsync()
@@ -51,7 +49,7 @@ public class Update : KBotModuleBase
         await DeferAsync().ConfigureAwait(false);
         var bmsg = await Context.Interaction.GetOriginalResponseAsync().ConfigureAwait(false);
         await bmsg.DeleteAsync().ConfigureAwait(false);
-        var msg = await bmsg.Channel.SendMessageAsync("Frissítés letöltése folyamatban...").ConfigureAwait(false);
+        var msg = await bmsg.Channel.SendMessageAsync("Downloading update...").ConfigureAwait(false);
         using var client = new HttpClient();
         var newVersion = await client.GetStringAsync(VersionUrl).ConfigureAwait(false);
         var uri = new Uri(await client.GetStringAsync(UpdateUrl).ConfigureAwait(false));
@@ -62,13 +60,13 @@ public class Update : KBotModuleBase
             await response.Content.CopyToAsync(fs).ConfigureAwait(false);
         }
 
-        await msg.ModifyAsync(x => x.Content = "Frissítés letöltve...").ConfigureAwait(false);
+        await msg.ModifyAsync(x => x.Content = "Downloaded update...").ConfigureAwait(false);
         await Task.Delay(1000).ConfigureAwait(false);
-        await msg.ModifyAsync(x => x.Content = "Frissítés kitömörítése...").ConfigureAwait(false);
+        await msg.ModifyAsync(x => x.Content = "Unpacking update...").ConfigureAwait(false);
         ZipFile.ExtractToDirectory($"C:\\KBot\\{newVersion}\\update.zip", $"C:\\KBot\\{newVersion}");
-        await msg.ModifyAsync(x => x.Content = "Frissítés kitömörítve...").ConfigureAwait(false);
+        await msg.ModifyAsync(x => x.Content = "Unpacked update...").ConfigureAwait(false);
         File.Delete($"C:\\KBot\\{newVersion}\\update.zip");
-        await msg.ModifyAsync(x => x.Content = "Indítás...").ConfigureAwait(false);
+        await msg.ModifyAsync(x => x.Content = "Starting bot...").ConfigureAwait(false);
         var pInfo = new ProcessStartInfo
         {
             UseShellExecute = true,
@@ -76,7 +74,7 @@ public class Update : KBotModuleBase
             WindowStyle = ProcessWindowStyle.Normal,
             FileName = $"C:\\KBot\\{newVersion}\\KBot.exe"
         };
-        await msg.ModifyAsync(x => x.Content = "KBot sikeresen frissítve!").ConfigureAwait(false);
+        await msg.ModifyAsync(x => x.Content = "Bot updated!").ConfigureAwait(false);
         Process.Start(pInfo);
         Environment.Exit(0);
     }

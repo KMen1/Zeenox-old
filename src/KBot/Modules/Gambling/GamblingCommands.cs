@@ -6,8 +6,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
 using KBot.Enums;
-using KBot.Models;
-using KBot.Models.Guild;
+using KBot.Extensions;
 using KBot.Models.User;
 
 namespace KBot.Modules.Gambling;
@@ -46,6 +45,29 @@ public class GamblingCommands : KBotModuleBase
             }
         }
         await RespondAsync(embeds: embeds.ToArray(), ephemeral:true).ConfigureAwait(false);
+    }
+
+    [SlashCommand("transaction", "Get more info on a specific transaction")]
+    public async Task SendTransactionAsync(string id)
+    {
+        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        var transaction = dbUser.Transactions.Find(x => x.Id == id);
+        if (transaction == null)
+        {
+            await RespondAsync("Transaction not found.").ConfigureAwait(false);
+            return;
+        }
+        
+        var embed = new EmbedBuilder()
+            .WithTitle($"Transaction - {transaction.Id}")
+            .WithColor(Color.Blue)
+            .AddField("Date", transaction.Date.ToString("G"), true)
+            .AddField("Amount", $"`{transaction.Amount:C}`", true)
+            .AddField("Type", $"`{transaction.Type.GetDescription()}`", true)
+            .AddField("Reason", $"```{transaction.Description}```")
+            .Build();
+        
+        await RespondAsync(embed: embed, ephemeral:true).ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]

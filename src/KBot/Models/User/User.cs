@@ -4,7 +4,6 @@ using System.Linq;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
-using KBot.Extensions;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace KBot.Models.User;
@@ -94,14 +93,7 @@ public class Gambling
     [BsonElement("moneylost")] public int MoneyLost { get; set; }
 
     [BsonIgnore]
-    public double WinRate
-    {
-        get
-        {
-            var total = Wins;
-            return Math.Round(total / (double)(GamesPlayed) * 100, 2);
-        }
-    }
+    public double WinRate => Math.Round(Wins / (double)(GamesPlayed) * 100, 2);
 
     public EmbedBuilder ToEmbedBuilder(IUser user)
     {
@@ -118,7 +110,7 @@ public class Gambling
 
     public Gambling()
     {
-        Balance = 1000;
+        Balance = 10000;
         DailyClaimDate = null;
         Wins = 0;
         Losses = 0;
@@ -146,7 +138,7 @@ public class Transaction
 
     public override string ToString()
     {
-        return $"ID: `{Id}` ({Date.ToString("yyyy.MM.dd")}): **{Type.GetDescription()}** ({Amount.ToString()} KCoin)" + (string.IsNullOrEmpty(Description) ? "" : $" - {Description}");
+        return $"`ID: {Id}` `Date: {Date.ToString("yyyy.MM.dd")}` `Amount: {Amount}`";
     }
 }
 

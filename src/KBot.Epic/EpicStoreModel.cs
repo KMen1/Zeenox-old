@@ -8,27 +8,23 @@ namespace KBot.Epic
     {
         [JsonProperty("data")]
         public Data Data { get; set; }
-
-        //[JsonProperty("extensions")]
-        //public Extensions Extensions { get; set; }
-
-        private Game[] Games => Data.Catalog.SearchStore.Games;
-        public Game CurrentGame => Games.ToList().Find(x => x.Promotions is not null && x.Promotions.PromotionalOffers.Length != 0);
+        private IEnumerable<Game> Games => Data.Catalog.SearchStore.Games;
+        public IEnumerable<Game> CurrentGame => Games.ToList().FindAll(x => x.Promotions is not null && x.Promotions.PromotionalOffers.Length != 0);
     }
 
-    public partial class Data
+    public class Data
     {
         [JsonProperty("Catalog")]
         public Catalog Catalog { get; set; }
     }
 
-    public partial class Catalog
+    public class Catalog
     {
         [JsonProperty("searchStore")]
         public SearchStore SearchStore { get; set; }
     }
 
-    public partial class SearchStore
+    public class SearchStore
     {
         [JsonProperty("elements")]
         public Game[] Games { get; set; }
@@ -37,7 +33,7 @@ namespace KBot.Epic
         public Paging Paging { get; set; }
     }
 
-    public partial class Game
+    public class Game
     {
         [JsonProperty("title")]
         public string Title { get; set; }
@@ -104,18 +100,18 @@ namespace KBot.Epic
         public Price Price { get; set; }
 
         [JsonProperty("promotions")]
-        public Promotions Promotions { get; set; }
+        public Promotions? Promotions { get; set; }
         
-        public PromotionalOfferPromotionalOffer[] Discounts => Promotions.PromotionalOffers[0].PromotionalOffers;
+        public PromotionalOfferPromotionalOffer[]? Discounts => Promotions?.PromotionalOffers[0].PromotionalOffers;
     }
 
-    public partial class CatalogNs
+    public class CatalogNs
     {
         [JsonProperty("mappings")]
         public Mapping[] Mappings { get; set; }
     }
 
-    public partial class Mapping
+    public class Mapping
     {
         [JsonProperty("pageSlug")]
         public string PageSlug { get; set; }
@@ -124,13 +120,13 @@ namespace KBot.Epic
         public string PageType { get; set; }
     }
 
-    public partial class Category
+    public class Category
     {
         [JsonProperty("path")]
         public string Path { get; set; }
     }
 
-    public partial class CustomAttribute
+    public class CustomAttribute
     {
         [JsonProperty("key")]
         public string Key { get; set; }
@@ -139,7 +135,7 @@ namespace KBot.Epic
         public string Value { get; set; }
     }
 
-    public partial class Item
+    public class Item
     {
         [JsonProperty("id")]
         public string Id { get; set; }
@@ -148,7 +144,7 @@ namespace KBot.Epic
         public string Namespace { get; set; }
     }
 
-    public partial class KeyImage
+    public class KeyImage
     {
         [JsonProperty("type")]
         public string Type { get; set; }
@@ -157,7 +153,7 @@ namespace KBot.Epic
         public Uri Url { get; set; }
     }
 
-    public partial class Price
+    public class Price
     {
         [JsonProperty("totalPrice")]
         public TotalPrice TotalPrice { get; set; }
@@ -166,13 +162,13 @@ namespace KBot.Epic
         public LineOffer[] LineOffers { get; set; }
     }
 
-    public partial class LineOffer
+    public class LineOffer
     {
         [JsonProperty("appliedRules")]
         public AppliedRule[] AppliedRules { get; set; }
     }
 
-    public partial class AppliedRule
+    public class AppliedRule
     {
         [JsonProperty("id")]
         public string Id { get; set; }
@@ -184,13 +180,13 @@ namespace KBot.Epic
         public AppliedRuleDiscountSetting DiscountSetting { get; set; }
     }
 
-    public partial class AppliedRuleDiscountSetting
+    public class AppliedRuleDiscountSetting
     {
         [JsonProperty("discountType")]
         public string DiscountType { get; set; }
     }
 
-    public partial class TotalPrice
+    public class TotalPrice
     {
         [JsonProperty("discountPrice")]
         public long DiscountPrice { get; set; }
@@ -214,13 +210,13 @@ namespace KBot.Epic
         public FmtPrice FmtPrice { get; set; }
     }
 
-    public partial class CurrencyInfo
+    public class CurrencyInfo
     {
         [JsonProperty("decimals")]
         public long Decimals { get; set; }
     }
 
-    public partial class FmtPrice
+    public class FmtPrice
     {
         [JsonProperty("originalPrice")]
         public string OriginalPrice { get; set; }
@@ -232,7 +228,7 @@ namespace KBot.Epic
         public string IntermediatePrice { get; set; }
     }
 
-    public partial class Promotions
+    public class Promotions
     {
         [JsonProperty("promotionalOffers")]
         public PromotionalOffer[] PromotionalOffers { get; set; }
@@ -241,13 +237,13 @@ namespace KBot.Epic
         public PromotionalOffer[] UpcomingPromotionalOffers { get; set; }
     }
 
-    public partial class PromotionalOffer
+    public class PromotionalOffer
     {
         [JsonProperty("promotionalOffers")]
         public PromotionalOfferPromotionalOffer[] PromotionalOffers { get; set; }
     }
 
-    public partial class PromotionalOfferPromotionalOffer
+    public class PromotionalOfferPromotionalOffer
     {
         [JsonProperty("startDate")]
         public DateTimeOffset StartDate { get; set; }
@@ -259,7 +255,7 @@ namespace KBot.Epic
         public PromotionalOfferDiscountSetting DiscountSetting { get; set; }
     }
 
-    public partial class PromotionalOfferDiscountSetting
+    public class PromotionalOfferDiscountSetting
     {
         [JsonProperty("discountType")]
         public string DiscountType { get; set; }
@@ -268,7 +264,7 @@ namespace KBot.Epic
         public long DiscountPercentage { get; set; }
     }
 
-    public partial class Seller
+    public class Seller
     {
         [JsonProperty("id")]
         public string Id { get; set; }
@@ -277,13 +273,13 @@ namespace KBot.Epic
         public string Name { get; set; }
     }
 
-    public partial class Tag
+    public class Tag
     {
         [JsonProperty("id")]
         public long Id { get; set; }
     }
 
-    public partial class Paging
+    public class Paging
     {
         [JsonProperty("count")]
         public long Count { get; set; }

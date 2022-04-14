@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
 using Discord;
 using Discord.WebSocket;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace KBot.Models.Guild;
 
 public class Guild
 {
-    [BsonId] public string DocId { get; set; }
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)] 
+    public string DocId { get; set; }
     [BsonElement("guildid")] public ulong Id { get; set; }
     [BsonElement("config")] public GuildConfig Config { get; set; }
     [BsonElement("users")] public List<User.User> Users { get; set; }

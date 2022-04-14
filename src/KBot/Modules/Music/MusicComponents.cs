@@ -16,35 +16,55 @@ public class MusicComponents : KBotModuleBase
         var result = Enum.TryParse(selections[0], out FilterType filterType);
         if (result)
         {
-            await DeferAsync().ConfigureAwait(false);
-            await AudioService.SetFiltersAsync(Context.Guild, Context.User, filterType).ConfigureAwait(false);
+            await DeferAsync(true).ConfigureAwait(false);
+            var embed = await AudioService.SetFiltersAsync(Context.Guild, Context.User, filterType).ConfigureAwait(false);
+            if (embed is not null)
+            {
+                await FollowupAsync(embed: embed).ConfigureAwait(false);
+            }
         }
     }
 
     [ComponentInteraction("stop")]
     public async Task StopPlayerAsync()
     {
-        await DeferAsync().ConfigureAwait(false);
-        await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        var embed = await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        if (embed is not null)
+        {
+            await FollowupAsync(embed: embed).ConfigureAwait(false);
+        }
     }
     [ComponentInteraction("volumeup")]
     public async Task IncreaseVolumeAsync()
     {
-        await DeferAsync().ConfigureAwait(false);
-        await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeUp).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        var embed = await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeUp).ConfigureAwait(false);
+        if (embed is not null)
+        {
+            await FollowupAsync(embed: embed).ConfigureAwait(false);
+        }
     }
     [ComponentInteraction("volumedown")]
     public async Task DecreaseVolumeAsync()
     {
-        await DeferAsync().ConfigureAwait(false);
-        await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeDown).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        var embed = await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeDown).ConfigureAwait(false);
+        if (embed is not null)
+        {
+            await FollowupAsync(embed: embed).ConfigureAwait(false);
+        }
     }
 
     [ComponentInteraction("pause")]
     public async Task PausePlayerAsync()
     {
-        await DeferAsync().ConfigureAwait(false);
-        await AudioService.PauseOrResumeAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        var embed = await AudioService.PauseOrResumeAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        if (embed is not null)
+        {
+            await FollowupAsync(embed: embed).ConfigureAwait(false);
+        }
     }
     [ComponentInteraction("next")]
     public async Task SkipAsync()
@@ -68,7 +88,11 @@ public class MusicComponents : KBotModuleBase
     [ComponentInteraction("clearfilters")]
     public async Task ClearFiltersAsync()
     {
-        await DeferAsync().ConfigureAwait(false);
-        await AudioService.ClearFiltersAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        var embed = await AudioService.ClearFiltersAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        if (embed is not null)
+        {
+            await FollowupAsync(embed: embed).ConfigureAwait(false);
+        }
     }
 }

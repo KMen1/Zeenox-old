@@ -105,7 +105,7 @@ public class LevelingModule : IInjectable
             await Task.WhenAll(toNotify.Select(async x =>
             {
                 var (user, level) = x;
-                await notifyChannel.SendMessageAsync($"🥳 Congrats {user.Mention}, you reached level **{level}** ").ConfigureAwait(false);
+                await notifyChannel.SendMessageAsync($"🥳 Congrats {user.Mention}, you reached level **{level}**").ConfigureAwait(false);
             })).ConfigureAwait(false);
         }
     }
@@ -114,7 +114,7 @@ public class LevelingModule : IInjectable
     {
         if (message.Author is not SocketGuildUser user || user.IsBot || user.IsWebhook)
             return;
-        
+
         var config = await _database.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
         if (!config.Leveling.Enabled) return;
 
@@ -126,7 +126,7 @@ public class LevelingModule : IInjectable
             var rate = new Random().NextDouble();
             var msgLength = message.Content.Length;
             var pointsToGive = (int)Math.Floor((rate * 100) + (msgLength / 2));
-            
+
             _XpQueue.Enqueue((user, pointsToGive));
         }).ConfigureAwait(false);
     }
