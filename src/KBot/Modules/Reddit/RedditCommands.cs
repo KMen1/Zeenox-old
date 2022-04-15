@@ -5,7 +5,7 @@ using Discord.Interactions;
 namespace KBot.Modules.Reddit;
 
 [Group("reddit", "Reddit commands")]
-public class Reddit : KBotModuleBase
+public class Reddit : SlashModuleBase
 {
     public RedditService RedditService { get; set; }
 
@@ -19,7 +19,9 @@ public class Reddit : KBotModuleBase
             await FollowupWithEmbedAsync(Color.Red, "Nem található ilyen subreddit.", "").ConfigureAwait(false);
             return;
         }
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
+
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+            .ConfigureAwait(false);
     }
 
     [SlashCommand("fost", "Sends a random post from r/FostTalicska.")]
@@ -27,7 +29,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostFromSubredditAsync("FostTalicska").ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+            .ConfigureAwait(false);
     }
 
     [SlashCommand("meme", "Sends a random post from r/memes.")]
@@ -35,7 +38,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostFromSubredditAsync("memes").ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+            .ConfigureAwait(false);
     }
 
     [SlashCommand("blursed", "Sends a random post from r/blursedimages.")]
@@ -43,7 +47,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostFromSubredditAsync("blursedimages").ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+            .ConfigureAwait(false);
     }
 
     [RequireNsfw]
@@ -52,7 +57,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostFromSubredditAsync("pussy").ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+            .ConfigureAwait(false);
     }
 
     [RequireNsfw]
@@ -61,7 +67,8 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostFromSubredditAsync("boobs").ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+            .ConfigureAwait(false);
     }
 
     [RequireNsfw]
@@ -70,6 +77,7 @@ public class Reddit : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var post = await RedditService.GetRandomPostFromSubredditAsync("ass").ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+            .ConfigureAwait(false);
     }
 }

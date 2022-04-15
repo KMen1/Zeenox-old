@@ -3,10 +3,10 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Gambling.Towers;
 
-public class TowersComponents : KBotModuleBase
+public class TowersComponents : SlashModuleBase
 {
     public TowersService TowersService { get; set; }
-    
+
     [ComponentInteraction("towers:*:*:*")]
     public async Task ClickFieldAsync(string id, int x, int y)
     {

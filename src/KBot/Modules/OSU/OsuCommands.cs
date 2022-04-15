@@ -19,10 +19,10 @@ using IUser = OsuSharp.Interfaces.IUser;
 namespace KBot.Modules.OSU;
 
 [Group("osu", "osu! parancsok")]
-public class Osu : KBotModuleBase
+public class Osu : SlashModuleBase
 {
     public OsuClient OsuClient { get; set; }
-    
+
     [SlashCommand("set", "Link your osu! profile")]
     public async Task SetOsuProfileAsync(string link)
     {
@@ -52,7 +52,8 @@ public class Osu : KBotModuleBase
             return;
         }
 
-        var score = await OsuClient.GetUserScoresAsync((long)osuId, ScoreType.Recent, true, GameMode.Osu, 1).ConfigureAwait(false);
+        var score = await OsuClient.GetUserScoresAsync((long) osuId, ScoreType.Recent, true, GameMode.Osu, 1)
+            .ConfigureAwait(false);
         if (score.Count == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "No recent plays in the last 24 hours!",
@@ -76,7 +77,7 @@ public class Osu : KBotModuleBase
             return;
         }
 
-        var osuUser = await OsuClient.GetUserAsync((long)osuId, GameMode.Osu).ConfigureAwait(false);
+        var osuUser = await OsuClient.GetUserAsync((long) osuId, GameMode.Osu).ConfigureAwait(false);
         var playStyle = osuUser.Playstyle[0] == "mouse" ? "Mouse" : "Tablet";
         var eb = new EmbedBuilder()
             .WithAuthor(osuUser.Username, osuUser.AvatarUrl.ToString(), $"https://osu.ppy.sh/users/{osuUser.Id}")
@@ -107,9 +108,8 @@ public class Osu : KBotModuleBase
         var users = await Database.GetOsuIdsAsync(Context.Guild.Id, 10).ConfigureAwait(false);
         var userOsuPair = new Dictionary<SocketUser, IUser>();
         foreach (var (userId, osuId) in users)
-        {
-            userOsuPair.Add(Context.Client.GetUser(userId), await OsuClient.GetUserAsync((long)osuId, GameMode.Osu).ConfigureAwait(false));
-        }
+            userOsuPair.Add(Context.Client.GetUser(userId),
+                await OsuClient.GetUserAsync((long) osuId, GameMode.Osu).ConfigureAwait(false));
 
         var userOsuPairList = userOsuPair.ToList();
         userOsuPairList.Sort((x, y) => x.Value.Statistics.GlobalRank.CompareTo(y.Value.Statistics.GlobalRank));
@@ -124,6 +124,7 @@ public class Osu : KBotModuleBase
             desc.AppendLine(
                 $"{i}. {user.Mention} : [`# {osuUser.Statistics.GlobalRank:n0} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)} PP)`](https://osu.ppy.sh/u/{osuUser.Id})");
         }
+
         eb.WithDescription(desc.ToString());
         sw.Stop();
         eb.WithFooter($"{sw.ElapsedMilliseconds} ms");
@@ -143,7 +144,8 @@ public class Osu : KBotModuleBase
             return;
         }
 
-        var score = await OsuClient.GetUserScoresAsync((long)osuId, ScoreType.Best, true, GameMode.Osu, 1).ConfigureAwait(false);
+        var score = await OsuClient.GetUserScoresAsync((long) osuId, ScoreType.Best, true, GameMode.Osu, 1)
+            .ConfigureAwait(false);
         await FollowUpWithScoreAsync(score[0], sw).ConfigureAwait(false);
     }
 
@@ -162,7 +164,8 @@ public class Osu : KBotModuleBase
                 $"▸ {Enum.Parse<Grade>(score.Rank).GetGradeEmoji()}▸ {score.Accuracy:P2} ▸ **{pp.ToString(CultureInfo.InvariantCulture)}PP** \n " +
                 $"▸ {score.TotalScore:n0} ▸ x{score.MaxCombo.ToString()}/{beatmap.MaxCombo.ToString()} ▸ [{score.Statistics.Count300.ToString()}/{score.Statistics.Count100.ToString()}/{score.Statistics.Count50.ToString()}/{score.Statistics.CountMiss.ToString()}]")
             .WithColor(Enum.Parse<Grade>(score.Rank).GetGradeColor())
-            .WithFooter($"{score.User.Username} - {score.CreatedAt.Humanize(culture: new CultureInfo("hu-HU"))} - {sw.ElapsedMilliseconds} ms",
+            .WithFooter(
+                $"{score.User.Username} - {score.CreatedAt.Humanize(culture: new CultureInfo("hu-HU"))} - {sw.ElapsedMilliseconds} ms",
                 "https://cdn.discordapp.com/emojis/864051085810991164.webp?size=96&quality=lossless")
             .Build();
         await FollowupAsync(embed: eb).ConfigureAwait(false);

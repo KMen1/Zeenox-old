@@ -11,8 +11,6 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models;
-using KBot.Models.Guild;
 using KBot.Models.User;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
@@ -25,8 +23,8 @@ namespace KBot.Modules.Gambling.BlackJack;
 
 public class BlackJackService : IInjectable
 {
-    private readonly DatabaseService Database;
     private readonly Cloudinary Cloudinary;
+    private readonly DatabaseService Database;
     private readonly List<BlackJackGame> Games = new();
 
     public BlackJackService(DatabaseService database, Cloudinary cloudinary)
@@ -68,9 +66,7 @@ public class BlackJackService : IInjectable
             }
         }).ConfigureAwait(false);
         if (e.IsWin || e.Prize == -1)
-        {
             await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
-        }
     }
 
     public BlackJackGame GetGame(string id)
@@ -81,21 +77,6 @@ public class BlackJackService : IInjectable
 
 public sealed class BlackJackGame : IGamblingGame
 {
-    public string Id { get; }
-    private Deck Deck { get; }
-    public SocketUser User { get; }
-    private IUserMessage Message { get; }
-    public IGuild Guild => ((ITextChannel)Message.Channel).Guild;
-    private List<Card> DealerCards { get; }
-
-    public int DealerScore => GetCardsValue(DealerCards);
-    private List<Card> PlayerCards { get; }
-    public int PlayerScore => GetCardsValue(PlayerCards);
-    public int Bet { get; }
-    public bool Hidden { get; private set; }
-    private Cloudinary CloudinaryClient { get; }
-    public event EventHandler<GameEndedEventArgs> GameEnded;
-
     public BlackJackGame(
         SocketUser player,
         IUserMessage message,
@@ -113,17 +94,32 @@ public sealed class BlackJackGame : IGamblingGame
         PlayerCards = Deck.DealHand();
     }
 
+    public string Id { get; }
+    private Deck Deck { get; }
+    public SocketUser User { get; }
+    private IUserMessage Message { get; }
+    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
+    private List<Card> DealerCards { get; }
+
+    public int DealerScore => GetCardsValue(DealerCards);
+    private List<Card> PlayerCards { get; }
+    public int PlayerScore => GetCardsValue(PlayerCards);
+    public int Bet { get; }
+    public bool Hidden { get; private set; }
+    private Cloudinary CloudinaryClient { get; }
+    public event EventHandler<GameEndedEventArgs> GameEnded;
+
     public Task StartAsync()
     {
         return Message.ModifyAsync(x =>
-         {
-             x.Content = string.Empty;
-             x.Embed = new EmbedBuilder().BlackJackEmbed(this);
-             x.Components = new ComponentBuilder()
-                 .WithButton("Hit", $"blackjack-hit:{Id}")
-                 .WithButton("Stand", $"blackjack-stand:{Id}")
-                 .Build();
-         });
+        {
+            x.Content = string.Empty;
+            x.Embed = new EmbedBuilder().BlackJackEmbed(this);
+            x.Components = new ComponentBuilder()
+                .WithButton("Hit", $"blackjack-hit:{Id}")
+                .WithButton("Stand", $"blackjack-stand:{Id}")
+                .Build();
+        });
     }
 
     public async Task HitAsync()
@@ -161,16 +157,14 @@ public sealed class BlackJackGame : IGamblingGame
                 return;
             }
         }
+
         await Message.ModifyAsync(x => x.Embed = new EmbedBuilder().BlackJackEmbed(this)).ConfigureAwait(false);
     }
 
     public async Task StandAsync()
     {
         Hidden = false;
-        while (DealerScore < 17)
-        {
-            DealerCards.Add(Deck.Draw());
-        }
+        while (DealerScore < 17) DealerCards.Add(Deck.Draw());
         switch (DealerScore)
         {
             case > 21:
@@ -204,7 +198,7 @@ public sealed class BlackJackGame : IGamblingGame
 
         if (PlayerScore == 21)
         {
-            var reward = (int)(Bet * 2.5);
+            var reward = (int) (Bet * 2.5);
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -216,6 +210,7 @@ public sealed class BlackJackGame : IGamblingGame
             OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - BLACKJACK", true));
             return;
         }
+
         if (PlayerScore > DealerScore)
         {
             var reward = Bet * 2;
@@ -230,6 +225,7 @@ public sealed class BlackJackGame : IGamblingGame
             OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - WIN", true));
             return;
         }
+
         if (PlayerScore < DealerScore)
         {
             await Message.ModifyAsync(x =>
@@ -243,6 +239,7 @@ public sealed class BlackJackGame : IGamblingGame
             OnGameEnded(new GameEndedEventArgs(Id, 0, "BL - Win", false));
             return;
         }
+
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -260,12 +257,14 @@ public sealed class BlackJackGame : IGamblingGame
         if (Hidden)
         {
             dealerImages.Add(DealerCards[0].GetImage());
-            dealerImages.Add((Bitmap) Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.empty.png")!));
+            dealerImages.Add((Bitmap) Image.FromStream(Assembly.GetExecutingAssembly()
+                .GetManifestResourceStream("KBot.Resources.empty.png")!));
         }
         else
         {
             dealerImages = DealerCards.ConvertAll(card => card.GetImage());
         }
+
         var playerImages = PlayerCards.ConvertAll(card => card.GetImage());
         var pMerged = MergeImages(playerImages);
         var dMerged = MergeImages(dealerImages);
@@ -298,16 +297,10 @@ public sealed class BlackJackGame : IGamblingGame
         }
 
         for (var i = 0; i < aces; i++)
-        {
             if (value + 11 <= 21)
-            {
                 value += 11;
-            }
             else
-            {
                 value++;
-            }
-        }
 
         return value;
     }

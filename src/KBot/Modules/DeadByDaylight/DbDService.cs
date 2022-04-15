@@ -27,23 +27,24 @@ public class DbDService : IInjectable
             return await RefreshWeeklyShrinesAsync().ConfigureAwait(false);
         }).ConfigureAwait(false);
         if (DateTime.UtcNow.ToUnixTimeStamp() > shrines.EndTime)
-        {
             shrines = await RefreshWeeklyShrinesAsync().ConfigureAwait(false);
-        }
         return shrines;
     }
 
     private async Task<(List<Perk> Perks, long EndTime)> RefreshWeeklyShrinesAsync()
     {
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
         var response = await _httpClient.GetStringAsync("https://dbd.onteh.net.au/api/shrine/").ConfigureAwait(false);
         var shrine = Shrines.FromJson(response);
         var perks = new List<Perk>();
         foreach (var perk in shrine.Perks)
         {
-            var perkresponse = await _httpClient.GetStringAsync($"https://dbd.onteh.net.au/api/perkinfo?perk={perk.Id}").ConfigureAwait(false);
+            var perkresponse = await _httpClient.GetStringAsync($"https://dbd.onteh.net.au/api/perkinfo?perk={perk.Id}")
+                .ConfigureAwait(false);
             perks.Add(Perk.FromJson(perkresponse));
         }
+
         return (perks, shrine.End);
     }
 
@@ -111,6 +112,7 @@ public class DbDService : IInjectable
             _ => "Ismeretlen"
         };
     }
+
     private string GetCharacterIdFromNumberId(long jsonCharacter)
     {
         return jsonCharacter switch

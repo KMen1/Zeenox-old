@@ -7,6 +7,7 @@ public enum Suit
     Diamonds,
     Hearts
 }
+
 public enum Face
 {
     Ace,

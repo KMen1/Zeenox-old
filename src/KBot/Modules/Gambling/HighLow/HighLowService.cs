@@ -11,8 +11,6 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models;
-using KBot.Models.Guild;
 using KBot.Models.User;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
@@ -24,9 +22,9 @@ namespace KBot.Modules.Gambling.HighLow;
 
 public class HighLowService : IInjectable
 {
-    private readonly List<HighLowGame> Games = new();
     private readonly Cloudinary Cloudinary;
     private readonly DatabaseService Database;
+    private readonly List<HighLowGame> Games = new();
 
     public HighLowService(DatabaseService database, Cloudinary cloudinary)
     {
@@ -62,10 +60,7 @@ public class HighLowService : IInjectable
                 x.Gambling.MoneyLost += game.Bet;
             }
         }).ConfigureAwait(false);
-        if (e.IsWin)
-        {
-            await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
-        }
+        if (e.IsWin) await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
     }
 
     public HighLowGame GetGame(string id)
@@ -76,24 +71,6 @@ public class HighLowService : IInjectable
 
 public sealed class HighLowGame : IGamblingGame
 {
-    public string Id { get; }
-    public SocketUser User { get; }
-    private IUserMessage Message { get; }
-    public IGuild Guild => ((ITextChannel)Message.Channel).Guild;
-    private Deck Deck { get; set; }
-    public int RemainCards => Deck.Cards.Count;
-    private Card PlayerHand { get; set; }
-    private Card DealerHand { get; set; }
-    public int Stake { get; private set; }
-    public int Bet { get; private set; }
-    public int HighStake { get; private set; }
-    public decimal HighMultiplier { get; private set; }
-    public int LowStake { get; private set; }
-    public decimal LowMultiplier { get; private set; }
-    private bool Hidden { get; set; }
-    private Cloudinary CloudinaryClient { get; }
-    public event EventHandler<GameEndedEventArgs> GameEnded;
-
     public HighLowGame(
         SocketUser user,
         IUserMessage message,
@@ -109,6 +86,24 @@ public sealed class HighLowGame : IGamblingGame
         Hidden = true;
         Deck = new Deck();
     }
+
+    public string Id { get; }
+    public SocketUser User { get; }
+    private IUserMessage Message { get; }
+    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
+    private Deck Deck { get; set; }
+    public int RemainCards => Deck.Cards.Count;
+    private Card PlayerHand { get; set; }
+    private Card DealerHand { get; set; }
+    public int Stake { get; private set; }
+    public int Bet { get; }
+    public int HighStake { get; private set; }
+    public decimal HighMultiplier { get; private set; }
+    public int LowStake { get; private set; }
+    public decimal LowMultiplier { get; private set; }
+    private bool Hidden { get; set; }
+    private Cloudinary CloudinaryClient { get; }
+    public event EventHandler<GameEndedEventArgs> GameEnded;
 
     public Task StartAsync()
     {
@@ -135,13 +130,14 @@ public sealed class HighLowGame : IGamblingGame
             if (Deck.Cards.Count == 0) Deck = new Deck();
             PlayerHand = Deck.Draw();
         }
+
         var cards = Deck.Cards.Count;
         var lowerCards = Deck.Cards.Count(x => x.Value < PlayerHand.Value);
         var higherCards = Deck.Cards.Count(x => x.Value > PlayerHand.Value);
-        HighMultiplier = Math.Round((decimal)cards / higherCards, 2);
-        HighStake = (int)(Stake * HighMultiplier);
-        LowMultiplier = Math.Round((decimal)cards / lowerCards, 2);
-        LowStake = (int)(Stake * LowMultiplier);
+        HighMultiplier = Math.Round((decimal) cards / higherCards, 2);
+        HighStake = (int) (Stake * HighMultiplier);
+        LowMultiplier = Math.Round((decimal) cards / lowerCards, 2);
+        LowStake = (int) (Stake * LowMultiplier);
     }
 
     public async Task GuessHigherAsync()
@@ -154,6 +150,7 @@ public sealed class HighLowGame : IGamblingGame
             await Message.ModifyAsync(x => x.Embed = new EmbedBuilder().HighLowEmbed(this)).ConfigureAwait(false);
             return;
         }
+
         Hidden = false;
         OnGameEnded(new GameEndedEventArgs(Id, 0, "", false));
         await Message.ModifyAsync(x =>
@@ -173,6 +170,7 @@ public sealed class HighLowGame : IGamblingGame
             await Message.ModifyAsync(x => x.Embed = new EmbedBuilder().HighLowEmbed(this)).ConfigureAwait(false);
             return;
         }
+
         Hidden = false;
         OnGameEnded(new GameEndedEventArgs(Id, 0, "", false));
         await Message.ModifyAsync(x =>
@@ -188,21 +186,23 @@ public sealed class HighLowGame : IGamblingGame
         OnGameEnded(new GameEndedEventArgs(Id, Stake, "HL - WIN", false));
         return Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"The game is over! You won **{Stake}** credits!", Color.Green);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"The game is over! You won **{Stake}** credits!",
+                Color.Green);
             x.Components = new ComponentBuilder().Build();
         });
     }
 
     public string GetTablePicUrl()
     {
-        var merged = MergePlayerAndDealer(PlayerHand.GetImage(), 
-            Hidden ?
-                (Bitmap)Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.empty.png")!) :
-                DealerHand.GetImage());
+        var merged = MergePlayerAndDealer(PlayerHand.GetImage(),
+            Hidden
+                ? (Bitmap) Image.FromStream(Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("KBot.Resources.empty.png")!)
+                : DealerHand.GetImage());
         var stream = new MemoryStream();
         merged.Save(stream, ImageFormat.Png);
         stream.Position = 0;
-        var upParams = new ImageUploadParams()
+        var upParams = new ImageUploadParams
         {
             File = new FileDescription($"highlow-{Id}.png", stream),
             PublicId = $"highlow-{Id}"

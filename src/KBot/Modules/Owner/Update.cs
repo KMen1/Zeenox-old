@@ -10,10 +10,11 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Owner;
 
-public class Update : KBotModuleBase
+public class Update : SlashModuleBase
 {
     private const string VersionUrl = "https://pastebin.com/raw/1gh1hT32";
     private const string UpdateUrl = "https://pastebin.com/raw/ru9hWYcj";
+
     [RequireOwner]
     [SlashCommand("update", "Frissíti a botot")]
     public async Task ResetAsync()
@@ -32,7 +33,8 @@ public class Update : KBotModuleBase
                     IconUrl = Context.Client.CurrentUser.GetAvatarUrl()
                 },
                 Title = "Update available",
-                Description = $"- Current version: `{currentVersion}` \n- New Version: `{newVersion}`\nAre you sure you want to update?"
+                Description =
+                    $"- Current version: `{currentVersion}` \n- New Version: `{newVersion}`\nAre you sure you want to update?"
             }.Build();
             var comp = new ComponentBuilder()
                 .WithButton("Confirm", "update-yes", ButtonStyle.Success, new Emoji("✅"))
@@ -41,8 +43,10 @@ public class Update : KBotModuleBase
             await FollowupAsync(embed: eb, components: comp).ConfigureAwait(false);
             return;
         }
+
         await FollowupAsync($"The current version is the latest ({currentVersion})").ConfigureAwait(false);
     }
+
     [ComponentInteraction("update-yes")]
     public async Task UpdateYesAsync()
     {
@@ -78,6 +82,7 @@ public class Update : KBotModuleBase
         Process.Start(pInfo);
         Environment.Exit(0);
     }
+
     [ComponentInteraction("update-no")]
     public async Task UpdateNoAsync()
     {

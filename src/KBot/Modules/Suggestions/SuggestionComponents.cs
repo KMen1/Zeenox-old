@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -7,7 +6,7 @@ using Discord.WebSocket;
 
 namespace KBot.Modules.Suggestions;
 
-public class SuggestionComponents : KBotModuleBase
+public class SuggestionComponents : SlashModuleBase
 {
     [RequireUserPermission(GuildPermission.KickMembers)]
     [ComponentInteraction("suggest-accept:*")]

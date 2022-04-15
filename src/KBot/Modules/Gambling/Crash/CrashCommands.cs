@@ -1,26 +1,26 @@
 ﻿using System.Threading.Tasks;
 using Discord.Interactions;
 using KBot.Enums;
-using KBot.Models;
-using KBot.Models.Guild;
 using KBot.Models.User;
 
 namespace KBot.Modules.Gambling.Crash;
 
-public class CrashCommands : KBotModuleBase
+public class CrashCommands : SlashModuleBase
 {
     public CrashService CrashService { get; set; }
-    
+
     [SlashCommand("crash", "Starts a new game of crash.")]
-    public async Task StartCrashGameAsync([MinValue(100), MaxValue(1000000)]int bet)
+    public async Task StartCrashGameAsync([MinValue(100)] [MaxValue(1000000)] int bet)
     {
         await DeferAsync().ConfigureAwait(false);
-        var (userHasEnough, guildHasEnough) = await Database.GetGambleValuesAsync(Context.Guild, Context.User, bet).ConfigureAwait(false);
+        var (userHasEnough, guildHasEnough) =
+            await Database.GetGambleValuesAsync(Context.Guild, Context.User, bet).ConfigureAwait(false);
         if (!userHasEnough)
         {
             await FollowupAsync("Insufficient balance.").ConfigureAwait(false);
             return;
         }
+
         if (!guildHasEnough)
         {
             await FollowupAsync("Insufficient guild balance.").ConfigureAwait(false);

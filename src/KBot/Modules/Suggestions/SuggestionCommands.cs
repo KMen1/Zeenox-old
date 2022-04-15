@@ -5,7 +5,7 @@ using Discord.Interactions;
 namespace KBot.Modules.Suggestions;
 
 [Group("suggestion", "Suggestions")]
-public class SuggestionCommands : KBotModuleBase
+public class SuggestionCommands : SlashModuleBase
 {
     [SlashCommand("create", "Create a new suggestion")]
     public async Task CreateSuggestionAsync(string title, string description)
@@ -29,8 +29,10 @@ public class SuggestionCommands : KBotModuleBase
             await FollowupAsync("Suggestions are not enabled on this server.").ConfigureAwait(false);
             return;
         }
+
         var suggestionChannel = Context.Guild.GetTextChannel(config.Suggestions.AnnounceChannelId);
         await suggestionChannel.SendMessageAsync(embed: embed, components: comp).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.Green, "Suggestion Created", $"In Channel: {suggestionChannel.Mention}").ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Green, "Suggestion Created", $"In Channel: {suggestionChannel.Mention}")
+            .ConfigureAwait(false);
     }
 }

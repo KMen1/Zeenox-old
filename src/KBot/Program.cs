@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using CloudinaryDotNet;
@@ -14,6 +11,8 @@ using Discord.Addons.Hosting;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Fergun.Interactive;
+using Google.Apis.Services;
+using Google.Apis.YouTube.v3;
 using KBot.Models;
 using KBot.Services;
 using Lavalink4NET;
@@ -30,6 +29,7 @@ using Serilog.Events;
 using ILogger = Lavalink4NET.Logging.ILogger;
 
 namespace KBot;
+
 public static class Program
 {
     private static Task Main()
@@ -56,7 +56,7 @@ public static class Program
             })
             .CreateLogger();
 
-            var host = Host.CreateDefaultBuilder()
+        var host = Host.CreateDefaultBuilder()
             .ConfigureAppConfiguration(x =>
             {
                 x.AddConfiguration(new ConfigurationBuilder()
@@ -66,7 +66,7 @@ public static class Program
             })
             .ConfigureDiscordHost((context, config) =>
             {
-                config.SocketConfig = new DiscordSocketConfig()
+                config.SocketConfig = new DiscordSocketConfig
                 {
                     LogLevel = LogSeverity.Verbose,
                     AlwaysDownloadUsers = true,
@@ -84,15 +84,16 @@ public static class Program
             })
             .ConfigureOsuSharp((context, options) =>
             {
-                options.Configuration = new OsuClientConfiguration()
+                options.Configuration = new OsuClientConfiguration
                 {
                     ClientId = context.Configuration.GetSection("OsuApi").GetValue<long>("AppId"),
-                    ClientSecret = context.Configuration.GetSection("OsuApi").GetValue<string>("AppSecret"),
+                    ClientSecret = context.Configuration.GetSection("OsuApi").GetValue<string>("AppSecret")
                 };
             })
             .ConfigureServices((context, services) =>
             {
-                services.AddSingleton(context.Configuration.Get<BotConfig>());
+                var config = context.Configuration.Get<BotConfig>();
+                services.AddSingleton(config);
                 services.AddHostedService<InteractionHandler>();
                 services.AddSingleton<IDiscordClientWrapper, DiscordClientWrapper>();
                 services.AddSingleton<IAudioService, LavalinkNode>();
@@ -100,26 +101,32 @@ public static class Program
                 services.AddSingleton(new LavalinkNodeOptions
                 {
                     AllowResuming = true,
-                    Password = "youshallnotpass",
-                    WebSocketUri = "ws://127.0.0.1:2333",
-                    RestUri = "http://127.0.0.1:2333",
-                    DisconnectOnStop = false,
+                    Password = config.Lavalink.Password,
+                    WebSocketUri = $"ws://{config.Lavalink.Host}:{config.Lavalink.Port}",
+                    RestUri = $"http://{config.Lavalink.Host}:{config.Lavalink.Port}",
+                    DisconnectOnStop = false
                 });
                 services.AddSingleton<ILogger, EventLogger>();
-                services.AddSingleton<IMongoClient>(new MongoClient(context.Configuration.GetSection("MongoDb").GetValue<string>("ConnectionString")));
-                services.AddSingleton(x => x.GetService<IMongoClient>()!.GetDatabase(context.Configuration.Get<BotConfig>().MongoDb.Database));
+                services.AddSingleton<IMongoClient>(new MongoClient(config.MongoDb.ConnectionString));
+                services.AddSingleton(x => x.GetService<IMongoClient>()!.GetDatabase(config.MongoDb.Database));
                 services.AddSingleton<OsuClient>();
                 services.Scan(scan => scan.FromAssemblyOf<IInjectable>()
                     .AddClasses(x => x.AssignableTo(typeof(IInjectable)))
                     .AsSelfWithInterfaces()
                     .WithSingletonLifetime());
                 services.AddSingleton(new Cloudinary(new Account(
-                    context.Configuration.GetSection("Cloudinary").GetValue<string>("CloudName"),
-                    context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiKey"),
-                    context.Configuration.GetSection("Cloudinary").GetValue<string>("ApiSecret"))));
+                    config.Cloudinary.CloudName,
+                    config.Cloudinary.ApiKey,
+                    config.Cloudinary.ApiSecret)));
                 services.AddMemoryCache();
                 services.AddSingleton<InteractiveService>();
                 services.AddHttpClient();
+                services.AddSingleton(new BaseClientService.Initializer
+                {
+                    ApiKey = config.Google.ApiKey,
+                    ApplicationName = "KBot"
+                });
+                services.AddSingleton<YouTubeService>();
             })
             .UseSerilog()
             .UseConsoleLifetime()
@@ -133,36 +140,41 @@ public static class Program
         file.Save(Path.Combine(startupPath, "KBot.lnk"), false);
 #endif
         foreach (var mytype in Assembly.GetExecutingAssembly().GetTypes()
-                     .Where(mytype => mytype .GetInterfaces().Contains(typeof(IInjectable))))
-        {
+                     .Where(mytype => mytype.GetInterfaces().Contains(typeof(IInjectable))))
             host.Services.GetService(mytype);
-        }
         return host.RunAsync();
     }
 
     [ComImport]
     [Guid("00021401-0000-0000-C000-000000000046")]
-    private class ShellLink { }
+    private class ShellLink
+    {
+    }
 
     [ComImport]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     [Guid("000214F9-0000-0000-C000-000000000046")]
     private interface IShellLink
     {
-        void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxPath, out IntPtr pfd, int fFlags);
+        void GetPath([Out] [MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxPath, out IntPtr pfd,
+            int fFlags);
+
         void GetIDList(out IntPtr ppidl);
         void SetIDList(IntPtr pidl);
-        void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszName, int cchMaxName);
+        void GetDescription([Out] [MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszName, int cchMaxName);
         void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string pszName);
-        void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszDir, int cchMaxPath);
+        void GetWorkingDirectory([Out] [MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszDir, int cchMaxPath);
         void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string pszDir);
-        void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszArgs, int cchMaxPath);
+        void GetArguments([Out] [MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszArgs, int cchMaxPath);
         void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
         void GetHotkey(out short pwHotkey);
         void SetHotkey(short wHotkey);
         void GetShowCmd(out int piShowCmd);
         void SetShowCmd(int iShowCmd);
-        void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath, int cchIconPath, out int piIcon);
+
+        void GetIconLocation([Out] [MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath, int cchIconPath,
+            out int piIcon);
+
         void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string pszIconPath, int iIcon);
         void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, int dwReserved);
         void Resolve(IntPtr hwnd, int fFlags);

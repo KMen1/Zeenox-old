@@ -8,11 +8,10 @@ namespace KBot.Extensions;
 
 public static class GenericExtensions
 {
-
     public static DateTimeOffset GetNextWeekday(this DateTime date, DayOfWeek day)
     {
         var result = date.Date.AddDays(1);
-        while( result.DayOfWeek != day )
+        while (result.DayOfWeek != day)
             result = result.AddDays(1);
         return result;
     }
@@ -21,7 +20,7 @@ public static class GenericExtensions
     {
         var randomNumber = new byte[1];
         generator.GetBytes(randomNumber);
-        var multiplier = Math.Max(0, (randomNumber[0] / 255d) - 0.00000000001d);
+        var multiplier = Math.Max(0, randomNumber[0] / 255d - 0.00000000001d);
         var range = maximumValue - minimumValue + 1;
         var randomValueInRange = Math.Floor(multiplier * range);
         return minimumValue + randomValueInRange;
@@ -31,7 +30,8 @@ public static class GenericExtensions
     {
         return builder
             .WithButton(" ", "previous", emote: new Emoji("⏮"), disabled: !player.CanGoBack, row: 0)
-            .WithButton(" ", "pause", emote: player.State == PlayerState.Playing ? new Emoji("⏸") : new Emoji("▶"), row: 0)
+            .WithButton(" ", "pause", emote: player.State == PlayerState.Playing ? new Emoji("⏸") : new Emoji("▶"),
+                row: 0)
             .WithButton(" ", "stop", emote: new Emoji("⏹"), row: 0, style: ButtonStyle.Danger)
             .WithButton(" ", "next", emote: new Emoji("⏭"), disabled: !player.CanGoForward, row: 0)
             .WithButton(" ", "volumedown", emote: new Emoji("🔉"), row: 1, disabled: player.Volume == 0)
@@ -65,7 +65,7 @@ public static class GenericExtensions
     {
         return guid.ToString().Split("-")[0];
     }
-    
+
     public static long ToUnixTimeStamp(this DateTime date)
     {
         var unixTimestamp = date.Ticks - new DateTime(1970, 1, 1).Ticks;

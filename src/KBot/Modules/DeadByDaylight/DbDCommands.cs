@@ -6,7 +6,7 @@ using Discord.Interactions;
 namespace KBot.Modules.DeadByDaylight;
 
 [Group("dbd", "Commands related to Dead by Daylight")]
-public class DbDCommands : KBotModuleBase
+public class DbDCommands : SlashModuleBase
 {
     public DbDService DbDService { get; set; }
 
@@ -21,10 +21,7 @@ public class DbDCommands : KBotModuleBase
 
         var (perks, endTime) = await DbDService.GetWeeklyShrinesAsync().ConfigureAwait(false);
 
-        foreach (var perk in perks)
-        {
-            eb.AddField(perk.Name , $"from {perk.CharacterName}", true);
-        }
+        foreach (var perk in perks) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
         eb.WithDescription($"🏁 <t:{endTime}:R>");
         sw.Stop();
         eb.WithFooter($"{sw.ElapsedMilliseconds.ToString()} ms");

@@ -1,38 +1,33 @@
-﻿using System.Globalization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿using Newtonsoft.Json;
 
-namespace KBot.Modules.DeadByDaylight.Models
+namespace KBot.Modules.DeadByDaylight.Models;
+
+public partial class Shrines
 {
-    public partial class Shrines
+    //[JsonProperty("id")]
+    //public long Id { get; set; }
+
+    [JsonProperty("perks")] public ShrinePerk[] Perks { get; set; }
+
+    //[JsonProperty("start")]
+    //public long Start { get; set; }
+
+    [JsonProperty("end")] public long End { get; set; }
+}
+
+public class ShrinePerk
+{
+    [JsonProperty("id")] public string Id { get; set; }
+
+    [JsonProperty("bloodpoints")] public long Bloodpoints { get; set; }
+
+    [JsonProperty("shards")] public long Shards { get; set; }
+}
+
+public partial class Shrines
+{
+    public static Shrines FromJson(string json)
     {
-        //[JsonProperty("id")]
-        //public long Id { get; set; }
-
-        [JsonProperty("perks")]
-        public ShrinePerk[] Perks { get; set; }
-
-        //[JsonProperty("start")]
-        //public long Start { get; set; }
-
-        [JsonProperty("end")]
-        public long End { get; set; }
-    }
-
-    public partial class ShrinePerk
-    {
-        [JsonProperty("id")]
-        public string Id { get; set; }
-
-        [JsonProperty("bloodpoints")]
-        public long Bloodpoints { get; set; }
-
-        [JsonProperty("shards")]
-        public long Shards { get; set; }
-    }
-
-    public partial class Shrines
-    {
-        public static Shrines FromJson(string json) => JsonConvert.DeserializeObject<Shrines>(json);
+        return JsonConvert.DeserializeObject<Shrines>(json);
     }
 }

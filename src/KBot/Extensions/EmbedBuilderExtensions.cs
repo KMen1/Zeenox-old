@@ -20,6 +20,7 @@ public static class EmbedBuilderExtensions
     private const string SuccessIcon = "https://i.ibb.co/HdqsDXh/tick.png";
     private const string ErrorIcon = "https://i.ibb.co/SrZZggy/x.png";
     private const string PlayingGif = "https://bestanimations.com/media/discs/895872755cd-animated-gif-9.gif";
+
     public static Embed MovieEventEmbed(this EmbedBuilder builder, SocketGuildEvent guildEvent, EventState embedType)
     {
         builder.WithTitle(guildEvent.Name)
@@ -27,7 +28,7 @@ public static class EmbedBuilderExtensions
             .WithTimestamp(DateTimeOffset.UtcNow)
             .AddField("👨 Organizer", guildEvent.Creator.Mention, true)
             .AddField("📅 Date", guildEvent.StartTime.ToString("yyyy. MM. dd. HH:mm"), true)
-            .AddField("🎙 Channel", ((SocketVoiceChannel)guildEvent.Channel).Mention, true);
+            .AddField("🎙 Channel", ((SocketVoiceChannel) guildEvent.Channel).Mention, true);
         switch (embedType)
         {
             case EventState.Scheduled:
@@ -51,10 +52,12 @@ public static class EmbedBuilderExtensions
                 break;
             }
         }
+
         return builder.Build();
     }
 
-    public static Embed BlackJackEmbed(this EmbedBuilder builder, BlackJackGame game, string desc = null, Color color = default)
+    public static Embed BlackJackEmbed(this EmbedBuilder builder, BlackJackGame game, string desc = null,
+        Color color = default)
     {
         return builder.WithTitle($"Blackjack | {game.Id}")
             .WithDescription($"Bet: **{game.Bet}**\n{desc}")
@@ -64,20 +67,21 @@ public static class EmbedBuilderExtensions
             .AddField("Dealer", game.Hidden ? "Value: `?`" : $"Value: `{game.DealerScore.ToString()}`", true)
             .Build();
     }
-    
-    public static Embed HighLowEmbed(this EmbedBuilder builder, HighLowGame game, string desc = null, Color color = default)
+
+    public static Embed HighLowEmbed(this EmbedBuilder builder, HighLowGame game, string desc = null,
+        Color color = default)
     {
         return builder.WithTitle($"Higher/Lower | {game.Id}")
             .WithDescription($"Bet: **{game.Stake}**\n{desc}")
             .WithColor(color == default ? Color.Gold : color)
             .WithImageUrl(game.GetTablePicUrl())
             .AddField("Higher", $"Multiplier: **{game.HighMultiplier.ToString()}**\n" +
-                                 $"Prize: **{game.HighStake.ToString()}**", true)
+                                $"Prize: **{game.HighStake.ToString()}**", true)
             .AddField("Lower", $"Multiplier: **{game.LowMultiplier.ToString()}**\n" +
-                                $"Prize: **{game.LowStake.ToString()}**", true)
+                               $"Prize: **{game.LowStake.ToString()}**", true)
             .Build();
     }
-    
+
     public static Embed CrashEmbed(this EmbedBuilder builder, CrashGame game, string desc = null, Color color = default)
     {
         return builder.WithTitle($"Crash | {game.Id}")
@@ -95,7 +99,7 @@ public static class EmbedBuilderExtensions
             .WithColor(color == default ? Color.Gold : color)
             .Build();
     }
-    
+
     public static Embed LeaveEmbed(this EmbedBuilder builder, IVoiceChannel vChannel)
     {
         return builder.WithAuthor("SUCCESS", SuccessIcon)
@@ -123,7 +127,7 @@ public static class EmbedBuilderExtensions
             .AddField("🔼 Uploader", $"`{player.CurrentTrack.Author}`", true)
             .AddField("🎙️ Channel", player.VoiceChannel.Mention, true)
             .AddField("🕐 Length", $"`{player.CurrentTrack.Duration.ToString("c")}`", true)
-            .AddField("🔁 Loop", player.LoopEnabled ? "`Igen`" : "`Nem`", true)
+            .AddField("🔁 Loop", player.Loop ? "`Igen`" : "`Nem`", true)
             .AddField("🔊 Volume", $"`{Math.Round(player.Volume * 100).ToString()}%`", true)
             .AddField("📝 Filter", player.FilterEnabled is not null ? $"`{player.FilterEnabled}`" : "`Nincs`", true)
             .AddField("🎶 In Queue", $"`{player.QueueCount.ToString()}`", true)
@@ -144,10 +148,7 @@ public static class EmbedBuilderExtensions
         builder.WithAuthor(cleared ? "QUEUE CLEARED" : "CURRENT QUEUE", SuccessIcon)
             .WithDescription($"In channel {player.VoiceChannel.Mention}")
             .WithColor(Color.Green);
-        if (cleared)
-        {
-            return builder.Build();
-        }
+        if (cleared) return builder.Build();
         if (player.QueueCount == 0)
         {
             builder.WithDescription("`No songs in queue`");
@@ -156,24 +157,22 @@ public static class EmbedBuilderExtensions
         {
             var desc = new StringBuilder();
             foreach (var track in player.Queue)
-            {
-                desc.AppendLine(//
-                    $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Source}) | Added by: {((TrackContext)track.Context)!.AddedBy.Mention}");
-            }
+                desc.AppendLine( //
+                    $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Source}) | Added by: {((TrackContext) track.Context)!.AddedBy.Mention}");
 
             builder.WithDescription(desc.ToString());
         }
+
         return builder.Build();
     }
 
     public static Embed AddedToQueueEmbed(this EmbedBuilder builder, IEnumerable<LavalinkTrack> tracks)
     {
         var enumerable = tracks.ToList();
-        var desc = enumerable.Take(10).Aggregate("", (current, track) => current + $"{enumerable.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Source})\n");
-        if (enumerable.Count > 10)
-        {
-            desc += $"and {(enumerable.Count - 10).ToString()} more\n";
-        }
+        var desc = enumerable.Take(10).Aggregate("",
+            (current, track) =>
+                current + $"{enumerable.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Source})\n");
+        if (enumerable.Count > 10) desc += $"and {(enumerable.Count - 10).ToString()} more\n";
         return builder.WithAuthor($"{enumerable.Count} TRACKS ADDED TO QUEUE", SuccessIcon)
             .WithColor(Color.Orange)
             .WithDescription(desc)

@@ -29,7 +29,7 @@ public class LevelingModule : IInjectable
         while (true)
         {
             await Task.Delay(5000).ConfigureAwait(false);
-            
+
             var usersToUpdate = new List<(SocketGuildUser, int)>();
             while (_XpQueue.TryDequeue(out var user)) usersToUpdate.Add(user);
 
@@ -58,27 +58,24 @@ public class LevelingModule : IInjectable
                         {
                             x.Level += x.Xp / x.XpNeeded;
                             var total = 0;
-                            for (var i = x.Level; i < x.Level + (x.Xp / x.XpNeeded); i++)
-                            {
-                                total += (int)Math.Pow(i * 4, 2);
-                            }
+                            for (var i = x.Level; i < x.Level + x.Xp / x.XpNeeded; i++)
+                                total += (int) Math.Pow(i * 4, 2);
                             x.Xp -= total;
                             break;
                         }
                     }
-                    
                 }).ConfigureAwait(false);
-                
+
                 if (newUserData.Level == oldUserData.Level)
                     continue;
                 toNotify.Add((user, newUserData.Level));
-                
+
                 var lowerLevelRoles = config.Leveling.LevelRoles.FindAll(x => x.Level <= newUserData.Level);
                 if (lowerLevelRoles.Count == 0) continue;
 
                 var roles = lowerLevelRoles.OrderByDescending(x => x.Level).ToList();
                 var highestRole = roles[0];
-                
+
                 if (user.Roles.All(x => x.Id != highestRole.Id))
                 {
                     var role = user.Guild.GetRole(highestRole.Id);
@@ -92,12 +89,12 @@ public class LevelingModule : IInjectable
                     var dmchannel = await user.CreateDMChannelAsync().ConfigureAwait(false);
                     await dmchannel.SendMessageAsync(embed: embed).ConfigureAwait(false);
                 }
-                foreach (var roleToRemove in roles.Skip(1).Select(x => user.Guild.GetRole(x.Id)).Where(x => user.Roles.Contains(x)))
-                {
+
+                foreach (var roleToRemove in roles.Skip(1).Select(x => user.Guild.GetRole(x.Id))
+                             .Where(x => user.Roles.Contains(x)))
                     await user.RemoveRoleAsync(roleToRemove).ConfigureAwait(false);
-                }
             }
-            
+
             if (toNotify.Count == 0)
                 continue;
 
@@ -105,7 +102,8 @@ public class LevelingModule : IInjectable
             await Task.WhenAll(toNotify.Select(async x =>
             {
                 var (user, level) = x;
-                await notifyChannel.SendMessageAsync($"🥳 Congrats {user.Mention}, you reached level **{level}**").ConfigureAwait(false);
+                await notifyChannel.SendMessageAsync($"🥳 Congrats {user.Mention}, you reached level **{level}**")
+                    .ConfigureAwait(false);
             })).ConfigureAwait(false);
         }
     }
@@ -125,13 +123,14 @@ public class LevelingModule : IInjectable
 
             var rate = new Random().NextDouble();
             var msgLength = message.Content.Length;
-            var pointsToGive = (int)Math.Floor((rate * 100) + (msgLength / 2));
+            var pointsToGive = (int) Math.Floor(rate * 100 + msgLength / 2);
 
             _XpQueue.Enqueue((user, pointsToGive));
         }).ConfigureAwait(false);
     }
 
-    private async Task OnUserVoiceStateUpdatedAsync(SocketUser socketUser, SocketVoiceState before, SocketVoiceState after)
+    private async Task OnUserVoiceStateUpdatedAsync(SocketUser socketUser, SocketVoiceState before,
+        SocketVoiceState after)
     {
         if (socketUser is not SocketGuildUser user || socketUser.IsBot) return;
 
@@ -152,16 +151,14 @@ public class LevelingModule : IInjectable
 
     private async Task ScanVoiceChannelAsync(SocketVoiceChannel channel)
     {
-        foreach (var user in channel.Users)
-        {
-            await ScanUserAsync(user);
-        }
+        foreach (var user in channel.Users) await ScanUserAsync(user);
     }
 
     private async Task ScanUserAsync(SocketGuildUser user)
     {
         if (IsActive(user))
-            await _database.UpdateUserAsync(user.Guild, user, x => x.LastVoiceActivityDate = DateTime.UtcNow).ConfigureAwait(false);
+            await _database.UpdateUserAsync(user.Guild, user, x => x.LastVoiceActivityDate = DateTime.UtcNow)
+                .ConfigureAwait(false);
         else
             await UserLeftChannelAsync(user).ConfigureAwait(false);
     }
@@ -171,7 +168,7 @@ public class LevelingModule : IInjectable
         var dbUser = await _database.GetUserAsync(user.Guild, user).ConfigureAwait(false);
 
         var joinDate = dbUser.LastVoiceActivityDate ?? DateTime.MinValue;
-        var minutes = (int)(DateTime.UtcNow - joinDate).TotalMinutes;
+        var minutes = (int) (DateTime.UtcNow - joinDate).TotalMinutes;
         if (minutes < 1)
             return;
         var Xp = minutes * 100;

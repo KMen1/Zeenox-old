@@ -6,17 +6,12 @@ namespace KBot.Modules.Gambling.Objects;
 
 public class Deck
 {
-    public List<Card> Cards { get; }
     public Deck()
     {
         Cards = new List<Card>();
         foreach (Suit suit in Enum.GetValues(typeof(Suit)))
-        {
-            foreach (Face face in Enum.GetValues(typeof(Face)))
-            {
-                Cards.Add(new Card(suit, face));
-            }
-        }
+        foreach (Face face in Enum.GetValues(typeof(Face)))
+            Cards.Add(new Card(suit, face));
         var rnd = new Random();
         for (var i = 0; i < Cards.Count; i++)
         {
@@ -24,6 +19,8 @@ public class Deck
             (Cards[i], Cards[r]) = (Cards[r], Cards[i]);
         }
     }
+
+    public List<Card> Cards { get; }
 
     public Card Draw()
     {

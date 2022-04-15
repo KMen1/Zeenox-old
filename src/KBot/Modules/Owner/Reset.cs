@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Interactions;
-using Humanizer;
 
 namespace KBot.Modules.Owner;
 
-public class Reset : KBotModuleBase
+public class Reset : SlashModuleBase
 {
     [RequireOwner]
     [SlashCommand("reset", "Restarts the bot")]

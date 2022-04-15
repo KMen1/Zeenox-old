@@ -2,13 +2,12 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using KBot.Models;
 using KBot.Models.Guild;
 
 namespace KBot.Modules.ButtonRoles;
 
 [Group("br", "Self assignable roles using buttons")]
-public class ButtonRoleCommands : KBotModuleBase
+public class ButtonRoleCommands : SlashModuleBase
 {
     [RequireUserPermission(GuildPermission.ManageRoles)]
     [SlashCommand("create", "Creates a new button role message")]
@@ -22,7 +21,9 @@ public class ButtonRoleCommands : KBotModuleBase
             .Build();
 
         var msg = await Context.Channel.SendMessageAsync(embed: embed).ConfigureAwait(false);
-        await Database.AddReactionRoleMessageAsync(Context.Guild, new ButtonRoleMessage(Context.Channel.Id, msg.Id, title, description)).ConfigureAwait(false);
+        await Database
+            .AddReactionRoleMessageAsync(Context.Guild,
+                new ButtonRoleMessage(Context.Channel.Id, msg.Id, title, description)).ConfigureAwait(false);
         var helpEmbed = new EmbedBuilder()
             .WithTitle("Message created!")
             .WithDescription(
@@ -30,17 +31,19 @@ public class ButtonRoleCommands : KBotModuleBase
             .WithColor(Color.Green);
         await FollowupAsync(embed: embed).ConfigureAwait(false);
     }
-    
+
     [RequireUserPermission(GuildPermission.ManageRoles)]
     [SlashCommand("add", "Adds a role to the specified button role message.")]
-    public async Task AddRoleToMessageAsync([Summary("messageid")]string messageIdString, string title, IRole role, string emote)
+    public async Task AddRoleToMessageAsync([Summary("messageid")] string messageIdString, string title, IRole role,
+        string emote)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var parseResult = ulong.TryParse(messageIdString, out var messageId);
         var msg = await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
         if (msg is null)
         {
-            await FollowupAsync($"Could not find message with id({messageIdString}) in the current channel!.").ConfigureAwait(false);
+            await FollowupAsync($"Could not find message with id({messageIdString}) in the current channel!.")
+                .ConfigureAwait(false);
             return;
         }
 
@@ -48,7 +51,7 @@ public class ButtonRoleCommands : KBotModuleBase
             Context.Guild,
             messageId,
             x => x.AddRole(new ButtonRole(role.Id, title, emote))
-            ).ConfigureAwait(false);
+        ).ConfigureAwait(false);
         if (!result)
         {
             await FollowupAsync("Could not find the specified message in the database.").ConfigureAwait(false);
@@ -64,14 +67,15 @@ public class ButtonRoleCommands : KBotModuleBase
 
     [RequireUserPermission(GuildPermission.ManageRoles)]
     [SlashCommand("remove", "Removes a role from the specified button role message.")]
-    public async Task RemoveRoleFromMessageAsync([Summary("messageid")]string messageIdString, IRole role)
+    public async Task RemoveRoleFromMessageAsync([Summary("messageid")] string messageIdString, IRole role)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var parseResult = ulong.TryParse(messageIdString, out var messageId);
         var msg = await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
         if (msg is null)
         {
-            await FollowupAsync($"Could not find message with id({messageIdString}) in the current channel!.").ConfigureAwait(false);
+            await FollowupAsync($"Could not find message with id({messageIdString}) in the current channel!.")
+                .ConfigureAwait(false);
             return;
         }
 
@@ -79,7 +83,7 @@ public class ButtonRoleCommands : KBotModuleBase
             Context.Guild,
             messageId,
             x => x.RemoveRole(role)
-            ).ConfigureAwait(false);
+        ).ConfigureAwait(false);
         if (!result)
         {
             await FollowupAsync("Could not find the specified message in the database.").ConfigureAwait(false);
@@ -92,7 +96,7 @@ public class ButtonRoleCommands : KBotModuleBase
         await dMessage!.ModifyAsync(x => x.Components = reactionRoleMessage.ToButtons()).ConfigureAwait(false);
         await FollowupAsync("Role removed!").ConfigureAwait(false);
     }
-    
+
     [ComponentInteraction("rrtr:*", true)]
     public async Task HandleRoleButtonAsync(ulong roleId)
     {

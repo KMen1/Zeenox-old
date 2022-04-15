@@ -10,8 +10,6 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using KBot.Extensions;
 using KBot.Models;
-using KBot.Modules.Events;
-using KBot.Modules.Leveling;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -19,10 +17,11 @@ namespace KBot.Services;
 
 public class InteractionHandler : DiscordClientService
 {
-    private readonly IServiceProvider _provider;
     private readonly InteractionService _interactionService;
+    private readonly IServiceProvider _provider;
 
-    public InteractionHandler(DiscordSocketClient client, ILogger<DiscordClientService> logger, IServiceProvider provider, InteractionService interactionService) : base(client, logger)
+    public InteractionHandler(DiscordSocketClient client, ILogger<DiscordClientService> logger,
+        IServiceProvider provider, InteractionService interactionService) : base(client, logger)
     {
         _provider = provider;
         _interactionService = interactionService;
@@ -42,17 +41,20 @@ public class InteractionHandler : DiscordClientService
         {
             Logger.LogError(e, "Failed to load modules");
         }
+
         await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
-        await Client.SetGameAsync("/" + _provider.GetRequiredService<BotConfig>().Client.Game, type: ActivityType.Listening).ConfigureAwait(false);
+        await Client
+            .SetGameAsync("/" + _provider.GetRequiredService<BotConfig>().Client.Game, type: ActivityType.Listening)
+            .ConfigureAwait(false);
         await Client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
-        
     }
 
     private async Task ClientOnGuildAvailableAsync(SocketGuild arg)
     {
         try
         {
-            await _interactionService.AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray()).ConfigureAwait(false);
+            await _interactionService.AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray())
+                .ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -61,7 +63,8 @@ public class InteractionHandler : DiscordClientService
         }
     }
 
-    private static async Task HandleComponentCommandResultAsync(ComponentCommandInfo componentInfo, IInteractionContext interactionContext, IResult result)
+    private static async Task HandleComponentCommandResultAsync(ComponentCommandInfo componentInfo,
+        IInteractionContext interactionContext, IResult result)
     {
         if (result.IsSuccess) return;
         var interaction = interactionContext.Interaction;
@@ -95,7 +98,8 @@ public class InteractionHandler : DiscordClientService
             case InteractionCommandError.UnmetPrecondition:
             {
                 await interaction.FollowupAsync(embed:
-                    new EmbedBuilder().ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
+                        new EmbedBuilder().ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához"))
+                    .ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ParseFailed:
@@ -107,7 +111,8 @@ public class InteractionHandler : DiscordClientService
         }
     }
 
-    private static async Task HandleSlashCommandResultAsync(SlashCommandInfo commandInfo, IInteractionContext interactionContext,
+    private static async Task HandleSlashCommandResultAsync(SlashCommandInfo commandInfo,
+        IInteractionContext interactionContext,
         IResult result)
     {
         if (result.IsSuccess) return;
@@ -118,32 +123,40 @@ public class InteractionHandler : DiscordClientService
         {
             case InteractionCommandError.Exception:
             {
-                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason))
+                    .ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ConvertFailed:
             {
-                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason))
+                    .ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.BadArgs:
             {
-                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason))
+                    .ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.Unsuccessful:
             {
-                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason))
+                    .ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.UnmetPrecondition:
             {
-                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
+                await interaction
+                    .FollowupAsync(
+                        embed: new EmbedBuilder().ErrorEmbed(
+                            "Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ParseFailed:
             {
-                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason)).ConfigureAwait(false);
+                await interaction.FollowupAsync(embed: new EmbedBuilder().ErrorEmbed(result.ErrorReason))
+                    .ConfigureAwait(false);
                 break;
             }
         }
@@ -159,7 +172,9 @@ public class InteractionHandler : DiscordClientService
         catch (Exception)
         {
             if (arg.Type == InteractionType.ApplicationCommand)
-                await arg.GetOriginalResponseAsync().ContinueWith(async msg => await msg.Result.DeleteAsync().ConfigureAwait(false)).Unwrap().ConfigureAwait(false);
+                await arg.GetOriginalResponseAsync()
+                    .ContinueWith(async msg => await msg.Result.DeleteAsync().ConfigureAwait(false)).Unwrap()
+                    .ConfigureAwait(false);
         }
     }
 }

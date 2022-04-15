@@ -10,46 +10,6 @@ namespace KBot.Models.User;
 
 public class User
 {
-    [BsonElement("userid")] public ulong Id { get; set; }
-    [BsonElement("xp")] public int Xp { get; set; }
-    [BsonIgnore] public int XpNeeded => (int)Math.Pow(Level * 4, 2);
-    [BsonElement("level")] public int Level { get; set; }
-    [BsonElement("osuid")] public ulong OsuId { get; set; }
-    [BsonElement("dailyclaimdate")] public DateTime? DailyClaimDate { get; set; }
-    [BsonElement("voiceactivitydate")] public DateTime? LastVoiceActivityDate { get; set; }
-    [BsonElement("gambling")] public Gambling Gambling { get; set; }
-    [BsonElement("warns")] public List<Warn> Warns { get; set; }
-    [BsonElement("roles")] public List<ulong> Roles { get; set; }
-    [BsonElement("transactions")] public List<Transaction> Transactions { get; set; }
-    [BsonIgnore]
-    public int Money
-    {
-        get => Gambling.Balance;
-        set => Gambling.Balance = value;
-    }
-    [BsonIgnore]
-    public int TotalXp
-    {
-        get
-        {
-            var total = 0;
-            for (var i = 0; i < Level; i++)
-            {
-                total += (int)Math.Pow(i * 4, 2);
-            }
-            return total;
-        }
-    }
-    public int MoneyToBuyLevel(int level)
-    {
-        var total = 0;
-        for (var i = 0; i < level; i++)
-        {
-            total += (int)Math.Pow((Level + i) * 4, 2);
-        }
-        return (int)Math.Round((decimal)(total * 2) - Xp);
-    }
-
     public User(SocketGuildUser user)
     {
         Id = user.Id;
@@ -59,7 +19,7 @@ public class User
         OsuId = 0;
         Warns = new List<Warn>();
         Roles = new List<ulong>();
-        user.Roles.Select(x=> x.Id).ToList().ForEach(x => Roles.Add(x));
+        user.Roles.Select(x => x.Id).ToList().ForEach(x => Roles.Add(x));
         Transactions = new List<Transaction>();
         DailyClaimDate = null;
         LastVoiceActivityDate = null;
@@ -79,35 +39,47 @@ public class User
         DailyClaimDate = DateTime.MinValue;
         LastVoiceActivityDate = DateTime.MinValue;
     }
-}
 
+    [BsonElement("userid")] public ulong Id { get; set; }
+    [BsonElement("xp")] public int Xp { get; set; }
+    [BsonIgnore] public int XpNeeded => (int) Math.Pow(Level * 4, 2);
+    [BsonElement("level")] public int Level { get; set; }
+    [BsonElement("osuid")] public ulong OsuId { get; set; }
+    [BsonElement("dailyclaimdate")] public DateTime? DailyClaimDate { get; set; }
+    [BsonElement("voiceactivitydate")] public DateTime? LastVoiceActivityDate { get; set; }
+    [BsonElement("gambling")] public Gambling Gambling { get; set; }
+    [BsonElement("warns")] public List<Warn> Warns { get; set; }
+    [BsonElement("roles")] public List<ulong> Roles { get; set; }
+    [BsonElement("transactions")] public List<Transaction> Transactions { get; set; }
+
+    [BsonIgnore]
+    public int Money
+    {
+        get => Gambling.Balance;
+        set => Gambling.Balance = value;
+    }
+
+    [BsonIgnore]
+    public int TotalXp
+    {
+        get
+        {
+            var total = 0;
+            for (var i = 0; i < Level; i++) total += (int) Math.Pow(i * 4, 2);
+            return total;
+        }
+    }
+
+    public int MoneyToBuyLevel(int level)
+    {
+        var total = 0;
+        for (var i = 0; i < level; i++) total += (int) Math.Pow((Level + i) * 4, 2);
+        return (int) Math.Round((decimal) (total * 2) - Xp);
+    }
+}
 
 public class Gambling
 {
-    [BsonElement("balance")] public int Balance { get; set; }
-    [BsonElement("dailyclaimdate")] public DateTime? DailyClaimDate { get; set; }
-    [BsonIgnore] public int GamesPlayed => Wins + Losses;
-    [BsonElement("wins")] public int Wins { get; set; }
-    [BsonElement("losses")] public int Losses { get; set; }
-    [BsonElement("moneywon")] public int MoneyWon { get; set; }
-    [BsonElement("moneylost")] public int MoneyLost { get; set; }
-
-    [BsonIgnore]
-    public double WinRate => Math.Round(Wins / (double)(GamesPlayed) * 100, 2);
-
-    public EmbedBuilder ToEmbedBuilder(IUser user)
-    {
-        return new EmbedBuilder()
-            .WithAuthor(user.Username, user.GetAvatarUrl())
-            .WithColor(Color.Gold)
-            .AddField("💳 Egyenleg", $"`{Balance.ToString()}`", true)
-            .AddField("💰 Nyereség", $"`{MoneyWon.ToString()}`", true)
-            .AddField("💸 Veszteség", $"`{MoneyLost.ToString()}`", true)
-            .AddField("📈 Győzelmi ráta", $"`{WinRate.ToString()}%`", true)
-            .AddField("🏆 Győzelmek", $"`{Wins.ToString()}`", true)
-            .AddField("🚫 Vereségek", $"`{Losses.ToString()}`", true);
-    }
-
     public Gambling()
     {
         Balance = 10000;
@@ -117,16 +89,33 @@ public class Gambling
         MoneyWon = 0;
         MoneyLost = 0;
     }
+
+    [BsonElement("balance")] public int Balance { get; set; }
+    [BsonElement("dailyclaimdate")] public DateTime? DailyClaimDate { get; set; }
+    [BsonIgnore] public int GamesPlayed => Wins + Losses;
+    [BsonElement("wins")] public int Wins { get; set; }
+    [BsonElement("losses")] public int Losses { get; set; }
+    [BsonElement("moneywon")] public int MoneyWon { get; set; }
+    [BsonElement("moneylost")] public int MoneyLost { get; set; }
+
+    [BsonIgnore] public double WinRate => Math.Round(Wins / (double) GamesPlayed * 100, 2);
+
+    public EmbedBuilder ToEmbedBuilder(IUser user)
+    {
+        return new EmbedBuilder()
+            .WithAuthor(user.Username, user.GetAvatarUrl())
+            .WithColor(Color.Gold)
+            .AddField("💳 Balance", $"`{Balance.ToString()}`", true)
+            .AddField("💰 Money Won", $"`{MoneyWon.ToString()}`", true)
+            .AddField("💸 Money Lost", $"`{MoneyLost.ToString()}`", true)
+            .AddField("📈 Winrate", $"`{WinRate.ToString()}%`", true)
+            .AddField("🏆 Wins", $"`{Wins.ToString()}`", true)
+            .AddField("🚫 Loses", $"`{Losses.ToString()}`", true);
+    }
 }
 
 public class Transaction
 {
-    [BsonElement("id")] public string Id { get; set; }
-    [BsonElement("type")] public TransactionType Type { get; set; }
-    [BsonElement("amount")] public int Amount { get; set; }
-    [BsonElement("date")] public DateTime Date { get; set; }
-    [BsonElement("desc")] public string Description { get; set; }
-    
     public Transaction(string id, TransactionType type, int amount, string description = "")
     {
         Id = id;
@@ -136,6 +125,12 @@ public class Transaction
         Date = DateTime.UtcNow;
     }
 
+    [BsonElement("id")] public string Id { get; set; }
+    [BsonElement("type")] public TransactionType Type { get; set; }
+    [BsonElement("amount")] public int Amount { get; set; }
+    [BsonElement("date")] public DateTime Date { get; set; }
+    [BsonElement("desc")] public string Description { get; set; }
+
     public override string ToString()
     {
         return $"`ID: {Id}` `Date: {Date.ToString("yyyy.MM.dd")}` `Amount: {Amount}`";
@@ -144,13 +139,14 @@ public class Transaction
 
 public class Warn
 {
-    [BsonElement("moderatorid")] public ulong ModeratorId { get; }
-    [BsonElement("reason")] public string Reason { get; }
-    [BsonElement("date")] public DateTime Date { get; }
     public Warn(ulong moderatorId, string reason, DateTime date)
     {
         ModeratorId = moderatorId;
         Reason = reason;
         Date = date;
     }
+
+    [BsonElement("moderatorid")] public ulong ModeratorId { get; }
+    [BsonElement("reason")] public string Reason { get; }
+    [BsonElement("date")] public DateTime Date { get; }
 }

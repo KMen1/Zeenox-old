@@ -22,5 +22,7 @@ public enum FilterType
     Vibrate = 8192,
     Vibrato = 16384,
     Tremolo = 32768,
-    All = Bassboost | Pop | Soft | Treblebass | Nightcore | Eightd | Vaporwave | Doubletime | Slowmotion | Chipmunk | Darthvader | Dance | China | Vibrate | Vibrato | Tremolo
+
+    All = Bassboost | Pop | Soft | Treblebass | Nightcore | Eightd | Vaporwave | Doubletime | Slowmotion | Chipmunk |
+          Darthvader | Dance | China | Vibrate | Vibrato | Tremolo
 }

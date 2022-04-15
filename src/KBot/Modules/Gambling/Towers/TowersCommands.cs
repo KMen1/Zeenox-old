@@ -1,27 +1,27 @@
 ﻿using System.Threading.Tasks;
 using Discord.Interactions;
 using KBot.Enums;
-using KBot.Models;
-using KBot.Models.Guild;
 using KBot.Models.User;
 
 namespace KBot.Modules.Gambling.Towers;
 
 [Group("towers", "Roobet Towers")]
-public class TowersCommands : KBotModuleBase
+public class TowersCommands : SlashModuleBase
 {
     public TowersService TowersService { get; set; }
-    
+
     [SlashCommand("start", "Starts a new game of towers")]
-    public async Task CreateTowersGameAsync([MinValue(100), MaxValue(1000000)] int bet, Difficulty diff)
+    public async Task CreateTowersGameAsync([MinValue(100)] [MaxValue(1000000)] int bet, Difficulty diff)
     {
         await DeferAsync().ConfigureAwait(false);
-        var (userHasEnough, guildHasEnough) = await Database.GetGambleValuesAsync(Context.Guild, Context.User, bet).ConfigureAwait(false);
+        var (userHasEnough, guildHasEnough) =
+            await Database.GetGambleValuesAsync(Context.Guild, Context.User, bet).ConfigureAwait(false);
         if (!userHasEnough)
         {
             await FollowupAsync("Insufficient balance.").ConfigureAwait(false);
             return;
         }
+
         if (!guildHasEnough)
         {
             await FollowupAsync("Insufficient guild balance.").ConfigureAwait(false);
@@ -50,6 +50,7 @@ public class TowersCommands : KBotModuleBase
             await FollowupAsync("No game found for that id.").ConfigureAwait(false);
             return;
         }
+
         if (game.User.Id != Context.User.Id)
             return;
         var reward = await game.StopAsync().ConfigureAwait(false);
@@ -72,6 +73,7 @@ public class TowersCommands : KBotModuleBase
                 x.Gambling.Losses++;
             }).ConfigureAwait(false));
         }
+
         await FollowupAsync("Stopped!").ConfigureAwait(false);
     }
 }

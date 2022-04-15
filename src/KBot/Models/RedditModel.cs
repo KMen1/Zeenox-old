@@ -15,13 +15,13 @@ public class SubredditData
 
 public class PostObject
 {
-    [JsonProperty("data")] private PostData Data { get; set;}
+    [JsonProperty("data")] private PostData Data { get; set; }
 
     public string Title => Data.Title;
     public string ImageUrl => Data.Url;
     public string Name => Data.Name;
     private string Permalink => Data.Permalink;
-        
+
     public string PostUrl => "https://reddit.com" + Permalink;
 }
 

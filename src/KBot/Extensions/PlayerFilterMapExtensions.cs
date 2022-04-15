@@ -34,11 +34,12 @@ public static class PlayerFilterMapExtensions
                 new(6, 0.55f),
                 new(7, 0.6f),
                 new(8, 0.6f),
-                new(9, 0.6f),
+                new(9, 0.6f)
             }
         };
         return "Pop";
     }
+
     public static string EnableSoft(this PlayerFilterMap map)
     {
         map.Equalizer = new EqualizerFilterOptions
@@ -55,6 +56,7 @@ public static class PlayerFilterMapExtensions
         };
         return "Pop";
     }
+
     public static string EnableTreblebass(this PlayerFilterMap map)
     {
         map.Equalizer = new EqualizerFilterOptions
@@ -72,7 +74,7 @@ public static class PlayerFilterMapExtensions
                 new(9, 0.45f),
                 new(10, 0.55f),
                 new(11, 0.6f),
-                new(12, 0.55f),
+                new(12, 0.55f)
             }
         };
         return "Pop";
@@ -125,7 +127,7 @@ new TremoloFilter()
         };
         return "Gyorsítás";
     }
-    
+
     public static string EnableSlowmotion(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
@@ -136,6 +138,7 @@ new TremoloFilter()
         };
         return "Lassítás";
     }
+
     public static string EnableChipmunk(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
@@ -146,6 +149,7 @@ new TremoloFilter()
         };
         return "Alvin és a mókusok";
     }
+
     public static string EnableDarthvader(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
@@ -156,6 +160,7 @@ new TremoloFilter()
         };
         return "Darth Vader";
     }
+
     public static string EnableDance(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
@@ -166,6 +171,7 @@ new TremoloFilter()
         };
         return "Tánc";
     }
+
     public static string EnableChina(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
@@ -176,6 +182,7 @@ new TremoloFilter()
         };
         return "Kína";
     }
+
     public static string EnableVibrato(this PlayerFilterMap map)
     {
         map.Vibrato = new VibratoFilterOptions

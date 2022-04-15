@@ -8,7 +8,7 @@ using Humanizer;
 namespace KBot.Modules.Leveling;
 
 [Group("level", "Leveling system commands")]
-public class Levels : KBotModuleBase
+public class Levels : SlashModuleBase
 {
     [SlashCommand("rank", "Gets a users level")]
     public async Task GetLevelAsync(SocketUser user = null)
@@ -20,6 +20,7 @@ public class Levels : KBotModuleBase
             await FollowupAsync("You can't check the rank of a bot.").ConfigureAwait(false);
             return;
         }
+
         var dbUser = await Database.GetUserAsync(Context.Guild, setUser).ConfigureAwait(false);
         var level = dbUser.Level;
         var requiredXP = Math.Pow(level * 4, 2);
@@ -45,7 +46,7 @@ public class Levels : KBotModuleBase
 
         foreach (var user in top)
         {
-            userColumn += $"{top.IndexOf(user) +1 }. {Context.Guild.GetUser(user.Id).Mention}\n";
+            userColumn += $"{top.IndexOf(user) + 1}. {Context.Guild.GetUser(user.Id).Mention}\n";
             levelColumn += $"{user.Level} ({user.Xp} XP)\n";
         }
 
@@ -72,7 +73,8 @@ public class Levels : KBotModuleBase
                 x.DailyClaimDate = DateTime.UtcNow;
                 x.Xp += xp;
             }).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(Color.Green, $"Successfully collected your daily XP of {xp}", "", ephemeral: true).ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Green, $"Successfully collected your daily XP of {xp}", "",
+                ephemeral: true).ConfigureAwait(false);
         }
         else
         {

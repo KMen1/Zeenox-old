@@ -13,8 +13,8 @@ namespace KBot.Modules.Gambling.Mines;
 
 public class MinesService : IInjectable
 {
-    private readonly List<MinesGame> _games;
     private readonly DatabaseService _database;
+    private readonly List<MinesGame> _games;
 
     public MinesService(DatabaseService database)
     {
@@ -32,7 +32,7 @@ public class MinesService : IInjectable
 
     private async void OnGameEndedAsync(object sender, GameEndedEventArgs e)
     {
-        var game = (MinesGame)sender!;
+        var game = (MinesGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
         _games.Remove(game);
         await _database.UpdateUserAsync(game.Guild, game.User, x =>
@@ -50,10 +50,7 @@ public class MinesService : IInjectable
                 x.Gambling.MoneyLost += game.Bet;
             }
         }).ConfigureAwait(false);
-        if (e.IsWin)
-        {
-            await _database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
-        }
+        if (e.IsWin) await _database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
     }
 
     public MinesGame GetGame(string id)
@@ -64,28 +61,8 @@ public class MinesService : IInjectable
 
 public sealed class MinesGame : IGamblingGame
 {
-    public string Id { get; }
     private readonly List<Point> Points = new();
-    private IUserMessage Message { get; }
-    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
-    public SocketUser User { get; }
-    public int Bet { get; }
-    public bool CanStop { get; private set; }
-    private int Mines => Points.Count(x => x.IsMine);
-    private int Clicked => Points.Count(x => x.IsClicked && !x.IsMine);
-    public event EventHandler<GameEndedEventArgs> GameEnded;
 
-    private decimal Multiplier
-    {
-        get
-        {
-            var szam = Factorial(25 - Mines) * Factorial(25 - Clicked);
-            var oszt = Factorial(25) * Factorial(25 - Mines - Clicked);
-            var t = (decimal)Math.Round(szam / oszt, 2);
-            return Math.Round((decimal).97 * (1 / t), 2);
-        }
-    }
-        
     public MinesGame(
         IUserMessage message,
         SocketUser user,
@@ -98,24 +75,39 @@ public sealed class MinesGame : IGamblingGame
         Bet = bet;
         var random = new Random();
         for (var i = 0; i < 5; i++)
-        {
-            for (var j = 0; j < 5; j++)
-            {
-                Points.Add(new Point { X = i, Y = j, Emoji = new Emoji("🪙"), IsClicked = false, Label = " "});
-            }
-        }
-        
-        for (var i = 0; i < mines ; i++)
+        for (var j = 0; j < 5; j++)
+            Points.Add(new Point {X = i, Y = j, Emoji = new Emoji("🪙"), IsClicked = false, Label = " "});
+
+        for (var i = 0; i < mines; i++)
         {
             var index = random.Next(0, Points.Count);
-            while (Points[index].IsMine)
-            {
-                index = random.Next(0, Points.Count);
-            }
+            while (Points[index].IsMine) index = random.Next(0, Points.Count);
             Points[index].IsMine = true;
             Points[index].Emoji = new Emoji("💣");
         }
     }
+
+    public string Id { get; }
+    private IUserMessage Message { get; }
+    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
+    public SocketUser User { get; }
+    public int Bet { get; }
+    public bool CanStop { get; private set; }
+    private int Mines => Points.Count(x => x.IsMine);
+    private int Clicked => Points.Count(x => x.IsClicked && !x.IsMine);
+
+    private decimal Multiplier
+    {
+        get
+        {
+            var szam = Factorial(25 - Mines) * Factorial(25 - Clicked);
+            var oszt = Factorial(25) * Factorial(25 - Mines - Clicked);
+            var t = (decimal) Math.Round(szam / oszt, 2);
+            return Math.Round((decimal) .97 * (1 / t), 2);
+        }
+    }
+
+    public event EventHandler<GameEndedEventArgs> GameEnded;
 
     public Task StartAsync()
     {
@@ -130,12 +122,11 @@ public sealed class MinesGame : IGamblingGame
         {
             var row = new ActionRowBuilder();
             for (var y = 0; y < size; y++)
-            {
                 row.AddComponent(new ButtonBuilder(" ", $"mine:{Id}:{x}:{y}", emote: new Emoji("🪙")).Build());
-            }
 
             comp.AddRow(row);
         }
+
         return Message.ModifyAsync(x =>
         {
             x.Content = string.Empty;
@@ -154,6 +145,7 @@ public sealed class MinesGame : IGamblingGame
             OnGameEnded(new GameEndedEventArgs(Id, 0, "MN - LOSE", false));
             return;
         }
+
         point!.IsClicked = true;
         point.Label = $"{Multiplier}x";
         var comp = new ComponentBuilder();
@@ -169,6 +161,7 @@ public sealed class MinesGame : IGamblingGame
 
             comp.AddRow(row);
         }
+
         await Message.ModifyAsync(z => z.Components = comp.Build()).ConfigureAwait(false);
     }
 
@@ -181,7 +174,7 @@ public sealed class MinesGame : IGamblingGame
 
     public async Task StopAsync(bool lost)
     {
-        var prize = lost ? 0 : (int)Math.Round(Bet * Multiplier);
+        var prize = lost ? 0 : (int) Math.Round(Bet * Multiplier);
 
         var revealComponents = new ComponentBuilder();
         for (var i = 0; i < Math.Sqrt(Points.Count); i++)
@@ -196,12 +189,14 @@ public sealed class MinesGame : IGamblingGame
 
             revealComponents.AddRow(row);
         }
+
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder()
                 .WithTitle($"Mines | {Id}")
                 .WithColor(lost ? Color.Red : Color.Green)
-                .WithDescription($"Bet: **{Bet}**\nMines: **{Mines}**\n" + (lost ? $"You lost **{Bet}**" : $"You won **{prize - Bet}** credits"))
+                .WithDescription($"Bet: **{Bet}**\nMines: **{Mines}**\n" +
+                                 (lost ? $"You lost **{Bet}**" : $"You won **{prize - Bet}** credits"))
                 .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
@@ -213,12 +208,13 @@ public sealed class MinesGame : IGamblingGame
         GameEnded?.Invoke(this, e);
     }
 }
+
 public class Point
 {
+    public Emoji Emoji;
+    public bool IsClicked;
+    public bool IsMine;
+    public string Label;
     public int X;
     public int Y;
-    public bool IsMine;
-    public bool IsClicked;
-    public Emoji Emoji;
-    public string Label;
 }

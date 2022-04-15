@@ -6,14 +6,12 @@ using Discord.WebSocket;
 using KBot.Models.Guild;
 using KBot.Models.User;
 using KBot.Services;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace KBot.Modules;
 
-public abstract class KBotModuleBase : InteractionModuleBase<SocketInteractionContext>
+public abstract class SlashModuleBase : InteractionModuleBase<SocketInteractionContext>
 {
     public DatabaseService Database { get; set; }
-    public IMemoryCache Cache { get; set; }
     public SocketUser BotUser => Context.Client.CurrentUser;
 
     protected async Task<IUserMessage> FollowupWithEmbedAsync(Color color, string title, string description,

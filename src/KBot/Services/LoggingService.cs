@@ -10,7 +10,7 @@ public class LoggingService : IInjectable
     public LoggingService(InteractionService interactionService, ILogger lavaLogger)
     {
         interactionService.Log += LogAsync;
-        ((EventLogger)lavaLogger).LogMessage += Log;
+        ((EventLogger) lavaLogger).LogMessage += Log;
     }
 
     private static void Log(object sender, LogMessageEventArgs arg)
@@ -58,6 +58,7 @@ public class LoggingService : IInjectable
                 Serilog.Log.Logger.Debug(arg.Exception, arg.Message);
                 break;
         }
+
         return Task.CompletedTask;
     }
 }

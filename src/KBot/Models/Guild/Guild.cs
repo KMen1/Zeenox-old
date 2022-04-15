@@ -8,14 +8,6 @@ namespace KBot.Models.Guild;
 
 public class Guild
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)] 
-    public string DocId { get; set; }
-    [BsonElement("guildid")] public ulong Id { get; set; }
-    [BsonElement("config")] public GuildConfig Config { get; set; }
-    [BsonElement("users")] public List<User.User> Users { get; set; }
-    [BsonElement("buttonroles")] public List<ButtonRoleMessage> ButtonRoles { get; set; }
-
     public Guild(List<SocketGuildUser> users)
     {
         Id = users[0].Guild.Id;
@@ -24,9 +16,28 @@ public class Guild
         ButtonRoles = new List<ButtonRoleMessage>();
         users.ConvertAll(x => new User.User(x)).ForEach(x => Users.Add(x));
     }
+
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string DocId { get; set; }
+
+    [BsonElement("guildid")] public ulong Id { get; set; }
+    [BsonElement("config")] public GuildConfig Config { get; set; }
+    [BsonElement("users")] public List<User.User> Users { get; set; }
+    [BsonElement("buttonroles")] public List<ButtonRoleMessage> ButtonRoles { get; set; }
 }
+
 public class ButtonRoleMessage
 {
+    public ButtonRoleMessage(ulong channelId, ulong messageId, string title, string description)
+    {
+        ChannelId = channelId;
+        MessageId = messageId;
+        Title = title;
+        Description = description;
+        Roles = new List<ButtonRole>();
+    }
+
     [BsonElement("title")] public string Title { get; set; }
     [BsonElement("description")] public string Description { get; set; }
     [BsonElement("roles")] public List<ButtonRole> Roles { get; set; }
@@ -48,6 +59,7 @@ public class ButtonRoleMessage
         Roles.Remove(Roles.Find(x => x.RoleId == role.Id));
         return true;
     }
+
     public MessageComponent ToButtons()
     {
         var comp = new ComponentBuilder();
@@ -62,18 +74,11 @@ public class ButtonRoleMessage
             else
                 comp.WithButton(role.Title, $"rrtr:{role.RoleId}");
         }
+
         return comp.Build();
     }
-
-    public ButtonRoleMessage(ulong channelId, ulong messageId, string title, string description)
-    {
-        ChannelId = channelId;
-        MessageId = messageId;
-        Title = title;
-        Description = description;
-        Roles = new List<ButtonRole>();
-    }
 }
+
 public class ButtonRole
 {
     public ButtonRole(ulong roleId, string title, string emote)
@@ -82,19 +87,20 @@ public class ButtonRole
         Title = title;
         Emote = emote;
     }
-    
-    [BsonElement("emote")] public string Emote { get; private set; }
-    [BsonElement("title")] public string Title { get; private set; }
-    [BsonElement("roleid")] public ulong RoleId { get; private set; }
+
+    [BsonElement("emote")] public string Emote { get; }
+    [BsonElement("title")] public string Title { get; }
+    [BsonElement("roleid")] public ulong RoleId { get; }
 }
+
 public class LevelRole
 {
-    [BsonElement("roleid")] public ulong Id { get; }
-    [BsonElement("level")] public int Level { get; }
-    
     public LevelRole(ulong id, int level)
     {
         Level = level;
         Id = id;
     }
+
+    [BsonElement("roleid")] public ulong Id { get; }
+    [BsonElement("level")] public int Level { get; }
 }

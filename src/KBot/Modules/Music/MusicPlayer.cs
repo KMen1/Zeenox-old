@@ -3,7 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using Google.Apis.YouTube.v3;
 using KBot.Extensions;
+using Lavalink4NET;
 using Lavalink4NET.Events;
 using Lavalink4NET.Player;
 
@@ -12,7 +14,24 @@ namespace KBot.Modules.Music;
 public class MusicPlayer : LavalinkPlayer
 {
     public readonly IVoiceChannel VoiceChannel;
-    public bool LoopEnabled { get; set; }
+
+    public MusicPlayer(IVoiceChannel voiceChannel, int skipVotesNeeded, YouTubeService youTubeService,
+        LavalinkNode lavalinkNode)
+    {
+        VoiceChannel = voiceChannel;
+        SkipVotesNeeded = skipVotesNeeded;
+        YouTubeService = youTubeService;
+        LavalinkNode = lavalinkNode;
+        Loop = false;
+        AutoPlay = true;
+        FilterEnabled = null;
+        NowPlayingMessage = null;
+        Queue = new List<LavalinkTrack>();
+        QueueHistory = new List<LavalinkTrack>();
+        SkipVotes = new List<ulong>();
+    }
+
+    public bool Loop { get; set; }
     public string FilterEnabled { get; set; }
     public SocketUser LastRequestedBy => (CurrentTrack!.Context as TrackContext)!.AddedBy;
     public IUserMessage NowPlayingMessage { get; set; }
@@ -25,18 +44,9 @@ public class MusicPlayer : LavalinkPlayer
     public bool IsPlaying => CurrentTrack != null;
     public List<ulong> SkipVotes { get; set; }
     public int SkipVotesNeeded { get; private set; }
-
-    public MusicPlayer(IVoiceChannel voiceChannel, int skipVotesNeeded)
-    {
-        VoiceChannel = voiceChannel;
-        SkipVotesNeeded = skipVotesNeeded;
-        LoopEnabled = false;
-        FilterEnabled = null;
-        NowPlayingMessage = null;
-        Queue = new List<LavalinkTrack>();
-        QueueHistory = new List<LavalinkTrack>();
-        SkipVotes = new List<ulong>();
-    }
+    private YouTubeService YouTubeService { get; }
+    private LavalinkNode LavalinkNode { get; }
+    public bool AutoPlay { get; set; }
 
     public Task UpdateNowPlayingMessageAsync()
     {
@@ -46,12 +56,12 @@ public class MusicPlayer : LavalinkPlayer
             x.Components = new ComponentBuilder().NowPlayerComponents(this);
         });
     }
-    
+
     public void Enqueue(LavalinkTrack track)
     {
         Queue.Add(track);
     }
-    
+
     public void Enqueue(IEnumerable<LavalinkTrack> tracks)
     {
         Queue.AddRange(tracks);
@@ -65,10 +75,11 @@ public class MusicPlayer : LavalinkPlayer
             Queue.Remove(track);
             return true;
         }
+
         nextTrack = null;
         return false;
     }
-    
+
     public bool ClearQueue()
     {
         if (Queue.Count == 0) return false;
@@ -93,7 +104,7 @@ public class MusicPlayer : LavalinkPlayer
         SkipVotes.Clear();
         return SkipAsync();
     }
-    
+
     public Task PlayPreviousAsync()
     {
         if (QueueHistory.Count == 0) return Task.CompletedTask;
@@ -104,16 +115,14 @@ public class MusicPlayer : LavalinkPlayer
 
     public override async Task OnTrackEndAsync(TrackEndEventArgs args)
     {
-        if (!args.MayStartNext)
-        {
-            return;
-        }
+        if (!args.MayStartNext) return;
         var player = args.Player;
-        if (LoopEnabled)
+        if (Loop)
         {
             await player.PlayAsync(Queue[0]).ConfigureAwait(false);
             return;
         }
+
         var nextTrack = Queue.FirstOrDefault();
         if (nextTrack is not null)
         {
@@ -125,6 +134,26 @@ public class MusicPlayer : LavalinkPlayer
             await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
             return;
         }
+
+        if (AutoPlay)
+        {
+            var searchListRequest = YouTubeService.Search.List("snippet");
+            searchListRequest.RelatedToVideoId = CurrentTrack.TrackIdentifier;
+            searchListRequest.Type = "video";
+            searchListRequest.MaxResults = 10;
+
+            var result = await searchListRequest.ExecuteAsync().ConfigureAwait(false);
+            var next = result.Items.First(x => x.Snippet is not null).Id.VideoId;
+
+            var track = await LavalinkNode.GetTrackAsync($"https://www.youtube.com/watch?v={next}")
+                .ConfigureAwait(false);
+            track.Context = CurrentTrack.Context;
+
+            await player.PlayAsync(track).ConfigureAwait(false);
+            await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
+            return;
+        }
+
         await NowPlayingMessage.DeleteAsync().ConfigureAwait(false);
         NowPlayingMessage = null;
         await args.Player.DisconnectAsync().ConfigureAwait(false);

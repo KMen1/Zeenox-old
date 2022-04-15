@@ -6,6 +6,8 @@ public class BotConfig
     public LavalinkConfig Lavalink { get; init; }
     public MongoDbConfig MongoDb { get; init; }
     public OsuApiConfig OsuApi { get; init; }
+    public CloudinaryConfig Cloudinary { get; init; }
+    public GoogleConfig Google { get; init; }
 }
 
 public class ClientConfig
@@ -32,4 +34,16 @@ public class OsuApiConfig
 {
     public ulong AppId { get; init; }
     public string AppSecret { get; init; }
+}
+
+public class CloudinaryConfig
+{
+    public string CloudName { get; init; }
+    public string ApiKey { get; init; }
+    public string ApiSecret { get; init; }
+}
+
+public class GoogleConfig
+{
+    public string ApiKey { get; init; }
 }

@@ -8,13 +8,12 @@ using Discord.WebSocket;
 using Fergun.Interactive;
 using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models;
-using KBot.Models.Guild;
 using KBot.Models.User;
 
 namespace KBot.Modules.Gambling;
+
 [Group("shop", "Stuff to buy with your money")]
-public class ShopCommands : KBotModuleBase
+public class ShopCommands : SlashModuleBase
 {
     private const int CategoryPrice = 150000000;
     private const int VoicePrice = 200000000;
@@ -48,7 +47,7 @@ public class ShopCommands : KBotModuleBase
         var comp = new ComponentBuilder()
             .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
-        
+
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
         var result = await Interactive
@@ -92,7 +91,7 @@ public class ShopCommands : KBotModuleBase
             .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
             .AddField("Role", $"`{name}`", true)
             .AddField("Price", $"`{RolePrice.ToString()}`", true);
-        
+
         if (dbUser.Money < RolePrice)
         {
             await FollowupAsync(embed: eb.WithDescription("Insufficient Funds! 😭").Build()).ConfigureAwait(false);
@@ -102,18 +101,20 @@ public class ShopCommands : KBotModuleBase
         var parsedSuccessfully = VerifyHexColorString(hexcolor, out var color);
         if (!parsedSuccessfully)
         {
-            await FollowupAsync(embed: eb.WithDescription("Wrong hex code (try like this: #32a852, 32a852)! 😭").Build()).ConfigureAwait(false);
+            await FollowupAsync(
+                    embed: eb.WithDescription("Wrong hex code (try like this: #32a852, 32a852)! 😭").Build())
+                .ConfigureAwait(false);
             return;
         }
-        
+
         var id = Guid.NewGuid().ToShortId();
 
         var comp = new ComponentBuilder()
             .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
-        
+
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
-        
+
         var result = await Interactive
             .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
@@ -131,7 +132,7 @@ public class ShopCommands : KBotModuleBase
         var role = await Context.Guild.CreateRoleAsync(name, GuildPermissions.None, new Color(color))
             .ConfigureAwait(false);
         await ((SocketGuildUser) Context.User).AddRoleAsync(role).ConfigureAwait(false);
-        
+
         await UpdateUserAsync(Context.User, x =>
         {
             x.Money -= RolePrice;
@@ -154,14 +155,14 @@ public class ShopCommands : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        
+
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
             .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
             .AddField("Category", $"`{name}`", true)
             .AddField("Price", $"`{CategoryPrice.ToString()}`", true);
-        
+
         if (dbUser.Money < CategoryPrice)
         {
             await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
@@ -169,13 +170,13 @@ public class ShopCommands : KBotModuleBase
         }
 
         var id = Guid.NewGuid().ToShortId();
-        
+
         var comp = new ComponentBuilder()
             .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
-        
+
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
-        
+
         var result = await Interactive
             .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
@@ -189,7 +190,7 @@ public class ShopCommands : KBotModuleBase
             }).ConfigureAwait(false);
             return;
         }
-        
+
         var category = await Context.Guild.CreateCategoryChannelAsync(name, x =>
         {
             x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
@@ -200,7 +201,7 @@ public class ShopCommands : KBotModuleBase
                     new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
             });
         }).ConfigureAwait(false);
-        
+
         await UpdateUserAsync(Context.User, x =>
         {
             x.Money -= CategoryPrice;
@@ -208,10 +209,11 @@ public class ShopCommands : KBotModuleBase
                 $"{category.Name} category"));
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += CategoryPrice).ConfigureAwait(false);
-        
+
         await ModifyOriginalResponseAsync(x =>
         {
-            x.Embed = eb.WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Money - CategoryPrice}`")
+            x.Embed = eb
+                .WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Money - CategoryPrice}`")
                 .WithColor(Color.Green).Build();
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
@@ -222,14 +224,14 @@ public class ShopCommands : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        
+
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
             .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
             .AddField("Csatorna", $"`{name}`", true)
             .AddField("Price", $"`{TextPrice.ToString()}`", true);
-        
+
         if (dbUser.Money < TextPrice)
         {
             await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
@@ -237,13 +239,13 @@ public class ShopCommands : KBotModuleBase
         }
 
         var id = Guid.NewGuid().ToShortId();
-        
+
         var comp = new ComponentBuilder()
             .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
-        
+
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
-        
+
         var result = await Interactive
             .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
@@ -268,7 +270,7 @@ public class ShopCommands : KBotModuleBase
                     new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
             });
         }).ConfigureAwait(false);
-        
+
         await UpdateUserAsync(Context.User, x =>
         {
             x.Money -= TextPrice;
@@ -276,7 +278,7 @@ public class ShopCommands : KBotModuleBase
                 $"{channel.Mention} text channel"));
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += TextPrice).ConfigureAwait(false);
-        
+
         await ModifyOriginalResponseAsync(x =>
         {
             x.Embed = eb.WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Money - TextPrice}`")
@@ -290,14 +292,14 @@ public class ShopCommands : KBotModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        
+
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
             .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
             .AddField("Channel", $"`{name}`", true)
             .AddField("Price", $"`{VoicePrice.ToString()}`", true);
-        
+
         if (dbUser.Money < VoicePrice)
         {
             await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
@@ -305,25 +307,23 @@ public class ShopCommands : KBotModuleBase
         }
 
         var id = Guid.NewGuid().ToShortId();
-        
+
         var comp = new ComponentBuilder()
             .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
             .Build();
-        
+
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
-        
+
         var result = await Interactive
             .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)
-        {
             await ModifyOriginalResponseAsync(x =>
             {
                 x.Embed = eb.WithDescription("Time is up!").WithColor(Color.Red).Build();
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-        }
 
         var channel = await Context.Guild.CreateVoiceChannelAsync(name, x =>
         {
@@ -335,7 +335,7 @@ public class ShopCommands : KBotModuleBase
                     new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
             });
         }).ConfigureAwait(false);
-        
+
         await UpdateUserAsync(Context.User, x =>
         {
             x.Money -= VoicePrice;
@@ -343,7 +343,7 @@ public class ShopCommands : KBotModuleBase
                 $"{channel.Mention} voice channel"));
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += VoicePrice).ConfigureAwait(false);
-        
+
         await ModifyOriginalResponseAsync(x =>
         {
             x.Embed = eb.WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Money - VoicePrice}`")
@@ -362,14 +362,16 @@ public class ShopCommands : KBotModuleBase
         var required =
             (int) Math.Round((CategoryPrice + TextPrice + VoicePrice + RolePrice +
                               levelRequired) * 0.75);
-        
+
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
             .WithDescription($"Balance: `{dbUser.Money.ToString()}`")
-            .AddField("Choice", $"`+{levels.ToString()} level\n{roleName} role\n{categoryName} category\n{textName} text.\n{voiceName} voice.` ", true)
+            .AddField("Choice",
+                $"`+{levels.ToString()} level\n{roleName} role\n{categoryName} category\n{textName} text.\n{voiceName} voice.` ",
+                true)
             .AddField("Price", $"`{required}`", true);
-        
+
         if (dbUser.Money < required)
         {
             await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
@@ -379,10 +381,12 @@ public class ShopCommands : KBotModuleBase
         var parsedSuccessfully = VerifyHexColorString(roleHexColor, out var color);
         if (!parsedSuccessfully)
         {
-            await FollowupAsync(embed: eb.WithDescription("Wrong hex code (try like this: #32a852, 32a852)! 😭").Build()).ConfigureAwait(false);
+            await FollowupAsync(
+                    embed: eb.WithDescription("Wrong hex code (try like this: #32a852, 32a852)! 😭").Build())
+                .ConfigureAwait(false);
             return;
         }
-        
+
         var id = Guid.NewGuid().ToString();
 
         var comp = new ComponentBuilder()
@@ -390,19 +394,17 @@ public class ShopCommands : KBotModuleBase
             .Build();
 
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
-        
+
         var result = await Interactive
             .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)
-        {
             await ModifyOriginalResponseAsync(x =>
             {
                 x.Embed = eb.WithDescription("Time is up! 😭").WithColor(Color.Red).Build();
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-        }
 
         var category = await Context.Guild.CreateCategoryChannelAsync(categoryName, x =>
         {
@@ -459,7 +461,7 @@ public class ShopCommands : KBotModuleBase
             x.Roles.Add(role.Id);
         }).ConfigureAwait(false);
         await UpdateUserAsync(BotUser, x => x.Money += required).ConfigureAwait(false);
-        
+
         await ModifyOriginalResponseAsync(x =>
         {
             x.Embed = eb.WithDescription("Successful Purchase 😎!").WithColor(Color.Green).Build();
@@ -471,14 +473,9 @@ public class ShopCommands : KBotModuleBase
     {
         if (hexcolor.StartsWith("0x", StringComparison.CurrentCultureIgnoreCase) ||
             hexcolor.StartsWith("&H", StringComparison.CurrentCultureIgnoreCase))
-        {
             hexcolor = hexcolor[2..];
-        }
 
-        if (hexcolor.StartsWith("#", StringComparison.CurrentCultureIgnoreCase))
-        {
-            hexcolor = hexcolor[1..];
-        }
+        if (hexcolor.StartsWith("#", StringComparison.CurrentCultureIgnoreCase)) hexcolor = hexcolor[1..];
 
         var parsedSuccessfully = uint.TryParse(hexcolor, NumberStyles.HexNumber, CultureInfo.CurrentCulture,
             out color);

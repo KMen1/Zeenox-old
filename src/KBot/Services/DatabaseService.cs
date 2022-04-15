@@ -68,14 +68,15 @@ public class DatabaseService : IInjectable
         var update = Builders<Guild>.Update.Set(x => x.ButtonRoles, guild.ButtonRoles);
         await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
     }
-    
+
     public async Task<ButtonRoleMessage> GetReactionRoleMessagesAsync(IGuild vGuild, ulong messageId)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
         return guild.ButtonRoles.Find(x => x.MessageId == messageId);
     }
 
-    public async Task<(bool, ButtonRoleMessage)> UpdateReactionRoleMessageAsync(IGuild vGuild, ulong messageId, Action<ButtonRoleMessage> action)
+    public async Task<(bool, ButtonRoleMessage)> UpdateReactionRoleMessageAsync(IGuild vGuild, ulong messageId,
+        Action<ButtonRoleMessage> action)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
         var index = guild.ButtonRoles.FindIndex(x => x.MessageId == messageId);
@@ -86,7 +87,7 @@ public class DatabaseService : IInjectable
         await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
         return (true, guild.ButtonRoles[index]);
     }
-    
+
     public async Task AddUserAsync(IGuild vGuild, SocketGuildUser user)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
@@ -101,28 +102,32 @@ public class DatabaseService : IInjectable
         return await (await _collection.FindAsync(x => x.Id == guild.Id).ConfigureAwait(false))
             .AnyAsync().ConfigureAwait(false);
     }
-    
+
     public async ValueTask<User> GetUserAsync(IGuild vGuild, SocketUser vUser)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
         return guild.Users.Find(x => x.Id == vUser.Id);
     }
+
     public async Task<User> UpdateUserAsync(IGuild vGuild, SocketUser user, Action<User> action)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
         var index = guild.Users.FindIndex(x => x.Id == user.Id);
         if (index == -1)
         {
-            guild.Users.Add(new User(user, (await vGuild.GetUserAsync(user.Id).ConfigureAwait(false)).RoleIds.ToList()));
+            guild.Users.Add(new User(user,
+                (await vGuild.GetUserAsync(user.Id).ConfigureAwait(false)).RoleIds.ToList()));
             index = guild.Users.Count - 1;
         }
+
         var dbUser = guild.Users[index];
         action(dbUser);
         var filter = Builders<Guild>.Filter.Eq(x => x.Id, vGuild.Id);
         var update = Builders<Guild>.Update.Set(x => x.Users[index], dbUser);
         await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
         return dbUser;
-    }    
+    }
+
     public async Task<User> UpdateBotUserAsync(IGuild vGuild, Action<User> action)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
@@ -134,6 +139,7 @@ public class DatabaseService : IInjectable
         await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
         return dbUser;
     }
+
     public async Task<List<User>> GetTopUsersAsync(IGuild vGuild, int users)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
@@ -154,7 +160,7 @@ public class DatabaseService : IInjectable
         await _collection.ReplaceOneAsync(x => x.DocId == guild.DocId, guild).ConfigureAwait(false);
         _cache.Remove(vGuild.Id.ToString());
     }
-    
+
     public async Task<GuildConfig> UpdateGuildConfigAsync(IGuild guild, Action<GuildConfig> action)
     {
         var config = (await _collection.FindAsync(x => x.Id == guild.Id).ConfigureAwait(false)).First().Config;

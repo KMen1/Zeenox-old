@@ -3,19 +3,16 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Gambling.BlackJack;
 
-public class BlackJackComponents : KBotModuleBase
+public class BlackJackComponents : SlashModuleBase
 {
     public BlackJackService BlackJackService { get; set; }
-    
+
     [ComponentInteraction("blackjack-hit:*")]
     public async Task HitBlackJackAsync(string Id)
     {
         await DeferAsync().ConfigureAwait(false);
         var game = BlackJackService.GetGame(Id);
-        if (game?.User.Id != Context.User.Id)
-        {
-            return;
-        }
+        if (game?.User.Id != Context.User.Id) return;
         await game.HitAsync().ConfigureAwait(false);
     }
 
@@ -24,10 +21,7 @@ public class BlackJackComponents : KBotModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var game = BlackJackService.GetGame(Id);
-        if (game.User.Id != Context.User.Id)
-        {
-            return;
-        }
+        if (game.User.Id != Context.User.Id) return;
         await game.StandAsync().ConfigureAwait(false);
     }
 }

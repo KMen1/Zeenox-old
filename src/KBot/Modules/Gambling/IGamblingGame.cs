@@ -18,6 +18,7 @@ public class GameEndedEventArgs
         IsWin = isWin;
         GameId = gameId;
     }
+
     public string GameId { get; }
     public int Prize { get; }
     public string Description { get; }

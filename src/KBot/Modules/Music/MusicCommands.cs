@@ -9,10 +9,10 @@ using KBot.Extensions;
 namespace KBot.Modules.Music;
 
 [Group("music", "Music")]
-public class MusicCommands : KBotModuleBase
+public class MusicCommands : SlashModuleBase
 {
     public AudioService AudioService { get; set; }
-    
+
     [SlashCommand("move", "Moves the bot to the channel you are in")]
     public async Task MovePlayerAsync()
     {
@@ -22,6 +22,7 @@ public class MusicCommands : KBotModuleBase
             await RespondAsync("You are not in a voice channel", ephemeral: true);
             return;
         }
+
         await RespondAsync(embed: await AudioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false))
             .ConfigureAwait(false);
     }
@@ -37,11 +38,13 @@ public class MusicCommands : KBotModuleBase
     public async Task PlayAsync(string query)
     {
         await DeferAsync().ConfigureAwait(false);
-        if (((IVoiceState)Context.User).VoiceChannel is null)
+        if (((IVoiceState) Context.User).VoiceChannel is null)
         {
-            await FollowupAsync(embed: new EmbedBuilder().ErrorEmbed("You are not in a voice channel!")).ConfigureAwait(false);
+            await FollowupAsync(embed: new EmbedBuilder().ErrorEmbed("You are not in a voice channel!"))
+                .ConfigureAwait(false);
             return;
         }
+
         await AudioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
     }
 
@@ -54,14 +57,19 @@ public class MusicCommands : KBotModuleBase
             await AudioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
             return;
         }
+
         var search = await AudioService.SearchAsync(query).ConfigureAwait(false);
         if (search is null)
         {
             await FollowupAsync("No matches!").ConfigureAwait(false);
             return;
         }
-        var tracks = search.Tracks.ToList();//
-        var desc = tracks.Take(10).Aggregate("", (current, track) => current + $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Source}) | [`{track.Duration}`]\n");
+
+        var tracks = search.Tracks.ToList(); //
+        var desc = tracks.Take(10).Aggregate("",
+            (current, track) =>
+                current +
+                $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Source}) | [`{track.Duration}`]\n");
 
         var comp = new ComponentBuilder();
         for (var i = 0; i < tracks.Take(10).Count(); i++)
@@ -82,6 +90,7 @@ public class MusicCommands : KBotModuleBase
             };
             comp.WithButton(" ", $"search:{tracks[i].TrackIdentifier}", emote: new Emoji(emoji));
         }
+
         var eb = new EmbedBuilder()
             .WithTitle("Search Results")
             .WithColor(Color.Blue)
@@ -89,24 +98,26 @@ public class MusicCommands : KBotModuleBase
             .Build();
         await FollowupAsync(embed: eb, components: comp.Build()).ConfigureAwait(false);
     }
-    
+
     [ComponentInteraction("search:*", true)]
     public async Task PlaySearchAsync(string identifier)
     {
-        var channel = ((IVoiceState)Context.User).VoiceChannel;
+        var channel = ((IVoiceState) Context.User).VoiceChannel;
         if (channel is null)
         {
             await RespondAsync("You are not in a voice channel", ephemeral: true).ConfigureAwait(false);
             return;
         }
+
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.PlayFromSearchAsync(Context.Guild, (SocketMessageComponent)Context.Interaction, identifier)
+        await AudioService.PlayFromSearchAsync(Context.Guild, (SocketMessageComponent) Context.Interaction, identifier)
             .ConfigureAwait(false);
     }
 
     [SlashCommand("volume", "Sets the volume")]
     public async Task ChangeVolumeAsync(
-        [Summary("volume"), MinValue(1), MaxValue(100)] ushort volume)
+        [Summary("volume")] [MinValue(1)] [MaxValue(100)]
+        ushort volume)
     {
         await RespondAsync(embed: await AudioService.SetVolumeAsync(Context.Guild, volume).ConfigureAwait(false),
             ephemeral: true).ConfigureAwait(false);
@@ -121,8 +132,16 @@ public class MusicCommands : KBotModuleBase
     [SlashCommand("clearqueue", "Clears the current queue")]
     public async Task ClearQueueAsync()
     {
-        await RespondAsync(embed: await AudioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false)).ConfigureAwait(false);
+        await RespondAsync(embed: await AudioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false))
+            .ConfigureAwait(false);
         await Task.Delay(5000).ConfigureAwait(false);
         await DeleteOriginalResponseAsync().ConfigureAwait(false);
+    }
+
+    [SlashCommand("autoplay", "Toggles autoplay")]
+    public async Task ToggleAutoplayAsync()
+    {
+        await RespondAsync(embed: await AudioService.ToggleAutoplayAsync(Context.Guild).ConfigureAwait(false),
+            ephemeral: true).ConfigureAwait(false);
     }
 }

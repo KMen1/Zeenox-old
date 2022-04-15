@@ -4,9 +4,9 @@
     "Game": "music play"
   },
   "LavaLink": {
-    "Host": "localhost",
-    "Port": 2333,
-    "Password": "youshallnotpass"
+    "Host": "",
+    "Port": 0,
+    "Password": ""
   },
   "MongoDb": {
     "ConnectionString": "",
@@ -16,5 +16,13 @@
   "OsuApi": {
     "AppId": 0,
     "AppSecret": ""
+  },
+  "Cloudinary": {
+    "CloudName": "",
+    "ApiKey": "",
+    "ApiSecret": ""
+  },
+  "Google": {
+    "ApiKey": ""
   }
 }

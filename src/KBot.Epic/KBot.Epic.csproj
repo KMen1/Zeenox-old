@@ -9,19 +9,19 @@
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <PlatformTarget>x64</PlatformTarget>
+        <PlatformTarget>x64</PlatformTarget>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-      <PlatformTarget>x64</PlatformTarget>
-      <DebugType>none</DebugType>
+        <PlatformTarget>x64</PlatformTarget>
+        <DebugType>none</DebugType>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Discord.Net.Webhook" Version="3.5.0" />
-      <PackageReference Include="Sentry" Version="3.14.1" />
-      <PackageReference Include="Sentry.Extensions.Logging" Version="3.14.1" />
-      <PackageReference Include="Sentry.Serilog" Version="3.14.1" />
+        <PackageReference Include="Discord.Net.Webhook" Version="3.5.0"/>
+        <PackageReference Include="Sentry" Version="3.14.1"/>
+        <PackageReference Include="Sentry.Extensions.Logging" Version="3.14.1"/>
+        <PackageReference Include="Sentry.Serilog" Version="3.14.1"/>
     </ItemGroup>
 
 </Project>

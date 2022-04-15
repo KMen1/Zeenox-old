@@ -6,21 +6,23 @@ namespace KBot.Modules.Gambling.Objects;
 
 public class Card
 {
-    private Suit Suit { get; }
-    public Face Face { get; }
-    public int Value { get; }
     public Card(Suit suit, Face face)
     {
         Suit = suit;
         Face = face;
 
-        Value = face switch {
+        Value = face switch
+        {
             Face.Jack => 10,
             Face.Queen => 10,
             Face.King => 10,
-            _ => Value = (int)face + 1
+            _ => Value = (int) face + 1
         };
     }
+
+    private Suit Suit { get; }
+    public Face Face { get; }
+    public int Value { get; }
 
     public Bitmap GetImage()
     {
@@ -38,7 +40,8 @@ public class Card
         };
 
         var x = width * (Value - 1);
-        var source = Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.cards.png")!);
+        var source =
+            Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.cards.png")!);
         var img = new Bitmap(width, height);
         using var g = Graphics.FromImage(img);
         g.DrawImage(source, new Rectangle(0, 0, width, height), new Rectangle(x, y, width, height), GraphicsUnit.Pixel);

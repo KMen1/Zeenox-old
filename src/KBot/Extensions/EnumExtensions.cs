@@ -15,12 +15,10 @@ public static class EnumExtensions
         var field = type.GetField(name);
         if (field == null) return null;
         if (Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) is DescriptionAttribute attr)
-        {
             return attr.Description;
-        }
         return null;
     }
-    
+
     public static string GetGradeEmoji(this Grade grade)
     {
         return grade switch
@@ -38,6 +36,7 @@ public static class EnumExtensions
             _ => "<:osuF:936588252763271168>"
         };
     }
+
     public static Color GetGradeColor(this Grade grade)
     {
         return grade switch

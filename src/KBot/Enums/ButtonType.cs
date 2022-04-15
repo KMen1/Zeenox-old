@@ -1,5 +1,4 @@
-﻿
-namespace KBot.Enums;
+﻿namespace KBot.Enums;
 
 public enum VoiceButtonType
 {

@@ -12,18 +12,15 @@ using KBot.Models.User;
 namespace KBot.Modules.Gambling;
 
 [Group("gamble", "A place to win big or lose big")]
-public class GamblingCommands : KBotModuleBase
+public class GamblingCommands : SlashModuleBase
 {
     [SlashCommand("profile", "Gets your gambling statistics")]
     public async Task SendGamblingProfileAsync(SocketUser vuser = null)
     {
         var user = vuser ?? Context.User;
-        if (user.IsBot)
-        {
-            await FollowupAsync("You can't get a bot's profile.").ConfigureAwait(false);
-        }
+        if (user.IsBot) await FollowupAsync("You can't get a bot's profile.").ConfigureAwait(false);
         var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        await RespondAsync(embed: dbUser.Gambling.ToEmbedBuilder(user).Build(), ephemeral:true).ConfigureAwait(false);
+        await RespondAsync(embed: dbUser.Gambling.ToEmbedBuilder(user).Build(), ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("transactions", "Gets you transactions")]
@@ -36,15 +33,14 @@ public class GamblingCommands : KBotModuleBase
         {
             i++;
             if (i % 1000 == 0)
-            {
                 embeds.Add(new EmbedBuilder()
                     .WithTitle($"{user?.Username ?? Context.User.Username}'s transactions")
                     .WithColor(Color.Blue)
                     .WithDescription(
                         transactions.Count == 0 ? "No transactions yet." : string.Join("\n", transactions)).Build());
-            }
         }
-        await RespondAsync(embeds: embeds.ToArray(), ephemeral:true).ConfigureAwait(false);
+
+        await RespondAsync(embeds: embeds.ToArray(), ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("transaction", "Get more info on a specific transaction")]
@@ -57,7 +53,7 @@ public class GamblingCommands : KBotModuleBase
             await RespondAsync("Transaction not found.").ConfigureAwait(false);
             return;
         }
-        
+
         var embed = new EmbedBuilder()
             .WithTitle($"Transaction - {transaction.Id}")
             .WithColor(Color.Blue)
@@ -66,8 +62,8 @@ public class GamblingCommands : KBotModuleBase
             .AddField("Type", $"`{transaction.Type.GetDescription()}`", true)
             .AddField("Reason", $"```{transaction.Description}```")
             .Build();
-        
-        await RespondAsync(embed: embed, ephemeral:true).ConfigureAwait(false);
+
+        await RespondAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
@@ -75,21 +71,19 @@ public class GamblingCommands : KBotModuleBase
     public async Task ChangeBalanceAsync(SocketUser user, int offset, string reason)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        if (user.IsBot)
-        {
-            await FollowupAsync("You can't change a bot's balance.").ConfigureAwait(false);
-        }
+        if (user.IsBot) await FollowupAsync("You can't change a bot's balance.").ConfigureAwait(false);
         var dbUser = await UpdateUserAsync(user, x =>
         {
             x.Gambling.Balance += offset;
-            x.Transactions.Add(new Transaction("-", TransactionType.Correction, offset, $"{Context.User.Mention}: {reason}"));
+            x.Transactions.Add(new Transaction("-", TransactionType.Correction, offset,
+                $"{Context.User.Mention}: {reason}"));
         }).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Money set!",
             $"{user.Mention} now has a balance of: **{dbUser.Gambling.Balance.ToString()}**").ConfigureAwait(false);
     }
 
     [SlashCommand("transfer", "Sends money to another user")]
-    public async Task TransferBalanceAsync(SocketUser user, [MinValue(1)]int amount)
+    public async Task TransferBalanceAsync(SocketUser user, [MinValue(1)] int amount)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var sourceUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
@@ -98,7 +92,8 @@ public class GamblingCommands : KBotModuleBase
             await FollowupAsync("Insufficient funds!").ConfigureAwait(false);
             return;
         }
-        var fee = (int)Math.Round(amount * 0.10);
+
+        var fee = (int) Math.Round(amount * 0.10);
         await UpdateUserAsync(Context.User, x =>
         {
             x.Money -= amount - fee;
@@ -107,9 +102,10 @@ public class GamblingCommands : KBotModuleBase
         await UpdateUserAsync(user, x =>
         {
             x.Money += amount - fee;
-            x.Transactions.Add(new Transaction("-", TransactionType.TransferReceive, amount, $"From: {Context.User.Mention}"));
+            x.Transactions.Add(new Transaction("-", TransactionType.TransferReceive, amount,
+                $"From: {Context.User.Mention}"));
         }).ConfigureAwait(false);
-        await UpdateUserAsync(BotUser,x =>
+        await UpdateUserAsync(BotUser, x =>
         {
             x.Money += fee;
             x.Transactions.Add(new Transaction("-", TransactionType.TransferFee, fee));
@@ -140,7 +136,8 @@ public class GamblingCommands : KBotModuleBase
                 x.Gambling.Balance += reward;
                 x.Transactions.Add(new Transaction("-", TransactionType.DailyClaim, reward));
             }).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(Color.Green, $"Succesfully collected {reward} coins","",  ephemeral: true).ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Green, $"Succesfully collected {reward} coins", "", ephemeral: true)
+                .ConfigureAwait(false);
         }
         else
         {
@@ -150,7 +147,7 @@ public class GamblingCommands : KBotModuleBase
                 .ConfigureAwait(false);
         }
     }
-    
+
     [SlashCommand("remaining", "Gets the available money the guild has")]
     public async Task SendBudgetAsync()
     {
@@ -169,11 +166,10 @@ public class GamblingCommands : KBotModuleBase
         await DeferAsync().ConfigureAwait(false);
 
         if (DateTime.Today.Day != 1)
-        {
-            await FollowupWithEmbedAsync(Color.Red, "Sikertelen eltérítés", "Pénzszállítás csak a hónap első napján van").ConfigureAwait(false);
-        }
+            await FollowupWithEmbedAsync(Color.Red, "Sikertelen eltérítés",
+                "Pénzszállítás csak a hónap első napján van").ConfigureAwait(false);
     }
-    
+
     [RequireOwner]
     [SlashCommand("refill", "Refill guild balance")]
     public async Task SendBudgetAsync(int amount)
