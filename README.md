@@ -7,35 +7,22 @@
 ![Build](https://github.com/KMen1/KBot/actions/workflows/build.yml/badge.svg)
 
 A feature-rich discord bot that aims to integrate the funcionality of other popular bots into one.
-Still in development so expect bugs.
 
 ## Features
-   * Guild Announcements (each one can be disabled)
-       * User Joined + Autorole if configured
-       * User Left
-       * User Banned
-       * User Unbanned
-   * Leveling System
-       * Mainly rewards voice time, but texting is also rewarded
-   * Music Player
-       * Fast loading times
-       * Realiable playback
-       * Supports playlists
-       * 15 different filters
-       * Easy-to-use menus
-   * Warn System
-   * osu! stats
-   * DbD weekly shrines
-   * Gambling System with 5 games
+   * Sends messages when user joins, leaves, gets banned or unbanned
+   * Leveling system that has text and voice support
+   * Music Player with fast loading times, autoplay, 15 filters and much more
+   * Moderation system with logging, warns, appeals and other stuff
+   * Commands for osu! and Dead By Daylight
+   * Gambling System with 5 games 
         * BlackJack
         * Crash
-        * Higher Lower
+        * Higher/Lower
         * Mines (based on Roobet's Mines)
         * Towers (based on Roobet's Towers)
-   * Appeal System
    * Weekly notification about the current free game in the Epic Games Store
-   * Suggestion System
-   * Reaction Roles with buttons
+   * Suggestion system similar to the one found in Carl bot
+   * Self assignable roles using buttons
    * Reddit commands
    * Completely customizable
 
@@ -47,4 +34,4 @@ Still in development so expect bugs.
    * [OsuSharp](https://github.com/Kiritsu/OsuSharp)
 
 ## License
-See [LICENSE](https://github.com/KMen1/KBot/blob/master/LICENSE)
+   * See [LICENSE](https://github.com/KMen1/KBot/blob/master/LICENSE)
