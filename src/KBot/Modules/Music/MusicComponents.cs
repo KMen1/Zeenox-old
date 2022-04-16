@@ -15,45 +15,45 @@ public class MusicComponents : SlashModuleBase
         var result = Enum.TryParse(selections[0], out FilterType filterType);
         if (result)
         {
-            await DeferAsync(true).ConfigureAwait(false);
+            await DeferAsync().ConfigureAwait(false);
             var embed = await AudioService.SetFiltersAsync(Context.Guild, Context.User, filterType)
                 .ConfigureAwait(false);
-            if (embed is not null) await FollowupAsync(embed: embed).ConfigureAwait(false);
+            if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
         }
     }
 
     [ComponentInteraction("stop")]
     public async Task StopPlayerAsync()
     {
-        await DeferAsync(true).ConfigureAwait(false);
+        await DeferAsync().ConfigureAwait(false);
         var embed = await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed).ConfigureAwait(false);
+        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
     [ComponentInteraction("volumeup")]
     public async Task IncreaseVolumeAsync()
     {
-        await DeferAsync(true).ConfigureAwait(false);
+        await DeferAsync().ConfigureAwait(false);
         var embed = await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeUp)
             .ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed).ConfigureAwait(false);
+        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
     [ComponentInteraction("volumedown")]
     public async Task DecreaseVolumeAsync()
     {
-        await DeferAsync(true).ConfigureAwait(false);
+        await DeferAsync().ConfigureAwait(false);
         var embed = await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeDown)
             .ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed).ConfigureAwait(false);
+        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
     [ComponentInteraction("pause")]
     public async Task PausePlayerAsync()
     {
-        await DeferAsync(true).ConfigureAwait(false);
+        await DeferAsync().ConfigureAwait(false);
         var embed = await AudioService.PauseOrResumeAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed).ConfigureAwait(false);
+        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
     [ComponentInteraction("next")]
@@ -80,8 +80,8 @@ public class MusicComponents : SlashModuleBase
     [ComponentInteraction("clearfilters")]
     public async Task ClearFiltersAsync()
     {
-        await DeferAsync(true).ConfigureAwait(false);
+        await DeferAsync().ConfigureAwait(false);
         var embed = await AudioService.ClearFiltersAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed).ConfigureAwait(false);
+        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 }

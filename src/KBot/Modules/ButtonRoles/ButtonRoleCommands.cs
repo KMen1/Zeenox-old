@@ -28,8 +28,9 @@ public class ButtonRoleCommands : SlashModuleBase
             .WithTitle("Message created!")
             .WithDescription(
                 "To add roles use the **/br add** command, to remove a role you can use **/br remove** role!")
-            .WithColor(Color.Green);
-        await FollowupAsync(embed: embed).ConfigureAwait(false);
+            .WithColor(Color.Green)
+            .Build();
+        await FollowupAsync(embed: helpEmbed).ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.ManageRoles)]
@@ -100,7 +101,7 @@ public class ButtonRoleCommands : SlashModuleBase
     [ComponentInteraction("rrtr:*", true)]
     public async Task HandleRoleButtonAsync(ulong roleId)
     {
-        await DeferAsync(true).ConfigureAwait(false);
+        await DeferAsync().ConfigureAwait(false);
         var role = Context.Guild.GetRole(roleId);
         var user = Context.Guild.GetUser(Context.User.Id);
         if (user.Roles.Contains(role))
@@ -110,7 +111,7 @@ public class ButtonRoleCommands : SlashModuleBase
                 .WithDescription($"**Succesfully removed {role.Mention} role**")
                 .WithColor(Color.Red)
                 .Build();
-            await FollowupAsync(embed: eb).ConfigureAwait(false);
+            await FollowupAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
         }
         else
         {
@@ -119,7 +120,7 @@ public class ButtonRoleCommands : SlashModuleBase
                 .WithDescription($"**Succesfully added {role.Mention} role**")
                 .WithColor(Color.Red)
                 .Build();
-            await FollowupAsync(embed: eb).ConfigureAwait(false);
+            await FollowupAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
         }
     }
 }

@@ -25,17 +25,25 @@ public class DatabaseService : IInjectable
         _collection = database.GetCollection<Guild>(config.MongoDb.Collection);
     }
 
-    public async Task UpdateAsync(SocketGuild vguild)
+    public async Task FixUsersAsync(SocketGuild vguild)
     {
         var guild = (await _collection.FindAsync(x => x.Id == vguild.Id).ConfigureAwait(false)).First();
-        /*foreach (var guildUser in guild.Users)
+        foreach (var user in vguild.Users)
         {
-            guildUser.Transactions = new List<Transaction>();
-            guildUser.Roles = new List<ulong>();
-            guildUser.BoughtChannels = new List<DiscordChannel>();
-            guildUser.BoughtRoles = new List<ulong>();
-            //guildUser.Gambling = new GamblingProfile();
-        }*/
+            if (!guild.Users.Exists(x => x.Id == user.Id))
+            {
+                guild.Users.Add(new User(user));
+            }
+        }
+        foreach (var guildUser in guild.Users)
+        {
+            guildUser.Roles ??= new List<ulong>();
+            guildUser.Gambling ??= new Gambling();
+            guildUser.Transactions ??= new List<Transaction>();
+            guildUser.Warns ??= new List<Warn>();
+            if (guildUser.Level == 0)
+                guildUser.Level = 1;
+        }
         await _collection.ReplaceOneAsync(x => x.DocId == guild.DocId, guild).ConfigureAwait(false);
     }
 

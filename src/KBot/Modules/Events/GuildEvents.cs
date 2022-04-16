@@ -148,7 +148,15 @@ public class GuildEvents : IInjectable
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
         if (!config.Announcements.Enabled) return;
         var channel = guild.GetTextChannel(config.Announcements.LeftChannelId);
-        await channel.SendMessageAsync($":cry: {user.Mention} elhagyta a szervert.").ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
+            .WithColor(Color.Red)
+            .WithDescription($"{user.Mention} left the server!\n" +
+                             $"Account created: **{user.CreatedAt.Humanize()}**")
+            .WithCurrentTimestamp()
+            .WithThumbnailUrl(user.GetAvatarUrl())
+            .Build();
+        await channel.SendMessageAsync(embed: eb).ConfigureAwait(false);
     }
 
     private async Task AnnounceUserBannedAsync(SocketUser user, SocketGuild guild)
@@ -156,8 +164,24 @@ public class GuildEvents : IInjectable
         if (user.IsBot || user.IsWebhook) return;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
         if (!config.Announcements.Enabled) return;
+
+        var log = await guild.GetAuditLogsAsync(1, actionType: ActionType.Ban).FlattenAsync().ConfigureAwait(false);
+        var entry = log.First();
+        var admin = entry.User;
+        var reason = entry.Reason;
+        
         var channel = guild.GetTextChannel(config.Announcements.BanChannelId);
-        await channel.SendMessageAsync($":no_entry: {user.Mention} ki lett tiltva a szerverről.").ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
+            .WithColor(Color.Red)
+            .WithDescription($"**{user.Mention}** has been banned!\n" +
+                             $"Account created: **{user.CreatedAt.Humanize()}**")
+            .AddField("Banned by", $"{admin.Mention}", true)
+            .AddField("Reason", reason is not null ? $"`{reason}`" : "`No reason given.`", true)
+            .WithCurrentTimestamp()
+            .WithThumbnailUrl(user.GetAvatarUrl())
+            .Build();
+        await channel.SendMessageAsync(embed: eb).ConfigureAwait(false);
     }
 
     private async Task AnnounceUserUnbannedAsync(SocketUser user, SocketGuild guild)
@@ -166,6 +190,14 @@ public class GuildEvents : IInjectable
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
         if (!config.Announcements.Enabled) return;
         var channel = guild.GetTextChannel(config.Announcements.UnbanChannelId);
-        await channel.SendMessageAsync($":grinning: {user.Mention} kitiltása vissza lett vonva.").ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
+            .WithColor(Color.Green)
+            .WithDescription($"{user.Mention} has been unbanned!\n" +
+                             $"Account created: **{user.CreatedAt.Humanize()}**")
+            .WithCurrentTimestamp()
+            .WithThumbnailUrl(user.GetAvatarUrl())
+            .Build();
+        await channel.SendMessageAsync(embed: eb).ConfigureAwait(false);
     }
 }

@@ -14,7 +14,7 @@ public class User
     {
         Id = user.Id;
         Xp = 0;
-        Level = 0;
+        Level = 1;
         Gambling = new Gambling();
         OsuId = 0;
         Warns = new List<Warn>();
@@ -29,7 +29,7 @@ public class User
     {
         Id = user.Id;
         Xp = 0;
-        Level = 0;
+        Level = 1;
         Gambling = new Gambling();
         OsuId = 0;
         Warns = new List<Warn>();

@@ -90,6 +90,37 @@ public class TemporaryVoice : SlashModuleBase
 }
 
 [RequireUserPermission(GuildPermission.Administrator)]
+[Group("moderation", "Setup moderation")]
+public class Moderation : SlashModuleBase
+{
+    [SlashCommand("enable", "Toggle moderation for this server")]
+    public async Task EnableModerationAsync(bool setting)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.Enabled = setting)
+            .ConfigureAwait(false);
+        await RespondAsync(setting ? "Moderation enabled!" : "Moderation disabled!", ephemeral: true)
+            .ConfigureAwait(false);
+    }
+    
+    [SlashCommand("log", "Set the log channel for moderation")]
+    public async Task SetLogAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.LogChannelId = channel.Id)
+            .ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
+    
+    [SlashCommand("appeal", "Set the appeal channel for moderation")]
+    public async Task SetAppealAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.AppealChannelId = channel.Id)
+            .ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
+    
+}
+
+[RequireUserPermission(GuildPermission.Administrator)]
 [Group("leveling", "Setup leveling")]
 public class Leveling : SlashModuleBase
 {

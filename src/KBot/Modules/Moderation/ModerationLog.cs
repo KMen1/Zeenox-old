@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using Humanizer;
 using KBot.Services;
 
 namespace KBot.Modules.Moderation;
@@ -183,10 +184,10 @@ public class ModerationLog : IInjectable
             .WithAuthor("Invite Created", invite.Inviter.GetAvatarUrl())
             .AddField("Inviter", invite.Inviter.Mention, true)
             .AddField("Uses", $"`{invite.MaxUses}x`", true)
-            .AddField("Age", invite.MaxAge, true)
+            .AddField("Age", TimeSpan.FromSeconds(invite.MaxAge).Humanize(), true)
             .AddField("Channel", invite.Channel.Name, true)
             .WithTimestamp(invite.CreatedAt)
-            .WithColor(Color.Red);
+            .WithColor(Color.Green);
 
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
     }

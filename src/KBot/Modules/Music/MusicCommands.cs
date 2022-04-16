@@ -23,14 +23,14 @@ public class MusicCommands : SlashModuleBase
             return;
         }
 
-        await RespondAsync(embed: await AudioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false))
+        await RespondAsync(embed: await AudioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false), ephemeral: true)
             .ConfigureAwait(false);
     }
 
     [SlashCommand("leave", "Leaves the voice channel the bot is in")]
     public async Task DisconnectPlayerAsync()
     {
-        await RespondAsync(embed: await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false))
+        await RespondAsync(embed: await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false), ephemeral: true)
             .ConfigureAwait(false);
     }
 
@@ -132,10 +132,8 @@ public class MusicCommands : SlashModuleBase
     [SlashCommand("clearqueue", "Clears the current queue")]
     public async Task ClearQueueAsync()
     {
-        await RespondAsync(embed: await AudioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false))
+        await RespondAsync(embed: await AudioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false), ephemeral: true)
             .ConfigureAwait(false);
-        await Task.Delay(5000).ConfigureAwait(false);
-        await DeleteOriginalResponseAsync().ConfigureAwait(false);
     }
 
     [SlashCommand("autoplay", "Toggles autoplay")]

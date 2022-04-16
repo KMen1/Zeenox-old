@@ -160,7 +160,7 @@ public class GamblingCommands : SlashModuleBase
         await FollowupAsync(embed: embed.Build()).ConfigureAwait(false);
     }
 
-    [SlashCommand("rob", "Pénzszállítás eltérítése")]
+    /*[SlashCommand("rob", "Pénzszállítás eltérítése")]
     public async Task RobAsync()
     {
         await DeferAsync().ConfigureAwait(false);
@@ -168,7 +168,7 @@ public class GamblingCommands : SlashModuleBase
         if (DateTime.Today.Day != 1)
             await FollowupWithEmbedAsync(Color.Red, "Sikertelen eltérítés",
                 "Pénzszállítás csak a hónap első napján van").ConfigureAwait(false);
-    }
+    }*/
 
     [RequireOwner]
     [SlashCommand("refill", "Refill guild balance")]
