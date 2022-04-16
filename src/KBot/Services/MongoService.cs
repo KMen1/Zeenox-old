@@ -12,13 +12,13 @@ using MongoDB.Driver;
 
 namespace KBot.Services;
 
-public class DatabaseService : IInjectable
+public class MongoService : IInjectable
 {
     private readonly IMemoryCache _cache;
     private readonly DiscordSocketClient _client;
     private readonly IMongoCollection<Guild> _collection;
 
-    public DatabaseService(BotConfig config, IMemoryCache cache, IMongoDatabase database, DiscordSocketClient client)
+    public MongoService(BotConfig config, IMemoryCache cache, IMongoDatabase database, DiscordSocketClient client)
     {
         _cache = cache;
         _client = client;

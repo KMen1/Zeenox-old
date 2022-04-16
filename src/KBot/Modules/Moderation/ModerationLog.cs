@@ -11,9 +11,9 @@ namespace KBot.Modules.Moderation;
 public class ModerationLog : IInjectable
 {
     private readonly DiscordSocketClient _client;
-    private readonly DatabaseService _database;
+    private readonly MongoService _database;
 
-    public ModerationLog(DiscordSocketClient client, DatabaseService database)
+    public ModerationLog(DiscordSocketClient client, MongoService database)
     {
         _client = client;
         _database = database;

@@ -127,9 +127,10 @@ public static class EmbedBuilderExtensions
             .AddField("🔼 Uploader", $"`{player.CurrentTrack.Author}`", true)
             .AddField("🎙️ Channel", player.VoiceChannel.Mention, true)
             .AddField("🕐 Length", $"`{player.CurrentTrack.Duration.ToString("c")}`", true)
-            .AddField("🔁 Loop", player.Loop ? "`Igen`" : "`Nem`", true)
+            .AddField("🔁 Loop", player.Loop ? "`On`" : "`Off`", true)
+            .AddField("🔁 Autoplay", player.AutoPlay ? "`On`" : "`Off`", true)
             .AddField("🔊 Volume", $"`{Math.Round(player.Volume * 100).ToString()}%`", true)
-            .AddField("📝 Filter", player.FilterEnabled is not null ? $"`{player.FilterEnabled}`" : "`Nincs`", true)
+            .AddField("📝 Filter", player.FilterEnabled is not null ? $"`{player.FilterEnabled}`" : "`None`", true)
             .AddField("🎶 In Queue", $"`{player.QueueCount.ToString()}`", true)
             .AddField("⏭ Voteskip", $"`{player.SkipVotes.Count.ToString()}/{player.SkipVotesNeeded.ToString()}`", true);
         return builder.Build();

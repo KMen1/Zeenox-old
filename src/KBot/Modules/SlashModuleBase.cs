@@ -11,7 +11,7 @@ namespace KBot.Modules;
 
 public abstract class SlashModuleBase : InteractionModuleBase<SocketInteractionContext>
 {
-    public DatabaseService Database { get; set; }
+    public MongoService Database { get; set; }
     public SocketUser BotUser => Context.Client.CurrentUser;
 
     protected async Task<IUserMessage> FollowupWithEmbedAsync(Color color, string title, string description,

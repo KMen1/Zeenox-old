@@ -15,9 +15,9 @@ public class GuildEvents : IInjectable
 {
     private readonly List<(SocketUser user, ulong channelId)> _channels;
     private readonly DiscordSocketClient _client;
-    private readonly DatabaseService _database;
+    private readonly MongoService _database;
 
-    public GuildEvents(DiscordSocketClient client, DatabaseService database)
+    public GuildEvents(DiscordSocketClient client, MongoService database)
     {
         _client = client;
         _database = database;

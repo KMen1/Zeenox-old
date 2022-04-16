@@ -8,6 +8,7 @@ public class BotConfig
     public OsuApiConfig OsuApi { get; init; }
     public CloudinaryConfig Cloudinary { get; init; }
     public GoogleConfig Google { get; init; }
+    public RedisConfig Redis { get; init; }
 }
 
 public class ClientConfig
@@ -46,4 +47,9 @@ public class CloudinaryConfig
 public class GoogleConfig
 {
     public string ApiKey { get; init; }
+}
+
+public class RedisConfig
+{
+    public string Endpoint { get; init; }
 }

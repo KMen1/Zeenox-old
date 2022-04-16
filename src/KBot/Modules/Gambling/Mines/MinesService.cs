@@ -13,10 +13,10 @@ namespace KBot.Modules.Gambling.Mines;
 
 public class MinesService : IInjectable
 {
-    private readonly DatabaseService _database;
+    private readonly MongoService _database;
     private readonly List<MinesGame> _games;
 
-    public MinesService(DatabaseService database)
+    public MinesService(MongoService database)
     {
         _database = database;
         _games = new List<MinesGame>();

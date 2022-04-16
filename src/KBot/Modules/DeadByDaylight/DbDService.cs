@@ -1,37 +1,75 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Discord;
+using Discord.WebSocket;
 using KBot.Extensions;
 using KBot.Modules.DeadByDaylight.Models;
-using Microsoft.Extensions.Caching.Memory;
+using KBot.Services;
 
 namespace KBot.Modules.DeadByDaylight;
 
 public class DbDService : IInjectable
 {
-    private readonly IMemoryCache _cache;
     private readonly HttpClient _httpClient;
-
-    public DbDService(IMemoryCache cache, HttpClient httpClient)
+    private readonly RedisService _redis;
+    private readonly MongoService _mongo;
+    private readonly DiscordSocketClient _client;
+    
+    public DbDService(HttpClient httpClient, RedisService redisService, MongoService mongoService, DiscordSocketClient client)
     {
-        _cache = cache;
         _httpClient = httpClient;
+        _redis = redisService;
+        _mongo = mongoService;
+        _client = client;
+
+        Task.Run(CheckForNewShrinesAsync);
     }
 
-    public async Task<(List<Perk> Perks, long EndTime)> GetWeeklyShrinesAsync()
+    private async Task CheckForNewShrinesAsync()
     {
-        var shrines = await _cache.GetOrCreateAsync("WeeklyShrines", async x =>
+        var next = DateTime.UtcNow.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).DateTime;
+        await _redis.SetDbdRefreshDateAsync(next).ConfigureAwait(false);
+        
+        while (true)
         {
-            x.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(10);
-            return await RefreshWeeklyShrinesAsync().ConfigureAwait(false);
-        }).ConfigureAwait(false);
-        if (DateTime.UtcNow.ToUnixTimeStamp() > shrines.EndTime)
-            shrines = await RefreshWeeklyShrinesAsync().ConfigureAwait(false);
-        return shrines;
+            await Task.Delay(TimeSpan.FromMinutes(30)).ConfigureAwait(false);
+
+            var refreshDate = await _redis.GetDbdRefreshDateAsync().ConfigureAwait(false);
+            if (DateTime.UtcNow < refreshDate) continue;
+            
+            var sw = Stopwatch.StartNew();
+            var shrines = await GetShrinesAsync().ConfigureAwait(false);
+            sw.Stop();
+            var channels = new List<ITextChannel>();
+            foreach (var guild in _client.Guilds)
+            {
+                var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
+                if (config.DbdChannelId != 0)
+                {
+                    channels.Add(await _client.GetChannelAsync(config.DbdChannelId).ConfigureAwait(false) as ITextChannel);
+                }
+            }
+            
+            var eb = new EmbedBuilder()
+                .WithTitle("Shrine of Secrets")
+                .WithColor(Color.DarkOrange)
+                .WithDescription($"🏁 <t:{refreshDate.AddDays(7).ToUnixTimeStamp()}:R>")
+                .WithFooter($"{sw.ElapsedMilliseconds.ToString()} ms");
+            foreach (var perk in shrines) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
+            
+            foreach (var textChannel in channels)
+            {
+                await textChannel.SendMessageAsync(embed: eb.Build()).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(7)).ConfigureAwait(false);
+            }
+            await _redis.SetDbdRefreshDateAsync(DateTime.UtcNow.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).DateTime).ConfigureAwait(false);
+        }
     }
 
-    private async Task<(List<Perk> Perks, long EndTime)> RefreshWeeklyShrinesAsync()
+    public async Task<List<Perk>> GetShrinesAsync()
     {
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
@@ -44,8 +82,7 @@ public class DbDService : IInjectable
                 .ConfigureAwait(false);
             perks.Add(Perk.FromJson(perkresponse));
         }
-
-        return (perks, shrine.End);
+        return perks;
     }
 
     public static string GetCharacterNameFromId(long jsonCharacter)

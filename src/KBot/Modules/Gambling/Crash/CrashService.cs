@@ -14,11 +14,11 @@ namespace KBot.Modules.Gambling.Crash;
 
 public class CrashService : IInjectable
 {
-    private readonly DatabaseService Database;
+    private readonly MongoService Database;
     private readonly List<CrashGame> Games = new();
     private readonly RandomNumberGenerator Generator = RandomNumberGenerator.Create();
 
-    public CrashService(DatabaseService database)
+    public CrashService(MongoService database)
     {
         Database = database;
     }

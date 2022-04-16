@@ -23,10 +23,10 @@ namespace KBot.Modules.Gambling.HighLow;
 public class HighLowService : IInjectable
 {
     private readonly Cloudinary Cloudinary;
-    private readonly DatabaseService Database;
+    private readonly MongoService Database;
     private readonly List<HighLowGame> Games = new();
 
-    public HighLowService(DatabaseService database, Cloudinary cloudinary)
+    public HighLowService(MongoService database, Cloudinary cloudinary)
     {
         Database = database;
         Cloudinary = cloudinary;

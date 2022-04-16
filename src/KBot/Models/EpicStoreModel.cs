@@ -13,7 +13,7 @@ public partial class EpicStore
 
     private IEnumerable<Game> Games => Data?.Catalog.SearchStore.Games;
 
-    public IEnumerable<Game> CurrentGame => Games?.ToList()
+    public IEnumerable<Game> CurrentGames => Games?.ToList()
         .FindAll(x => x.Promotions is not null && x.Promotions.PromotionalOffers.Length != 0);
 }
 

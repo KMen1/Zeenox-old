@@ -14,10 +14,10 @@ namespace KBot.Modules.Gambling.Towers;
 
 public class TowersService : IInjectable
 {
-    private readonly DatabaseService Database;
+    private readonly MongoService Database;
     private readonly List<TowersGame> Games = new();
 
-    public TowersService(DatabaseService database)
+    public TowersService(MongoService database)
     {
         Database = database;
     }

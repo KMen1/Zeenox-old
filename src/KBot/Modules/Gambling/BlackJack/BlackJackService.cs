@@ -24,10 +24,10 @@ namespace KBot.Modules.Gambling.BlackJack;
 public class BlackJackService : IInjectable
 {
     private readonly Cloudinary Cloudinary;
-    private readonly DatabaseService Database;
+    private readonly MongoService Database;
     private readonly List<BlackJackGame> Games = new();
 
-    public BlackJackService(DatabaseService database, Cloudinary cloudinary)
+    public BlackJackService(MongoService database, Cloudinary cloudinary)
     {
         Database = database;
         Cloudinary = cloudinary;

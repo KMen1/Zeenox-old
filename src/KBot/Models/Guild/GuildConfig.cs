@@ -7,6 +7,8 @@ public class GuildConfig
 {
     public GuildConfig()
     {
+        EpicChannelId = 0;
+        DbdChannelId = 0;
         Announcements = new AnnouncementConfig();
         Moderation = new ModerationConfig();
         TemporaryVoice = new TemporaryVoiceChannels();
@@ -21,6 +23,8 @@ public class GuildConfig
     [BsonElement("movieevents")] public MovieEvents MovieEvents { get; set; }
     [BsonElement("leveling")] public Leveling Leveling { get; set; }
     [BsonElement("suggestions")] public Suggestions Suggestions { get; set; }
+    [BsonElement("epicchannelid")] public ulong EpicChannelId { get; set; }
+    [BsonElement("dbdchannelid")] public ulong DbdChannelId { get; set; }
 }
 
 public class ModerationConfig

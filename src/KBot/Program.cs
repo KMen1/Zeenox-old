@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -28,6 +30,7 @@ using OsuSharp;
 using OsuSharp.Extensions;
 using Serilog;
 using Serilog.Events;
+using StackExchange.Redis;
 using ILogger = Lavalink4NET.Logging.ILogger;
 
 namespace KBot;
@@ -129,6 +132,11 @@ public static class Program
                     ApplicationName = "KBot"
                 });
                 services.AddSingleton<YouTubeService>();
+                services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(new ConfigurationOptions()
+                {
+                    EndPoints = { "redis-15978.c135.eu-central-1-1.ec2.cloud.redislabs.com:15978" },
+                    Password = "5k0wjJKEdYriKtSyo5ZG9F6ohg0VBADT"
+                }));
             })
             .UseSerilog()
             .UseConsoleLifetime()

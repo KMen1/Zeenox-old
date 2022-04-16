@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using Google.Apis.YouTube.v3.Data;
 using KBot.Services;
 using Serilog;
 
@@ -12,10 +13,10 @@ namespace KBot.Modules.Leveling;
 
 public class LevelingModule : IInjectable
 {
-    private readonly DatabaseService _database;
+    private readonly MongoService _database;
     private readonly ConcurrentQueue<(SocketGuildUser, int)> _XpQueue = new();
 
-    public LevelingModule(DiscordSocketClient client, DatabaseService database)
+    public LevelingModule(DiscordSocketClient client, MongoService database)
     {
         _database = database;
         client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
@@ -28,25 +29,27 @@ public class LevelingModule : IInjectable
     {
         while (true)
         {
-            await Task.Delay(5000).ConfigureAwait(false);
+            await Task.Delay(1000).ConfigureAwait(false);
 
             var usersToUpdate = new List<(SocketGuildUser, int)>();
             while (_XpQueue.TryDequeue(out var user)) usersToUpdate.Add(user);
 
             if (usersToUpdate.Count == 0)
                 continue;
-
-            var config = await _database.GetGuildConfigAsync(usersToUpdate[0].Item1.Guild).ConfigureAwait(false);
-            var toNotify = new List<(SocketGuildUser, int)>();
-            foreach (var (user, Xp) in usersToUpdate)
+            
+            var toNotify = new List<(SocketGuildUser, int, ulong)>();
+            foreach (var item in usersToUpdate)
             {
+                var xp = item.Item2;
+                var user = item.Item1;
+                var config = await _database.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
                 var oldUserData = await _database.GetUserAsync(user.Guild, user).ConfigureAwait(false);
                 var newUserData = await _database.UpdateUserAsync(user.Guild, user, x =>
                 {
-                    x.Xp += Xp;
+                    x.Xp += xp;
 
                     if (x.Xp < x.XpNeeded) return;
-                    switch (Xp % x.XpNeeded)
+                    switch (xp % x.XpNeeded)
                     {
                         case 0:
                         {
@@ -68,7 +71,7 @@ public class LevelingModule : IInjectable
 
                 if (newUserData.Level == oldUserData.Level)
                     continue;
-                toNotify.Add((user, newUserData.Level));
+                toNotify.Add((item.Item1, newUserData.Level, config.Leveling.AnnounceChannelId));
 
                 var lowerLevelRoles = config.Leveling.LevelRoles.FindAll(x => x.Level <= newUserData.Level);
                 if (lowerLevelRoles.Count == 0) continue;
@@ -83,7 +86,7 @@ public class LevelingModule : IInjectable
                     var embed = new EmbedBuilder()
                         .WithAuthor(user.Guild.Name, user.Guild.IconUrl)
                         .WithTitle("You got a reward!")
-                        .WithDescription(role.Mention)
+                        .WithDescription($"`{role.Name}`")
                         .WithColor(Color.Gold)
                         .Build();
                     var dmchannel = await user.CreateDMChannelAsync().ConfigureAwait(false);
@@ -98,13 +101,15 @@ public class LevelingModule : IInjectable
             if (toNotify.Count == 0)
                 continue;
 
-            var notifyChannel = toNotify[0].Item1.Guild.GetTextChannel(config.Leveling.AnnounceChannelId);
-            await Task.WhenAll(toNotify.Select(async x =>
+            foreach (var item in toNotify)
             {
-                var (user, level) = x;
-                await notifyChannel.SendMessageAsync($"🥳 Congrats {user.Mention}, you reached level **{level}**")
+                var user = item.Item1;
+                var level = item.Item2;
+                var channelId = item.Item3;
+                if (user.Guild.GetTextChannel(channelId) is not { } channel) continue;
+                await channel.SendMessageAsync($"🥳 Congrats {user.Mention}, you reached level **{level}**")
                     .ConfigureAwait(false);
-            })).ConfigureAwait(false);
+            }
         }
     }
 
@@ -140,6 +145,17 @@ public class LevelingModule : IInjectable
 
         _ = Task.Run(async () =>
         {
+            if (before.IsSelfMuted && !before.IsSelfDeafened && after.IsSelfMuted && after.IsSelfDeafened )
+                return;
+            switch (before.IsMuted)
+            {
+                case true when !before.IsDeafened && after.IsMuted && after.IsDeafened:
+                case true when before.IsDeafened && !after.IsMuted && after.IsDeafened:
+                case true when before.IsDeafened && after.IsMuted && !after.IsDeafened:
+                    return;
+            }
+            if (before.IsDeafened && !before.IsMuted && after.IsMuted && after.IsDeafened)
+                return;
             if (before.VoiceChannel is not null)
                 await ScanVoiceChannelAsync(before.VoiceChannel);
             if (after.VoiceChannel is not null && after.VoiceChannel != before.VoiceChannel)
@@ -171,8 +187,7 @@ public class LevelingModule : IInjectable
         var minutes = (int) (DateTime.UtcNow - joinDate).TotalMinutes;
         if (minutes < 1)
             return;
-        var Xp = minutes * 100;
-        _XpQueue.Enqueue((user, Xp));
+        _XpQueue.Enqueue((user, minutes * 100));
     }
 
     private static bool IsActive(IVoiceState user)

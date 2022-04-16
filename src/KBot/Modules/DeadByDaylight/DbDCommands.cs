@@ -1,7 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using KBot.Extensions;
 
 namespace KBot.Modules.DeadByDaylight;
 
@@ -19,12 +21,20 @@ public class DbDCommands : SlashModuleBase
             .WithTitle("Shrine of Secrets")
             .WithColor(Color.Orange);
 
-        var (perks, endTime) = await DbDService.GetWeeklyShrinesAsync().ConfigureAwait(false);
+        var perks = await DbDService.GetShrinesAsync().ConfigureAwait(false);
 
         foreach (var perk in perks) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
-        eb.WithDescription($"🏁 <t:{endTime}:R>");
+        eb.WithDescription($"🏁 <t:{DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).ToUnixTimeSeconds()}:R>");
         sw.Stop();
         eb.WithFooter($"{sw.ElapsedMilliseconds.ToString()} ms");
         await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
+    }
+
+    [SlashCommand("set", "Sets the channel to receive weekyl shrines")]
+    public async Task SetDbdChannelAsync(ITextChannel channel)
+    {
+        await DeferAsync().ConfigureAwait(false);
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.DbdChannelId = channel.Id).ConfigureAwait(false);
+        await FollowupAsync("Channel set to receive weekly shrines").ConfigureAwait(false);
     }
 }
