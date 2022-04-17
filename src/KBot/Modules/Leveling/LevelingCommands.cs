@@ -4,6 +4,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
+using KBot.Models.Guild;
 
 namespace KBot.Modules.Leveling;
 
@@ -103,5 +104,42 @@ public class Levels : SlashModuleBase
         var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.Level += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Level set!",
             $"{user.Mention} now has a level of **{dbUser.Level.ToString()}**").ConfigureAwait(false);
+    }
+    
+    [RequireUserPermission(GuildPermission.Administrator)]
+    [SlashCommand("setchannel", "Set the channel for level up messages")]
+    public async Task SetChannelAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AnnounceChannelId = channel.Id)
+            .ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
+    
+    [RequireUserPermission(GuildPermission.Administrator)]
+    [SlashCommand("setafk", "Set the AFK channel")]
+    public async Task SetAfkChannelAsync(IVoiceChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AfkChannelId = channel.Id)
+            .ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
+    
+    [RequireUserPermission(GuildPermission.Administrator)]
+    [SlashCommand("addrole", "Add a role to the leveling roles")]
+    public async Task AddRoleAsync(IRole role, [MinValue(1)] int level)
+    {
+        await Database
+            .UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.Add(new LevelRole(role.Id, level)))
+            .ConfigureAwait(false);
+        await RespondAsync("Role Added!", ephemeral: true).ConfigureAwait(false);
+    }
+    
+    [RequireUserPermission(GuildPermission.Administrator)]
+    [SlashCommand("removerole", "Remove a role from the leveling roles")]
+    public async Task RemoveRoleAsync(IRole role)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.RemoveAll(y => y.Id == role.Id))
+            .ConfigureAwait(false);
+        await RespondAsync("Role Removed", ephemeral: true).ConfigureAwait(false);
     }
 }

@@ -30,11 +30,11 @@ public class DbDCommands : SlashModuleBase
         await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
     }
 
+    [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("set", "Sets the channel to receive weekyl shrines")]
     public async Task SetDbdChannelAsync(ITextChannel channel)
     {
-        await DeferAsync().ConfigureAwait(false);
         await Database.UpdateGuildConfigAsync(Context.Guild, x => x.DbdChannelId = channel.Id).ConfigureAwait(false);
-        await FollowupAsync("Channel set to receive weekly shrines").ConfigureAwait(false);
+        await RespondAsync("Channel set to receive weekly shrines", ephemeral: true).ConfigureAwait(false);
     }
 }

@@ -128,7 +128,7 @@ public class GuildEvents : IInjectable
 
         await user.AddRoleAsync(config.Announcements.JoinRoleId).ConfigureAwait(false);
 
-        if (!config.Announcements.Enabled) return;
+        if (config.Announcements.JoinChannelId == 0) return;
         var channel = user.Guild.GetTextChannel(config.Announcements.JoinChannelId);
         var eb = new EmbedBuilder()
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
@@ -146,7 +146,7 @@ public class GuildEvents : IInjectable
     {
         if (user.IsBot || user.IsWebhook) return;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Announcements.Enabled) return;
+        if (config.Announcements.LeftChannelId == 0) return;
         var channel = guild.GetTextChannel(config.Announcements.LeftChannelId);
         var eb = new EmbedBuilder()
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
@@ -163,7 +163,7 @@ public class GuildEvents : IInjectable
     {
         if (user.IsBot || user.IsWebhook) return;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Announcements.Enabled) return;
+        if (config.Announcements.BanChannelId == 0) return;
 
         var log = await guild.GetAuditLogsAsync(1, actionType: ActionType.Ban).FlattenAsync().ConfigureAwait(false);
         var entry = log.First();
@@ -188,7 +188,7 @@ public class GuildEvents : IInjectable
     {
         if (user.IsBot || user.IsWebhook) return;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Announcements.Enabled) return;
+        if (config.Announcements.UnbanChannelId == 0) return;
         var channel = guild.GetTextChannel(config.Announcements.UnbanChannelId);
         var eb = new EmbedBuilder()
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())

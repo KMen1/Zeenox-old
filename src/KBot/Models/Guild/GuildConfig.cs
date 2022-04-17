@@ -31,12 +31,9 @@ public class ModerationConfig
 {
     public ModerationConfig()
     {
-        Enabled = false;
         LogChannelId = 0;
         AppealChannelId = 0;
     }
-
-    [BsonElement("enabled")] public bool Enabled { get; set; }
     [BsonElement("logchannelid")] public ulong LogChannelId { get; set; }
     [BsonElement("appealchannelid")] public ulong AppealChannelId { get; set; }
 }
@@ -45,15 +42,12 @@ public class AnnouncementConfig
 {
     public AnnouncementConfig()
     {
-        Enabled = false;
         JoinChannelId = 0;
         JoinRoleId = 0;
         LeftChannelId = 0;
         BanChannelId = 0;
         UnbanChannelId = 0;
     }
-
-    [BsonElement("enabled")] public bool Enabled { get; set; }
     [BsonElement("joinchannelid")] public ulong JoinChannelId { get; set; }
     [BsonElement("joinroleid")] public ulong JoinRoleId { get; set; }
     [BsonElement("leftchannelid")] public ulong LeftChannelId { get; set; }

@@ -170,4 +170,22 @@ public class ModerationCommands : SlashModuleBase
 
         await RespondWithModalAsync(modal.Build()).ConfigureAwait(false);
     }
+
+    [RequireUserPermission(GuildPermission.Administrator)]
+    [SlashCommand("setlog", "Sets the moderation log channel for the server.")]
+    public async Task SetLogChannelAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.LogChannelId = channel.Id)
+            .ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }    
+    
+    [RequireUserPermission(GuildPermission.Administrator)]
+    [SlashCommand("setappeal", "Sets the channel to send appeals to for the server.")]
+    public async Task SetAppealChannelAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.AppealChannelId = channel.Id)
+            .ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
 }

@@ -31,11 +31,11 @@ public class EpicCommands : SlashModuleBase
         await FollowupAsync(embeds: embeds).ConfigureAwait(false);
     }
 
+    [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("set", "Sets the channel to receive weekly epic free games.")]
     public async Task SetEpicChannelAsync(ITextChannel channel)
     {
-        await DeferAsync().ConfigureAwait(false);
         await Database.UpdateGuildConfigAsync(Context.Guild, x => x.EpicChannelId = channel.Id).ConfigureAwait(false);
-        await FollowupAsync("Epic free games will now be sent to this channel.").ConfigureAwait(false);
+        await RespondAsync("Channel set to receive weekly free games from the epic game store.", ephemeral: true).ConfigureAwait(false);
     }
 }

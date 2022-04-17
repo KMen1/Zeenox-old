@@ -9,15 +9,6 @@ namespace KBot.Modules.Config;
 [Group("announcements", "Setup announcements for your server")]
 public class Announcements : SlashModuleBase
 {
-    [SlashCommand("enable", "Toggle announcements for this server")]
-    public async Task EnableAnnouncementsAsync(bool setting)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Announcements.Enabled = setting)
-            .ConfigureAwait(false);
-        await RespondAsync(setting ? "Announcements enabled!" : "Announcements disabled!", ephemeral: true)
-            .ConfigureAwait(false);
-    }
-
     [SlashCommand("join", "Set the join message channel")]
     public async Task SetJoinAsync(ITextChannel channel)
     {
@@ -84,103 +75,6 @@ public class TemporaryVoice : SlashModuleBase
     public async Task SetChannelAsync(IVoiceChannel channel)
     {
         await Database.UpdateGuildConfigAsync(Context.Guild, x => x.TemporaryVoice.CreateChannelId = channel.Id)
-            .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
-    }
-}
-
-[RequireUserPermission(GuildPermission.Administrator)]
-[Group("moderation", "Setup moderation")]
-public class Moderation : SlashModuleBase
-{
-    [SlashCommand("enable", "Toggle moderation for this server")]
-    public async Task EnableModerationAsync(bool setting)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.Enabled = setting)
-            .ConfigureAwait(false);
-        await RespondAsync(setting ? "Moderation enabled!" : "Moderation disabled!", ephemeral: true)
-            .ConfigureAwait(false);
-    }
-    
-    [SlashCommand("log", "Set the log channel for moderation")]
-    public async Task SetLogAsync(ITextChannel channel)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.LogChannelId = channel.Id)
-            .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
-    }
-    
-    [SlashCommand("appeal", "Set the appeal channel for moderation")]
-    public async Task SetAppealAsync(ITextChannel channel)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.AppealChannelId = channel.Id)
-            .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
-    }
-    
-}
-
-[RequireUserPermission(GuildPermission.Administrator)]
-[Group("leveling", "Setup leveling")]
-public class Leveling : SlashModuleBase
-{
-    [SlashCommand("enable", "Toggle leveling for this server")]
-    public async Task EnableLevelingAsync(bool enable)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.Enabled = enable).ConfigureAwait(false);
-        await RespondAsync(enable ? "Leveling Enabled!" : "Leveling Disabled!", ephemeral: true).ConfigureAwait(false);
-    }
-
-    [SlashCommand("channel", "Set the channel for level up messages")]
-    public async Task SetChannelAsync(ITextChannel channel)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AnnounceChannelId = channel.Id)
-            .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
-    }
-
-    [SlashCommand("afk", "Set the AFK channel")]
-    public async Task SetAfkChannelAsync(IVoiceChannel channel)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AfkChannelId = channel.Id)
-            .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
-    }
-
-    [SlashCommand("addrole", "Add a role to the leveling roles")]
-    public async Task AddRoleAsync(IRole role, [MinValue(1)] int level)
-    {
-        await Database
-            .UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.Add(new LevelRole(role.Id, level)))
-            .ConfigureAwait(false);
-        await RespondAsync("Role Added!", ephemeral: true).ConfigureAwait(false);
-    }
-
-    [SlashCommand("removerole", "Remove a role from the leveling roles")]
-    public async Task RemoveRoleAsync(IRole role)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.RemoveAll(y => y.Id == role.Id))
-            .ConfigureAwait(false);
-        await RespondAsync("Role Removed", ephemeral: true).ConfigureAwait(false);
-    }
-}
-
-[RequireUserPermission(GuildPermission.Administrator)]
-[Group("suggestions", "Setup suggestions")]
-public class Suggestions : SlashModuleBase
-{
-    [SlashCommand("enable", "Toggle suggestions for this server")]
-    public async Task EnableSuggestionsAsync(bool enable)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.Enabled = enable).ConfigureAwait(false);
-        await RespondAsync(enable ? "Javaslatok bekapcsolva!" : "Javaslatok kikapcsolva!", ephemeral: true)
-            .ConfigureAwait(false);
-    }
-
-    [SlashCommand("channel", "Set the channel for suggestion messages")]
-    public async Task SetChannelAsync(ITextChannel channel)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.AnnounceChannelId = channel.Id)
             .ConfigureAwait(false);
         await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
     }

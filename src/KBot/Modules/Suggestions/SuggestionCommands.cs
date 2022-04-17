@@ -35,4 +35,22 @@ public class SuggestionCommands : SlashModuleBase
         await FollowupWithEmbedAsync(Color.Green, "Suggestion Created", $"In Channel: {suggestionChannel.Mention}")
             .ConfigureAwait(false);
     }
+    
+    [RequireUserPermission(GuildPermission.Administrator)]
+    [SlashCommand("enable", "Toggle suggestions for this server")]
+    public async Task EnableSuggestionsAsync(bool enable)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.Enabled = enable).ConfigureAwait(false);
+        await RespondAsync(enable ? "Javaslatok bekapcsolva!" : "Javaslatok kikapcsolva!", ephemeral: true)
+            .ConfigureAwait(false);
+    }
+    
+    [RequireUserPermission(GuildPermission.Administrator)]
+    [SlashCommand("channel", "Set the channel for suggestion messages")]
+    public async Task SetChannelAsync(ITextChannel channel)
+    {
+        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.AnnounceChannelId = channel.Id)
+            .ConfigureAwait(false);
+        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+    }
 }

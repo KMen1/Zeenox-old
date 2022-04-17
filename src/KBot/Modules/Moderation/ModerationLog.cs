@@ -41,7 +41,7 @@ public class ModerationLog : IInjectable
         var guild = channel!.Guild;
 
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Moderation.Enabled)
+        if (config.Moderation.LogChannelId == 0)
             return;
 
         var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
@@ -65,7 +65,7 @@ public class ModerationLog : IInjectable
         var guild = channel!.Guild;
 
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Moderation.Enabled)
+        if (config.Moderation.LogChannelId == 0)
             return;
 
         var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
@@ -82,7 +82,7 @@ public class ModerationLog : IInjectable
     private async Task OnUserBanned(SocketUser user, SocketGuild guild)
     {
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Moderation.Enabled)
+        if (config.Moderation.LogChannelId == 0)
             return;
 
         var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
@@ -105,7 +105,7 @@ public class ModerationLog : IInjectable
     private async Task OnUserUnbanned(SocketUser user, SocketGuild guild)
     {
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Moderation.Enabled)
+        if (config.Moderation.LogChannelId == 0)
             return;
 
         var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
@@ -128,7 +128,7 @@ public class ModerationLog : IInjectable
     {
         var guild = role.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Moderation.Enabled)
+        if (config.Moderation.LogChannelId == 0)
             return;
 
         var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
@@ -151,7 +151,7 @@ public class ModerationLog : IInjectable
     {
         var guild = role.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Moderation.Enabled)
+        if (config.Moderation.LogChannelId == 0)
             return;
 
         var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
@@ -175,7 +175,7 @@ public class ModerationLog : IInjectable
     {
         var guild = invite.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Moderation.Enabled)
+        if (config.Moderation.LogChannelId == 0)
             return;
 
         var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
@@ -196,7 +196,7 @@ public class ModerationLog : IInjectable
     {
         var guild = channel.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Moderation.Enabled)
+        if (config.Moderation.LogChannelId == 0)
             return;
 
         var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
