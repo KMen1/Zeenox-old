@@ -63,7 +63,7 @@ public class EpicGamesService : IInjectable
 
             foreach (var textChannel in channels)
             {
-                await textChannel.SendMessageAsync(embeds: embeds).ConfigureAwait(false);
+                await textChannel.SendMessageAsync("@here", embeds: embeds).ConfigureAwait(false);
                 await Task.Delay(TimeSpan.FromSeconds(7)).ConfigureAwait(false);
             }
             await _redis.SetEpicRefreshDateAsync(DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).AddHours(17).AddMinutes(10).DateTime).ConfigureAwait(false);

@@ -47,26 +47,9 @@ public class LevelingModule : IInjectable
                 var newUserData = await _database.UpdateUserAsync(user.Guild, user, x =>
                 {
                     x.Xp += xp;
-
                     if (x.Xp < x.RequiredXp) return;
-                    switch (xp % x.RequiredXp)
-                    {
-                        case 0:
-                        {
-                            x.Level += x.Xp / x.RequiredXp;
-                            x.Xp = 0;
-                            break;
-                        }
-                        case > 0:
-                        {
-                            x.Level += x.Xp / x.RequiredXp;
-                            var total = 0;
-                            for (var i = x.Level; i < x.Level + x.Xp / x.RequiredXp; i++)
-                                total += (int) Math.Pow(i * 4, 2);
-                            x.Xp -= total;
-                            break;
-                        }
-                    }
+                    x.Level++;
+                    x.Xp -= x.RequiredXp;
                 }).ConfigureAwait(false);
 
                 if (newUserData.Level == oldUserData.Level)

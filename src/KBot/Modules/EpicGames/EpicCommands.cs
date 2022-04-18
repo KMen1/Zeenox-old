@@ -33,9 +33,12 @@ public class EpicCommands : SlashModuleBase
 
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("set", "Sets the channel to receive weekly epic free games.")]
-    public async Task SetEpicChannelAsync(ITextChannel channel)
+    public async Task SetEpicChannelAsync(ITextChannel channel = null)
     {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.EpicNotificationChannelId = channel.Id).ConfigureAwait(false);
-        await RespondAsync("Channel set to receive weekly free games from the epic game store.", ephemeral: true).ConfigureAwait(false);
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.EpicNotificationChannelId = channel?.Id ?? 0)
+            .ConfigureAwait(false);
+        await RespondAsync(channel is null ?
+            "Epic announcements disabled!"
+            : "Channel set to receive weekly free games from the epic game store.", ephemeral: true).ConfigureAwait(false);
     }
 }

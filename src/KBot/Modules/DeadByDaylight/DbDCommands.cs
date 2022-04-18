@@ -32,9 +32,11 @@ public class DbDCommands : SlashModuleBase
 
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("set", "Sets the channel to receive weekyl shrines")]
-    public async Task SetDbdChannelAsync(ITextChannel channel)
+    public async Task SetDbdChannelAsync(ITextChannel channel = null)
     {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.DbdNotificationChannelId = channel.Id).ConfigureAwait(false);
-        await RespondAsync("Channel set to receive weekly shrines", ephemeral: true).ConfigureAwait(false);
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.DbdNotificationChannelId = channel?.Id ?? 0).ConfigureAwait(false);
+        await RespondAsync(channel is null ?
+            "Weekly shrine notification disabled"
+            : "Channel set to receive weekly shrines", ephemeral: true).ConfigureAwait(false);
     }
 }

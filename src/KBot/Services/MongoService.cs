@@ -123,7 +123,7 @@ public class MongoService : IInjectable
     public async Task<List<User>> GetTopUsersAsync(IGuild vGuild, int limit)
     {
         var users = (await _userCollection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).ToList();
-        return users.OrderByDescending(x => x.TotalXp).Take(limit).ToList();
+        return users.OrderByDescending(x => x.Xp).Take(limit).ToList();
     }
 
     public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(IGuild guild, int limit)

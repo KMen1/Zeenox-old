@@ -35,15 +35,6 @@ public class User
 
     [BsonElement("xp")] public int Xp { get; set; }
     [BsonIgnore] public int RequiredXp => (int) Math.Pow(Level * 4, 2);
-    [BsonIgnore] public int TotalXp
-    {
-        get
-        {
-            var total = 0;
-            for (var i = 0; i < Level; i++) total += (int) Math.Pow(i * 4, 2);
-            return total + Xp;
-        }
-    }
     public int MoneyToBuyLevel(int level)
     {
         var total = 0;

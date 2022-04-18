@@ -29,10 +29,10 @@ public class RedisService : IInjectable
         var db = _redis.GetDatabase();
         return db.StringSetAsync("dbd_refresh_date", time.ToString("yyyy-MM-dd HH:mm:ss"));
     }
-    public Task<DateTime> GetDbdRefreshDateAsync()
+    public async Task<DateTime> GetDbdRefreshDateAsync()
     {
         var db = _redis.GetDatabase();
-        var date = db.StringGet("dbd_refresh_date");
-        return Task.FromResult(DateTime.Parse(date));
+        var date = await db.StringGetAsync("dbd_refresh_date").ConfigureAwait(false);
+        return DateTime.Parse(date);
     }
 }

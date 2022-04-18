@@ -30,7 +30,7 @@ public class Levels : SlashModuleBase
             .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
             .WithColor(Color.Gold)
             .WithDescription(
-                $"**XP: **`{xp.ToString()}/{requiredXP}` ({dbUser.TotalXp} Total) \n**Level: **`{level.ToString()}`")
+                $"**XP: **`{xp.ToString()}/{requiredXP}` \n**Level: **`{level.ToString()}`")
             .Build();
 
         await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);

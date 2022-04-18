@@ -38,10 +38,11 @@ public class SuggestionCommands : SlashModuleBase
 
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("channel", "Set the channel for suggestion messages")]
-    public async Task SetChannelAsync(ITextChannel channel)
+    public async Task SetChannelAsync(ITextChannel channel = null)
     {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.SuggestionChannelId = channel.Id)
+        
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.SuggestionChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+        await RespondAsync(channel is null ? "Suggestions disabled!" : "Channel set!", ephemeral: true).ConfigureAwait(false);
     }
 }
