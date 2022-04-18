@@ -34,7 +34,7 @@ public class Osu : SlashModuleBase
 
         await DeferAsync(true).ConfigureAwait(false);
         var osuId = Convert.ToUInt64(link.Split("/").Last());
-        await Database.UpdateUserAsync(Context.Guild, Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync(Context.Guild, Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Red, "Succesfully linked your osu! profile!",
             "https://osu.ppy.sh/u/" + osuId).ConfigureAwait(false);
     }
@@ -44,7 +44,7 @@ public class Osu : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var osuId = (await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false)).OsuId;
+        var osuId = (await Mongo.GetUserAsync((SocketGuildUser)(user ?? Context.User)).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked!",
@@ -64,12 +64,12 @@ public class Osu : SlashModuleBase
         await FollowUpWithScoreAsync(score[0], sw).ConfigureAwait(false);
     }
 
-    [SlashCommand("stats", "osu! statictics")]
+    [SlashCommand("stats", "osu! statistics")]
     public async Task SendOsuStatsAsync(SocketUser user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var osuId = (await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false)).OsuId;
+        var osuId = (await Mongo.GetUserAsync((SocketGuildUser)(user ?? Context.User)).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked!",
@@ -105,7 +105,7 @@ public class Osu : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var users = await Database.GetOsuIdsAsync(Context.Guild.Id, 10).ConfigureAwait(false);
+        var users = await Mongo.GetOsuIdsAsync(Context.Guild, 10).ConfigureAwait(false);
         var userOsuPair = new Dictionary<SocketUser, IUser>();
         foreach (var (userId, osuId) in users)
             userOsuPair.Add(Context.Client.GetUser(userId),
@@ -136,7 +136,7 @@ public class Osu : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = new Stopwatch();
-        var osuId = (await Database.GetUserAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false)).OsuId;
+        var osuId = (await Mongo.GetUserAsync((SocketGuildUser)(user ?? Context.User)).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked",

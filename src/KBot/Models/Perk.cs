@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using KBot.Modules.DeadByDaylight;
+using Newtonsoft.Json;
 
-namespace KBot.Modules.DeadByDaylight.Models;
+namespace KBot.Models;
 
 public partial class Perk
 {

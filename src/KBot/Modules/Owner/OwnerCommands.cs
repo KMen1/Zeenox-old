@@ -24,13 +24,4 @@ public class OwnerCommands : SlashModuleBase
         Process.Start(pInfo);
         Environment.Exit(0);
     }
-
-    [RequireOwner]
-    [SlashCommand("fixusers", "Fixes null references")]
-    public async Task FixUsersAsync()
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        await Database.FixUsersAsync(Context.Guild).ConfigureAwait(false);
-        await FollowupAsync("Users fixed.", ephemeral: true).ConfigureAwait(false);
-    }
 }

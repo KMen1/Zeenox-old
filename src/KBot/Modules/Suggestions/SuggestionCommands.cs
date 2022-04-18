@@ -24,32 +24,23 @@ public class SuggestionCommands : SlashModuleBase
             .Build();
 
         var config = await GetGuildConfigAsync().ConfigureAwait(false);
-        if (!config.Suggestions.Enabled)
+        if (config.SuggestionChannelId == 0)
         {
             await FollowupAsync("Suggestions are not enabled on this server.").ConfigureAwait(false);
             return;
         }
 
-        var suggestionChannel = Context.Guild.GetTextChannel(config.Suggestions.AnnounceChannelId);
+        var suggestionChannel = Context.Guild.GetTextChannel(config.SuggestionChannelId);
         await suggestionChannel.SendMessageAsync(embed: embed, components: comp).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Suggestion Created", $"In Channel: {suggestionChannel.Mention}")
             .ConfigureAwait(false);
     }
-    
-    [RequireUserPermission(GuildPermission.Administrator)]
-    [SlashCommand("enable", "Toggle suggestions for this server")]
-    public async Task EnableSuggestionsAsync(bool enable)
-    {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.Enabled = enable).ConfigureAwait(false);
-        await RespondAsync(enable ? "Javaslatok bekapcsolva!" : "Javaslatok kikapcsolva!", ephemeral: true)
-            .ConfigureAwait(false);
-    }
-    
+
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("channel", "Set the channel for suggestion messages")]
     public async Task SetChannelAsync(ITextChannel channel)
     {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Suggestions.AnnounceChannelId = channel.Id)
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.SuggestionChannelId = channel.Id)
             .ConfigureAwait(false);
         await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
     }

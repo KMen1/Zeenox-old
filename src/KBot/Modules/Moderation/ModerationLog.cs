@@ -18,20 +18,20 @@ public class ModerationLog : IInjectable
         _client = client;
         _database = database;
 
-        _client.UserBanned += OnUserBanned;
-        _client.UserUnbanned += OnUserUnbanned;
+        _client.UserBanned += OnUserBannedAsync;
+        _client.UserUnbanned += OnUserUnbannedAsync;
 
-        _client.RoleCreated += OnRoleCreated;
-        _client.RoleDeleted += OnRoleDeleted;
+        _client.RoleCreated += OnRoleCreatedAsync;
+        _client.RoleDeleted += OnRoleDeletedAsync;
 
-        _client.InviteCreated += OnInviteCreated;
-        _client.InviteDeleted += OnInviteDeleted;
+        _client.InviteCreated += OnInviteCreatedAsync;
+        _client.InviteDeleted += OnInviteDeletedAsync;
 
-        _client.MessageDeleted += OnMessageDeleted;
-        _client.MessageUpdated += OnMessageUpdated;
+        _client.MessageDeleted += OnMessageDeletedAsync;
+        _client.MessageUpdated += OnMessageUpdatedAsync;
     }
 
-    private async Task OnMessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
+    private async Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
     {
         var beforeMessage = arg1.Value;
         if (beforeMessage.Author.IsBot || beforeMessage.Author.IsWebhook)
@@ -41,10 +41,10 @@ public class ModerationLog : IInjectable
         var guild = channel!.Guild;
 
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Moderation.LogChannelId == 0)
+        if (config.ModLogChannelId == 0)
             return;
 
-        var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
+        var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         var embed = new EmbedBuilder()
             .WithAuthor("Message edited", beforeMessage.Author.GetAvatarUrl())
@@ -56,7 +56,7 @@ public class ModerationLog : IInjectable
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
     }
 
-    private async Task OnMessageDeleted(Cacheable<IMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2)
+    private async Task OnMessageDeletedAsync(Cacheable<IMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2)
     {
         var message = arg1.Value;
         if (message.Author.IsBot || message.Author.IsWebhook)
@@ -65,10 +65,10 @@ public class ModerationLog : IInjectable
         var guild = channel!.Guild;
 
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Moderation.LogChannelId == 0)
+        if (config.ModLogChannelId == 0)
             return;
 
-        var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
+        var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         var embed = new EmbedBuilder()
             .WithAuthor("Message Deleted", message.Author.GetAvatarUrl())
@@ -79,13 +79,13 @@ public class ModerationLog : IInjectable
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
     }
 
-    private async Task OnUserBanned(SocketUser user, SocketGuild guild)
+    private async Task OnUserBannedAsync(SocketUser user, SocketGuild guild)
     {
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Moderation.LogChannelId == 0)
+        if (config.ModLogChannelId == 0)
             return;
 
-        var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
+        var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         var auditLog = await guild.GetAuditLogsAsync(1, actionType: ActionType.Ban).FlattenAsync()
             .ConfigureAwait(false);
@@ -102,13 +102,13 @@ public class ModerationLog : IInjectable
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
     }
 
-    private async Task OnUserUnbanned(SocketUser user, SocketGuild guild)
+    private async Task OnUserUnbannedAsync(SocketUser user, SocketGuild guild)
     {
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Moderation.LogChannelId == 0)
+        if (config.ModLogChannelId == 0)
             return;
 
-        var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
+        var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         var auditLog = await guild.GetAuditLogsAsync(1, actionType: ActionType.Unban).FlattenAsync()
             .ConfigureAwait(false);
@@ -124,14 +124,14 @@ public class ModerationLog : IInjectable
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
     }
 
-    private async Task OnRoleCreated(SocketRole role)
+    private async Task OnRoleCreatedAsync(SocketRole role)
     {
         var guild = role.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Moderation.LogChannelId == 0)
+        if (config.ModLogChannelId == 0)
             return;
 
-        var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
+        var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         var auditLog = await guild.GetAuditLogsAsync(1, actionType: ActionType.RoleCreated).FlattenAsync()
             .ConfigureAwait(false);
@@ -147,14 +147,14 @@ public class ModerationLog : IInjectable
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
     }
 
-    private async Task OnRoleDeleted(SocketRole role)
+    private async Task OnRoleDeletedAsync(SocketRole role)
     {
         var guild = role.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Moderation.LogChannelId == 0)
+        if (config.ModLogChannelId == 0)
             return;
 
-        var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
+        var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         var auditLog = await guild.GetAuditLogsAsync(1, actionType: ActionType.RoleDeleted).FlattenAsync()
             .ConfigureAwait(false);
@@ -171,14 +171,14 @@ public class ModerationLog : IInjectable
     }
 
 
-    private async Task OnInviteCreated(SocketInvite invite)
+    private async Task OnInviteCreatedAsync(SocketInvite invite)
     {
         var guild = invite.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Moderation.LogChannelId == 0)
+        if (config.ModLogChannelId == 0)
             return;
 
-        var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
+        var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         var embed = new EmbedBuilder()
             .WithAuthor("Invite Created", invite.Inviter.GetAvatarUrl())
@@ -192,14 +192,14 @@ public class ModerationLog : IInjectable
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
     }
 
-    private async Task OnInviteDeleted(SocketGuildChannel channel, string inviteCode)
+    private async Task OnInviteDeletedAsync(SocketGuildChannel channel, string inviteCode)
     {
         var guild = channel.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Moderation.LogChannelId == 0)
+        if (config.ModLogChannelId == 0)
             return;
 
-        var logChannel = guild.GetTextChannel(config.Moderation.LogChannelId);
+        var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         var embed = new EmbedBuilder()
             .WithAuthor("Invite Deleted", guild.CurrentUser.GetAvatarUrl())

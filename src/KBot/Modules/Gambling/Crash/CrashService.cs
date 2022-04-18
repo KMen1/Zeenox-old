@@ -7,27 +7,27 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models.User;
+using KBot.Models;
 using KBot.Services;
 
 namespace KBot.Modules.Gambling.Crash;
 
 public class CrashService : IInjectable
 {
-    private readonly MongoService Database;
-    private readonly List<CrashGame> Games = new();
-    private readonly RandomNumberGenerator Generator = RandomNumberGenerator.Create();
+    private readonly MongoService _mongo;
+    private readonly List<CrashGame> _games = new();
+    private readonly RandomNumberGenerator _generator = RandomNumberGenerator.Create();
 
-    public CrashService(MongoService database)
+    public CrashService(MongoService mongo)
     {
-        Database = database;
+        _mongo = mongo;
     }
 
     public CrashGame CreateGame(SocketUser user, IUserMessage msg, int bet)
     {
         var crashPoint = GenerateCrashPoint();
         var game = new CrashGame(user, msg, bet, crashPoint);
-        Games.Add(game);
+        _games.Add(game);
         game.GameEnded += OnGameEndedAsync;
         return game;
     }
@@ -36,40 +36,53 @@ public class CrashService : IInjectable
     {
         var game = (CrashGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
-        Games.Remove(game);
-        await Database.UpdateUserAsync(game.Guild, game.User, x =>
+        _games.Remove(game);
+        if (e.IsWin)
         {
-            if (e.IsWin)
+            await _mongo.AddTransactionAsync(new Transaction(
+                e.GameId,
+                TransactionType.Crash,
+                e.Prize,
+                e.Description)).ConfigureAwait(false);
+
+            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
             {
-                x.Gambling.Balance += e.Prize;
-                x.Gambling.Wins++;
-                x.Gambling.MoneyWon += e.Prize - game.Bet;
-                x.Transactions.Add(new Transaction(e.GameId, TransactionType.Gambling, e.Prize, e.Description));
-            }
-            else
-            {
-                x.Gambling.Losses++;
-                x.Gambling.MoneyLost += game.Bet;
-            }
+                x.Balance += e.Prize;
+                x.Wins++;
+                x.MoneyWon += e.Prize;
+                x.TransactionIds.Add(e.GameId);
+            }).ConfigureAwait(false);
+            return;
+        }
+        await _mongo.AddTransactionAsync(new Transaction(
+                e.GameId,
+                TransactionType.Crash,
+                -game.Bet,
+                e.Description)).ConfigureAwait(false);
+        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+        {
+            x.Balance -= game.Bet;
+            x.Losses++;
+            x.MoneyLost += game.Bet;
+            x.TransactionIds.Add(e.GameId);
         }).ConfigureAwait(false);
-        if (e.IsWin) await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
     }
 
     private double GenerateCrashPoint()
     {
         var e = Math.Pow(2, 256);
-        var h = Generator.NextDouble(0, e - 1);
+        var h = _generator.NextDouble(0, e - 1);
         return 0.80 * e / (e - h);
     }
 
     public CrashGame GetGame(string id)
     {
-        return Games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id == id);
     }
 
     public async Task StopGameAsync(string id)
     {
-        var game = Games.Find(x => x.Id == id);
+        var game = _games.Find(x => x.Id == id);
         if (game == null)
             return;
         await game.StopAsync().ConfigureAwait(false);
@@ -140,7 +153,7 @@ public sealed class CrashGame : IGamblingGame
     public Task StopAsync()
     {
         TokenSource.Cancel();
-        OnGameEnded(new GameEndedEventArgs(Id, Bet + Profit, $"CR - {Multiplier:0.0}x", false));
+        OnGameEnded(new GameEndedEventArgs(Id, Profit, $"CR - {Multiplier:0.0}x", false));
         return Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().CrashEmbed(this, $"Stopped at: `{Multiplier:0.00}x`\n" +

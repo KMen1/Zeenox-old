@@ -43,25 +43,25 @@ public class LevelingModule : IInjectable
                 var xp = item.Item2;
                 var user = item.Item1;
                 var config = await _database.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
-                var oldUserData = await _database.GetUserAsync(user.Guild, user).ConfigureAwait(false);
+                var oldUserData = await _database.GetUserAsync(user).ConfigureAwait(false);
                 var newUserData = await _database.UpdateUserAsync(user.Guild, user, x =>
                 {
                     x.Xp += xp;
 
-                    if (x.Xp < x.XpNeeded) return;
-                    switch (xp % x.XpNeeded)
+                    if (x.Xp < x.RequiredXp) return;
+                    switch (xp % x.RequiredXp)
                     {
                         case 0:
                         {
-                            x.Level += x.Xp / x.XpNeeded;
+                            x.Level += x.Xp / x.RequiredXp;
                             x.Xp = 0;
                             break;
                         }
                         case > 0:
                         {
-                            x.Level += x.Xp / x.XpNeeded;
+                            x.Level += x.Xp / x.RequiredXp;
                             var total = 0;
-                            for (var i = x.Level; i < x.Level + x.Xp / x.XpNeeded; i++)
+                            for (var i = x.Level; i < x.Level + x.Xp / x.RequiredXp; i++)
                                 total += (int) Math.Pow(i * 4, 2);
                             x.Xp -= total;
                             break;
@@ -71,9 +71,9 @@ public class LevelingModule : IInjectable
 
                 if (newUserData.Level == oldUserData.Level)
                     continue;
-                toNotify.Add((item.Item1, newUserData.Level, config.Leveling.AnnounceChannelId));
+                toNotify.Add((item.Item1, newUserData.Level, config.LevelUpChannelId));
 
-                var lowerLevelRoles = config.Leveling.LevelRoles.FindAll(x => x.Level <= newUserData.Level);
+                var lowerLevelRoles = config.LevelRoles.FindAll(x => x.Level <= newUserData.Level);
                 if (lowerLevelRoles.Count == 0) continue;
 
                 var roles = lowerLevelRoles.OrderByDescending(x => x.Level).ToList();
@@ -119,7 +119,7 @@ public class LevelingModule : IInjectable
             return;
 
         var config = await _database.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
-        if (!config.Leveling.Enabled) return;
+        if (config.LevelUpChannelId == 0) return;
 
         _ = Task.Run(() =>
         {
@@ -141,7 +141,7 @@ public class LevelingModule : IInjectable
 
         var guild = user.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.Leveling.Enabled) return;
+        if (config.LevelUpChannelId == 0) return;
 
         _ = Task.Run(async () =>
         {
@@ -173,7 +173,7 @@ public class LevelingModule : IInjectable
     private async Task ScanUserAsync(SocketGuildUser user)
     {
         if (IsActive(user))
-            await _database.UpdateUserAsync(user.Guild, user, x => x.LastVoiceActivityDate = DateTime.UtcNow)
+            await _database.UpdateUserAsync(user.Guild, user, x => x.VoiceChannelJoin = DateTime.UtcNow)
                 .ConfigureAwait(false);
         else
             await UserLeftChannelAsync(user).ConfigureAwait(false);
@@ -181,13 +181,13 @@ public class LevelingModule : IInjectable
 
     private async Task UserLeftChannelAsync(SocketGuildUser user)
     {
-        var dbUser = await _database.GetUserAsync(user.Guild, user).ConfigureAwait(false);
+        var dbUser = await _database.GetUserAsync(user).ConfigureAwait(false);
 
-        var joinDate = dbUser.LastVoiceActivityDate ?? DateTime.MinValue;
-        var minutes = (int) (DateTime.UtcNow - joinDate).TotalMinutes;
-        if (minutes < 1)
+        var joinDate = dbUser.VoiceChannelJoin;
+        var seconds = (int) (DateTime.UtcNow - joinDate).TotalSeconds;
+        if (seconds < 10)
             return;
-        _XpQueue.Enqueue((user, minutes * 100));
+        _XpQueue.Enqueue((user, seconds));
     }
 
     private static bool IsActive(IVoiceState user)

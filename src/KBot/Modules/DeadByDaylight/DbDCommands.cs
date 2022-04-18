@@ -34,7 +34,7 @@ public class DbDCommands : SlashModuleBase
     [SlashCommand("set", "Sets the channel to receive weekyl shrines")]
     public async Task SetDbdChannelAsync(ITextChannel channel)
     {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.DbdChannelId = channel.Id).ConfigureAwait(false);
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.DbdNotificationChannelId = channel.Id).ConfigureAwait(false);
         await RespondAsync("Channel set to receive weekly shrines", ephemeral: true).ConfigureAwait(false);
     }
 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using Discord;
 using KBot.Modules.Music;
@@ -32,14 +34,15 @@ public static class GenericExtensions
             .WithButton(" ", "previous", emote: new Emoji("⏮"), disabled: !player.CanGoBack, row: 0)
             .WithButton(" ", "pause", emote: player.State == PlayerState.Playing ? new Emoji("⏸") : new Emoji("▶"),
                 row: 0)
-            .WithButton(" ", "stop", emote: new Emoji("⏹"), row: 0, style: ButtonStyle.Danger)
+            .WithButton(" ", "stop", emote: new Emoji("⏹"), row: 0)
             .WithButton(" ", "next", emote: new Emoji("⏭"), disabled: !player.CanGoForward, row: 0)
             .WithButton(" ", "volumedown", emote: new Emoji("🔉"), row: 1, disabled: player.Volume == 0)
-            .WithButton(" ", "repeat", emote: new Emoji("🔁"), row: 1)
+            .WithButton("L", "repeat", emote: new Emoji("🔁"), row: 1)
+            .WithButton("A", "autoplay", emote: new Emoji("🔁"), row: 1)
             .WithButton(" ", "clearfilters", emote: new Emoji("🗑️"), row: 1)
             .WithButton(" ", "volumeup", emote: new Emoji("🔊"), row: 1, disabled: player.Volume == 1.0f)
             .WithSelectMenu(new SelectMenuBuilder()
-                .WithPlaceholder("Szűrő kiválasztása")
+                .WithPlaceholder("Select Filter")
                 .WithCustomId("filterselectmenu")
                 .WithMinValues(1)
                 .WithMaxValues(1)
@@ -71,5 +74,14 @@ public static class GenericExtensions
         var unixTimestamp = date.Ticks - new DateTime(1970, 1, 1).Ticks;
         unixTimestamp /= TimeSpan.TicksPerSecond;
         return unixTimestamp;
+    }
+    
+    public static List<List<T>> ChunkBy<T>(this List<T> source, int chunkSize) 
+    {
+        return source
+            .Select((x, i) => new { Index = i, Value = x })
+            .GroupBy(x => x.Index / chunkSize)
+            .Select(x => x.Select(v => v.Value).ToList())
+            .ToList();
     }
 }

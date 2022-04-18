@@ -7,25 +7,25 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models.User;
+using KBot.Models;
 using KBot.Services;
 
 namespace KBot.Modules.Gambling.Towers;
 
 public class TowersService : IInjectable
 {
-    private readonly MongoService Database;
-    private readonly List<TowersGame> Games = new();
+    private readonly MongoService _mongo;
+    private readonly List<TowersGame> _games = new();
 
-    public TowersService(MongoService database)
+    public TowersService(MongoService mongo)
     {
-        Database = database;
+        _mongo = mongo;
     }
 
     public TowersGame CreateGame(SocketUser user, IUserMessage message, int bet, Difficulty difficulty)
     {
         var game = new TowersGame(user, message, bet, difficulty);
-        Games.Add(game);
+        _games.Add(game);
         game.GameEnded += HandleGameEndedAsync;
         return game;
     }
@@ -34,28 +34,40 @@ public class TowersService : IInjectable
     {
         var game = (TowersGame) sender!;
         game.GameEnded -= HandleGameEndedAsync;
-        Games.Remove(game);
-        await Database.UpdateUserAsync(game.Guild, game.User, x =>
+        _games.Remove(game);
+        if (e.IsWin)
         {
-            if (e.IsWin)
+            await _mongo.AddTransactionAsync(new Transaction(
+                game.Id,
+                TransactionType.Towers,
+                e.Prize,
+                e.Description)).ConfigureAwait(false);
+            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
             {
-                x.Gambling.Balance += e.Prize;
-                x.Gambling.Wins++;
-                x.Gambling.MoneyWon += e.Prize - game.Bet;
-                x.Transactions.Add(new Transaction(e.GameId, TransactionType.Gambling, e.Prize, e.Description));
-            }
-            else
-            {
-                x.Gambling.Losses++;
-                x.Gambling.MoneyLost += game.Bet;
-            }
+                x.Balance += e.Prize;
+                x.Wins++;
+                x.MoneyWon += e.Prize;
+                x.TransactionIds.Add(game.Id);
+            }).ConfigureAwait(false);
+            return;
+        }
+        await _mongo.AddTransactionAsync(new Transaction(
+            game.Id,
+            TransactionType.Towers,
+            -game.Bet,
+            e.Description)).ConfigureAwait(false);
+        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+        {
+            x.Balance -= game.Bet;
+            x.Losses++;
+            x.MoneyLost += game.Bet;
+            x.TransactionIds.Add(game.Id);
         }).ConfigureAwait(false);
-        if (e.IsWin) await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
     }
 
     public TowersGame GetGame(string id)
     {
-        return Games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id == id);
     }
 }
 
@@ -149,7 +161,7 @@ public sealed class TowersGame : IGamblingGame
             return;
         }
 
-        Prize = (int) Math.Round(Bet * Multiplier);
+        Prize = (int) Math.Round(Bet * Multiplier) - Bet;
 
         if (x == 5)
         {
@@ -181,7 +193,7 @@ public sealed class TowersGame : IGamblingGame
         await Message.ModifyAsync(z => z.Components = comp.Build()).ConfigureAwait(false);
     }
 
-    public async Task<int> StopAsync()
+    public async Task StopAsync()
     {
         var prize = Lost ? 0 : Prize;
         var revealComponents = new ComponentBuilder();
@@ -206,7 +218,6 @@ public sealed class TowersGame : IGamblingGame
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
         OnGameEnded(new GameEndedEventArgs(Id, prize, "TW - Lose", false));
-        return prize;
     }
 
     private void OnGameEnded(GameEndedEventArgs e)

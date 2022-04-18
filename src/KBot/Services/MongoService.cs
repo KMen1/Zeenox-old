@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using KBot.Models;
-using KBot.Models.Guild;
-using KBot.Models.User;
 using Microsoft.Extensions.Caching.Memory;
 using MongoDB.Driver;
 
@@ -16,182 +14,160 @@ public class MongoService : IInjectable
 {
     private readonly IMemoryCache _cache;
     private readonly DiscordSocketClient _client;
-    private readonly IMongoCollection<Guild> _collection;
+    private readonly IMongoCollection<GuildConfig> _configCollection;
+    private readonly IMongoCollection<User> _userCollection;
+    private readonly IMongoCollection<Transaction> _transactionCollection;
+    private readonly IMongoCollection<Warn> _warnCollection;
+    private readonly IMongoCollection<ButtonRoleMessage> _brCollection;
 
     public MongoService(BotConfig config, IMemoryCache cache, IMongoDatabase database, DiscordSocketClient client)
     {
         _cache = cache;
         _client = client;
-        _collection = database.GetCollection<Guild>(config.MongoDb.Collection);
+        _configCollection = database.GetCollection<GuildConfig>(config.MongoDb.ConfigCollection);
+        _userCollection = database.GetCollection<User>(config.MongoDb.UserCollection);
+        _transactionCollection = database.GetCollection<Transaction>(config.MongoDb.TransactionCollection);
+        _warnCollection = database.GetCollection<Warn>(config.MongoDb.WarnCollection);
+        _brCollection = database.GetCollection<ButtonRoleMessage>(config.MongoDb.ButtonRoleCollection);
     }
 
-    public async Task FixUsersAsync(SocketGuild vguild)
+    public Task CreateGuildConfigAsync(IGuild guild)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vguild.Id).ConfigureAwait(false)).First();
-        foreach (var user in vguild.Users)
-        {
-            if (!guild.Users.Exists(x => x.Id == user.Id))
-            {
-                guild.Users.Add(new User(user));
-            }
-        }
-        foreach (var guildUser in guild.Users)
-        {
-            guildUser.Roles ??= new List<ulong>();
-            guildUser.Gambling ??= new Gambling();
-            guildUser.Transactions ??= new List<Transaction>();
-            guildUser.Warns ??= new List<Warn>();
-            if (guildUser.Level == 0)
-                guildUser.Level = 1;
-        }
-        await _collection.ReplaceOneAsync(x => x.DocId == guild.DocId, guild).ConfigureAwait(false);
+        return _configCollection.InsertOneAsync(new GuildConfig(guild));
     }
-
-    public Task AddGuildAsync(List<SocketGuildUser> users)
-    {
-        var guild = new Guild(users);
-        return _collection.InsertOneAsync(guild);
-    }
-
+    
     public Task<GuildConfig> GetGuildConfigAsync(IGuild guild)
     {
         return _cache.GetOrCreateAsync(guild.Id.ToString(), async x =>
         {
             x.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
-            return (await _collection.FindAsync(y => y.Id == guild.Id).ConfigureAwait(false)).First().Config;
+            return (await _configCollection.FindAsync(y => y.GuildId == guild.Id).ConfigureAwait(false)).FirstOrDefault();
         });
     }
 
-    public async Task<Guild> GetGuildAsync(IGuild vGuild)
+    public Task AddReactionRoleMessageAsync(ButtonRoleMessage message)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        return guild;
-    }
-
-    public async Task AddReactionRoleMessageAsync(IGuild vGuild, ButtonRoleMessage message)
-    {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        guild.ButtonRoles.Add(message);
-        var filter = Builders<Guild>.Filter.Eq(x => x.Id, vGuild.Id);
-        var update = Builders<Guild>.Update.Set(x => x.ButtonRoles, guild.ButtonRoles);
-        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
+        return _brCollection.InsertOneAsync(message);
     }
 
     public async Task<ButtonRoleMessage> GetReactionRoleMessagesAsync(IGuild vGuild, ulong messageId)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        return guild.ButtonRoles.Find(x => x.MessageId == messageId);
+        var message = await _brCollection.FindAsync(x => x.GuildId == vGuild.Id && x.MessageId == messageId).ConfigureAwait(false);
+        return message.FirstOrDefault();
     }
 
     public async Task<(bool, ButtonRoleMessage)> UpdateReactionRoleMessageAsync(IGuild vGuild, ulong messageId,
         Action<ButtonRoleMessage> action)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        var index = guild.ButtonRoles.FindIndex(x => x.MessageId == messageId);
-        if (index == -1) return (false, null);
-        action(guild.ButtonRoles[index]);
-        var filter = Builders<Guild>.Filter.Eq(x => x.Id, vGuild.Id);
-        var update = Builders<Guild>.Update.Set(x => x.ButtonRoles, guild.ButtonRoles);
-        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
-        return (true, guild.ButtonRoles[index]);
+        var messages = await _brCollection.FindAsync(x => x.GuildId == vGuild.Id && x.MessageId == messageId).ConfigureAwait(false);
+        var message = messages.FirstOrDefault();
+        if (message is null)
+            return (false, null);
+        action(message);
+        await _brCollection.ReplaceOneAsync(x => x.GuildId == vGuild.Id && x.MessageId == messageId, message).ConfigureAwait(false);
+        return (true, message);
     }
 
-    public async Task AddUserAsync(IGuild vGuild, SocketGuildUser user)
+    public async Task<User> AddUserAsync(SocketGuildUser user)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        guild.Users.Add(new User(user));
-        var filter = Builders<Guild>.Filter.Eq(x => x.Id, vGuild.Id);
-        var update = Builders<Guild>.Update.Set(x => x.Users, guild.Users);
-        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
+        var users = await _userCollection.FindAsync(x => x.UserId == user.Id && x.GuildId == user.Guild.Id).ConfigureAwait(false);
+        if (await users.AnyAsync().ConfigureAwait(false))
+            return users.First();
+        var newUser = new User(user);
+        await _userCollection.InsertOneAsync(newUser).ConfigureAwait(false);
+        return newUser;
     }
 
-    public async Task<bool> CheckIfGuildIsInDbAsync(IGuild guild)
+    public async ValueTask<User> GetUserAsync(SocketGuildUser vUser)
     {
-        return await (await _collection.FindAsync(x => x.Id == guild.Id).ConfigureAwait(false))
-            .AnyAsync().ConfigureAwait(false);
-    }
-
-    public async ValueTask<User> GetUserAsync(IGuild vGuild, SocketUser vUser)
-    {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        return guild.Users.Find(x => x.Id == vUser.Id);
+        var user = (await _userCollection.FindAsync(x => x.GuildId == vUser.Guild.Id && x.UserId == vUser.Id)
+            .ConfigureAwait(false)).FirstOrDefault();
+        if (user is null)
+            return await AddUserAsync(vUser).ConfigureAwait(false);
+        return user;
     }
 
     public async Task<User> UpdateUserAsync(IGuild vGuild, SocketUser user, Action<User> action)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        var index = guild.Users.FindIndex(x => x.Id == user.Id);
-        if (index == -1)
-        {
-            guild.Users.Add(new User(user,
-                (await vGuild.GetUserAsync(user.Id).ConfigureAwait(false)).RoleIds.ToList()));
-            index = guild.Users.Count - 1;
-        }
-
-        var dbUser = guild.Users[index];
+        var dbUser = (await _userCollection.FindAsync(x => x.GuildId == vGuild.Id && x.UserId == user.Id).ConfigureAwait(false)).FirstOrDefault();
+        if (dbUser is null)
+            await AddUserAsync(user as SocketGuildUser).ConfigureAwait(false);
         action(dbUser);
-        var filter = Builders<Guild>.Filter.Eq(x => x.Id, vGuild.Id);
-        var update = Builders<Guild>.Update.Set(x => x.Users[index], dbUser);
-        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
+        await _userCollection.ReplaceOneAsync(x => x.GuildId == vGuild.Id && x.UserId == user.Id, dbUser).ConfigureAwait(false);
         return dbUser;
     }
 
-    public async Task<User> UpdateBotUserAsync(IGuild vGuild, Action<User> action)
+    public Task AddWarnAsync(Warn warn)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        var index = guild.Users.FindIndex(x => x.Id == _client.CurrentUser.Id);
-        var dbUser = guild.Users[index];
-        action(dbUser);
-        var filter = Builders<Guild>.Filter.Eq(x => x.Id, vGuild.Id);
-        var update = Builders<Guild>.Update.Set(x => x.Users[index], dbUser);
-        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
-        return dbUser;
+        return _warnCollection.InsertOneAsync(warn);
+    }
+    
+    public async Task<List<Warn>> GetWarnsAsync(SocketGuildUser user)
+    {
+        var warns = await _warnCollection.FindAsync(x => x.GuildId == user.Guild.Id && x.GivenToId == user.Id).ConfigureAwait(false);
+        return warns.ToList();
+    }
+    
+    public async Task<Warn> GetWarnAsync(string warnId)
+    {
+        var warns = await _warnCollection.FindAsync(x => x.WarnId == warnId).ConfigureAwait(false);
+        return warns.FirstOrDefault();
     }
 
-    public async Task<List<User>> GetTopUsersAsync(IGuild vGuild, int users)
+    public async Task<bool> RemoveWarnAsync(string warnId)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        guild.Users.ForEach(x => x.Xp += x.TotalXp);
-        return guild.Users.OrderByDescending(x => x.Xp).Take(users).ToList();
+        var result = await _warnCollection.DeleteOneAsync(x => x.WarnId == warnId).ConfigureAwait(false);
+        return result.IsAcknowledged;
     }
 
-    public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(ulong guildId, int limit)
+    public async Task<List<User>> GetTopUsersAsync(IGuild vGuild, int limit)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == guildId).ConfigureAwait(false)).First();
-        return guild.Users.Where(x => x.OsuId != 0).Select(x => (x.Id, x.OsuId)).Take(limit).ToList();
+        var users = (await _userCollection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).ToList();
+        return users.OrderByDescending(x => x.TotalXp).Take(limit).ToList();
+    }
+
+    public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(IGuild guild, int limit)
+    {
+        var users = await _userCollection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false);
+        return users.ToList().Where(x => x.OsuId != 0).Take(limit).Select(x => (x.UserId, x.OsuId)).ToList();
     }
 
     public async Task UpdateGuildConfigAsync(IGuild vGuild, GuildConfig config)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        guild.Config = config;
-        await _collection.ReplaceOneAsync(x => x.DocId == guild.DocId, guild).ConfigureAwait(false);
+        await _configCollection.ReplaceOneAsync(x => x.GuildId == config.GuildId, config).ConfigureAwait(false);
         _cache.Remove(vGuild.Id.ToString());
     }
 
-    public async Task<GuildConfig> UpdateGuildConfigAsync(IGuild guild, Action<GuildConfig> action)
+    public async Task UpdateGuildConfigAsync(IGuild guild, Action<GuildConfig> action)
     {
-        var config = (await _collection.FindAsync(x => x.Id == guild.Id).ConfigureAwait(false)).First().Config;
+        var config = (await _configCollection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false)).FirstOrDefault();
         action(config);
-        var filter = Builders<Guild>.Filter.Eq(x => x.Id, guild.Id);
-        var update = Builders<Guild>.Update.Set(x => x.Config, config);
-        await _collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
+        await _configCollection.ReplaceOneAsync(x => x.GuildId == config.GuildId, config).ConfigureAwait(false);
         _cache.Remove(guild.Id.ToString());
-        return config;
     }
 
-    public async Task UpdateGuildAsync(IGuild vGuild, Action<Guild> action)
+    public Task AddTransactionAsync(Transaction transaction)
     {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        action(guild);
-        await _collection.ReplaceOneAsync(x => x.Id == vGuild.Id, guild).ConfigureAwait(false);
+        return _transactionCollection.InsertOneAsync(transaction);
     }
+    
+    public async Task<List<Transaction>> GetTransactionsAsync(IGuild guild, SocketUser user)
+    {
+        var users = await _userCollection.FindAsync(x => x.GuildId == guild.Id && x.UserId == user.Id).ConfigureAwait(false);
+        var dbUser = users.FirstOrDefault();
 
-    public async Task<(bool, bool)> GetGambleValuesAsync(IGuild vGuild, IUser user, int bet)
-    {
-        var guild = (await _collection.FindAsync(x => x.Id == vGuild.Id).ConfigureAwait(false)).First();
-        var userModel = guild.Users.Find(x => x.Id == user.Id);
-        var botModel = guild.Users.Find(x => x.Id == _client.CurrentUser.Id);
-        return (userModel!.Money >= bet, bet < botModel!.Money);
+        var transactions = new List<Transaction>();
+        foreach (var transactionId in dbUser.TransactionIds)
+        {
+            transactions.Add((await _transactionCollection.FindAsync(x => x.Id == transactionId).ConfigureAwait(false)).FirstOrDefault());
+        }
+
+        return transactions;
     }
+    
+    public async Task<Transaction> GetTransactionAsync(string id)
+    {
+        return (await _transactionCollection.FindAsync(x => x.Id == id).ConfigureAwait(false)).FirstOrDefault();
+    }
+    
 }

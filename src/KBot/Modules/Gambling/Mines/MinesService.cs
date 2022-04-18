@@ -6,20 +6,19 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models.User;
+using KBot.Models;
 using KBot.Services;
 
 namespace KBot.Modules.Gambling.Mines;
 
 public class MinesService : IInjectable
 {
-    private readonly MongoService _database;
-    private readonly List<MinesGame> _games;
+    private readonly MongoService _mongo;
+    private readonly List<MinesGame> _games = new();
 
-    public MinesService(MongoService database)
+    public MinesService(MongoService mongo)
     {
-        _database = database;
-        _games = new List<MinesGame>();
+        _mongo = mongo;
     }
 
     public MinesGame CreateGame(SocketUser user, IUserMessage message, int bet, int mines)
@@ -35,22 +34,37 @@ public class MinesService : IInjectable
         var game = (MinesGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
         _games.Remove(game);
-        await _database.UpdateUserAsync(game.Guild, game.User, x =>
+
+        if (e.IsWin)
         {
-            if (e.IsWin)
+            await _mongo.AddTransactionAsync(new Transaction(
+                e.GameId,
+                TransactionType.Mines,
+                e.Prize,
+                e.Description)).ConfigureAwait(false);
+
+            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
             {
-                x.Gambling.Balance += e.Prize;
-                x.Gambling.Wins++;
-                x.Gambling.MoneyWon += e.Prize - game.Bet;
-                x.Transactions.Add(new Transaction(e.GameId, TransactionType.Gambling, e.Prize, e.Description));
-            }
-            else
-            {
-                x.Gambling.Losses++;
-                x.Gambling.MoneyLost += game.Bet;
-            }
+                x.Balance += e.Prize;
+                x.Wins++;
+                x.MoneyWon += e.Prize;
+                x.TransactionIds.Add(e.GameId);
+            }).ConfigureAwait(false);
+            return;
+        }
+        await _mongo.AddTransactionAsync(new Transaction(
+            e.GameId,
+            TransactionType.Mines,
+            -game.Bet,
+            e.Description)).ConfigureAwait(false);
+
+        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+        {
+            x.Balance -= game.Bet;
+            x.Losses++;
+            x.MoneyLost += game.Bet;
+            x.TransactionIds.Add(e.GameId);
         }).ConfigureAwait(false);
-        if (e.IsWin) await _database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
     }
 
     public MinesGame GetGame(string id)

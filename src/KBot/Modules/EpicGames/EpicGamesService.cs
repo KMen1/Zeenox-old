@@ -33,7 +33,7 @@ public class EpicGamesService : IInjectable
     {
         var next = DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).AddHours(17).AddMinutes(10).DateTime;
         await _redis.SetEpicRefreshDateAsync(next).ConfigureAwait(false);
-        
+
         while (true)
         {
             await Task.Delay(TimeSpan.FromMinutes(30)).ConfigureAwait(false);
@@ -46,9 +46,9 @@ public class EpicGamesService : IInjectable
             foreach (var guild in _client.Guilds)
             {
                 var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
-                if (config.EpicChannelId != 0)
+                if (config.EpicNotificationChannelId != 0)
                 {
-                    channels.Add(await _client.GetChannelAsync(config.EpicChannelId).ConfigureAwait(false) as ITextChannel);
+                    channels.Add(await _client.GetChannelAsync(config.EpicNotificationChannelId).ConfigureAwait(false) as ITextChannel);
                 }
             }
             var embeds = games.Select(game =>
@@ -76,7 +76,7 @@ public class EpicGamesService : IInjectable
             .GetStringAsync(
                 "https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=US&allowCountries=HU")
             .ConfigureAwait(false);
-        
+
         var search = EpicStore.FromJson(response);
         return search.CurrentGames;
     }

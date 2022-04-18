@@ -28,7 +28,12 @@ public class MongoDbConfig
 {
     public string ConnectionString { get; init; }
     public string Database { get; init; }
-    public string Collection { get; init; }
+    public string GuildCollection { get; init; }
+    public string ConfigCollection { get; init; }
+    public string UserCollection { get; init; }
+    public string TransactionCollection { get; init; }
+    public string WarnCollection { get; init; }
+    public string ButtonRoleCollection { get; init; }
 }
 
 public class OsuApiConfig

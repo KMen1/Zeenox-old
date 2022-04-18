@@ -1,19 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace KBot.Models;
 
-public class RedditModel
+public class Subreddit
 {
-    [JsonProperty("data")] public SubredditData Data { get; set; }
+    [JsonProperty("data")] private SubredditData Data { get; set; }
+    public List<Post> Posts => Data.Posts;
 }
 
 public class SubredditData
 {
-    [JsonProperty("children")] public List<PostObject> Posts { get; set; }
+    [JsonProperty("children")] public List<Post> Posts { get; set; }
 }
 
-public class PostObject
+public class Post
 {
     [JsonProperty("data")] private PostData Data { get; set; }
 

@@ -9,7 +9,7 @@ namespace KBot.Models;
 
 public partial class EpicStore
 {
-    [JsonProperty("data")] public Data Data { get; set; }
+    [JsonProperty("data")] private Data Data { get; set; }
 
     private IEnumerable<Game> Games => Data?.Catalog.SearchStore.Games;
 

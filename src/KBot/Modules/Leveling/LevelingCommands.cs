@@ -4,7 +4,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
-using KBot.Models.Guild;
+using KBot.Models;
 
 namespace KBot.Modules.Leveling;
 
@@ -22,7 +22,7 @@ public class Levels : SlashModuleBase
             return;
         }
 
-        var dbUser = await Database.GetUserAsync(Context.Guild, setUser).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)setUser).ConfigureAwait(false);
         var level = dbUser.Level;
         var requiredXP = Math.Pow(level * 4, 2);
         var xp = dbUser.Xp;
@@ -40,14 +40,14 @@ public class Levels : SlashModuleBase
     public async Task GetTopAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var top = await Database.GetTopUsersAsync(Context.Guild, 10).ConfigureAwait(false);
+        var top = await Mongo.GetTopUsersAsync(Context.Guild, 10).ConfigureAwait(false);
 
         var userColumn = "";
         var levelColumn = "";
 
         foreach (var user in top)
         {
-            userColumn += $"{top.IndexOf(user) + 1}. {Context.Guild.GetUser(user.Id).Mention}\n";
+            userColumn += $"{top.IndexOf(user) + 1}. {Context.Guild.GetUser(user.UserId).Mention}\n";
             levelColumn += $"{user.Level} ({user.Xp} XP)\n";
         }
 
@@ -63,15 +63,15 @@ public class Levels : SlashModuleBase
     public async Task GetDailyAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        var lastDaily = dbUser.DailyClaimDate ?? DateTime.MinValue;
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
+        var lastDaily = dbUser.DailyXpClaim;
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
             var xp = new Random().Next(100, 500);
-            await Database.UpdateUserAsync(Context.Guild, Context.User, x =>
+            await Mongo.UpdateUserAsync(Context.Guild, Context.User, x =>
             {
-                x.DailyClaimDate = DateTime.UtcNow;
+                x.DailyXpClaim = DateTime.UtcNow;
                 x.Xp += xp;
             }).ConfigureAwait(false);
             await FollowupWithEmbedAsync(Color.Green, $"Successfully collected your daily XP of {xp}", "",
@@ -91,7 +91,7 @@ public class Levels : SlashModuleBase
     public async Task ChangeXPAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.Xp += offset).ConfigureAwait(false);
+        var dbUser = await Mongo.UpdateUserAsync(Context.Guild, user, x => x.Xp += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "XP set!",
             $"{user.Mention} now has an XP of **{dbUser.Xp.ToString()}**").ConfigureAwait(false);
     }
@@ -101,7 +101,7 @@ public class Levels : SlashModuleBase
     public async Task ChangeLevelAsync(SocketUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.UpdateUserAsync(Context.Guild, user, x => x.Level += offset).ConfigureAwait(false);
+        var dbUser = await Mongo.UpdateUserAsync(Context.Guild, user, x => x.Level += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Level set!",
             $"{user.Mention} now has a level of **{dbUser.Level.ToString()}**").ConfigureAwait(false);
     }
@@ -110,7 +110,7 @@ public class Levels : SlashModuleBase
     [SlashCommand("setchannel", "Set the channel for level up messages")]
     public async Task SetChannelAsync(ITextChannel channel)
     {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AnnounceChannelId = channel.Id)
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.LevelUpChannelId = channel.Id)
             .ConfigureAwait(false);
         await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
     }
@@ -119,7 +119,7 @@ public class Levels : SlashModuleBase
     [SlashCommand("setafk", "Set the AFK channel")]
     public async Task SetAfkChannelAsync(IVoiceChannel channel)
     {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.AfkChannelId = channel.Id)
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.AfkChannelId = channel.Id)
             .ConfigureAwait(false);
         await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
     }
@@ -128,8 +128,8 @@ public class Levels : SlashModuleBase
     [SlashCommand("addrole", "Add a role to the leveling roles")]
     public async Task AddRoleAsync(IRole role, [MinValue(1)] int level)
     {
-        await Database
-            .UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.Add(new LevelRole(role.Id, level)))
+        await Mongo
+            .UpdateGuildConfigAsync(Context.Guild, x => x.LevelRoles.Add(new LevelRole(role.Id, level)))
             .ConfigureAwait(false);
         await RespondAsync("Role Added!", ephemeral: true).ConfigureAwait(false);
     }
@@ -138,7 +138,7 @@ public class Levels : SlashModuleBase
     [SlashCommand("removerole", "Remove a role from the leveling roles")]
     public async Task RemoveRoleAsync(IRole role)
     {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Leveling.LevelRoles.RemoveAll(y => y.Id == role.Id))
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.LevelRoles.RemoveAll(y => y.Id == role.Id))
             .ConfigureAwait(false);
         await RespondAsync("Role Removed", ephemeral: true).ConfigureAwait(false);
     }

@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using KBot.Models.Guild;
+using KBot.Models;
 
 namespace KBot.Modules.ButtonRoles;
 
@@ -21,9 +21,13 @@ public class ButtonRoleCommands : SlashModuleBase
             .Build();
 
         var msg = await Context.Channel.SendMessageAsync(embed: embed).ConfigureAwait(false);
-        await Database
-            .AddReactionRoleMessageAsync(Context.Guild,
-                new ButtonRoleMessage(Context.Channel.Id, msg.Id, title, description)).ConfigureAwait(false);
+        await Mongo
+            .AddReactionRoleMessageAsync(new ButtonRoleMessage(
+                Context.Guild.Id,
+                Context.Channel.Id,
+                msg.Id,
+                title,
+                description)).ConfigureAwait(false);
         var helpEmbed = new EmbedBuilder()
             .WithTitle("Message created!")
             .WithDescription(
@@ -48,7 +52,7 @@ public class ButtonRoleCommands : SlashModuleBase
             return;
         }
 
-        var (result, reactionRoleMessage) = await Database.UpdateReactionRoleMessageAsync(
+        var (result, reactionRoleMessage) = await Mongo.UpdateReactionRoleMessageAsync(
             Context.Guild,
             messageId,
             x => x.AddRole(new ButtonRole(role.Id, title, emote))
@@ -80,7 +84,7 @@ public class ButtonRoleCommands : SlashModuleBase
             return;
         }
 
-        var (result, reactionRoleMessage) = await Database.UpdateReactionRoleMessageAsync(
+        var (result, reactionRoleMessage) = await Mongo.UpdateReactionRoleMessageAsync(
             Context.Guild,
             messageId,
             x => x.RemoveRole(role)

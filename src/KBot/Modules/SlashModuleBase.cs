@@ -3,16 +3,14 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Models.Guild;
-using KBot.Models.User;
+using KBot.Models;
 using KBot.Services;
 
 namespace KBot.Modules;
 
 public abstract class SlashModuleBase : InteractionModuleBase<SocketInteractionContext>
 {
-    public MongoService Database { get; set; }
-    public SocketUser BotUser => Context.Client.CurrentUser;
+    public MongoService Mongo { get; set; }
 
     protected async Task<IUserMessage> FollowupWithEmbedAsync(Color color, string title, string description,
         string url = null, string imageUrl = null, bool ephemeral = false)
@@ -29,16 +27,11 @@ public abstract class SlashModuleBase : InteractionModuleBase<SocketInteractionC
 
     protected Task<GuildConfig> GetGuildConfigAsync()
     {
-        return Database.GetGuildConfigAsync(Context.Guild);
-    }
-
-    protected ValueTask<User> GetDbUser(SocketUser user)
-    {
-        return Database.GetUserAsync(Context.Guild, user);
+        return Mongo.GetGuildConfigAsync(Context.Guild);
     }
 
     protected Task<User> UpdateUserAsync(SocketUser user, Action<User> action)
     {
-        return Database.UpdateUserAsync(Context.Guild, user, action);
+        return Mongo.UpdateUserAsync(Context.Guild, user, action);
     }
 }

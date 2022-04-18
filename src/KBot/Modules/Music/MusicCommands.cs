@@ -135,11 +135,4 @@ public class MusicCommands : SlashModuleBase
         await RespondAsync(embed: await AudioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false), ephemeral: true)
             .ConfigureAwait(false);
     }
-
-    [SlashCommand("autoplay", "Toggles autoplay")]
-    public async Task ToggleAutoplayAsync()
-    {
-        await RespondAsync(embed: await AudioService.ToggleAutoplayAsync(Context.Guild).ConfigureAwait(false),
-            ephemeral: true).ConfigureAwait(false);
-    }
 }

@@ -1,36 +1,14 @@
 ﻿using System.Collections.Generic;
 using Discord;
-using Discord.WebSocket;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace KBot.Models.Guild;
-
-public class Guild
-{
-    public Guild(List<SocketGuildUser> users)
-    {
-        Id = users[0].Guild.Id;
-        Config = new GuildConfig();
-        Users = new List<User.User>();
-        ButtonRoles = new List<ButtonRoleMessage>();
-        users.ConvertAll(x => new User.User(x)).ForEach(x => Users.Add(x));
-    }
-
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string DocId { get; set; }
-
-    [BsonElement("guildid")] public ulong Id { get; set; }
-    [BsonElement("config")] public GuildConfig Config { get; set; }
-    [BsonElement("users")] public List<User.User> Users { get; set; }
-    [BsonElement("buttonroles")] public List<ButtonRoleMessage> ButtonRoles { get; set; }
-}
+namespace KBot.Models;
 
 public class ButtonRoleMessage
 {
-    public ButtonRoleMessage(ulong channelId, ulong messageId, string title, string description)
+    public ButtonRoleMessage(ulong guildId, ulong channelId, ulong messageId, string title, string description)
     {
+        GuildId = guildId;
         ChannelId = channelId;
         MessageId = messageId;
         Title = title;
@@ -38,11 +16,12 @@ public class ButtonRoleMessage
         Roles = new List<ButtonRole>();
     }
 
+    [BsonElement("guild_id")] public ulong GuildId { get; set; }
+    [BsonElement("channel_id")] public ulong ChannelId { get; set; }
+    [BsonId] public ulong MessageId { get; set; }
     [BsonElement("title")] public string Title { get; set; }
     [BsonElement("description")] public string Description { get; set; }
     [BsonElement("roles")] public List<ButtonRole> Roles { get; set; }
-    [BsonElement("messageid")] public ulong MessageId { get; set; }
-    [BsonElement("channelid")] public ulong ChannelId { get; set; }
 
     public bool AddRole(ButtonRole role)
     {
@@ -88,19 +67,7 @@ public class ButtonRole
         Emote = emote;
     }
 
-    [BsonElement("emote")] public string Emote { get; }
+    [BsonElement("role_id")] public ulong RoleId { get; }
     [BsonElement("title")] public string Title { get; }
-    [BsonElement("roleid")] public ulong RoleId { get; }
-}
-
-public class LevelRole
-{
-    public LevelRole(ulong id, int level)
-    {
-        Level = level;
-        Id = id;
-    }
-
-    [BsonElement("roleid")] public ulong Id { get; }
-    [BsonElement("level")] public int Level { get; }
+    [BsonElement("emote")] public string Emote { get; }
 }

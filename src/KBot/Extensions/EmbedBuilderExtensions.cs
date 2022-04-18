@@ -21,41 +21,6 @@ public static class EmbedBuilderExtensions
     private const string ErrorIcon = "https://i.ibb.co/SrZZggy/x.png";
     private const string PlayingGif = "https://bestanimations.com/media/discs/895872755cd-animated-gif-9.gif";
 
-    public static Embed MovieEventEmbed(this EmbedBuilder builder, SocketGuildEvent guildEvent, EventState embedType)
-    {
-        builder.WithTitle(guildEvent.Name)
-            .WithDescription(guildEvent.Description)
-            .WithTimestamp(DateTimeOffset.UtcNow)
-            .AddField("👨 Organizer", guildEvent.Creator.Mention, true)
-            .AddField("📅 Date", guildEvent.StartTime.ToString("yyyy. MM. dd. HH:mm"), true)
-            .AddField("🎙 Channel", ((SocketVoiceChannel) guildEvent.Channel).Mention, true);
-        switch (embedType)
-        {
-            case EventState.Scheduled:
-            {
-                builder.WithAuthor("NEW MOVIE SCHEDULED!", SuccessIcon).WithColor(Color.Orange);
-                break;
-            }
-            case EventState.Updated:
-            {
-                builder.WithAuthor("MOVIE EVENT UPDATED!", SuccessIcon).WithColor(Color.Orange);
-                break;
-            }
-            case EventState.Started:
-            {
-                builder.WithAuthor("MOVIE EVENT STARTED!", SuccessIcon).WithColor(Color.Green);
-                break;
-            }
-            case EventState.Cancelled:
-            {
-                builder.WithAuthor("MOVIE EVENT DELETED!", ErrorIcon).WithColor(Color.Red);
-                break;
-            }
-        }
-
-        return builder.Build();
-    }
-
     public static Embed BlackJackEmbed(this EmbedBuilder builder, BlackJackGame game, string desc = null,
         Color color = default)
     {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -15,32 +16,21 @@ public class GuildEvents : IInjectable
 {
     private readonly List<(SocketUser user, ulong channelId)> _channels;
     private readonly DiscordSocketClient _client;
-    private readonly MongoService _database;
+    private readonly MongoService _mongo;
 
     public GuildEvents(DiscordSocketClient client, MongoService database)
     {
         _client = client;
-        _database = database;
+        _mongo = database;
         client.GuildAvailable += ClientOnGuildAvailableAsync;
-        //client.GuildMemberUpdated += ClientOnGuildMemberUpdatedAsync;
         client.UserJoined += AnnounceUserJoinedAsync;
         client.UserLeft += AnnounceUserLeftAsync;
         client.UserBanned += AnnounceUserBannedAsync;
         client.UserUnbanned += AnnounceUserUnbannedAsync;
         client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
-        client.GuildScheduledEventCreated += guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Scheduled);
-        client.GuildScheduledEventUpdated += (_, after) => HandleScheduledEventAsync(after, EventState.Updated);
-        client.GuildScheduledEventStarted += guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Started);
-        client.GuildScheduledEventCancelled +=
-            guildEvent => HandleScheduledEventAsync(guildEvent, EventState.Cancelled);
         _channels = new List<(SocketUser user, ulong channelId)>();
         Log.Logger.Information("GuildEvents Module Loaded");
     }
-
-    /*private Task ClientOnGuildMemberUpdatedAsync(Cacheable<SocketGuildUser, ulong> arg1, SocketGuildUser arg2)
-    {
-        throw new System.NotImplementedException();
-    }*/
 
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser argUser, SocketVoiceState before, SocketVoiceState after)
     {
@@ -48,16 +38,16 @@ public class GuildEvents : IInjectable
         var guild = user.Guild;
         if (user.IsBot)
             return;
-        var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (!config.TemporaryVoice.Enabled)
+        var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
+        if (config.TemporaryVoiceCreateId == 0)
             return;
 
-        if (after.VoiceChannel is not null && after.VoiceChannel.Id == config.TemporaryVoice.CreateChannelId)
+        if (after.VoiceChannel is not null && after.VoiceChannel.Id == config.TemporaryVoiceCreateId)
         {
             var voiceChannel = await guild.CreateVoiceChannelAsync($"{user.Username} Társalgója", x =>
             {
                 x.UserLimit = 2;
-                x.CategoryId = config.TemporaryVoice.CategoryId;
+                x.CategoryId = config.TemporaryVoiceCategoryId;
                 x.Bitrate = 96000;
                 x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
                 {
@@ -84,37 +74,17 @@ public class GuildEvents : IInjectable
 
     private async Task ClientOnGuildAvailableAsync(SocketGuild guild)
     {
-        if (!await _database.CheckIfGuildIsInDbAsync(guild).ConfigureAwait(false))
+        if (await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false) is null)
         {
-            var users = _client.GetGuild(guild.Id).Users.ToList();
-            await _database.AddGuildAsync(users).ConfigureAwait(false);
-        }
-    }
-
-    private async Task HandleScheduledEventAsync(SocketGuildEvent guildEvent, EventState type)
-    {
-        var eventChannel = guildEvent.Channel;
-        var config = await _database.GetGuildConfigAsync(guildEvent.Guild).ConfigureAwait(false);
-        if (!config.MovieEvents.Enabled) return;
-
-        var streamingChannelId = config.MovieEvents.StreamChannelId;
-        var movieRoleId = config.MovieEvents.RoleId;
-        var movieEventAnnouncementChannelId = config.MovieEvents.AnnounceChannelId;
-        if (eventChannel is not null && eventChannel.Id == streamingChannelId)
-        {
-            var movieRole = guildEvent.Guild.GetRole(movieRoleId);
-            var notifyChannel = guildEvent.Guild.GetTextChannel(movieEventAnnouncementChannelId);
-            await notifyChannel.SendMessageAsync(movieRole.Mention,
-                    embed: new EmbedBuilder().MovieEventEmbed(guildEvent, type))
-                .ConfigureAwait(false);
+            await _mongo.CreateGuildConfigAsync(guild).ConfigureAwait(false);
         }
     }
 
     private async Task AnnounceUserJoinedAsync(SocketGuildUser user)
     {
         if (user.IsBot || user.IsWebhook) return;
-        var dbUser = await _database.GetUserAsync(user.Guild, user).ConfigureAwait(false);
-        var config = await _database.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
+        var dbUser = await _mongo.GetUserAsync(user).ConfigureAwait(false);
+        var config = await _mongo.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
         if (dbUser is not null)
             foreach (var roleId in dbUser.Roles)
             {
@@ -124,12 +94,12 @@ public class GuildEvents : IInjectable
                 await user.AddRoleAsync(role).ConfigureAwait(false);
             }
         else
-            await _database.AddUserAsync(user.Guild, user).ConfigureAwait(false);
+            await _mongo.AddUserAsync(user).ConfigureAwait(false);
 
-        await user.AddRoleAsync(config.Announcements.JoinRoleId).ConfigureAwait(false);
+        await user.AddRoleAsync(config.WelcomeRoleId).ConfigureAwait(false);
 
-        if (config.Announcements.JoinChannelId == 0) return;
-        var channel = user.Guild.GetTextChannel(config.Announcements.JoinChannelId);
+        if (config.WelcomeChannelId == 0) return;
+        var channel = user.Guild.GetTextChannel(config.WelcomeChannelId);
         var eb = new EmbedBuilder()
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
             .WithColor(Color.Green)
@@ -145,9 +115,9 @@ public class GuildEvents : IInjectable
     private async Task AnnounceUserLeftAsync(SocketGuild guild, SocketUser user)
     {
         if (user.IsBot || user.IsWebhook) return;
-        var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Announcements.LeftChannelId == 0) return;
-        var channel = guild.GetTextChannel(config.Announcements.LeftChannelId);
+        var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
+        if (config.LeaveChannelId == 0) return;
+        var channel = guild.GetTextChannel(config.LeaveChannelId);
         var eb = new EmbedBuilder()
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
             .WithColor(Color.Red)
@@ -162,15 +132,15 @@ public class GuildEvents : IInjectable
     private async Task AnnounceUserBannedAsync(SocketUser user, SocketGuild guild)
     {
         if (user.IsBot || user.IsWebhook) return;
-        var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Announcements.BanChannelId == 0) return;
+        var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
+        if (config.BanChannelId == 0) return;
 
         var log = await guild.GetAuditLogsAsync(1, actionType: ActionType.Ban).FlattenAsync().ConfigureAwait(false);
         var entry = log.First();
         var admin = entry.User;
         var reason = entry.Reason;
         
-        var channel = guild.GetTextChannel(config.Announcements.BanChannelId);
+        var channel = guild.GetTextChannel(config.BanChannelId);
         var eb = new EmbedBuilder()
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
             .WithColor(Color.Red)
@@ -187,9 +157,9 @@ public class GuildEvents : IInjectable
     private async Task AnnounceUserUnbannedAsync(SocketUser user, SocketGuild guild)
     {
         if (user.IsBot || user.IsWebhook) return;
-        var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
-        if (config.Announcements.UnbanChannelId == 0) return;
-        var channel = guild.GetTextChannel(config.Announcements.UnbanChannelId);
+        var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
+        if (config.UnbanChannelId == 0) return;
+        var channel = guild.GetTextChannel(config.UnbanChannelId);
         var eb = new EmbedBuilder()
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
             .WithColor(Color.Green)

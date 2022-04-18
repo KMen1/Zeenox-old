@@ -11,7 +11,11 @@
   "MongoDb": {
     "ConnectionString": "",
     "Database": "",
-    "Collection": ""
+    "ConfigCollection": "",
+    "UserCollection": "",
+    "TransactionCollection": "",
+    "WarnCollection": "",
+    "ButtonRoleCollection": ""
   },
   "OsuApi": {
     "AppId": 0,

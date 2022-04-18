@@ -11,7 +11,7 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models.User;
+using KBot.Models;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
 using Color = Discord.Color;
@@ -23,20 +23,20 @@ namespace KBot.Modules.Gambling.BlackJack;
 
 public class BlackJackService : IInjectable
 {
-    private readonly Cloudinary Cloudinary;
-    private readonly MongoService Database;
-    private readonly List<BlackJackGame> Games = new();
+    private readonly Cloudinary _cloudinary;
+    private readonly MongoService _mongo;
+    private readonly List<BlackJackGame> _games = new();
 
-    public BlackJackService(MongoService database, Cloudinary cloudinary)
+    public BlackJackService(MongoService mongo, Cloudinary cloudinary)
     {
-        Database = database;
-        Cloudinary = cloudinary;
+        _mongo = mongo;
+        _cloudinary = cloudinary;
     }
 
     public BlackJackGame CreateGame(SocketUser user, IUserMessage message, int stake)
     {
-        var game = new BlackJackGame(user, message, stake, Cloudinary);
-        Games.Add(game);
+        var game = new BlackJackGame(user, message, stake, _cloudinary);
+        _games.Add(game);
         game.GameEnded += OnGameEndedAsync;
         return game;
     }
@@ -45,33 +45,47 @@ public class BlackJackService : IInjectable
     {
         var game = (BlackJackGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
-        Games.Remove(game);
-        await Database.UpdateUserAsync(game.Guild, game.User, x =>
+        _games.Remove(game);
+
+        if (e.IsWin)
         {
-            if (e.IsWin)
+            await _mongo.AddTransactionAsync(new Transaction(
+                e.GameId,
+                TransactionType.Blackjack,
+                e.Prize,
+                e.Description)).ConfigureAwait(false);
+
+            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
             {
-                x.Gambling.Balance += e.Prize;
-                x.Gambling.Wins++;
-                x.Gambling.MoneyWon += e.Prize - game.Bet;
-                x.Transactions.Add(new Transaction(e.GameId, TransactionType.Gambling, e.Prize, e.Description));
-            }
-            else if (e.Prize == -1)
-            {
-                x.Gambling.Balance += game.Bet;
-            }
-            else
-            {
-                x.Gambling.Losses++;
-                x.Gambling.MoneyLost += game.Bet;
-            }
+                x.Balance += e.Prize;
+                x.Wins++;
+                x.MoneyWon += e.Prize;
+                x.TransactionIds.Add(e.GameId);
+            }).ConfigureAwait(false);
+            return;
+        }
+        if (e.Prize == -1)
+        {
+            return;
+        }
+        await _mongo.AddTransactionAsync(new Transaction(
+            e.GameId,
+            TransactionType.Blackjack,
+            -game.Bet,
+            e.Description)).ConfigureAwait(false);
+            
+        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+        {
+            x.Balance -= game.Bet;
+            x.Losses++;
+            x.MoneyLost += game.Bet;
+            x.TransactionIds.Add(e.GameId);
         }).ConfigureAwait(false);
-        if (e.IsWin || e.Prize == -1)
-            await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
     }
 
     public BlackJackGame GetGame(string id)
     {
-        return Games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id == id);
     }
 }
 
@@ -144,7 +158,7 @@ public sealed class BlackJackGame : IGamblingGame
             case 21:
             {
                 Hidden = false;
-                var reward = (int) (Bet * 2.5);
+                var reward = (int) (Bet * 2.5) - Bet;
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -169,7 +183,7 @@ public sealed class BlackJackGame : IGamblingGame
         {
             case > 21:
             {
-                var reward = Bet * 2;
+                var reward = (Bet * 2) - Bet;
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
@@ -198,12 +212,12 @@ public sealed class BlackJackGame : IGamblingGame
 
         if (PlayerScore == 21)
         {
-            var reward = (int) (Bet * 2.5);
+            var reward = (int) (Bet * 2.5) - Bet;
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"🥳 Player Wins! (BLACKJACK)\nYou won **{Bet}** credits!",
+                    $"🥳 Player Wins! (BLACKJACK)\nYou won **{reward}** credits!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
@@ -213,12 +227,12 @@ public sealed class BlackJackGame : IGamblingGame
 
         if (PlayerScore > DealerScore)
         {
-            var reward = Bet * 2;
+            var reward = (Bet * 2) - Bet;
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"🥳 Player Wins!\nYou won **{Bet}** credits!",
+                    $"🥳 Player Wins!\nYou won **{reward}** credits!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
@@ -244,7 +258,7 @@ public sealed class BlackJackGame : IGamblingGame
         {
             x.Embed = new EmbedBuilder().BlackJackEmbed(
                 this,
-                "😕 Tie! (PUSH)\n**The bet has been given back!**",
+                "😕 Tie! (PUSH)",
                 Color.Blue);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);

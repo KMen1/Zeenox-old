@@ -4,19 +4,15 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Models.User;
 
 namespace KBot.Modules.Moderation;
 
 public class ModerationComponents : SlashModuleBase
 {
-    [ModalInteraction("appeal:*:*")]
-    public async Task HandleAppealAsync(ulong adminId, int warnId, AppealModal submission)
+    [ModalInteraction("appeal:*")]
+    public async Task HandleAppealAsync(ulong adminId, AppealModal submission)
     {
         var admin = Context.Guild.GetUser(adminId);
-        Warn warn = null;
-        if (warnId != 0)
-            warn = (await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false)).Warns[warnId - 1];
 
         var eb = new EmbedBuilder()
             .WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
@@ -25,7 +21,7 @@ public class ModerationComponents : SlashModuleBase
             .WithColor(Color.Orange)
             .AddField("Who gave the punishment?", $"{admin.Mention}")
             .AddField("What kind of punishment?", submission.PunishType)
-            .AddField("Reason for punishment", warn is null ? submission.PunishReason : warn.Reason)
+            .AddField("Reason for punishment", submission.PunishReason)
             .AddField("Reason for appeal", submission.AppealReason)
             .Build();
         var comp = new ComponentBuilder()

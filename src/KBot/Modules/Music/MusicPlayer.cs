@@ -23,7 +23,7 @@ public class MusicPlayer : LavalinkPlayer
         YouTubeService = youTubeService;
         LavalinkNode = lavalinkNode;
         Loop = false;
-        AutoPlay = true;
+        AutoPlay = false;
         FilterEnabled = null;
         NowPlayingMessage = null;
         Queue = new List<LavalinkTrack>();

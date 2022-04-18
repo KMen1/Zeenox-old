@@ -11,7 +11,7 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models.User;
+using KBot.Models;
 using KBot.Modules.Gambling.Objects;
 using KBot.Services;
 using Color = Discord.Color;
@@ -22,21 +22,21 @@ namespace KBot.Modules.Gambling.HighLow;
 
 public class HighLowService : IInjectable
 {
-    private readonly Cloudinary Cloudinary;
-    private readonly MongoService Database;
-    private readonly List<HighLowGame> Games = new();
+    private readonly Cloudinary _cloudinary;
+    private readonly MongoService _mongo;
+    private readonly List<HighLowGame> _games = new();
 
     public HighLowService(MongoService database, Cloudinary cloudinary)
     {
-        Database = database;
-        Cloudinary = cloudinary;
+        _mongo = database;
+        _cloudinary = cloudinary;
     }
 
     public HighLowGame CreateGame(SocketUser user, IUserMessage message, int stake)
     {
-        var game = new HighLowGame(user, message, stake, Cloudinary);
+        var game = new HighLowGame(user, message, stake, _cloudinary);
         game.GameEnded += OnGameEndedAsync;
-        Games.Add(game);
+        _games.Add(game);
         return game;
     }
 
@@ -44,28 +44,43 @@ public class HighLowService : IInjectable
     {
         var game = (HighLowGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
-        Games.Remove(game);
-        await Database.UpdateUserAsync(game.Guild, game.User, x =>
+        _games.Remove(game);
+
+        if (e.IsWin)
         {
-            if (e.IsWin)
+            await _mongo.AddTransactionAsync(new Transaction(
+                e.GameId,
+                TransactionType.Highlow,
+                e.Prize,
+                e.Description)).ConfigureAwait(false);
+
+            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
             {
-                x.Gambling.Balance += e.Prize;
-                x.Gambling.Wins++;
-                x.Gambling.MoneyWon += e.Prize - game.Bet;
-                x.Transactions.Add(new Transaction(e.GameId, TransactionType.Gambling, e.Prize, e.Description));
-            }
-            else
-            {
-                x.Gambling.Losses++;
-                x.Gambling.MoneyLost += game.Bet;
-            }
+                x.Balance += e.Prize;
+                x.Wins++;
+                x.MoneyWon += e.Prize;
+                x.TransactionIds.Add(e.GameId);
+            }).ConfigureAwait(false);
+            return;
+        }
+        await _mongo.AddTransactionAsync(new Transaction(
+            e.GameId,
+            TransactionType.Highlow,
+            -game.Bet,
+            e.Description)).ConfigureAwait(false);
+
+        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+        {
+            x.Balance -= game.Bet;
+            x.Losses++;
+            x.MoneyLost += game.Bet;
+            x.TransactionIds.Add(e.GameId);
         }).ConfigureAwait(false);
-        if (e.IsWin) await Database.UpdateBotUserAsync(game.Guild, x => x.Money -= e.Prize).ConfigureAwait(false);
     }
 
     public HighLowGame GetGame(string id)
     {
-        return Games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id == id);
     }
 }
 

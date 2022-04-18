@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using KBot.Extensions;
-using KBot.Modules.DeadByDaylight.Models;
+using KBot.Models;
 using KBot.Services;
 
 namespace KBot.Modules.DeadByDaylight;
@@ -47,9 +47,9 @@ public class DbDService : IInjectable
             foreach (var guild in _client.Guilds)
             {
                 var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
-                if (config.DbdChannelId != 0)
+                if (config.DbdNotificationChannelId != 0)
                 {
-                    channels.Add(await _client.GetChannelAsync(config.DbdChannelId).ConfigureAwait(false) as ITextChannel);
+                    channels.Add(await _client.GetChannelAsync(config.DbdNotificationChannelId).ConfigureAwait(false) as ITextChannel);
                 }
             }
             

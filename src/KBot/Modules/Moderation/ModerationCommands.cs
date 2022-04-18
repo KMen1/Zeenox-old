@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Models.User;
+using KBot.Extensions;
+using KBot.Models;
 
 namespace KBot.Modules.Moderation;
 
@@ -18,16 +19,20 @@ public class ModerationCommands : SlashModuleBase
     {
         var moderatorId = Context.User.Id;
         await DeferAsync(true).ConfigureAwait(false);
-        if (Context.Guild.GetUser(user.Id).GuildPermissions.KickMembers)
+        /*if (Context.Guild.GetUser(user.Id).GuildPermissions.KickMembers)
         {
             await FollowupWithEmbedAsync(Color.Red, "Unable to warn", "You can't warn another moderator")
                 .ConfigureAwait(false);
             return;
-        }
+        }*/
 
-        await Database
-            .UpdateUserAsync(Context.Guild, user, x => x.Warns.Add(new Warn(moderatorId, reason, DateTime.UtcNow)))
-            .ConfigureAwait(false);
+        await Mongo.AddWarnAsync(new Warn(
+            Guid.NewGuid().ToShortId(),
+            Context.Guild.Id,
+            moderatorId,
+            user.Id,
+            reason,
+            DateTime.UtcNow)).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Orange, $"Succesfully warned {user.Username}", "").ConfigureAwait(false);
 
         var channel = await user.CreateDMChannelAsync().ConfigureAwait(false);
@@ -48,42 +53,25 @@ public class ModerationCommands : SlashModuleBase
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
-    [SlashCommand("unwarn", "Unwarn a user.")]
-    public async Task RemoveWarnAsync(SocketUser user, string reason, [MinValue(1)] int warnId)
+    [SlashCommand("removewarn", "Deletes a warn.")]
+    public async Task RemoveWarnAsync(string warnId)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false);
-        if (warnId > dbUser.Warns.Count)
+        var result = await Mongo.RemoveWarnAsync(warnId).ConfigureAwait(false);
+        if (!result)
         {
             await FollowupWithEmbedAsync(Color.Red, $"Warn with id({warnId}) does not exist", "").ConfigureAwait(false);
             return;
         }
-
-        await Database.UpdateUserAsync(Context.Guild, user, x => x.Warns.RemoveAt(warnId - 1)).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green,
-            $"Succesfully removed warn from {user.Username}!", "").ConfigureAwait(false);
-        var channel = await user.CreateDMChannelAsync().ConfigureAwait(false);
-        var eb = new EmbedBuilder()
-            .WithTitle($"You've been unwarned in {Context.Guild.Name}!")
-            .WithColor(Color.Green)
-            .WithDescription($"By {Context.User.Mention}\nReason: `{reason}`")
-            .WithCurrentTimestamp()
-            .Build();
-        try
-        {
-            await channel.SendMessageAsync(embed: eb).ConfigureAwait(false);
-        }
-        catch
-        {
-            // ignored
-        }
+            $"Succesfully deleted warn!", "").ConfigureAwait(false);
     }
 
     [SlashCommand("warns", "Gets the warns of a user.")]
     public async Task WarnsAsync(SocketUser user)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var warns = (await Database.GetUserAsync(Context.Guild, user).ConfigureAwait(false)).Warns;
+        var warns = await Mongo.GetWarnsAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         if (warns.Count == 0)
         {
             await FollowupWithEmbedAsync(Color.Gold, "😎 Nice job!",
@@ -94,7 +82,7 @@ public class ModerationCommands : SlashModuleBase
         var warnString = new StringBuilder();
         foreach (var warn in warns)
             warnString.AppendLine(
-                $"{warns.TakeWhile(n => n != warn).Count() + 1}. {Context.Client.GetUser(warn.ModeratorId).Mention} által - Indok:`{warn.Reason}`");
+                $"`{warn.WarnId}`: **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`");
         await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} has {warns.Count} warns", warnString.ToString(),
             ephemeral: true).ConfigureAwait(false);
     }
@@ -130,9 +118,7 @@ public class ModerationCommands : SlashModuleBase
     [SlashCommand("appeal", "Appeal a warn to the mod team.")]
     public async Task AppealAsync(
         [Summary("Admin", "The moderator who warned you")]
-        SocketUser admin,
-        [Summary("WarnID", "Warn id")] [MinValue(1)]
-        int warnId = 0)
+        SocketUser admin)
     {
         if (!Context.Guild.GetUser(admin.Id).GuildPermissions.KickMembers)
         {
@@ -142,32 +128,13 @@ public class ModerationCommands : SlashModuleBase
 
         var modal = new ModalBuilder()
             .WithTitle("Warn Appeal")
+            .WithCustomId($"appeal:{admin.Id}")
             .AddTextInput("How were you punished?", "appeal-punishtype", TextInputStyle.Short,
                 "Warn/mute/timeout", required: true)
             .AddTextInput("Why are you making an appeal?", "appeal-reason", TextInputStyle.Paragraph,
-                "The admin warned me because he was angry, stb.", required: true);
-
-        if (warnId == 0)
-        {
-            modal.WithCustomId($"appeal:{admin.Id}:0")
-                .AddTextInput("Why were you punished?", "appeal-punishreason", TextInputStyle.Paragraph,
-                    "Rule breaking", required: true);
-            await RespondWithModalAsync(modal.Build()).ConfigureAwait(false);
-            return;
-        }
-
-        var warns = (await Database.GetUserAsync(Context.Guild, Context.User).ConfigureAwait(false)).Warns;
-        if (warns.Count < warnId)
-        {
-            await RespondAsync("No warn exists with that id!", ephemeral: true).ConfigureAwait(false);
-            return;
-        }
-
-        modal.WithCustomId($"appeal:{admin.Id}:{warnId}")
+                "The admin warned me because he was angry, stb.", required: true)
             .AddTextInput("Why were you punished?", "appeal-punishreason", TextInputStyle.Paragraph,
-                "i sent kys in chat", required: false)
-            .Build();
-
+                    "Rule breaking", required: true);
         await RespondWithModalAsync(modal.Build()).ConfigureAwait(false);
     }
 
@@ -175,7 +142,7 @@ public class ModerationCommands : SlashModuleBase
     [SlashCommand("setlog", "Sets the moderation log channel for the server.")]
     public async Task SetLogChannelAsync(ITextChannel channel)
     {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.LogChannelId = channel.Id)
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.ModLogChannelId = channel.Id)
             .ConfigureAwait(false);
         await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
     }    
@@ -184,7 +151,7 @@ public class ModerationCommands : SlashModuleBase
     [SlashCommand("setappeal", "Sets the channel to send appeals to for the server.")]
     public async Task SetAppealChannelAsync(ITextChannel channel)
     {
-        await Database.UpdateGuildConfigAsync(Context.Guild, x => x.Moderation.AppealChannelId = channel.Id)
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.AppealChannelId = channel.Id)
             .ConfigureAwait(false);
         await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
     }
