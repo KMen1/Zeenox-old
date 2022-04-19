@@ -22,7 +22,7 @@ public class HighLowCommands : SlashModuleBase
         }
 
         var msg = await FollowupAsync("Starting...").ConfigureAwait(false);
-        var game = HighLowService.CreateGame(Context.User, msg, bet);
+        var game = HighLowService.CreateGame((SocketGuildUser)Context.User, msg, bet);
         await game.StartAsync().ConfigureAwait(false);
     }
 }

@@ -10,7 +10,7 @@ public class GameResult
         
     }
     
-    [BsonElement("game_id")] public string GameId { get; set; }
+    [BsonId] public string Id { get; set; }
     [BsonElement("user_id")] public ulong UserId { get; set; }
     [BsonElement("bet")] public int Bet { get; set; }
     [BsonElement("is_win")] public bool IsWin { get; set; }

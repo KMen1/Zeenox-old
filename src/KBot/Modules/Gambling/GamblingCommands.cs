@@ -8,6 +8,7 @@ using Discord.WebSocket;
 using Humanizer;
 using KBot.Enums;
 using KBot.Extensions;
+using StackExchange.Redis.KeyspaceIsolation;
 
 namespace KBot.Modules.Gambling;
 
@@ -26,7 +27,7 @@ public class GamblingCommands : SlashModuleBase
     [SlashCommand("transactions", "Gets you transactions")]
     public async Task SendTransactionsAsync(SocketUser user = null)
     {
-        var transactions = await Mongo.GetTransactionsAsync(Context.Guild, user ?? Context.User).ConfigureAwait(false);
+        var transactions = await Mongo.GetTransactionsAsync((SocketGuildUser)(user ?? Context.User)).ConfigureAwait(false);
         if (transactions.Count == 0)
         {
             await RespondAsync("You have no transactions.", ephemeral: true).ConfigureAwait(false);
@@ -67,12 +68,12 @@ public class GamblingCommands : SlashModuleBase
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("changemoney", "Change someones balance (admin)")]
-    public async Task ChangeBalanceAsync(SocketUser user, int offset, string reason)
+    public async Task ChangeBalanceAsync(SocketGuildUser user, int offset, string reason)
     {
         await DeferAsync(true).ConfigureAwait(false);
         if (user.IsBot) await FollowupAsync("You can't change a bot's balance.").ConfigureAwait(false);
         var id = Guid.NewGuid().ToShortId();
-        var dbUser = await UpdateUserAsync(user, x =>
+        var dbUser = await Mongo.UpdateUserAsync(user, x =>
         {
             x.Balance += offset;
             x.TransactionIds.Add(id);
@@ -82,7 +83,7 @@ public class GamblingCommands : SlashModuleBase
     }
 
     [SlashCommand("transfer", "Sends money to another user")]
-    public async Task TransferBalanceAsync(SocketUser user, [MinValue(1)] int amount)
+    public async Task TransferBalanceAsync(SocketGuildUser user, [MinValue(1)] int amount)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var sourceUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
@@ -93,12 +94,12 @@ public class GamblingCommands : SlashModuleBase
         }
 
         var id = Guid.NewGuid().ToShortId();
-        await UpdateUserAsync(Context.User, x =>
+        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x =>
         {
             x.Balance -= amount;
             x.TransactionIds.Add(id);
         }).ConfigureAwait(false);
-        await UpdateUserAsync(user, x =>
+        await Mongo.UpdateUserAsync(user, x =>
         {
             x.Balance += amount;
             x.TransactionIds.Add(id);
@@ -123,7 +124,7 @@ public class GamblingCommands : SlashModuleBase
         {
             var id = Guid.NewGuid().ToShortId();
             var reward = new Random().Next(1000, 10000);
-            await UpdateUserAsync(Context.User, x =>
+            await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x =>
             {
                 x.DailyBalanceClaim = DateTime.UtcNow;
                 x.Balance += reward;

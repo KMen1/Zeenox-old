@@ -22,7 +22,7 @@ public class TowersService : IInjectable
         _mongo = mongo;
     }
 
-    public TowersGame CreateGame(SocketUser user, IUserMessage message, int bet, Difficulty difficulty)
+    public TowersGame CreateGame(SocketGuildUser user, IUserMessage message, int bet, Difficulty difficulty)
     {
         var game = new TowersGame(user, message, bet, difficulty);
         _games.Add(game);
@@ -38,30 +38,30 @@ public class TowersService : IInjectable
         if (e.IsWin)
         {
             await _mongo.AddTransactionAsync(new Transaction(
-                game.Id,
+                e.GameId,
                 TransactionType.Towers,
                 e.Prize,
-                e.Description)).ConfigureAwait(false);
-            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+                e.Description),
+                e.User).ConfigureAwait(false);
+            await _mongo.UpdateUserAsync(e.User, x =>
             {
                 x.Balance += e.Prize;
                 x.Wins++;
                 x.MoneyWon += e.Prize;
-                x.TransactionIds.Add(game.Id);
             }).ConfigureAwait(false);
             return;
         }
         await _mongo.AddTransactionAsync(new Transaction(
-            game.Id,
+            e.GameId,
             TransactionType.Towers,
-            -game.Bet,
-            e.Description)).ConfigureAwait(false);
-        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+            -e.Bet,
+            e.Description),
+            e.User).ConfigureAwait(false);
+        await _mongo.UpdateUserAsync(e.User, x =>
         {
-            x.Balance -= game.Bet;
+            x.Balance -= e.Bet;
             x.Losses++;
-            x.MoneyLost += game.Bet;
-            x.TransactionIds.Add(game.Id);
+            x.MoneyLost += e.Bet;
         }).ConfigureAwait(false);
     }
 
@@ -74,7 +74,7 @@ public class TowersService : IInjectable
 public sealed class TowersGame : IGamblingGame
 {
     public TowersGame(
-        SocketUser user,
+        SocketGuildUser user,
         IUserMessage message,
         int bet,
         Difficulty difficulty)
@@ -107,9 +107,8 @@ public sealed class TowersGame : IGamblingGame
     }
 
     public string Id { get; }
-    public SocketUser User { get; }
+    public SocketGuildUser User { get; }
     private IUserMessage Message { get; }
-    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
     public int Bet { get; }
     public Difficulty Difficulty { get; }
     private int Columns => Difficulty is Difficulty.Medium ? 2 : 3;
@@ -169,7 +168,7 @@ public sealed class TowersGame : IGamblingGame
                     Lost ? $"You lost **{Bet}** credits" : $"You won **{Prize}** credits",
                     Lost ? Color.Red : Color.Green))
                 .ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, Prize, "TW - Win", true));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Prize, "TW - Win", true));
         }
 
         var comp = new ComponentBuilder();
@@ -217,7 +216,7 @@ public sealed class TowersGame : IGamblingGame
                 Lost ? Color.Red : Color.Green);
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, prize, "TW - Lose", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, "TW - Lose", false));
     }
 
     private void OnGameEnded(GameEndedEventArgs e)

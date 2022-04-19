@@ -7,14 +7,14 @@ public class Warn
 {
     public Warn(string id, ulong guildId, ulong givenById, ulong givenToId, string reason, DateTime date)
     {
-        WarnId = id;
+        Id = id;
         GuildId = guildId;
         GivenById = givenById;
         GivenToId = givenToId;
         Reason = reason;
         Date = date;
     }
-    [BsonId] public string WarnId { get; set; }
+    [BsonId] public string Id { get; set; }
     [BsonElement("guildid")] public ulong GuildId { get; set;}
     [BsonElement("given_by_id")] public ulong GivenById { get; set; }
     [BsonElement("give_to_id")] public ulong GivenToId { get; set; }

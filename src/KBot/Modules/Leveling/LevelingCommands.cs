@@ -68,8 +68,8 @@ public class Levels : SlashModuleBase
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
-            var xp = new Random().Next(100, 500);
-            await Mongo.UpdateUserAsync(Context.Guild, Context.User, x =>
+            var xp = new Random().Next(1000, 5000);
+            await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x =>
             {
                 x.DailyXpClaim = DateTime.UtcNow;
                 x.Xp += xp;
@@ -88,20 +88,20 @@ public class Levels : SlashModuleBase
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("changexp", "Change someone's XP")]
-    public async Task ChangeXPAsync(SocketUser user, int offset)
+    public async Task ChangeXPAsync(SocketGuildUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.UpdateUserAsync(Context.Guild, user, x => x.Xp += offset).ConfigureAwait(false);
+        var dbUser = await Mongo.UpdateUserAsync(user, x => x.Xp += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "XP set!",
             $"{user.Mention} now has an XP of **{dbUser.Xp.ToString()}**").ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("changelevel", "Change someone's level")]
-    public async Task ChangeLevelAsync(SocketUser user, int offset)
+    public async Task ChangeLevelAsync(SocketGuildUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.UpdateUserAsync(Context.Guild, user, x => x.Level += offset).ConfigureAwait(false);
+        var dbUser = await Mongo.UpdateUserAsync(user, x => x.Level += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Level set!",
             $"{user.Mention} now has a level of **{dbUser.Level.ToString()}**").ConfigureAwait(false);
     }

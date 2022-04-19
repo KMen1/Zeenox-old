@@ -20,7 +20,7 @@ public class BlackJackCommands : SlashModuleBase
         }
 
         var msg = await FollowupAsync("Starting...").ConfigureAwait(false);
-        var game = BlackJackService.CreateGame(Context.User, msg, bet);
+        var game = BlackJackService.CreateGame((SocketGuildUser)Context.User, msg, bet);
         await game.StartAsync().ConfigureAwait(false);
     }
 }

@@ -27,7 +27,7 @@ public class Transaction
         Date = DateTime.UtcNow;
     }
 
-    [BsonElement("id")] public string Id { get; set; }
+    [BsonId] public string Id { get; set; }
     [BsonElement("type")] public TransactionType Source { get; set; }
     [BsonElement("amount")] public int Amount { get; set; }
     [BsonElement("date")] public DateTime Date { get; set; }

@@ -13,7 +13,7 @@ public class User
     {
         UserId = user.Id;
         GuildId = user.Guild.Id;
-        DocId = user.Id + user.Guild.Id;
+        UniqueId = user.Id + user.Guild.Id;
         Xp = 0;
         Level = 1;
         DailyXpClaim = DateTime.MinValue;
@@ -27,9 +27,10 @@ public class User
         MoneyWon = 0;
         MoneyLost = 0;
         TransactionIds = new List<string>();
+        WarnIds = new List<string>();
     }
 
-    [BsonId] public ulong DocId { get; set; }
+    [BsonId] public ulong UniqueId { get; set; }
     [BsonElement("guild_id")] public ulong GuildId { get; set; }
     [BsonElement("user_id")] public ulong UserId { get; set; }
 
@@ -57,6 +58,7 @@ public class User
     [BsonElement("money_lost")] public int MoneyLost { get; set; }
     [BsonElement("transaction_ids")] public List<string> TransactionIds { get; set; }
     [BsonElement("game_result_ids")] public List<string> GameResultIds { get; set; }
+    [BsonElement("warn_ids")] public List<string> WarnIds { get; set; }
     [BsonIgnore] public double WinRate => Math.Round(Wins / (double) GamesPlayed * 100, 2);
     
     public EmbedBuilder ToEmbedBuilder(IUser user)

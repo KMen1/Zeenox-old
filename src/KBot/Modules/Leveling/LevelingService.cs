@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using Google.Apis.YouTube.v3.Data;
 using KBot.Services;
 using Serilog;
 
@@ -44,12 +43,12 @@ public class LevelingModule : IInjectable
                 var user = item.Item1;
                 var config = await _database.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
                 var oldUserData = await _database.GetUserAsync(user).ConfigureAwait(false);
-                var newUserData = await _database.UpdateUserAsync(user.Guild, user, x =>
+                var newUserData = await _database.UpdateUserAsync(user, x =>
                 {
                     x.Xp += xp;
                     if (x.Xp < x.RequiredXp) return;
-                    x.Level++;
                     x.Xp -= x.RequiredXp;
+                    x.Level++;
                 }).ConfigureAwait(false);
 
                 if (newUserData.Level == oldUserData.Level)
@@ -156,7 +155,7 @@ public class LevelingModule : IInjectable
     private async Task ScanUserAsync(SocketGuildUser user)
     {
         if (IsActive(user))
-            await _database.UpdateUserAsync(user.Guild, user, x => x.VoiceChannelJoin = DateTime.UtcNow)
+            await _database.UpdateUserAsync(user, x => x.VoiceChannelJoin = DateTime.UtcNow)
                 .ConfigureAwait(false);
         else
             await UserLeftChannelAsync(user).ConfigureAwait(false);

@@ -67,12 +67,11 @@ public class ShopCommands : SlashModuleBase
             id,
             TransactionType.LevelPurchase,
             -required,
-            $"{amount}")).ConfigureAwait(false);
-        await UpdateUserAsync(Context.User, x =>
+            $"{amount}"), (SocketGuildUser)Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x =>
         {
             x.Balance -= required;
             x.Level += amount;
-            x.TransactionIds.Add(id);
         }).ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
@@ -142,11 +141,10 @@ public class ShopCommands : SlashModuleBase
             id,
             TransactionType.RolePurchase,
             -RolePrice,
-            role.Mention)).ConfigureAwait(false);
-        await UpdateUserAsync(Context.User, x =>
+            role.Mention), (SocketGuildUser)Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x =>
         {
             x.Balance -= RolePrice;
-            x.TransactionIds.Add(id);
             x.Roles.Add(role.Id);
         }).ConfigureAwait(false);
 
@@ -214,12 +212,8 @@ public class ShopCommands : SlashModuleBase
             id,
             TransactionType.CategoryPurchase,
             -CategoryPrice,
-            category.Name)).ConfigureAwait(false);
-        await UpdateUserAsync(Context.User, x =>
-        {
-            x.Balance -= CategoryPrice;
-            x.TransactionIds.Add(id);
-        }).ConfigureAwait(false);
+            category.Name), (SocketGuildUser)Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.Balance -= CategoryPrice).ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
         {
@@ -286,12 +280,8 @@ public class ShopCommands : SlashModuleBase
             id,
             TransactionType.TextPurchase,
             -TextPrice,
-            channel.Mention)).ConfigureAwait(false);
-        await UpdateUserAsync(Context.User, x =>
-        {
-            x.Balance -= TextPrice;
-            x.TransactionIds.Add(id);
-        }).ConfigureAwait(false);
+            channel.Mention), (SocketGuildUser)Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.Balance -= TextPrice).ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
         {
@@ -354,12 +344,8 @@ public class ShopCommands : SlashModuleBase
             id,
             TransactionType.VoicePurchase,
             -VoicePrice,
-            channel.Mention)).ConfigureAwait(false);
-        await UpdateUserAsync(Context.User, x =>
-        {
-            x.Balance -= VoicePrice;
-            x.TransactionIds.Add(id);
-        }).ConfigureAwait(false);
+            channel.Mention), (SocketGuildUser)Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.Balance -= VoicePrice).ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
         {

@@ -23,7 +23,7 @@ public class CrashService : IInjectable
         _mongo = mongo;
     }
 
-    public CrashGame CreateGame(SocketUser user, IUserMessage msg, int bet)
+    public CrashGame CreateGame(SocketGuildUser user, IUserMessage msg, int bet)
     {
         var crashPoint = GenerateCrashPoint();
         var game = new CrashGame(user, msg, bet, crashPoint);
@@ -43,28 +43,28 @@ public class CrashService : IInjectable
                 e.GameId,
                 TransactionType.Crash,
                 e.Prize,
-                e.Description)).ConfigureAwait(false);
+                e.Description),
+                e.User).ConfigureAwait(false);
 
-            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+            await _mongo.UpdateUserAsync(e.User, x =>
             {
                 x.Balance += e.Prize;
                 x.Wins++;
                 x.MoneyWon += e.Prize;
-                x.TransactionIds.Add(e.GameId);
             }).ConfigureAwait(false);
             return;
         }
         await _mongo.AddTransactionAsync(new Transaction(
                 e.GameId,
                 TransactionType.Crash,
-                -game.Bet,
-                e.Description)).ConfigureAwait(false);
-        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+                -e.Bet,
+                e.Description),
+            e.User).ConfigureAwait(false);
+        await _mongo.UpdateUserAsync(e.User, x =>
         {
-            x.Balance -= game.Bet;
+            x.Balance -= e.Bet;
             x.Losses++;
-            x.MoneyLost += game.Bet;
-            x.TransactionIds.Add(e.GameId);
+            x.MoneyLost += e.Bet;
         }).ConfigureAwait(false);
     }
 
@@ -92,7 +92,7 @@ public class CrashService : IInjectable
 public sealed class CrashGame : IGamblingGame
 {
     public CrashGame(
-        SocketUser user,
+        SocketGuildUser user,
         IUserMessage message,
         int bet,
         double crashPoint)
@@ -107,9 +107,8 @@ public sealed class CrashGame : IGamblingGame
     }
 
     public string Id { get; }
-    public SocketUser User { get; }
+    public SocketGuildUser User { get; }
     private IUserMessage Message { get; }
-    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
     public int Bet { get; }
     private double CrashPoint { get; }
     public double Multiplier { get; private set; }
@@ -136,7 +135,7 @@ public sealed class CrashGame : IGamblingGame
 
             if (Multiplier >= CrashPoint)
             {
-                OnGameEnded(new GameEndedEventArgs(Id, 0, "", false));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "", false));
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().CrashEmbed(this,
@@ -153,7 +152,7 @@ public sealed class CrashGame : IGamblingGame
     public Task StopAsync()
     {
         TokenSource.Cancel();
-        OnGameEnded(new GameEndedEventArgs(Id, Profit, $"CR - {Multiplier:0.0}x", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Profit, $"CR - {Multiplier:0.0}x", false));
         return Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().CrashEmbed(this, $"Stopped at: `{Multiplier:0.00}x`\n" +

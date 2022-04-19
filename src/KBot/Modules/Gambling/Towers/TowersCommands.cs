@@ -23,7 +23,7 @@ public class TowersCommands : SlashModuleBase
         }
 
         var msg = await FollowupAsync("Starting...").ConfigureAwait(false);
-        var game = TowersService.CreateGame(Context.User, msg, bet, diff);
+        var game = TowersService.CreateGame((SocketGuildUser)Context.User, msg, bet, diff);
         await game.StartAsync().ConfigureAwait(false);
     }
 

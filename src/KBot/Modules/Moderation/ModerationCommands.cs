@@ -15,16 +15,16 @@ public class ModerationCommands : SlashModuleBase
 {
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("warn", "Warns a user.")]
-    public async Task WarnAsync(SocketUser user, string reason)
+    public async Task WarnAsync(SocketGuildUser user, string reason)
     {
         var moderatorId = Context.User.Id;
         await DeferAsync(true).ConfigureAwait(false);
-        /*if (Context.Guild.GetUser(user.Id).GuildPermissions.KickMembers)
+        if (Context.Guild.GetUser(user.Id).GuildPermissions.KickMembers)
         {
             await FollowupWithEmbedAsync(Color.Red, "Unable to warn", "You can't warn another moderator")
                 .ConfigureAwait(false);
             return;
-        }*/
+        }
 
         await Mongo.AddWarnAsync(new Warn(
             Guid.NewGuid().ToShortId(),
@@ -32,14 +32,15 @@ public class ModerationCommands : SlashModuleBase
             moderatorId,
             user.Id,
             reason,
-            DateTime.UtcNow)).ConfigureAwait(false);
+            DateTime.UtcNow), user).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Orange, $"Succesfully warned {user.Username}", "").ConfigureAwait(false);
 
         var channel = await user.CreateDMChannelAsync().ConfigureAwait(false);
         var eb = new EmbedBuilder()
             .WithTitle($"You've been warned in {Context.Guild.Name}!")
             .WithColor(Color.Red)
-            .WithDescription($"By {Context.User.Mention}\nReason: `{reason}`")
+            .AddField("Moderator", $"{Context.User.Username}#{Context.User.DiscriminatorValue}")
+            .AddField("Reason", $"```{reason}```")
             .WithCurrentTimestamp()
             .Build();
         try
@@ -82,7 +83,7 @@ public class ModerationCommands : SlashModuleBase
         var warnString = new StringBuilder();
         foreach (var warn in warns)
             warnString.AppendLine(
-                $"`{warn.WarnId}`: **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`");
+                $"`{warn.Id}`: **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`");
         await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} has {warns.Count} warns", warnString.ToString(),
             ephemeral: true).ConfigureAwait(false);
     }

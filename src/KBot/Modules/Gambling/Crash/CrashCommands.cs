@@ -22,7 +22,7 @@ public class CrashCommands : SlashModuleBase
         }
 
         var msg = await FollowupAsync("Starting...").ConfigureAwait(false);
-        var game = CrashService.CreateGame(Context.User, msg, bet);
+        var game = CrashService.CreateGame((SocketGuildUser)Context.User, msg, bet);
         await game.StartAsync().ConfigureAwait(false);
     }
 

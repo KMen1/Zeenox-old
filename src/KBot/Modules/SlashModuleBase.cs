@@ -29,9 +29,4 @@ public abstract class SlashModuleBase : InteractionModuleBase<SocketInteractionC
     {
         return Mongo.GetGuildConfigAsync(Context.Guild);
     }
-
-    protected Task<User> UpdateUserAsync(SocketUser user, Action<User> action)
-    {
-        return Mongo.UpdateUserAsync(Context.Guild, user, action);
-    }
 }

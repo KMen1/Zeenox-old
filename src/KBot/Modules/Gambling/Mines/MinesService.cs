@@ -21,7 +21,7 @@ public class MinesService : IInjectable
         _mongo = mongo;
     }
 
-    public MinesGame CreateGame(SocketUser user, IUserMessage message, int bet, int mines)
+    public MinesGame CreateGame(SocketGuildUser user, IUserMessage message, int bet, int mines)
     {
         var game = new MinesGame(message, user, bet, mines);
         game.GameEnded += OnGameEndedAsync;
@@ -41,29 +41,29 @@ public class MinesService : IInjectable
                 e.GameId,
                 TransactionType.Mines,
                 e.Prize,
-                e.Description)).ConfigureAwait(false);
+                e.Description),
+                e.User).ConfigureAwait(false);
 
-            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+            await _mongo.UpdateUserAsync(e.User, x =>
             {
                 x.Balance += e.Prize;
                 x.Wins++;
                 x.MoneyWon += e.Prize;
-                x.TransactionIds.Add(e.GameId);
             }).ConfigureAwait(false);
             return;
         }
         await _mongo.AddTransactionAsync(new Transaction(
             e.GameId,
             TransactionType.Mines,
-            -game.Bet,
-            e.Description)).ConfigureAwait(false);
+            -e.Bet,
+            e.Description),
+            e.User).ConfigureAwait(false);
 
-        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+        await _mongo.UpdateUserAsync(e.User, x =>
         {
-            x.Balance -= game.Bet;
+            x.Balance -= e.Bet;
             x.Losses++;
-            x.MoneyLost += game.Bet;
-            x.TransactionIds.Add(e.GameId);
+            x.MoneyLost += e.Bet;
         }).ConfigureAwait(false);
     }
 
@@ -79,7 +79,7 @@ public sealed class MinesGame : IGamblingGame
 
     public MinesGame(
         IUserMessage message,
-        SocketUser user,
+        SocketGuildUser user,
         int bet,
         int mines)
     {
@@ -103,8 +103,7 @@ public sealed class MinesGame : IGamblingGame
 
     public string Id { get; }
     private IUserMessage Message { get; }
-    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
-    public SocketUser User { get; }
+    public SocketGuildUser User { get; }
     public int Bet { get; }
     public bool CanStop { get; private set; }
     private int Mines => Points.Count(x => x.IsMine);
@@ -156,7 +155,7 @@ public sealed class MinesGame : IGamblingGame
         if (point!.IsMine)
         {
             await StopAsync(true).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, 0, "MN - LOSE", false));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "MN - LOSE", false));
             return;
         }
 
@@ -214,7 +213,7 @@ public sealed class MinesGame : IGamblingGame
                 .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, prize, lost ? "MN - LOSE" : "MN - WIN", !lost));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, lost ? "MN - LOSE" : "MN - WIN", !lost));
     }
 
     private void OnGameEnded(GameEndedEventArgs e)

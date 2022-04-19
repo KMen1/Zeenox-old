@@ -32,7 +32,7 @@ public class HighLowService : IInjectable
         _cloudinary = cloudinary;
     }
 
-    public HighLowGame CreateGame(SocketUser user, IUserMessage message, int stake)
+    public HighLowGame CreateGame(SocketGuildUser user, IUserMessage message, int stake)
     {
         var game = new HighLowGame(user, message, stake, _cloudinary);
         game.GameEnded += OnGameEndedAsync;
@@ -52,29 +52,29 @@ public class HighLowService : IInjectable
                 e.GameId,
                 TransactionType.Highlow,
                 e.Prize,
-                e.Description)).ConfigureAwait(false);
+                e.Description),
+                e.User).ConfigureAwait(false);
 
-            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+            await _mongo.UpdateUserAsync(e.User, x =>
             {
                 x.Balance += e.Prize;
                 x.Wins++;
                 x.MoneyWon += e.Prize;
-                x.TransactionIds.Add(e.GameId);
             }).ConfigureAwait(false);
             return;
         }
         await _mongo.AddTransactionAsync(new Transaction(
             e.GameId,
             TransactionType.Highlow,
-            -game.Bet,
-            e.Description)).ConfigureAwait(false);
+            -e.Bet,
+            e.Description),
+            e.User).ConfigureAwait(false);
 
-        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+        await _mongo.UpdateUserAsync(e.User, x =>
         {
-            x.Balance -= game.Bet;
+            x.Balance -= e.Bet;
             x.Losses++;
-            x.MoneyLost += game.Bet;
-            x.TransactionIds.Add(e.GameId);
+            x.MoneyLost += e.Bet;
         }).ConfigureAwait(false);
     }
 
@@ -87,7 +87,7 @@ public class HighLowService : IInjectable
 public sealed class HighLowGame : IGamblingGame
 {
     public HighLowGame(
-        SocketUser user,
+        SocketGuildUser user,
         IUserMessage message,
         int stake,
         Cloudinary cloudinary)
@@ -103,9 +103,8 @@ public sealed class HighLowGame : IGamblingGame
     }
 
     public string Id { get; }
-    public SocketUser User { get; }
+    public SocketGuildUser User { get; }
     private IUserMessage Message { get; }
-    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
     private Deck Deck { get; set; }
     public int RemainCards => Deck.Cards.Count;
     private Card PlayerHand { get; set; }
@@ -167,7 +166,7 @@ public sealed class HighLowGame : IGamblingGame
         }
 
         Hidden = false;
-        OnGameEnded(new GameEndedEventArgs(Id, 0, "", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "", false));
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Wrong choice! You lost **{Bet}** credits!", Color.Red);
@@ -187,7 +186,7 @@ public sealed class HighLowGame : IGamblingGame
         }
 
         Hidden = false;
-        OnGameEnded(new GameEndedEventArgs(Id, 0, "", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "", false));
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Wrong choice! You lost **{Bet}** credits!", Color.Red);
@@ -198,7 +197,7 @@ public sealed class HighLowGame : IGamblingGame
     public Task FinishAsync()
     {
         Hidden = false;
-        OnGameEnded(new GameEndedEventArgs(Id, Stake, "HL - WIN", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Stake, "HL - WIN", false));
         return Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().HighLowEmbed(this, $"The game is over! You won **{Stake}** credits!",

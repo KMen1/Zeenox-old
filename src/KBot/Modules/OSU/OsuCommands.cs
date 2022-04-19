@@ -34,7 +34,7 @@ public class Osu : SlashModuleBase
 
         await DeferAsync(true).ConfigureAwait(false);
         var osuId = Convert.ToUInt64(link.Split("/").Last());
-        await Mongo.UpdateUserAsync(Context.Guild, Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Red, "Succesfully linked your osu! profile!",
             "https://osu.ppy.sh/u/" + osuId).ConfigureAwait(false);
     }

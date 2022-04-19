@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -12,6 +13,9 @@ public class ModerationLog : IInjectable
 {
     private readonly DiscordSocketClient _client;
     private readonly MongoService _database;
+    private readonly Regex _inviteRegex = new(
+        @"(https?://)?(www.)?(discord.(gg|io|me|li)|discordapp.com/invite)/[^\s/]+?(?=\b)"
+        , RegexOptions.Compiled);
 
     public ModerationLog(DiscordSocketClient client, MongoService database)
     {
@@ -29,6 +33,35 @@ public class ModerationLog : IInjectable
 
         _client.MessageDeleted += OnMessageDeletedAsync;
         _client.MessageUpdated += OnMessageUpdatedAsync;
+        _client.MessageReceived += OnMessageReceivedAsync;
+    }
+
+    private async Task OnMessageReceivedAsync(SocketMessage arg)
+    {
+        if (arg.Author.IsBot) return;
+        var channel = (SocketTextChannel) arg.Channel;
+        var guild = channel.Guild;
+        var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
+        if (config.ModLogChannelId == 0)
+            return;
+        if (!_inviteRegex.IsMatch(arg.Content)) return;
+        var invites = _inviteRegex.Matches(arg.Content);
+        
+        var logChannel = guild.GetTextChannel(config.ModLogChannelId);
+
+        foreach (Match match in invites)
+        {
+            if ((await _client.GetInviteAsync(match.Value).ConfigureAwait(false)).GuildId == guild.Id) continue;
+            var embed = new EmbedBuilder()
+                .WithAuthor("Invite Sent", arg.Author.GetAvatarUrl())
+                .AddField("User", arg.Author.Mention, true)
+                .AddField("Channel", channel.Mention, true)
+                .AddField("Invite", match.Value)
+                .Build();
+            await logChannel.SendMessageAsync(embed: embed).ConfigureAwait(false);
+        }
+
+        await arg.DeleteAsync().ConfigureAwait(false);
     }
 
     private async Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)

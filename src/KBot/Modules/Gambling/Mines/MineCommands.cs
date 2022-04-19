@@ -24,7 +24,7 @@ public class MineCommands : SlashModuleBase
         }
 
         var msg = await FollowupAsync("Starting...").ConfigureAwait(false);
-        var game = MinesService.CreateGame(Context.User, msg, bet, mines);
+        var game = MinesService.CreateGame((SocketGuildUser)Context.User, msg, bet, mines);
         await game.StartAsync().ConfigureAwait(false);
     }
 

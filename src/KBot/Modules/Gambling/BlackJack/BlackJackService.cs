@@ -33,7 +33,7 @@ public class BlackJackService : IInjectable
         _cloudinary = cloudinary;
     }
 
-    public BlackJackGame CreateGame(SocketUser user, IUserMessage message, int stake)
+    public BlackJackGame CreateGame(SocketGuildUser user, IUserMessage message, int stake)
     {
         var game = new BlackJackGame(user, message, stake, _cloudinary);
         _games.Add(game);
@@ -53,14 +53,14 @@ public class BlackJackService : IInjectable
                 e.GameId,
                 TransactionType.Blackjack,
                 e.Prize,
-                e.Description)).ConfigureAwait(false);
+                e.Description),
+                e.User).ConfigureAwait(false);
 
-            await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+            await _mongo.UpdateUserAsync(e.User, x =>
             {
                 x.Balance += e.Prize;
                 x.Wins++;
                 x.MoneyWon += e.Prize;
-                x.TransactionIds.Add(e.GameId);
             }).ConfigureAwait(false);
             return;
         }
@@ -71,15 +71,15 @@ public class BlackJackService : IInjectable
         await _mongo.AddTransactionAsync(new Transaction(
             e.GameId,
             TransactionType.Blackjack,
-            -game.Bet,
-            e.Description)).ConfigureAwait(false);
+            -e.Bet,
+            e.Description),
+            e.User).ConfigureAwait(false);
             
-        await _mongo.UpdateUserAsync(game.Guild, game.User, x =>
+        await _mongo.UpdateUserAsync(e.User, x =>
         {
-            x.Balance -= game.Bet;
+            x.Balance -= e.Bet;
             x.Losses++;
-            x.MoneyLost += game.Bet;
-            x.TransactionIds.Add(e.GameId);
+            x.MoneyLost += e.Bet;
         }).ConfigureAwait(false);
     }
 
@@ -92,7 +92,7 @@ public class BlackJackService : IInjectable
 public sealed class BlackJackGame : IGamblingGame
 {
     public BlackJackGame(
-        SocketUser player,
+        SocketGuildUser player,
         IUserMessage message,
         int bet,
         Cloudinary cloudinary)
@@ -110,9 +110,8 @@ public sealed class BlackJackGame : IGamblingGame
 
     public string Id { get; }
     private Deck Deck { get; }
-    public SocketUser User { get; }
+    public SocketGuildUser User { get; }
     private IUserMessage Message { get; }
-    public IGuild Guild => ((ITextChannel) Message.Channel).Guild;
     private List<Card> DealerCards { get; }
 
     public int DealerScore => GetCardsValue(DealerCards);
@@ -152,7 +151,7 @@ public sealed class BlackJackGame : IGamblingGame
                         Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, 0, "BL - Lose", false));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "BL - Lose", false));
                 return;
             }
             case 21:
@@ -167,7 +166,7 @@ public sealed class BlackJackGame : IGamblingGame
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - BLACKJACK", true));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "BL - BLACKJACK", true));
                 return;
             }
         }
@@ -192,7 +191,7 @@ public sealed class BlackJackGame : IGamblingGame
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - DEALERBUST", true));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "BL - DEALERBUST", true));
                 return;
             }
             case 21:
@@ -205,7 +204,7 @@ public sealed class BlackJackGame : IGamblingGame
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, 0, "BL - Lose", false));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "BL - Lose", false));
                 return;
             }
         }
@@ -221,7 +220,7 @@ public sealed class BlackJackGame : IGamblingGame
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - BLACKJACK", true));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "BL - BLACKJACK", true));
             return;
         }
 
@@ -236,7 +235,7 @@ public sealed class BlackJackGame : IGamblingGame
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, reward, "BL - WIN", true));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "BL - WIN", true));
             return;
         }
 
@@ -250,7 +249,7 @@ public sealed class BlackJackGame : IGamblingGame
                     Color.Red);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, 0, "BL - Win", false));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "BL - Win", false));
             return;
         }
 
@@ -262,7 +261,7 @@ public sealed class BlackJackGame : IGamblingGame
                 Color.Blue);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, -1, "BL - PUSH", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, -1, "BL - PUSH", false));
     }
 
     public string GetTablePicUrl()
