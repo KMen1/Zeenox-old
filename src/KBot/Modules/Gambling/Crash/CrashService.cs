@@ -135,13 +135,13 @@ public sealed class CrashGame : IGamblingGame
 
             if (Multiplier >= CrashPoint)
             {
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "", false));
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().CrashEmbed(this,
                         $"Crashed at: `{CrashPoint:0.00}x`\nYou lost **{Bet}** credits`", Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Crash: LOSE", false));
                 break;
             }
 
@@ -149,17 +149,17 @@ public sealed class CrashGame : IGamblingGame
         }
     }
 
-    public Task StopAsync()
+    public async Task StopAsync()
     {
         TokenSource.Cancel();
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Profit, $"CR - {Multiplier:0.0}x", false));
-        return Message.ModifyAsync(x =>
+        await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().CrashEmbed(this, $"Stopped at: `{Multiplier:0.00}x`\n" +
                                                           $"Crashpoint: `{CrashPoint:0.00}x`\n" +
                                                           $"You won **{Profit:0}** credits", Color.Green);
             x.Components = new ComponentBuilder().Build();
-        });
+        }).ConfigureAwait(false);
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Profit, $"CR: {Multiplier:0.0}x", false));
     }
 
     private void OnGameEnded(GameEndedEventArgs e)

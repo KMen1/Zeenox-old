@@ -4,16 +4,16 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace KBot.Models;
 
-public class ButtonRoleMessage
+public class SelfRoleMessage
 {
-    public ButtonRoleMessage(ulong guildId, ulong channelId, ulong messageId, string title, string description)
+    public SelfRoleMessage(ulong guildId, ulong channelId, ulong messageId, string title, string description)
     {
         GuildId = guildId;
         ChannelId = channelId;
         MessageId = messageId;
         Title = title;
         Description = description;
-        Roles = new List<ButtonRole>();
+        Roles = new List<SelfRole>();
     }
 
     [BsonElement("guild_id")] public ulong GuildId { get; set; }
@@ -21,9 +21,9 @@ public class ButtonRoleMessage
     [BsonId] public ulong MessageId { get; set; }
     [BsonElement("title")] public string Title { get; set; }
     [BsonElement("description")] public string Description { get; set; }
-    [BsonElement("roles")] public List<ButtonRole> Roles { get; set; }
+    [BsonElement("roles")] public List<SelfRole> Roles { get; set; }
 
-    public bool AddRole(ButtonRole role)
+    public bool AddRole(SelfRole role)
     {
         if (Roles.Exists(x => x.RoleId == role.RoleId))
             return false;
@@ -42,25 +42,29 @@ public class ButtonRoleMessage
     public MessageComponent ToButtons()
     {
         var comp = new ComponentBuilder();
+        var select = new SelectMenuBuilder();
+        select.WithCustomId("roleselect");
+        select.WithMinValues(0);
+        select.WithMaxValues(Roles.Count);
         foreach (var role in Roles)
         {
             var emoteResult = Emote.TryParse(role.Emote, out var emote);
             var emojiResult = Emoji.TryParse(role.Emote, out var emoji);
             if (emoteResult)
-                comp.WithButton(role.Title, $"rrtr:{role.RoleId}", emote: emote);
+                select.AddOption(role.Title, $"{role.RoleId}", emote: emote);
             else if (emojiResult)
-                comp.WithButton(role.Title, $"rrtr:{role.RoleId}", emote: emoji);
+                select.AddOption(role.Title, $"{role.RoleId}", emote: emoji);
             else
-                comp.WithButton(role.Title, $"rrtr:{role.RoleId}");
+                select.AddOption(role.Title, $"{role.RoleId}");
         }
-
+        comp.WithSelectMenu(select);
         return comp.Build();
     }
 }
 
-public class ButtonRole
+public class SelfRole
 {
-    public ButtonRole(ulong roleId, string title, string emote)
+    public SelfRole(ulong roleId, string title, string emote)
     {
         RoleId = roleId;
         Title = title;

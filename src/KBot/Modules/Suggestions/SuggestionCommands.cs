@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using StackExchange.Redis.KeyspaceIsolation;
 
 namespace KBot.Modules.Suggestions;
 
@@ -23,7 +24,7 @@ public class SuggestionCommands : SlashModuleBase
             .WithButton("Deny", $"suggest-decline:{Context.User.Id}", ButtonStyle.Danger, new Emoji("❌"))
             .Build();
 
-        var config = await GetGuildConfigAsync().ConfigureAwait(false);
+        var config = await Mongo.GetGuildConfigAsync(Context.Guild).ConfigureAwait(false);
         if (config.SuggestionChannelId == 0)
         {
             await FollowupAsync("Suggestions are not enabled on this server.").ConfigureAwait(false);

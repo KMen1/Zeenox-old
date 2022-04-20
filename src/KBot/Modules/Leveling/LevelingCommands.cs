@@ -29,8 +29,9 @@ public class Levels : SlashModuleBase
         var embed = new EmbedBuilder()
             .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
             .WithColor(Color.Gold)
-            .WithDescription(
-                $"**XP: **`{xp.ToString()}/{requiredXP}` \n**Level: **`{level.ToString()}`")
+            .AddField("Level", $"`{level}`", true)
+            .AddField("XP", $"`{xp}`", true)
+            .AddField("Required XP", $"`{requiredXP}`", true)
             .Build();
 
         await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
@@ -44,11 +45,12 @@ public class Levels : SlashModuleBase
 
         var userColumn = "";
         var levelColumn = "";
-
+        var xpColumn = "";
         foreach (var user in top)
         {
             userColumn += $"{top.IndexOf(user) + 1}. {Context.Guild.GetUser(user.UserId).Mention}\n";
-            levelColumn += $"{user.Level} ({user.Xp} XP)\n";
+            levelColumn += $"{user.Level}\n";
+            xpColumn += $"{user.Xp}\n";
         }
 
         await FollowupAsync(embed: new EmbedBuilder()
@@ -56,6 +58,7 @@ public class Levels : SlashModuleBase
             .WithColor(Color.Green)
             .AddField("User", userColumn, true)
             .AddField("Level", levelColumn, true)
+            .AddField("XP", xpColumn, true)
             .Build(), ephemeral: true).ConfigureAwait(false);
     }
 

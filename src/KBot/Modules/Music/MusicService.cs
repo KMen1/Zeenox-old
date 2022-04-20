@@ -351,15 +351,11 @@ public class AudioService : IInjectable
         return results.Tracks is not null ? results : null;
     }
 
-    public async Task<Embed> ToggleAutoplayAsync(IGuild guild)
+    public async Task ToggleAutoplayAsync(IGuild guild)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        if (player is null)
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
-
+        if (player is null) return;
         player.AutoPlay = !player.AutoPlay;
         await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
-        return new EmbedBuilder().WithColor(Color.Green)
-            .WithTitle("Autoplay has been" + (player.AutoPlay ? "enabled!" : "disabled!")).Build();
     }
 }

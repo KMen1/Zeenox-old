@@ -2,11 +2,12 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using Discord.WebSocket;
 using KBot.Models;
 
-namespace KBot.Modules.ButtonRoles;
+namespace KBot.Modules.SelfRoles;
 
-[Group("br", "Self assignable roles using buttons")]
+[Group("selfrole", "Self assignable roles using select menus")]
 public class ButtonRoleCommands : SlashModuleBase
 {
     [RequireUserPermission(GuildPermission.ManageRoles)]
@@ -22,7 +23,7 @@ public class ButtonRoleCommands : SlashModuleBase
 
         var msg = await Context.Channel.SendMessageAsync(embed: embed).ConfigureAwait(false);
         await Mongo
-            .AddReactionRoleMessageAsync(new ButtonRoleMessage(
+            .AddSelfRoleMessageAsync(new SelfRoleMessage(
                 Context.Guild.Id,
                 Context.Channel.Id,
                 msg.Id,
@@ -55,7 +56,7 @@ public class ButtonRoleCommands : SlashModuleBase
         var (result, reactionRoleMessage) = await Mongo.UpdateReactionRoleMessageAsync(
             Context.Guild,
             messageId,
-            x => x.AddRole(new ButtonRole(role.Id, title, emote))
+            x => x.AddRole(new SelfRole(role.Id, title, emote))
         ).ConfigureAwait(false);
         if (!result)
         {
@@ -102,29 +103,23 @@ public class ButtonRoleCommands : SlashModuleBase
         await FollowupAsync("Role removed!").ConfigureAwait(false);
     }
 
-    [ComponentInteraction("rrtr:*", true)]
-    public async Task HandleRoleButtonAsync(ulong roleId)
+    [ComponentInteraction("roleselect", true)]
+    public async Task HandleRoleButtonAsync(string[] selections)
     {
         await DeferAsync().ConfigureAwait(false);
-        var role = Context.Guild.GetRole(roleId);
-        var user = Context.Guild.GetUser(Context.User.Id);
-        if (user.Roles.Contains(role))
-        {
-            await user.RemoveRoleAsync(role).ConfigureAwait(false);
-            var eb = new EmbedBuilder()
-                .WithDescription($"**Succesfully removed {role.Mention} role**")
-                .WithColor(Color.Red)
-                .Build();
-            await FollowupAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-        }
-        else
-        {
-            await user.AddRoleAsync(role).ConfigureAwait(false);
-            var eb = new EmbedBuilder()
-                .WithDescription($"**Succesfully added {role.Mention} role**")
-                .WithColor(Color.Red)
-                .Build();
-            await FollowupAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-        }
+        var msgId = ((SocketMessageComponent) Context.Interaction).Message.Id;
+        var rr = await Mongo.GetSelfRoleMessageAsync(msgId).ConfigureAwait(false);
+        var roleIds = rr.Roles.Select(x => x.RoleId).ToArray();
+        var selectedIds = selections.Select(ulong.Parse).ToArray();
+        var rolesToRemove = roleIds.Except(selectedIds).Select(x => Context.Guild.GetRole(x)).Where(x => x != null).ToArray();
+        var rolesToAdd = selections.Select(x => Context.Guild.GetRole(ulong.Parse(x))).Where(x => x != null).ToArray();
+        await ((SocketGuildUser)Context.User).AddRolesAsync(rolesToAdd).ConfigureAwait(false);
+        await ((SocketGuildUser)Context.User).RemoveRolesAsync(rolesToRemove).ConfigureAwait(false);
+
+        var eb = new EmbedBuilder()
+            .WithDescription($"Successfully added {rolesToAdd.Length} roles and removed {rolesToRemove.Length} roles!")
+            .WithColor(Color.Green)
+            .Build();
+        await FollowupAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 }

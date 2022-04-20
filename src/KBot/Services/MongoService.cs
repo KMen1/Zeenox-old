@@ -17,7 +17,7 @@ public class MongoService : IInjectable
     private readonly IMongoCollection<User> _userCollection;
     private readonly IMongoCollection<Transaction> _transactionCollection;
     private readonly IMongoCollection<Warn> _warnCollection;
-    private readonly IMongoCollection<ButtonRoleMessage> _brCollection;
+    private readonly IMongoCollection<SelfRoleMessage> _brCollection;
 
     public MongoService(BotConfig config, IMemoryCache cache, IMongoDatabase database)
     {
@@ -26,7 +26,7 @@ public class MongoService : IInjectable
         _userCollection = database.GetCollection<User>(config.MongoDb.UserCollection);
         _transactionCollection = database.GetCollection<Transaction>(config.MongoDb.TransactionCollection);
         _warnCollection = database.GetCollection<Warn>(config.MongoDb.WarnCollection);
-        _brCollection = database.GetCollection<ButtonRoleMessage>(config.MongoDb.ButtonRoleCollection);
+        _brCollection = database.GetCollection<SelfRoleMessage>(config.MongoDb.ButtonRoleCollection);
     }
 
     public Task CreateGuildConfigAsync(IGuild guild)
@@ -43,19 +43,19 @@ public class MongoService : IInjectable
         });
     }
 
-    public Task AddReactionRoleMessageAsync(ButtonRoleMessage message)
+    public Task AddSelfRoleMessageAsync(SelfRoleMessage message)
     {
         return _brCollection.InsertOneAsync(message);
     }
 
-    public async Task<ButtonRoleMessage> GetReactionRoleMessagesAsync(IGuild vGuild, ulong messageId)
+    public async Task<SelfRoleMessage> GetSelfRoleMessageAsync(ulong messageId)
     {
-        var message = await _brCollection.FindAsync(x => x.GuildId == vGuild.Id && x.MessageId == messageId).ConfigureAwait(false);
+        var message = await _brCollection.FindAsync(x => x.MessageId == messageId).ConfigureAwait(false);
         return message.FirstOrDefault();
     }
 
-    public async Task<(bool, ButtonRoleMessage)> UpdateReactionRoleMessageAsync(IGuild vGuild, ulong messageId,
-        Action<ButtonRoleMessage> action)
+    public async Task<(bool, SelfRoleMessage)> UpdateReactionRoleMessageAsync(IGuild vGuild, ulong messageId,
+        Action<SelfRoleMessage> action)
     {
         var messages = await _brCollection.FindAsync(x => x.GuildId == vGuild.Id && x.MessageId == messageId).ConfigureAwait(false);
         var message = messages.FirstOrDefault();
@@ -131,7 +131,7 @@ public class MongoService : IInjectable
     public async Task<List<User>> GetTopUsersAsync(IGuild vGuild, int limit)
     {
         var users = (await _userCollection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).ToList();
-        return users.OrderByDescending(x => x.Xp).Take(limit).ToList();
+        return users.OrderByDescending(x => x.Level).Take(limit).ToList();
     }
 
     public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(IGuild guild, int limit)

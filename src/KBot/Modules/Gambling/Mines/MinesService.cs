@@ -155,7 +155,7 @@ public sealed class MinesGame : IGamblingGame
         if (point!.IsMine)
         {
             await StopAsync(true).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "MN - LOSE", false));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Mines: LOSE", false));
             return;
         }
 
@@ -213,7 +213,7 @@ public sealed class MinesGame : IGamblingGame
                 .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, lost ? "MN - LOSE" : "MN - WIN", !lost));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, lost ? "Mines: LOSE" : "Mines: WIN", !lost));
     }
 
     private void OnGameEnded(GameEndedEventArgs e)

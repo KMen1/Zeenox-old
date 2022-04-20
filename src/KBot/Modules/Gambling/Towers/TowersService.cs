@@ -168,7 +168,7 @@ public sealed class TowersGame : IGamblingGame
                     Lost ? $"You lost **{Bet}** credits" : $"You won **{Prize}** credits",
                     Lost ? Color.Red : Color.Green))
                 .ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Prize, "TW - Win", true));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Prize, "Towers: WIN", true));
         }
 
         var comp = new ComponentBuilder();
@@ -216,7 +216,7 @@ public sealed class TowersGame : IGamblingGame
                 Lost ? Color.Red : Color.Green);
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, "TW - Lose", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, "Towers: LOSE", false));
     }
 
     private void OnGameEnded(GameEndedEventArgs e)

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using Discord.WebSocket;
-using KBot.Models;
 using KBot.Services;
 
 namespace KBot.Modules;
@@ -23,10 +20,5 @@ public abstract class SlashModuleBase : InteractionModuleBase<SocketInteractionC
             .WithColor(color)
             .Build();
         return await Context.Interaction.FollowupAsync(embed: embed, ephemeral: ephemeral).ConfigureAwait(false);
-    }
-
-    protected Task<GuildConfig> GetGuildConfigAsync()
-    {
-        return Mongo.GetGuildConfigAsync(Context.Guild);
     }
 }
