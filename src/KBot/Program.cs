@@ -47,7 +47,7 @@ public static class Program
             {
                 x.MinimumBreadcrumbLevel = LogEventLevel.Warning;
                 x.MinimumEventLevel = LogEventLevel.Warning;
-                x.Dsn = "https://76bb0b430dbf48349ed15b3e5d168cea@o88188.ingest.sentry.io/6201115";
+                x.Dsn = "";
                 x.Debug = false;
                 x.AttachStacktrace = true;
                 x.SendDefaultPii = true;
