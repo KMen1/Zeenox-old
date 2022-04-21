@@ -74,7 +74,7 @@ public class MusicComponents : SlashModuleBase
     public async Task ToggleLoopAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.SetRepeatAsync(Context.Guild).ConfigureAwait(false);
+        await AudioService.ToggleRepeatAsync(Context.Guild).ConfigureAwait(false);
     }    
     
     [ComponentInteraction("autoplay")]

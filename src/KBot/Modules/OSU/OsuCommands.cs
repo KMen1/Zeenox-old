@@ -21,7 +21,11 @@ namespace KBot.Modules.OSU;
 [Group("osu", "osu! parancsok")]
 public class Osu : SlashModuleBase
 {
-    public OsuClient OsuClient { get; set; }
+    private readonly OsuClient _osuClient;
+    public Osu(OsuClient osuClient)
+    {
+        _osuClient = osuClient;
+    }
 
     [SlashCommand("set", "Link your osu! profile")]
     public async Task SetOsuProfileAsync(string link)
@@ -40,7 +44,7 @@ public class Osu : SlashModuleBase
     }
 
     [SlashCommand("recent", "Gets the recent play of a user")]
-    public async Task SendRecentOsuPlayAsync(SocketUser user = null)
+    public async Task SendRecentOsuPlayAsync(SocketUser? user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
@@ -52,7 +56,7 @@ public class Osu : SlashModuleBase
             return;
         }
 
-        var score = await OsuClient.GetUserScoresAsync((long) osuId, ScoreType.Recent, true, GameMode.Osu, 1)
+        var score = await _osuClient.GetUserScoresAsync((long) osuId, ScoreType.Recent, true, GameMode.Osu, 1)
             .ConfigureAwait(false);
         if (score.Count == 0)
         {
@@ -65,7 +69,7 @@ public class Osu : SlashModuleBase
     }
 
     [SlashCommand("stats", "osu! statistics")]
-    public async Task SendOsuStatsAsync(SocketUser user = null)
+    public async Task SendOsuStatsAsync(SocketUser? user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
@@ -77,7 +81,7 @@ public class Osu : SlashModuleBase
             return;
         }
 
-        var osuUser = await OsuClient.GetUserAsync((long) osuId, GameMode.Osu).ConfigureAwait(false);
+        var osuUser = await _osuClient.GetUserAsync((long) osuId, GameMode.Osu).ConfigureAwait(false);
         var playStyle = osuUser.Playstyle[0] == "mouse" ? "Mouse" : "Tablet";
         var eb = new EmbedBuilder()
             .WithAuthor(osuUser.Username, osuUser.AvatarUrl.ToString(), $"https://osu.ppy.sh/users/{osuUser.Id}")
@@ -89,7 +93,7 @@ public class Osu : SlashModuleBase
                 $"`# {osuUser.Statistics.GlobalRank.ToString("n0")} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)}PP)`",
                 true)
             .AddField("🥇 Country Rank", $"`# {osuUser.Statistics.CountryRank.ToString("n0")}`", true)
-            .AddField("🎯 Accuracy", $"`{Math.Round(osuUser.Statistics.HitAccuracy, 1).ToString()} %`", true)
+            .AddField("🎯 Accuracy", $"`{Math.Round(osuUser.Statistics.HitAccuracy, 1).ToString(CultureInfo.InvariantCulture)} %`", true)
             .AddField("🕐 Playtime",
                 $"`{TimeSpan.FromSeconds(osuUser.Statistics.PlayTime).Humanize()} ({osuUser.Statistics.PlayCount.ToString()} játék)`",
                 true)
@@ -109,7 +113,7 @@ public class Osu : SlashModuleBase
         var userOsuPair = new Dictionary<SocketUser, IUser>();
         foreach (var (userId, osuId) in users)
             userOsuPair.Add(Context.Client.GetUser(userId),
-                await OsuClient.GetUserAsync((long) osuId, GameMode.Osu).ConfigureAwait(false));
+                await _osuClient.GetUserAsync((long) osuId, GameMode.Osu).ConfigureAwait(false));
 
         var userOsuPairList = userOsuPair.ToList();
         userOsuPairList.Sort((x, y) => x.Value.Statistics.GlobalRank.CompareTo(y.Value.Statistics.GlobalRank));
@@ -132,7 +136,7 @@ public class Osu : SlashModuleBase
     }
 
     [SlashCommand("topplay", "Sends the top play of a user")]
-    public async Task SendOsuTopPlayAsync(SocketUser user = null)
+    public async Task SendOsuTopPlayAsync(SocketUser? user = null)
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = new Stopwatch();
@@ -144,7 +148,7 @@ public class Osu : SlashModuleBase
             return;
         }
 
-        var score = await OsuClient.GetUserScoresAsync((long) osuId, ScoreType.Best, true, GameMode.Osu, 1)
+        var score = await _osuClient.GetUserScoresAsync((long) osuId, ScoreType.Best, true, GameMode.Osu, 1)
             .ConfigureAwait(false);
         await FollowUpWithScoreAsync(score[0], sw).ConfigureAwait(false);
     }

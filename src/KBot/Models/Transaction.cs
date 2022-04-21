@@ -16,7 +16,7 @@ public class Transaction
         To = to;
         Date = DateTime.UtcNow;
     }
-    public Transaction(string id, TransactionType source, int amount, string description = null)
+    public Transaction(string id, TransactionType source, int amount, string? description = null)
     {
         Id = id;
         Source = source;
@@ -31,9 +31,9 @@ public class Transaction
     [BsonElement("type")] public TransactionType Source { get; set; }
     [BsonElement("amount")] public int Amount { get; set; }
     [BsonElement("date")] public DateTime Date { get; set; }
-    [BsonElement("desc")] public string Description { get; set; }
-    [BsonElement("from")] public string From { get; set; }
-    [BsonElement("to")] public string To { get; set; }
+    [BsonElement("desc")] public string? Description { get; set; }
+    [BsonElement("from")] public string? From { get; set; }
+    [BsonElement("to")] public string? To { get; set; }
 
     public override string ToString()
     {

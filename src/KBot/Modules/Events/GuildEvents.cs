@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Humanizer;
-using KBot.Enums;
-using KBot.Extensions;
 using KBot.Services;
 using Serilog;
 
@@ -85,16 +82,13 @@ public class GuildEvents : IInjectable
         if (user.IsBot || user.IsWebhook) return;
         var dbUser = await _mongo.GetUserAsync(user).ConfigureAwait(false);
         var config = await _mongo.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
-        if (dbUser is not null)
-            foreach (var roleId in dbUser.Roles)
-            {
-                var guild = user.Guild;
-                var role = guild.GetRole(roleId);
-                if (role is null) continue;
-                await user.AddRoleAsync(role).ConfigureAwait(false);
-            }
-        else
-            await _mongo.AddUserAsync(user).ConfigureAwait(false);
+        foreach (var roleId in dbUser.Roles)
+        {
+            var guild = user.Guild;
+            var role = guild.GetRole(roleId);
+            if (role is null) continue;
+            await user.AddRoleAsync(role).ConfigureAwait(false);
+        }
 
         await user.AddRoleAsync(config.WelcomeRoleId).ConfigureAwait(false);
 

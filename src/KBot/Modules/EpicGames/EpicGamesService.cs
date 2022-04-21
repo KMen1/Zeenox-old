@@ -46,10 +46,10 @@ public class EpicGamesService : IInjectable
             foreach (var guild in _client.Guilds)
             {
                 var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
-                if (config.EpicNotificationChannelId != 0)
-                {
-                    channels.Add(await _client.GetChannelAsync(config.EpicNotificationChannelId).ConfigureAwait(false) as ITextChannel);
-                }
+                if (config.EpicNotificationChannelId == 0) continue;
+                var channel = guild.GetTextChannel(config.EpicNotificationChannelId);
+                if (channel is null) continue;
+                channels.Add(channel);
             }
             var embeds = games.Select(game =>
                 new EmbedBuilder()

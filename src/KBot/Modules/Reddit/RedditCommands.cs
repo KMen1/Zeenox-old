@@ -7,13 +7,17 @@ namespace KBot.Modules.Reddit;
 [Group("reddit", "Reddit commands")]
 public class Reddit : SlashModuleBase
 {
-    public RedditService RedditService { get; set; }
+    private readonly RedditService _redditService;
+    public Reddit(RedditService redditService)
+    {
+        _redditService = redditService;
+    }
 
     [SlashCommand("sub", "Sends a random post from the specified subreddit.")]
     public async Task SubAsync(string subreddit)
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostFromSubredditAsync(subreddit).ConfigureAwait(false);
+        var post = await _redditService.GetRandomPostFromSubredditAsync(subreddit).ConfigureAwait(false);
         if (post is null)
         {
             await FollowupWithEmbedAsync(Color.Red, "Nem található ilyen subreddit.", "").ConfigureAwait(false);
@@ -28,7 +32,7 @@ public class Reddit : SlashModuleBase
     public async Task FostAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostFromSubredditAsync("FostTalicska").ConfigureAwait(false);
+        var post = await _redditService.GetRandomPostFromSubredditAsync("FostTalicska").ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -37,7 +41,7 @@ public class Reddit : SlashModuleBase
     public async Task MemeAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostFromSubredditAsync("memes").ConfigureAwait(false);
+        var post = await _redditService.GetRandomPostFromSubredditAsync("memes").ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -46,7 +50,7 @@ public class Reddit : SlashModuleBase
     public async Task BlursedAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostFromSubredditAsync("blursedimages").ConfigureAwait(false);
+        var post = await _redditService.GetRandomPostFromSubredditAsync("blursedimages").ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -56,7 +60,7 @@ public class Reddit : SlashModuleBase
     public async Task PussyAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostFromSubredditAsync("pussy").ConfigureAwait(false);
+        var post = await _redditService.GetRandomPostFromSubredditAsync("pussy").ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -66,7 +70,7 @@ public class Reddit : SlashModuleBase
     public async Task BoobsAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostFromSubredditAsync("boobs").ConfigureAwait(false);
+        var post = await _redditService.GetRandomPostFromSubredditAsync("boobs").ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -76,7 +80,7 @@ public class Reddit : SlashModuleBase
     public async Task AssAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await RedditService.GetRandomPostFromSubredditAsync("ass").ConfigureAwait(false);
+        var post = await _redditService.GetRandomPostFromSubredditAsync("ass").ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }

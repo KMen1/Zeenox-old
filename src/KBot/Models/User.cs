@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Discord;
 using Discord.WebSocket;
@@ -57,7 +58,7 @@ public class User
     [BsonElement("money_won")] public int MoneyWon { get; set; }
     [BsonElement("money_lost")] public int MoneyLost { get; set; }
     [BsonElement("transaction_ids")] public List<string> TransactionIds { get; set; }
-    [BsonElement("game_result_ids")] public List<string> GameResultIds { get; set; }
+    //[BsonElement("game_result_ids")] public List<string> GameResultIds { get; set; }
     [BsonElement("warn_ids")] public List<string> WarnIds { get; set; }
     [BsonIgnore] public double WinRate => Math.Round(Wins / (double) GamesPlayed * 100, 2);
     
@@ -69,7 +70,7 @@ public class User
             .AddField("💳 Balance", $"`{Balance.ToString()}`", true)
             .AddField("💰 Money Won", $"`{MoneyWon.ToString()}`", true)
             .AddField("💸 Money Lost", $"`{MoneyLost.ToString()}`", true)
-            .AddField("📈 Winrate", $"`{WinRate.ToString()}%`", true)
+            .AddField("📈 Winrate", $"`{WinRate.ToString(CultureInfo.InvariantCulture)}%`", true)
             .AddField("🏆 Wins", $"`{Wins.ToString()}`", true)
             .AddField("🚫 Loses", $"`{Losses.ToString()}`", true);
     }

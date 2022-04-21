@@ -41,7 +41,7 @@ public class ButtonRoleCommands : SlashModuleBase
     [RequireUserPermission(GuildPermission.ManageRoles)]
     [SlashCommand("add", "Adds a role to the specified button role message.")]
     public async Task AddRoleToMessageAsync([Summary("messageid")] string messageIdString, string title, IRole role,
-        string emote)
+        string emote, string? description = null)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var parseResult = ulong.TryParse(messageIdString, out var messageId);
@@ -56,7 +56,7 @@ public class ButtonRoleCommands : SlashModuleBase
         var (result, reactionRoleMessage) = await Mongo.UpdateReactionRoleMessageAsync(
             Context.Guild,
             messageId,
-            x => x.AddRole(new SelfRole(role.Id, title, emote))
+            x => x.AddRole(new SelfRole(role.Id, title, emote, description))
         ).ConfigureAwait(false);
         if (!result)
         {
@@ -64,7 +64,7 @@ public class ButtonRoleCommands : SlashModuleBase
             return;
         }
 
-        var dMessage = await Context.Guild.GetTextChannel(reactionRoleMessage.ChannelId)
+        var dMessage = await Context.Guild.GetTextChannel(reactionRoleMessage!.ChannelId)
             .GetMessageAsync(reactionRoleMessage.MessageId).ConfigureAwait(false) as IUserMessage;
 
         await dMessage!.ModifyAsync(x => x.Components = reactionRoleMessage.ToButtons()).ConfigureAwait(false);
@@ -96,7 +96,7 @@ public class ButtonRoleCommands : SlashModuleBase
             return;
         }
 
-        var dMessage = await Context.Guild.GetTextChannel(reactionRoleMessage.ChannelId)
+        var dMessage = await Context.Guild.GetTextChannel(reactionRoleMessage!.ChannelId)
             .GetMessageAsync(reactionRoleMessage.MessageId).ConfigureAwait(false) as IUserMessage;
 
         await dMessage!.ModifyAsync(x => x.Components = reactionRoleMessage.ToButtons()).ConfigureAwait(false);

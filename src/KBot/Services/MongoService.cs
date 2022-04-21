@@ -54,7 +54,7 @@ public class MongoService : IInjectable
         return message.FirstOrDefault();
     }
 
-    public async Task<(bool, SelfRoleMessage)> UpdateReactionRoleMessageAsync(IGuild vGuild, ulong messageId,
+    public async Task<(bool, SelfRoleMessage?)> UpdateReactionRoleMessageAsync(IGuild vGuild, ulong messageId,
         Action<SelfRoleMessage> action)
     {
         var messages = await _brCollection.FindAsync(x => x.GuildId == vGuild.Id && x.MessageId == messageId).ConfigureAwait(false);
@@ -103,13 +103,13 @@ public class MongoService : IInjectable
         var warns = new List<Warn>();
         var tasks = dbUser.WarnIds.ConvertAll(warnId =>
             _warnCollection.FindAsync(x => x.Id == warnId)
-                .ContinueWith(x =>
-                    warns.Add(x.Result.FirstOrDefault())));
+                .ContinueWith(async x =>
+                    warns.Add((await x).FirstOrDefault())));
         await Task.WhenAll(tasks).ConfigureAwait(false);
         return warns;
     }
     
-    public async Task<Warn> GetWarnAsync(string warnId)
+    public async Task<Warn?> GetWarnAsync(string warnId)
     {
         var warns = await _warnCollection.FindAsync(x => x.Id == warnId).ConfigureAwait(false);
         return warns.FirstOrDefault();
@@ -161,8 +161,8 @@ public class MongoService : IInjectable
         var transactions = new List<Transaction>();
         var tasks = dbUser.TransactionIds.ConvertAll(transactionId =>
             _transactionCollection.FindAsync(x => x.Id == transactionId)
-                .ContinueWith(x =>
-                    transactions.Add(x.Result.FirstOrDefault())));
+                .ContinueWith(async x =>
+                    transactions.Add((await x).FirstOrDefault())));
         await Task.WhenAll(tasks).ConfigureAwait(false);
         return transactions;
     }

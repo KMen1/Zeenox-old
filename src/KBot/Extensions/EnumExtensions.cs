@@ -7,7 +7,7 @@ namespace KBot.Extensions;
 
 public static class EnumExtensions
 {
-    public static string GetDescription(this Enum value)
+    public static string? GetDescription(this Enum value)
     {
         var type = value.GetType();
         var name = Enum.GetName(type, value);

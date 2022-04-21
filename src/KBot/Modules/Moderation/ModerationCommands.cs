@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -54,7 +55,7 @@ public class ModerationCommands : SlashModuleBase
     }
 
     [RequireUserPermission(GuildPermission.KickMembers)]
-    [SlashCommand("removewarn", "Deletes a warn.")]
+    [SlashCommand("deletewarn", "Deletes a warn.")]
     public async Task RemoveWarnAsync(string warnId)
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -75,7 +76,7 @@ public class ModerationCommands : SlashModuleBase
         var warns = await Mongo.GetWarnsAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         if (warns.Count == 0)
         {
-            await FollowupWithEmbedAsync(Color.Gold, "😎 Nice job!",
+            await FollowupWithEmbedAsync(Color.Gold, "😎 Good job!",
                 $"{user.Mention} has no warns!").ConfigureAwait(false);
             return;
         }
@@ -83,9 +84,33 @@ public class ModerationCommands : SlashModuleBase
         var warnString = new StringBuilder();
         foreach (var warn in warns)
             warnString.AppendLine(
-                $"`{warn.Id}`: **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`");
+                $"`{warn.Id}`:`{warn.Date.ToString(CultureInfo.InvariantCulture)}` **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`");
         await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} has {warns.Count} warns", warnString.ToString(),
             ephemeral: true).ConfigureAwait(false);
+    }
+
+    [SlashCommand("warninfo", "Get more information about a warn.")]
+    public async Task WarnInfoAsync(string warnId)
+    {
+        await DeferAsync(true).ConfigureAwait(false);
+        var warn = await Mongo.GetWarnAsync(warnId).ConfigureAwait(false);
+        if (warn == null)
+        {
+            await FollowupWithEmbedAsync(Color.Red, $"Warn with id({warnId}) does not exist", "").ConfigureAwait(false);
+            return;
+        }
+        var moderator = Context.Client.GetUser(warn.GivenById);
+        var user = Context.Client.GetUser(warn.GivenToId);
+        var eb = new EmbedBuilder()
+            .WithTitle($"Details of warn: {warn.Id}")
+            .WithColor(Color.Orange)
+            .AddField("Given By", $"{moderator.Mention}", true)
+            .AddField("Given To", $"{user.Mention}", true)
+            .AddField("Date", $"{warn.Date.ToString(CultureInfo.InvariantCulture)}", true)
+            .AddField("Reason", $"```{warn.Reason}```")
+            .WithCurrentTimestamp()
+            .Build();
+        await FollowupAsync(embed: eb).ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.ManageNicknames)]

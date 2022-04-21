@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+#pragma warning disable CS8618
 
 namespace KBot.Models;
 
@@ -11,7 +12,7 @@ public partial class EpicStore
 {
     [JsonProperty("data")] private Data Data { get; set; }
 
-    private IEnumerable<Game> Games => Data?.Catalog.SearchStore.Games;
+    private IEnumerable<Game>? Games => Data?.Catalog.SearchStore.Games;
 
     public IEnumerable<Game> CurrentGames => Games?.ToList()
         .FindAll(x => x.Promotions is not null && x.Promotions.PromotionalOffers.Length != 0);
@@ -80,9 +81,9 @@ public class Game
 
     [JsonProperty("price")] public Price Price { get; set; }
 
-    [JsonProperty("promotions")] public Promotions Promotions { get; set; }
+    [JsonProperty("promotions")] public Promotions? Promotions { get; set; }
 
-    public PromotionalOfferPromotionalOffer[] Discounts => Promotions.PromotionalOffers[0].PromotionalOffers;
+    public PromotionalOfferPromotionalOffer[]? Discounts => Promotions?.PromotionalOffers[0].PromotionalOffers;
 }
 
 public class CatalogNs
@@ -230,7 +231,7 @@ public class Paging
 
 public partial class EpicStore
 {
-    public static EpicStore FromJson(string json)
+    public static EpicStore? FromJson(string json)
     {
         return JsonConvert.DeserializeObject<EpicStore>(json, ConverterEpic.Settings);
     }

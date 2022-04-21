@@ -44,7 +44,7 @@ public class ModerationComponents : SlashModuleBase
         var msgId = ((SocketMessageComponent) Context.Interaction).Message.Id;
         var modal = new ModalBuilder()
             .WithTitle("Justify Decision")
-            .WithCustomId($"appeal-decision:{userId}:{adminId}:{msgId}:1")
+            .WithCustomId($"appeal-decision:{userId}:{msgId}:1")
             .AddTextInput("Please justify your decision", "reason-input", TextInputStyle.Paragraph,
                 "Accident...")
             .Build();
@@ -61,26 +61,25 @@ public class ModerationComponents : SlashModuleBase
         var msgId = ((SocketMessageComponent) Context.Interaction).Message.Id;
         var modal = new ModalBuilder()
             .WithTitle("Justify Decision")
-            .WithCustomId($"appeal-decision:{userId}:{adminId}:{msgId}:0")
+            .WithCustomId($"appeal-decision:{userId}:{msgId}:0")
             .AddTextInput("Please justify your decision:", "reason-input", TextInputStyle.Paragraph,
                 "Accident...")
             .Build();
         await RespondWithModalAsync(modal).ConfigureAwait(false);
     }
 
-    [ModalInteraction("appeal-decision:*:*:*:*")]
-    public async Task AppealDecisionAsync(ulong userId, ulong adminId, ulong messageId, string decision,
+    [ModalInteraction("appeal-decision:*:*:*")]
+    public async Task AppealDecisionAsync(ulong userId, ulong messageId, int decision,
         ReasonModal modal)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var msg =
             (IUserMessage) await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
-        var admin = Context.Guild.GetUser(Convert.ToUInt64(adminId));
         var user = Context.Guild.GetUser(Convert.ToUInt64(userId));
         var embed = msg.Embeds.First().ToEmbedBuilder();
 
         var userEb = new EmbedBuilder();
-        if (decision == "1")
+        if (decision == 1)
         {
             userEb.WithAuthor(Context.Guild.Name, Context.Guild.IconUrl)
                 .WithTitle("Appeal Accepted")

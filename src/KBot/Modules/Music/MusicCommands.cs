@@ -11,7 +11,11 @@ namespace KBot.Modules.Music;
 [Group("music", "Music")]
 public class MusicCommands : SlashModuleBase
 {
-    public AudioService AudioService { get; set; }
+    private readonly AudioService _audioService;
+    public MusicCommands(AudioService audioService)
+    {
+        _audioService = audioService;
+    }
 
     [SlashCommand("move", "Moves the bot to the channel you are in")]
     public async Task MovePlayerAsync()
@@ -23,29 +27,29 @@ public class MusicCommands : SlashModuleBase
             return;
         }
 
-        await RespondAsync(embed: await AudioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false), ephemeral: true)
+        await RespondAsync(embed: await _audioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false), ephemeral: true)
             .ConfigureAwait(false);
     }
 
     [SlashCommand("leave", "Leaves the voice channel the bot is in")]
     public async Task DisconnectPlayerAsync()
     {
-        await RespondAsync(embed: await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false), ephemeral: true)
+        await RespondAsync(embed: await _audioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false), ephemeral: true)
             .ConfigureAwait(false);
     }
 
     [SlashCommand("play", "Plays a song")]
     public async Task PlayAsync(string query)
     {
-        await DeferAsync().ConfigureAwait(false);
         if (((IVoiceState) Context.User).VoiceChannel is null)
         {
-            await FollowupAsync(embed: new EmbedBuilder().ErrorEmbed("You are not in a voice channel!"))
+            await RespondAsync(embed: new EmbedBuilder().ErrorEmbed("You are not in a voice channel!"))
                 .ConfigureAwait(false);
             return;
         }
+        await RespondAsync("Searching...").ConfigureAwait(false);
 
-        await AudioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
+        await _audioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
     }
 
     [SlashCommand("search", "Searches for a song")]
@@ -54,11 +58,11 @@ public class MusicCommands : SlashModuleBase
         await DeferAsync().ConfigureAwait(false);
         if (Uri.IsWellFormedUriString(query, UriKind.Absolute))
         {
-            await AudioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
+            await _audioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
             return;
         }
 
-        var search = await AudioService.SearchAsync(query).ConfigureAwait(false);
+        var search = await _audioService.SearchAsync(query).ConfigureAwait(false);
         if (search is null)
         {
             await FollowupAsync("No matches!").ConfigureAwait(false);
@@ -110,7 +114,7 @@ public class MusicCommands : SlashModuleBase
         }
 
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.PlayFromSearchAsync(Context.Guild, (SocketMessageComponent) Context.Interaction, identifier)
+        await _audioService.PlayFromSearchAsync(Context.Guild, (SocketMessageComponent) Context.Interaction, identifier)
             .ConfigureAwait(false);
     }
 
@@ -119,20 +123,20 @@ public class MusicCommands : SlashModuleBase
         [Summary("volume")] [MinValue(1)] [MaxValue(100)]
         ushort volume)
     {
-        await RespondAsync(embed: await AudioService.SetVolumeAsync(Context.Guild, volume).ConfigureAwait(false),
+        await RespondAsync(embed: await _audioService.SetVolumeAsync(Context.Guild, volume).ConfigureAwait(false),
             ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("queue", "Shows the current queue")]
     public Task SendQueueAsync()
     {
-        return RespondAsync(embed: AudioService.GetQueue(Context.Guild), ephemeral: true);
+        return RespondAsync(embed: _audioService.GetQueue(Context.Guild), ephemeral: true);
     }
 
     [SlashCommand("clearqueue", "Clears the current queue")]
     public async Task ClearQueueAsync()
     {
-        await RespondAsync(embed: await AudioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false), ephemeral: true)
+        await RespondAsync(embed: await _audioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false), ephemeral: true)
             .ConfigureAwait(false);
     }
 }

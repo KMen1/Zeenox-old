@@ -15,7 +15,7 @@ public class RedditService : IInjectable
         _httpClient = httpClient;
     }
 
-    public async ValueTask<Post> GetRandomPostFromSubredditAsync(string subredditName)
+    public async ValueTask<Post?> GetRandomPostFromSubredditAsync(string subredditName)
     {
         var url = $"https://www.reddit.com/r/{subredditName}/.json?sort=hot&limit=30";
         var jsonString = await _httpClient.GetStringAsync(url).ConfigureAwait(false);

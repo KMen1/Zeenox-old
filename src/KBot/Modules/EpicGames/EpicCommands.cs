@@ -11,14 +11,19 @@ namespace KBot.Modules.EpicGames;
 [Group("epic", "Set epic channel or get free games")]
 public class EpicCommands : SlashModuleBase
 {
-    public HttpClient HttpClient { get; set; }
-    public EpicGamesService EpicGamesService { get; set; }
-
+    private readonly HttpClient _httpClient;
+    private readonly EpicGamesService _epicGamesService;
+    public EpicCommands(HttpClient httpClient, EpicGamesService epicGamesService)
+    {
+        _httpClient = httpClient;
+        _epicGamesService = epicGamesService;
+    }
+    
     [SlashCommand("free", "Send the current free games on the Epic Games Store.")]
     public async Task GetEpicFreeGameAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var games = await EpicGamesService.GetCurrentFreeGamesAsync().ConfigureAwait(false);
+        var games = await _epicGamesService.GetCurrentFreeGamesAsync().ConfigureAwait(false);
         var embeds = games.Select(game =>
             new EmbedBuilder()
                 .WithTitle(game.Title)
@@ -33,7 +38,7 @@ public class EpicCommands : SlashModuleBase
 
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("set", "Sets the channel to receive weekly epic free games.")]
-    public async Task SetEpicChannelAsync(ITextChannel channel = null)
+    public async Task SetEpicChannelAsync(ITextChannel? channel = null)
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.EpicNotificationChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);

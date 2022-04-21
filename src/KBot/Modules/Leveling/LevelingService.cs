@@ -13,7 +13,7 @@ namespace KBot.Modules.Leveling;
 public class LevelingModule : IInjectable
 {
     private readonly MongoService _database;
-    private readonly ConcurrentQueue<(SocketGuildUser, int)> _XpQueue = new();
+    private readonly ConcurrentQueue<(SocketGuildUser, int)> _xpQueue = new();
 
     public LevelingModule(DiscordSocketClient client, MongoService database)
     {
@@ -31,7 +31,7 @@ public class LevelingModule : IInjectable
             await Task.Delay(1000).ConfigureAwait(false);
 
             var usersToUpdate = new List<(SocketGuildUser, int)>();
-            while (_XpQueue.TryDequeue(out var user)) usersToUpdate.Add(user);
+            while (_xpQueue.TryDequeue(out var user)) usersToUpdate.Add(user);
 
             if (usersToUpdate.Count == 0)
                 continue;
@@ -112,7 +112,7 @@ public class LevelingModule : IInjectable
             var msgLength = message.Content.Length;
             var pointsToGive = (int) Math.Floor(rate * 100 + msgLength / 2);
 
-            _XpQueue.Enqueue((user, pointsToGive));
+            _xpQueue.Enqueue((user, pointsToGive));
         }).ConfigureAwait(false);
     }
 
@@ -169,7 +169,7 @@ public class LevelingModule : IInjectable
         var seconds = (int) (DateTime.UtcNow - joinDate).TotalSeconds;
         if (seconds < 10)
             return;
-        _XpQueue.Enqueue((user, seconds));
+        _xpQueue.Enqueue((user, seconds));
     }
 
     private static bool IsActive(IVoiceState user)

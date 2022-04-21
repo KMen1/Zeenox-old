@@ -51,11 +51,11 @@ public class SelfRoleMessage
             var emoteResult = Emote.TryParse(role.Emote, out var emote);
             var emojiResult = Emoji.TryParse(role.Emote, out var emoji);
             if (emoteResult)
-                select.AddOption(role.Title, $"{role.RoleId}", emote: emote);
+                select.AddOption(role.Title, $"{role.RoleId}", role.Description, emote: emote);
             else if (emojiResult)
-                select.AddOption(role.Title, $"{role.RoleId}", emote: emoji);
+                select.AddOption(role.Title, $"{role.RoleId}", role.Description, emote: emoji);
             else
-                select.AddOption(role.Title, $"{role.RoleId}");
+                select.AddOption(role.Title, $"{role.RoleId}", role.Description);
         }
         comp.WithSelectMenu(select);
         return comp.Build();
@@ -64,14 +64,16 @@ public class SelfRoleMessage
 
 public class SelfRole
 {
-    public SelfRole(ulong roleId, string title, string emote)
+    public SelfRole(ulong roleId, string title, string emote, string description)
     {
         RoleId = roleId;
         Title = title;
         Emote = emote;
+        Description = description;
     }
 
-    [BsonElement("role_id")] public ulong RoleId { get; }
-    [BsonElement("title")] public string Title { get; }
-    [BsonElement("emote")] public string Emote { get; }
+    [BsonElement("role_id")] public ulong RoleId { get; set; }
+    [BsonElement("title")] public string Title { get; set; }
+    [BsonElement("title")] public string Description { get; set; }
+    [BsonElement("emote")] public string Emote { get; set; }
 }

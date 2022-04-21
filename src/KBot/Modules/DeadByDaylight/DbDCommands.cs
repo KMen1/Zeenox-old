@@ -10,7 +10,11 @@ namespace KBot.Modules.DeadByDaylight;
 [Group("dbd", "Commands related to Dead by Daylight")]
 public class DbDCommands : SlashModuleBase
 {
-    public DbDService DbDService { get; set; }
+    private readonly DbDService _dbDService;
+    public DbDCommands(DbDService dbDService)
+    {
+        _dbDService = dbDService;
+    }
 
     [SlashCommand("shrine", "Gets the current weekly shrines")]
     public async Task DbdShrineAsync()
@@ -21,7 +25,7 @@ public class DbDCommands : SlashModuleBase
             .WithTitle("Shrine of Secrets")
             .WithColor(Color.Orange);
 
-        var perks = await DbDService.GetShrinesAsync().ConfigureAwait(false);
+        var perks = await _dbDService.GetShrinesAsync().ConfigureAwait(false);
 
         foreach (var perk in perks) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
         eb.WithDescription($"🏁 <t:{DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).ToUnixTimeSeconds()}:R>");
@@ -32,7 +36,7 @@ public class DbDCommands : SlashModuleBase
 
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("set", "Sets the channel to receive weekyl shrines")]
-    public async Task SetDbdChannelAsync(ITextChannel channel = null)
+    public async Task SetDbdChannelAsync(ITextChannel? channel = null)
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.DbdNotificationChannelId = channel?.Id ?? 0).ConfigureAwait(false);
         await RespondAsync(channel is null ?

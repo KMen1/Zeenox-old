@@ -13,7 +13,7 @@ public class LoggingService : IInjectable
         ((EventLogger) lavaLogger).LogMessage += Log;
     }
 
-    private static void Log(object sender, LogMessageEventArgs arg)
+    private static void Log(object? sender, LogMessageEventArgs arg)
     {
         switch (arg.Level)
         {

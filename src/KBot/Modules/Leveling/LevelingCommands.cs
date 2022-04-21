@@ -12,7 +12,7 @@ namespace KBot.Modules.Leveling;
 public class Levels : SlashModuleBase
 {
     [SlashCommand("rank", "Gets a users level")]
-    public async Task GetLevelAsync(SocketUser user = null)
+    public async Task GetLevelAsync(SocketUser? user = null)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var setUser = user ?? Context.User;
@@ -91,7 +91,7 @@ public class Levels : SlashModuleBase
 
     [RequireUserPermission(GuildPermission.KickMembers)]
     [SlashCommand("changexp", "Change someone's XP")]
-    public async Task ChangeXPAsync(SocketGuildUser user, int offset)
+    public async Task ChangeXpAsync(SocketGuildUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Mongo.UpdateUserAsync(user, x => x.Xp += offset).ConfigureAwait(false);

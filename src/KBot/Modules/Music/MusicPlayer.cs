@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -15,7 +16,11 @@ public class MusicPlayer : LavalinkPlayer
 {
     public readonly IVoiceChannel VoiceChannel;
 
-    public MusicPlayer(IVoiceChannel voiceChannel, int skipVotesNeeded, YouTubeService youTubeService,
+    public MusicPlayer(
+        IVoiceChannel voiceChannel,
+        IUserMessage nowPlayingMessage,
+        int skipVotesNeeded,
+        YouTubeService youTubeService,
         LavalinkNode lavalinkNode)
     {
         VoiceChannel = voiceChannel;
@@ -25,16 +30,16 @@ public class MusicPlayer : LavalinkPlayer
         Loop = false;
         AutoPlay = false;
         FilterEnabled = null;
-        NowPlayingMessage = null;
+        NowPlayingMessage = nowPlayingMessage;
         Queue = new List<LavalinkTrack>();
         QueueHistory = new List<LavalinkTrack>();
         SkipVotes = new List<ulong>();
     }
 
-    public bool Loop { get; set; }
-    public string FilterEnabled { get; set; }
+    public bool Loop { get; private set; }
+    public string? FilterEnabled { get; set; }
     public SocketUser LastRequestedBy => (CurrentTrack!.Context as TrackContext)!.AddedBy;
-    public IUserMessage NowPlayingMessage { get; set; }
+    private IUserMessage? NowPlayingMessage { get; set; }
     public List<LavalinkTrack> Queue { get; }
     public int QueueCount => Queue.Count;
     private List<LavalinkTrack> QueueHistory { get; }
@@ -46,28 +51,44 @@ public class MusicPlayer : LavalinkPlayer
     public int SkipVotesNeeded { get; private set; }
     private YouTubeService YouTubeService { get; }
     private LavalinkNode LavalinkNode { get; }
-    public bool AutoPlay { get; set; }
+    public bool AutoPlay { get; private set; }
 
-    public Task UpdateNowPlayingMessageAsync()
+    private Task UpdateNowPlayingMessageAsync()
     {
-        return NowPlayingMessage.ModifyAsync(x =>
+        return NowPlayingMessage!.ModifyAsync(x =>
         {
+            x.Content = "";
             x.Embed = new EmbedBuilder().NowPlayingEmbed(this);
             x.Components = new ComponentBuilder().NowPlayerComponents(this);
         });
     }
 
-    public void Enqueue(LavalinkTrack track)
+    
+    public Task ToggleLoopAsync()
+    {
+        Loop = !Loop;
+        return UpdateNowPlayingMessageAsync();
+    }
+    
+    public Task ToggleAutoPlayAsync()
+    {
+        AutoPlay = !AutoPlay;
+        return UpdateNowPlayingMessageAsync();
+    }
+    
+    public Task EnqueueAsync(LavalinkTrack track)
     {
         Queue.Add(track);
+        return UpdateNowPlayingMessageAsync();
     }
 
-    public void Enqueue(IEnumerable<LavalinkTrack> tracks)
+    public Task EnqueueAsync(IEnumerable<LavalinkTrack> tracks)
     {
         Queue.AddRange(tracks);
+        return UpdateNowPlayingMessageAsync();
     }
 
-    public bool TryDequeue(LavalinkTrack track, out LavalinkTrack nextTrack)
+    public bool TryDequeue(LavalinkTrack track, out LavalinkTrack? nextTrack)
     {
         if (Queue.Count > 0 && Queue.Contains(track))
         {
@@ -80,10 +101,11 @@ public class MusicPlayer : LavalinkPlayer
         return false;
     }
 
-    public bool ClearQueue()
+    public async Task<bool> ClearQueueAsync()
     {
         if (Queue.Count == 0) return false;
         Queue.Clear();
+        await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
         return true;
     }
 
@@ -113,6 +135,37 @@ public class MusicPlayer : LavalinkPlayer
         return PlayAsync(track);
     }
 
+    public override async Task PlayAsync(LavalinkTrack track, TimeSpan? startTime = null, TimeSpan? endTime = null, bool noReplace = false)
+    {
+        await base.PlayAsync(track, startTime, endTime, noReplace).ConfigureAwait(false);
+        await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
+    }
+
+    public override async Task PauseAsync()
+    {
+        await base.PauseAsync().ConfigureAwait(false);
+        await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
+    }
+    
+    public override async Task ResumeAsync()
+    {
+        await base.ResumeAsync().ConfigureAwait(false);
+        await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
+    }
+
+    public override async Task SetVolumeAsync(float volume = 1, bool normalize = false, bool force = false)
+    {
+        await base.SetVolumeAsync(volume, normalize, force).ConfigureAwait(false);
+        await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
+    }
+
+    public override async Task DisconnectAsync()
+    {
+        await NowPlayingMessage!.DeleteAsync().ConfigureAwait(false);
+        NowPlayingMessage = null;
+        await base.DisconnectAsync().ConfigureAwait(false);
+    }
+
     public override async Task OnTrackEndAsync(TrackEndEventArgs args)
     {
         if (!args.MayStartNext) return;
@@ -138,7 +191,7 @@ public class MusicPlayer : LavalinkPlayer
         if (AutoPlay)
         {
             var searchListRequest = YouTubeService.Search.List("snippet");
-            searchListRequest.RelatedToVideoId = CurrentTrack.TrackIdentifier;
+            searchListRequest.RelatedToVideoId = CurrentTrack!.TrackIdentifier;
             searchListRequest.Type = "video";
             searchListRequest.MaxResults = 10;
 
@@ -147,14 +200,14 @@ public class MusicPlayer : LavalinkPlayer
 
             var track = await LavalinkNode.GetTrackAsync($"https://www.youtube.com/watch?v={next}")
                 .ConfigureAwait(false);
-            track.Context = CurrentTrack.Context;
+            track!.Context = CurrentTrack.Context;
 
             await player.PlayAsync(track).ConfigureAwait(false);
             await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
             return;
         }
 
-        await NowPlayingMessage.DeleteAsync().ConfigureAwait(false);
+        await NowPlayingMessage!.DeleteAsync().ConfigureAwait(false);
         NowPlayingMessage = null;
         await args.Player.DisconnectAsync().ConfigureAwait(false);
         await base.OnTrackEndAsync(args).ConfigureAwait(false);
