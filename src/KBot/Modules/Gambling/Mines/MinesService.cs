@@ -29,7 +29,7 @@ public class MinesService : IInjectable
         return game;
     }
 
-    private async void OnGameEndedAsync(object sender, GameEndedEventArgs e)
+    private async void OnGameEndedAsync(object? sender, GameEndedArgs e)
     {
         var game = (MinesGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
@@ -67,15 +67,15 @@ public class MinesService : IInjectable
         }).ConfigureAwait(false);
     }
 
-    public MinesGame GetGame(string id)
+    public MinesGame? GetGame(string id)
     {
-        return _games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id.Equals(id, StringComparison.Ordinal));
     }
 }
 
-public sealed class MinesGame : IGamblingGame
+public sealed class MinesGame : IGame
 {
-    private readonly List<Point> Points = new();
+    private readonly List<Point> _points = new();
 
     public MinesGame(
         IUserMessage message,
@@ -90,14 +90,22 @@ public sealed class MinesGame : IGamblingGame
         var random = new Random();
         for (var i = 0; i < 5; i++)
         for (var j = 0; j < 5; j++)
-            Points.Add(new Point {X = i, Y = j, Emoji = new Emoji("🪙"), IsClicked = false, Label = " "});
+            _points.Add(new Point
+            {
+                Emoji = new Emoji("🪙"),
+                IsClicked = false,
+                IsMine = false,
+                Label = " ",
+                X = i,
+                Y = j
+            });
 
         for (var i = 0; i < mines; i++)
         {
-            var index = random.Next(0, Points.Count);
-            while (Points[index].IsMine) index = random.Next(0, Points.Count);
-            Points[index].IsMine = true;
-            Points[index].Emoji = new Emoji("💣");
+            var index = random.Next(0, _points.Count);
+            while (_points[index].IsMine) index = random.Next(0, _points.Count);
+            var orig = _points[index];
+            _points[index] = orig with {Emoji = new Emoji("💣"), IsMine = true, Label = " "};
         }
     }
 
@@ -106,8 +114,8 @@ public sealed class MinesGame : IGamblingGame
     public SocketGuildUser User { get; }
     public int Bet { get; }
     public bool CanStop { get; private set; }
-    private int Mines => Points.Count(x => x.IsMine);
-    private int Clicked => Points.Count(x => x.IsClicked && !x.IsMine);
+    private int Mines => _points.Count(x => x.IsMine);
+    private int Clicked => _points.Count(x => x.IsClicked && !x.IsMine);
 
     private decimal Multiplier
     {
@@ -120,17 +128,17 @@ public sealed class MinesGame : IGamblingGame
         }
     }
 
-    public event EventHandler<GameEndedEventArgs> GameEnded;
+    public event EventHandler<GameEndedArgs>? GameEnded;
 
     public Task StartAsync()
     {
         var eb = new EmbedBuilder()
             .WithTitle($"Mines | {Id}")
             .WithColor(Color.Gold)
-            .WithDescription($"Bet: **{Bet}**\nMines: **{Mines}**\nExit: `/mine stop {Id}`")
+            .WithDescription($"**Bet:** {Bet} credits\n**Mines:** {Mines}\n**Exit:** `/mine stop {Id}`")
             .Build();
         var comp = new ComponentBuilder();
-        var size = Math.Sqrt(Points.Count);
+        var size = Math.Sqrt(_points.Count);
         for (var x = 0; x < size; x++)
         {
             var row = new ActionRowBuilder();
@@ -151,23 +159,23 @@ public sealed class MinesGame : IGamblingGame
     public async Task ClickFieldAsync(int x, int y)
     {
         CanStop = true;
-        var point = Points.Find(point => point.X == x && point.Y == y);
-        if (point!.IsMine)
+        var index = _points.FindIndex(point => point.X == x && point.Y == y);
+        var orig = _points[index];
+        if (orig.IsMine)
         {
             await StopAsync(true).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Mines: LOSE", false));
+            OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Mines: LOSE", false));
             return;
         }
 
-        point!.IsClicked = true;
-        point.Label = $"{Multiplier}x";
+        _points[index] = orig with {IsClicked = true, Label = $"{Multiplier}x"};
         var comp = new ComponentBuilder();
-        for (var i = 0; i < Math.Sqrt(Points.Count); i++)
+        for (var i = 0; i < Math.Sqrt(_points.Count); i++)
         {
             var row = new ActionRowBuilder();
-            for (var j = 0; j < Math.Sqrt(Points.Count); j++)
+            for (var j = 0; j < Math.Sqrt(_points.Count); j++)
             {
-                var tPonint = Points.Find(z => z.X == i && z.Y == j);
+                var tPonint = _points.Find(z => z.X == i && z.Y == j);
                 row.AddComponent(new ButtonBuilder(tPonint!.Label, $"mine:{Id}:{i}:{j}", emote: new Emoji("🪙"),
                     isDisabled: tPonint.IsClicked).Build());
             }
@@ -190,12 +198,12 @@ public sealed class MinesGame : IGamblingGame
         var prize = lost ? 0 : (int) Math.Round(Bet * Multiplier);
 
         var revealComponents = new ComponentBuilder();
-        for (var i = 0; i < Math.Sqrt(Points.Count); i++)
+        for (var i = 0; i < Math.Sqrt(_points.Count); i++)
         {
             var row = new ActionRowBuilder();
-            for (var j = 0; j < Math.Sqrt(Points.Count); j++)
+            for (var j = 0; j < Math.Sqrt(_points.Count); j++)
             {
-                var tPonint = Points.Find(z => z.X == i && z.Y == j);
+                var tPonint = _points.Find(z => z.X == i && z.Y == j);
                 row.AddComponent(new ButtonBuilder(tPonint!.Label, $"mine:{Id}:{i}:{j}", emote: tPonint.Emoji,
                     isDisabled: true).Build());
             }
@@ -208,21 +216,21 @@ public sealed class MinesGame : IGamblingGame
             x.Embed = new EmbedBuilder()
                 .WithTitle($"Mines | {Id}")
                 .WithColor(lost ? Color.Red : Color.Green)
-                .WithDescription($"Bet: **{Bet}**\nMines: **{Mines}**\n" +
-                                 (lost ? $"You lost **{Bet}**" : $"You won **{prize - Bet}** credits"))
+                .WithDescription($"**Bet:** {Bet} credits\n**Mines:** {Mines}\n" +
+                                 (lost ? $"**Result:** You lose **{Bet}** credits" : $"**Result:** You win **{prize - Bet}** credits"))
                 .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, lost ? "Mines: LOSE" : "Mines: WIN", !lost));
+        OnGameEnded(new GameEndedArgs(Id, User, Bet, prize, lost ? "Mines: LOSE" : "Mines: WIN", !lost));
     }
 
-    private void OnGameEnded(GameEndedEventArgs e)
+    private void OnGameEnded(GameEndedArgs e)
     {
         GameEnded?.Invoke(this, e);
     }
 }
 
-public class Point
+struct Point
 {
     public Emoji Emoji;
     public bool IsClicked;
@@ -230,4 +238,5 @@ public class Point
     public string Label;
     public int X;
     public int Y;
+
 }

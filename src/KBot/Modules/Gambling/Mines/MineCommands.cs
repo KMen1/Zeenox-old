@@ -9,22 +9,32 @@ namespace KBot.Modules.Gambling.Mines;
 [Group("mine", "Roobet Mine")]
 public class MineCommands : SlashModuleBase
 {
-    public MinesService MinesService { get; set; }
+    private readonly MinesService _minesService;
+    public MineCommands(MinesService minesService)
+    {
+        _minesService = minesService;
+    }
 
     [SlashCommand("start", "Starts a new game of mine")]
     public async Task StartMinesAsync([MinValue(100)] [MaxValue(1000000)] int bet,
         [MinValue(5)] [MaxValue(24)] int mines)
     {
-        await DeferAsync().ConfigureAwait(false);
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         if (dbUser.Balance < bet)
         {
-            await FollowupAsync("Insufficient balance.").ConfigureAwait(false);
+            await RespondAsync("Insufficient balance.").ConfigureAwait(false);
             return;
         }
 
-        var msg = await FollowupAsync("Starting...").ConfigureAwait(false);
-        var game = MinesService.CreateGame((SocketGuildUser)Context.User, msg, bet, mines);
+        if (dbUser.MinimumBet > bet)
+        {
+            await RespondAsync($"You must bet at least {dbUser.MinimumBet} credits.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        await RespondAsync("Starting Game...").ConfigureAwait(false);
+        var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
+        var game = _minesService.CreateGame((SocketGuildUser)Context.User, msg, bet, mines);
         await game.StartAsync().ConfigureAwait(false);
     }
 
@@ -32,7 +42,7 @@ public class MineCommands : SlashModuleBase
     public async Task StopMinesAsync(string id)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var game = MinesService.GetGame(id);
+        var game = _minesService.GetGame(id);
         if (game is null)
         {
             await FollowupAsync("No game found for that id.").ConfigureAwait(false);

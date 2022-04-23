@@ -5,13 +5,17 @@ namespace KBot.Modules.Gambling.Mines;
 
 public class MineComponents : SlashModuleBase
 {
-    public MinesService MinesService { get; set; }
-
+    private readonly MinesService _minesService;
+    public MineComponents(MinesService minesService)
+    {
+        _minesService = minesService;
+    }
+    
     [ComponentInteraction("mine:*:*:*")]
     public async Task HandleMineAsync(string id, int x, int y)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = MinesService.GetGame(id);
+        var game = _minesService.GetGame(id);
         if (game.User.Id != Context.User.Id) return;
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }

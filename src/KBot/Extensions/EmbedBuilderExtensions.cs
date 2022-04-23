@@ -6,7 +6,6 @@ using System.Text;
 using Discord;
 using Discord.WebSocket;
 using Humanizer;
-using KBot.Enums;
 using KBot.Modules.Gambling.BlackJack;
 using KBot.Modules.Gambling.Crash;
 using KBot.Modules.Gambling.HighLow;
@@ -26,11 +25,11 @@ public static class EmbedBuilderExtensions
         Color color = default)
     {
         return builder.WithTitle($"Blackjack | {game.Id}")
-            .WithDescription($"Bet: **{game.Bet}**\n{desc}")
+            .WithDescription($"**Bet:** {game.Bet} credits\n{desc}")
             .WithColor(color == default ? Color.Gold : color)
             .WithImageUrl(game.GetTablePicUrl())
-            .AddField("Player", $"Value: `{game.PlayerScore.ToString()}`", true)
-            .AddField("Dealer", game.Hidden ? "Value: `?`" : $"Value: `{game.DealerScore.ToString()}`", true)
+            .AddField("Player", $"Value: `{game.PlayerScore.ToString(CultureInfo.InvariantCulture)}`", true)
+            .AddField("Dealer", game.Hidden ? "Value: `?`" : $"Value: `{game.DealerScore.ToString(CultureInfo.InvariantCulture)}`", true)
             .Build();
     }
 
@@ -38,30 +37,30 @@ public static class EmbedBuilderExtensions
         Color color = default)
     {
         return builder.WithTitle($"Higher/Lower | {game.Id}")
-            .WithDescription($"Bet: **{game.Stake}**\n{desc}")
+            .WithDescription($"**Original Bet:** {game.Bet} credits\n**Current Bet:** {game.Stake} credits\n{desc}")
             .WithColor(color == default ? Color.Gold : color)
             .WithImageUrl(game.GetTablePicUrl())
             .AddField("Higher", $"Multiplier: **{game.HighMultiplier.ToString(CultureInfo.InvariantCulture)}**\n" +
-                                $"Prize: **{game.HighStake.ToString()}**", true)
+                                $"Prize: **{game.HighStake.ToString(CultureInfo.InvariantCulture)}**", true)
             .AddField("Lower", $"Multiplier: **{game.LowMultiplier.ToString(CultureInfo.InvariantCulture)}**\n" +
-                               $"Prize: **{game.LowStake.ToString()}**", true)
+                               $"Prize: **{game.LowStake.ToString(CultureInfo.InvariantCulture)}**", true)
             .Build();
     }
 
     public static Embed CrashEmbed(this EmbedBuilder builder, CrashGame game, string? desc = null, Color color = default)
     {
         return builder.WithTitle($"Crash | {game.Id}")
-            .WithDescription($"Bet: **{game.Bet}**\n{desc}")
+            .WithDescription($"**Bet:** {game.Bet.ToString(CultureInfo.InvariantCulture)} credits\n{desc}")
             .WithColor(color == default ? Color.Gold : color)
-            .AddField("Multiplier", $"`{game.Multiplier:0.00}x`", true)
-            .AddField("Profit", $"`{game.Profit:0}`", true)
+            .AddField("Multiplier", $"`{game.Multiplier.ToString("0.00", CultureInfo.InvariantCulture)}x`", true)
+            .AddField("Profit", $"`{game.Profit.ToString("0", CultureInfo.InvariantCulture)}`", true)
             .Build();
     }
 
     public static Embed TowersEmbed(this EmbedBuilder builder, TowersGame game, string desc = "", Color color = default)
     {
         return builder.WithTitle($"Towers | {game.Id}")
-            .WithDescription($"Bet: **{game.Bet}**\nDifficulty: **{game.Difficulty.GetDescription()}**\n{desc}")
+            .WithDescription($"**Bet:** {game.Bet} credits\n**Difficulty:** {game.Difficulty.ToString()}\n{desc}")
             .WithColor(color == default ? Color.Gold : color)
             .Build();
     }
@@ -84,27 +83,27 @@ public static class EmbedBuilderExtensions
 
     public static Embed NowPlayingEmbed(this EmbedBuilder builder, MusicPlayer player)
     {
-        builder.WithAuthor("NOW PLAYING", PlayingGif)
+        return builder.WithAuthor("NOW PLAYING", PlayingGif)
             .WithTitle(player.CurrentTrack!.Title)
             .WithUrl(player.CurrentTrack.Source)
             .WithImageUrl($"https://img.youtube.com/vi/{player.CurrentTrack.TrackIdentifier}/maxresdefault.jpg")
-            .WithColor(Color.Green)
-            .AddField("👨 Added by", player.LastRequestedBy.Mention, true)
+            .WithColor(new Color(31, 31, 31))
+            .AddField("👤 Added by", player.LastRequestedBy.Mention, true)
             .AddField("🔼 Uploader", $"`{player.CurrentTrack.Author}`", true)
             .AddField("🎙️ Channel", player.VoiceChannel.Mention, true)
-            .AddField("🕐 Length", $"`{player.CurrentTrack.Duration.ToString("c")}`", true)
+            .AddField("🕐 Length", $"`{player.CurrentTrack.Duration:c}`", true)
+            .AddField("🔎 Autoplay", player.AutoPlay ? "`On`" : "`Off`", true)
             .AddField("🔁 Loop", player.Loop ? "`On`" : "`Off`", true)
-            .AddField("🔁 Autoplay", player.AutoPlay ? "`On`" : "`Off`", true)
             .AddField("🔊 Volume", $"`{Math.Round(player.Volume * 100).ToString(CultureInfo.InvariantCulture)}%`", true)
             .AddField("📝 Filter", player.FilterEnabled is not null ? $"`{player.FilterEnabled}`" : "`None`", true)
-            .AddField("🎶 In Queue", $"`{player.QueueCount.ToString()}`", true)
-            .AddField("⏭ Voteskip", $"`{player.SkipVotes.Count.ToString()}/{player.SkipVotesNeeded.ToString()}`", true);
-        return builder.Build();
+            .AddField("🎶 In Queue", $"`{player.QueueCount.ToString(CultureInfo.InvariantCulture)}`", true)
+            .AddField("⏭ Voteskip", $"`{player.SkipVotes.Count.ToString(CultureInfo.InvariantCulture)}/{player.SkipVotesNeeded.ToString(CultureInfo.InvariantCulture)}`", true)
+            .Build();
     }
 
     public static Embed VolumeEmbed(this EmbedBuilder builder, MusicPlayer player)
     {
-        return builder.WithAuthor($"VOLUME SET TO {player.Volume.ToString()}%", SuccessIcon)
+        return builder.WithAuthor($"VOLUME SET TO {player.Volume.ToString(CultureInfo.InvariantCulture)}%", SuccessIcon)
             .WithDescription($"In channel {player.VoiceChannel.Mention}")
             .WithColor(Color.Green)
             .Build();
@@ -122,12 +121,10 @@ public static class EmbedBuilderExtensions
         }
         else
         {
-            var desc = new StringBuilder();
-            foreach (var track in player.Queue)
-                desc.AppendLine( //
-                    $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Source}) | Added by: {((TrackContext) track.Context).AddedBy.Mention}");
+            var desc = player.Queue.Aggregate("",
+                (current, track) => current + $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Source}) | Added by: {((SocketUser) track.Context!).Mention}\n");
 
-            builder.WithDescription(desc.ToString());
+            builder.WithDescription(desc);
         }
 
         return builder.Build();
@@ -139,7 +136,7 @@ public static class EmbedBuilderExtensions
         var desc = enumerable.Take(10).Aggregate("",
             (current, track) =>
                 current + $"{enumerable.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Source})\n");
-        if (enumerable.Count > 10) desc += $"and {(enumerable.Count - 10).ToString()} more\n";
+        if (enumerable.Count > 10) desc += $"and {(enumerable.Count - 10).ToString(CultureInfo.InvariantCulture)} more\n";
         return builder.WithAuthor($"{enumerable.Count} TRACKS ADDED TO QUEUE", SuccessIcon)
             .WithColor(Color.Orange)
             .WithDescription(desc)

@@ -5,13 +5,17 @@ namespace KBot.Modules.Gambling.BlackJack;
 
 public class BlackJackComponents : SlashModuleBase
 {
-    public BlackJackService BlackJackService { get; set; }
+    private readonly BlackJackService _blackJackService;
+    public BlackJackComponents(BlackJackService blackJackService)
+    {
+        _blackJackService = blackJackService;
+    }
 
     [ComponentInteraction("blackjack-hit:*")]
     public async Task HitBlackJackAsync(string Id)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = BlackJackService.GetGame(Id);
+        var game = _blackJackService.GetGame(Id);
         if (game?.User.Id != Context.User.Id) return;
         await game.HitAsync().ConfigureAwait(false);
     }
@@ -20,7 +24,7 @@ public class BlackJackComponents : SlashModuleBase
     public async Task StandBlackJackAsync(string Id)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = BlackJackService.GetGame(Id);
+        var game = _blackJackService.GetGame(Id);
         if (game.User.Id != Context.User.Id) return;
         await game.StandAsync().ConfigureAwait(false);
     }

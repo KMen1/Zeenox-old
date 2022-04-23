@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -98,7 +99,7 @@ public class GuildEvents : IInjectable
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
             .WithColor(Color.Green)
             .WithDescription($"Welcome to **{user.Guild.Name}** {user.Mention}!\n" +
-                             $"You are the **{user.Guild.Users.Count.Ordinalize()}** member!\n" +
+                             $"You are the **{user.Guild.Users.Count.Ordinalize(CultureInfo.InvariantCulture)}** member!\n" +
                              $"Account created: **{user.CreatedAt.Humanize()}**")
             .WithCurrentTimestamp()
             .WithThumbnailUrl(user.GetAvatarUrl())
@@ -111,6 +112,7 @@ public class GuildEvents : IInjectable
         if (user.IsBot || user.IsWebhook) return;
         var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
         if (config.LeaveChannelId == 0) return;
+        if (await guild.GetBanAsync(user).ConfigureAwait(false) is not null) return;
         var channel = guild.GetTextChannel(config.LeaveChannelId);
         var eb = new EmbedBuilder()
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())

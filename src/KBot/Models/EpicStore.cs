@@ -4,7 +4,8 @@ using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-#pragma warning disable CS8618
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048
 
 namespace KBot.Models;
 
@@ -12,9 +13,9 @@ public partial class EpicStore
 {
     [JsonProperty("data")] private Data Data { get; set; }
 
-    private IEnumerable<Game>? Games => Data?.Catalog.SearchStore.Games;
+    private IEnumerable<Game> Games => Data.Catalog.SearchStore.Games;
 
-    public IEnumerable<Game> CurrentGames => Games?.ToList()
+    public IEnumerable<Game>? CurrentGames => Games?.ToList()
         .FindAll(x => x.Promotions is not null && x.Promotions.PromotionalOffers.Length != 0);
 }
 
@@ -69,7 +70,7 @@ public class Game
 
     [JsonProperty("items")] public Item[] Items { get; set; }
 
-    [JsonProperty("customAttributes")] public CustomAttribute[] CustomAttributes { get; set; }
+    [JsonProperty("customAttributes")] public Custom[] CustomAttributes { get; set; }
 
     [JsonProperty("categories")] public Category[] Categories { get; set; }
 
@@ -103,7 +104,7 @@ public class Category
     [JsonProperty("path")] public string Path { get; set; }
 }
 
-public class CustomAttribute
+public class Custom
 {
     [JsonProperty("key")] public string Key { get; set; }
 
@@ -231,9 +232,9 @@ public class Paging
 
 public partial class EpicStore
 {
-    public static EpicStore? FromJson(string json)
+    public static EpicStore FromJson(string json)
     {
-        return JsonConvert.DeserializeObject<EpicStore>(json, ConverterEpic.Settings);
+        return JsonConvert.DeserializeObject<EpicStore>(json, ConverterEpic.Settings)!;
     }
 }
 

@@ -30,7 +30,7 @@ public class TowersService : IInjectable
         return game;
     }
 
-    private async void HandleGameEndedAsync(object sender, GameEndedEventArgs e)
+    private async void HandleGameEndedAsync(object? sender, GameEndedArgs e)
     {
         var game = (TowersGame) sender!;
         game.GameEnded -= HandleGameEndedAsync;
@@ -65,13 +65,13 @@ public class TowersService : IInjectable
         }).ConfigureAwait(false);
     }
 
-    public TowersGame GetGame(string id)
+    public TowersGame? GetGame(string id)
     {
-        return _games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 }
 
-public sealed class TowersGame : IGamblingGame
+public sealed class TowersGame : IGame
 {
     public TowersGame(
         SocketGuildUser user,
@@ -98,8 +98,8 @@ public sealed class TowersGame : IGamblingGame
             while (row.Count(z => z.IsMine) < Mines)
             {
                 var index = rand.Next(0, row.Count);
-                row[index].IsMine = true;
-                row[index].Emoji = new Emoji("💣");
+                var orig = row[index];
+                row[index] = orig with {IsMine = true, Emoji = new Emoji("💣")};
             }
 
             Fields.AddRange(row);
@@ -124,7 +124,7 @@ public sealed class TowersGame : IGamblingGame
     private List<Field> Fields { get; }
     private bool Lost { get; set; }
     private int Prize { get; set; }
-    public event EventHandler<GameEndedEventArgs> GameEnded;
+    public event EventHandler<GameEndedArgs>? GameEnded;
 
     public Task StartAsync()
     {
@@ -135,7 +135,7 @@ public sealed class TowersGame : IGamblingGame
             for (var j = Columns; j > 0; j--)
             {
                 var tPonint = Fields.Find(x => x.X == i && x.Y == j);
-                row.AddComponent(new ButtonBuilder($"{tPonint?.Label}$", $"towers:{Id}:{i}:{j}", emote: new Emoji("🪙"),
+                row.AddComponent(new ButtonBuilder($"{tPonint.Label}$", $"towers:{Id}:{i}:{j}", emote: new Emoji("🪙"),
                     isDisabled: i != 1).Build());
             }
 
@@ -165,14 +165,18 @@ public sealed class TowersGame : IGamblingGame
         if (x == 5)
         {
             await Message.ModifyAsync(u => u.Embed = new EmbedBuilder().TowersEmbed(this,
-                    Lost ? $"You lost **{Bet}** credits" : $"You won **{Prize}** credits",
+                    Lost ? $"**Result:** You lost **{Bet}** credits!" : $"**Result:** You won **{Prize}** credits!",
                     Lost ? Color.Red : Color.Green))
                 .ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Prize, "Towers: WIN", true));
+            OnGameEnded(new GameEndedArgs(Id, User, Bet, Prize, "Towers: WIN", true));
         }
 
         var comp = new ComponentBuilder();
-        Fields.Where(f => f.X == x).ToList().ForEach(f => f.Disabled = true);
+        var index = Fields.FindIndex(f => f.X == x);
+        var orig = Fields[index];
+        Fields[index] = orig with {Disabled = true};
+        Fields[index+1] = orig with {Disabled = true, Y = orig.Y - 1};
+        Fields[index+2] = orig with {Disabled = true, Y = orig.Y - 2};
         for (var i = 5; i > 0; i--)
         {
             var row = new ActionRowBuilder();
@@ -212,20 +216,22 @@ public sealed class TowersGame : IGamblingGame
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().TowersEmbed(this,
-                Lost ? $"You lost **{Bet}** credits" : $"You won **{Prize}** credits",
+                Lost ? $"**Result:** You lost **{Bet}** credits!" : $"**Result:** You won **{Prize}** credits!",
                 Lost ? Color.Red : Color.Green);
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, "Towers: LOSE", false));
+        OnGameEnded(Lost
+            ? new GameEndedArgs(Id, User, Bet, prize, "Towers: LOSE", false)
+            : new GameEndedArgs(Id, User, Bet, prize, "Towers: WIN", true));
     }
 
-    private void OnGameEnded(GameEndedEventArgs e)
+    private void OnGameEnded(GameEndedArgs e)
     {
         GameEnded?.Invoke(this, e);
     }
 }
 
-public class Field
+struct Field
 {
     public int X { get; set; }
     public int Y { get; set; }
@@ -237,7 +243,7 @@ public class Field
 
 public enum Difficulty
 {
-    [Description("Easy")] Easy = 1,
-    [Description("Medium")] Medium = 2,
-    [Description("Hard")] Hard = 3
+    Easy = 1,
+    Medium = 2,
+    Hard = 3
 }

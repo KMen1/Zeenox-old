@@ -12,7 +12,7 @@ using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Extensions;
 using KBot.Models;
-using KBot.Modules.Gambling.Objects;
+using KBot.Modules.Gambling.GameObjects;
 using KBot.Services;
 using Color = Discord.Color;
 using Image = System.Drawing.Image;
@@ -40,7 +40,7 @@ public class HighLowService : IInjectable
         return game;
     }
 
-    private async void OnGameEndedAsync(object sender, GameEndedEventArgs e)
+    private async void OnGameEndedAsync(object? sender, GameEndedArgs e)
     {
         var game = (HighLowGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
@@ -78,13 +78,13 @@ public class HighLowService : IInjectable
         }).ConfigureAwait(false);
     }
 
-    public HighLowGame GetGame(string id)
+    public HighLowGame? GetGame(string id)
     {
-        return _games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 }
 
-public sealed class HighLowGame : IGamblingGame
+public sealed class HighLowGame : IGame
 {
     public HighLowGame(
         SocketGuildUser user,
@@ -117,7 +117,7 @@ public sealed class HighLowGame : IGamblingGame
     public decimal LowMultiplier { get; private set; }
     private bool Hidden { get; set; }
     private Cloudinary CloudinaryClient { get; }
-    public event EventHandler<GameEndedEventArgs> GameEnded;
+    public event EventHandler<GameEndedArgs>? GameEnded;
 
     public Task StartAsync()
     {
@@ -168,10 +168,10 @@ public sealed class HighLowGame : IGamblingGame
         Hidden = false;
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Wrong choice! You lost **{Bet}** credits!", Color.Red);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"**Result:** You lost **{Bet}** credits!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
+        OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
     }
 
     public async Task GuessLowerAsync()
@@ -188,10 +188,10 @@ public sealed class HighLowGame : IGamblingGame
         Hidden = false;
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"Wrong choice! You lost **{Bet}** credits!", Color.Red);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"**Result:** You lost **{Bet}** credits!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
+        OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
     }
 
     public async Task FinishAsync()
@@ -199,11 +199,11 @@ public sealed class HighLowGame : IGamblingGame
         Hidden = false;
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"The game is over! You won **{Stake}** credits!",
+            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"**Result:** You win **{Stake}** credits!",
                 Color.Green);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Stake, "HighLow: WIN", false));
+        OnGameEnded(new GameEndedArgs(Id, User, Bet, Stake, "HighLow: WIN", false));
     }
 
     public string GetTablePicUrl()
@@ -238,7 +238,7 @@ public sealed class HighLowGame : IGamblingGame
         return bitmap;
     }
 
-    private void OnGameEnded(GameEndedEventArgs e)
+    private void OnGameEnded(GameEndedArgs e)
     {
         GameEnded?.Invoke(this, e);
     }

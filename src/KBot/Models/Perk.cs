@@ -1,4 +1,6 @@
-﻿using KBot.Modules.DeadByDaylight;
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048
+using KBot.Modules.DeadByDaylight;
 using Newtonsoft.Json;
 
 namespace KBot.Models;
@@ -32,6 +34,6 @@ public partial class Perk
 {
     public static Perk FromJson(string json)
     {
-        return JsonConvert.DeserializeObject<Perk>(json);
+        return JsonConvert.DeserializeObject<Perk>(json)!;
     }
 }

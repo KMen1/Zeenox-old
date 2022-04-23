@@ -37,9 +37,9 @@ public static class GenericExtensions
             .WithButton(" ", "stop", emote: new Emoji("⏹"), row: 0)
             .WithButton(" ", "next", emote: new Emoji("⏭"), disabled: !player.CanGoForward, row: 0)
             .WithButton(" ", "volumedown", emote: new Emoji("🔉"), row: 1, disabled: player.Volume == 0)
-            .WithButton("L", "repeat", emote: new Emoji("🔁"), row: 1)
-            .WithButton("A", "autoplay", emote: new Emoji("🔁"), row: 1)
-            .WithButton(" ", "clearfilters", emote: new Emoji("🗑️"), row: 1)
+            .WithButton(" ", "autoplay", emote: new Emoji("🔎"), row: 1)
+            .WithButton(" ", "repeat", emote: new Emoji("🔁"), row: 1)
+            .WithButton(" ", "clearfilters", emote: new Emoji("🗑️"), row: 1, disabled: player.FilterEnabled is null)
             .WithButton(" ", "volumeup", emote: new Emoji("🔊"), row: 1, disabled: player.Volume == 1.0f)
             .WithSelectMenu(new SelectMenuBuilder()
                 .WithPlaceholder("Select Filter")
@@ -51,11 +51,11 @@ public static class GenericExtensions
                 .AddOption("Soft", "Soft", emote: new Emoji("✨"))
                 .AddOption("Loud", "Treblebass", emote: new Emoji("🔊"))
                 .AddOption("Nightcore", "Nightcore", emote: new Emoji("🌃"))
-                .AddOption("8D", "Eightd", emote: new Emoji("🧊"))
+                .AddOption("8D", "Eightd", emote: new Emoji("🎧"))
                 .AddOption("Chinese", "China", emote: new Emoji("🍊"))
                 .AddOption("Vaporwave", "Vaporwave", emote: new Emoji("💦"))
-                .AddOption("Speed Up", "Doubletime", emote: new Emoji("⏩"))
-                .AddOption("Speed Down", "Slowmotion", emote: new Emoji("⏪"))
+                .AddOption("Speed Up", "Doubletime", emote: new Emoji("⏫"))
+                .AddOption("Speed Down", "Slowmotion", emote: new Emoji("⏬"))
                 .AddOption("Chipmunk", "Chipmunk", emote: new Emoji("🐿"))
                 .AddOption("Darthvader", "Darthvader", emote: new Emoji("🤖"))
                 .AddOption("Dance", "Dance", emote: new Emoji("🕺"))
@@ -64,9 +64,9 @@ public static class GenericExtensions
             .Build();
     }
 
-    public static string ToShortId(this Guid guid)
+    public static string ToShortId(this Guid id)
     {
-        return guid.ToString().Split("-")[0];
+        return id.ToString().Split("-")[0];
     }
 
     public static long ToUnixTimeStamp(this DateTime date)
@@ -76,7 +76,7 @@ public static class GenericExtensions
         return unixTimestamp;
     }
     
-    public static List<List<T>> ChunkBy<T>(this List<T> source, int chunkSize) 
+    public static IEnumerable<IEnumerable<T>> ChunkBy<T>(this IEnumerable<T> source, int chunkSize)
     {
         return source
             .Select((x, i) => new { Index = i, Value = x })

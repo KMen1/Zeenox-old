@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -30,7 +31,7 @@ public class DbDCommands : SlashModuleBase
         foreach (var perk in perks) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
         eb.WithDescription($"🏁 <t:{DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).ToUnixTimeSeconds()}:R>");
         sw.Stop();
-        eb.WithFooter($"{sw.ElapsedMilliseconds.ToString()} ms");
+        eb.WithFooter($"{sw.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)} ms");
         await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
     }
 

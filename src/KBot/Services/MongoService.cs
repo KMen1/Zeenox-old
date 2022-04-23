@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -36,7 +37,7 @@ public class MongoService : IInjectable
     
     public Task<GuildConfig> GetGuildConfigAsync(IGuild guild)
     {
-        return _cache.GetOrCreateAsync(guild.Id.ToString(), async x =>
+        return _cache.GetOrCreateAsync(guild.Id.ToString(CultureInfo.InvariantCulture), async x =>
         {
             x.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
             return (await _configCollection.FindAsync(y => y.GuildId == guild.Id).ConfigureAwait(false)).FirstOrDefault();
@@ -66,7 +67,7 @@ public class MongoService : IInjectable
         return (true, message);
     }
 
-    public async Task<User> AddUserAsync(SocketGuildUser user)
+    private async Task<User> AddUserAsync(SocketGuildUser user)
     {
         var users = await _userCollection.FindAsync(x => x.UserId == user.Id && x.GuildId == user.Guild.Id).ConfigureAwait(false);
         if (await users.AnyAsync().ConfigureAwait(false))
@@ -78,7 +79,7 @@ public class MongoService : IInjectable
 
     public async ValueTask<User> GetUserAsync(SocketGuildUser vUser)
     {
-        return (await _userCollection.FindAsync(x => x.GuildId == vUser.Guild.Id && x.UserId == vUser.Id)
+        return (await _userCollection.FindAsync(x => x.UniqueId == vUser.Guild.Id+vUser.Id)
             .ConfigureAwait(false)).FirstOrDefault() ?? await AddUserAsync(vUser).ConfigureAwait(false);
     }
 
@@ -96,7 +97,7 @@ public class MongoService : IInjectable
         await UpdateUserAsync(user, x => x.WarnIds.Add(warn.Id)).ConfigureAwait(false);
     }
     
-    public async Task<List<Warn>> GetWarnsAsync(SocketGuildUser user)
+    public async Task<IEnumerable<Warn>> GetWarnsAsync(SocketGuildUser user)
     {
         var dbUser = await GetUserAsync(user).ConfigureAwait(false);
 
@@ -104,7 +105,7 @@ public class MongoService : IInjectable
         var tasks = dbUser.WarnIds.ConvertAll(warnId =>
             _warnCollection.FindAsync(x => x.Id == warnId)
                 .ContinueWith(async x =>
-                    warns.Add((await x).FirstOrDefault())));
+                    warns.Add((await x.ConfigureAwait(false)).FirstOrDefault())));
         await Task.WhenAll(tasks).ConfigureAwait(false);
         return warns;
     }
@@ -128,16 +129,16 @@ public class MongoService : IInjectable
         return true;
     }
 
-    public async Task<List<User>> GetTopUsersAsync(IGuild vGuild, int limit)
+    public async Task<IEnumerable<User>> GetTopUsersAsync(IGuild vGuild, int limit)
     {
         var users = (await _userCollection.FindAsync(x => x.GuildId == vGuild.Id).ConfigureAwait(false)).ToList();
         return users.OrderByDescending(x => x.Level).Take(limit).ToList();
     }
 
-    public async Task<List<(ulong userId, ulong osuId)>> GetOsuIdsAsync(IGuild guild, int limit)
+    public async Task<IEnumerable<(ulong userId, ulong osuId)>> GetOsuIdsAsync(IGuild guild, int limit)
     {
         var users = await _userCollection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false);
-        return users.ToList().Where(x => x.OsuId != 0).Take(limit).Select(x => (x.UserId, x.OsuId)).ToList();
+        return users.ToList().Where(x => x.OsuId != 0).Take(limit).Select(x => (x.UserId, x.OsuId));
     }
 
     public async Task UpdateGuildConfigAsync(IGuild guild, Action<GuildConfig> action)
@@ -145,7 +146,7 @@ public class MongoService : IInjectable
         var config = (await _configCollection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false)).FirstOrDefault();
         action(config);
         await _configCollection.ReplaceOneAsync(x => x.GuildId == config.GuildId, config).ConfigureAwait(false);
-        _cache.Remove(guild.Id.ToString());
+        _cache.Remove(guild.Id.ToString(CultureInfo.InvariantCulture));
     }
 
     public async Task AddTransactionAsync(Transaction transaction, SocketGuildUser user)
@@ -154,7 +155,7 @@ public class MongoService : IInjectable
         await UpdateUserAsync(user, x => x.TransactionIds.Add(transaction.Id)).ConfigureAwait(false);
     }
     
-    public async Task<List<Transaction>> GetTransactionsAsync(SocketGuildUser user)
+    public async Task<IEnumerable<Transaction>> GetTransactionsAsync(SocketGuildUser user)
     {
         var dbUser = await GetUserAsync(user).ConfigureAwait(false);
 
@@ -162,12 +163,12 @@ public class MongoService : IInjectable
         var tasks = dbUser.TransactionIds.ConvertAll(transactionId =>
             _transactionCollection.FindAsync(x => x.Id == transactionId)
                 .ContinueWith(async x =>
-                    transactions.Add((await x).FirstOrDefault())));
+                    transactions.Add((await x.ConfigureAwait(false)).FirstOrDefault())));
         await Task.WhenAll(tasks).ConfigureAwait(false);
         return transactions;
     }
     
-    public async Task<Transaction> GetTransactionAsync(string id)
+    public async Task<Transaction?> GetTransactionAsync(string id)
     {
         return (await _transactionCollection.FindAsync(x => x.Id == id).ConfigureAwait(false)).FirstOrDefault();
     }

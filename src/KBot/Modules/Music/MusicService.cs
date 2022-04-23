@@ -7,6 +7,7 @@ using Discord.WebSocket;
 using Google.Apis.YouTube.v3;
 using KBot.Enums;
 using KBot.Extensions;
+using KBot.Models;
 using Lavalink4NET;
 using Lavalink4NET.Filters;
 using Lavalink4NET.Payloads.Player;
@@ -15,10 +16,11 @@ using Lavalink4NET.Rest;
 
 namespace KBot.Modules.Music;
 
-public class AudioService : IInjectable
+public class MusicService : IInjectable
 {
-    private readonly Dictionary<FilterType, Func<PlayerFilterMap, string>> _filterActions = new()
+    private readonly Dictionary<FilterType, Action<PlayerFilterMap>> _filterActions = new()
     {
+        {FilterType.None, x => x.Clear()},
         {FilterType.Bassboost, x => x.EnableBassBoost()},
         {FilterType.Pop, x => x.EnablePop()},
         {FilterType.Soft, x => x.EnableSoft()},
@@ -39,11 +41,18 @@ public class AudioService : IInjectable
     private readonly LavalinkNode _lavaNode;
     private readonly YouTubeService _youtubeService;
 
-    public AudioService(DiscordSocketClient client, LavalinkNode lavaNode, YouTubeService youtubeService)
+    public MusicService(DiscordSocketClient client, LavalinkNode lavaNode, YouTubeService youtubeService)
     {
         _lavaNode = lavaNode;
         _youtubeService = youtubeService;
         client.Ready += async () => await _lavaNode.InitializeAsync().ConfigureAwait(false);
+    }
+
+    public bool IsPlayingInGuild(IGuild guild)
+    {
+        if (!_lavaNode.HasPlayer(guild.Id)) return false;
+        var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
+        return player!.IsPlaying;
     }
 
     public async Task<Embed> DisconnectAsync(IGuild guild, SocketUser user)
@@ -69,28 +78,20 @@ public class AudioService : IInjectable
         return new EmbedBuilder().MoveEmbed(channel);
     }
 
-    public async Task PlayAsync(IGuild guild, SocketInteraction interaction, string query)
+    public async Task<Embed?> PlayAsync(IGuild guild, SocketGuildUser user, IUserMessage message, string query)
     {
-        var user = interaction.User;
-        var voiceChannel = ((IVoiceState) user).VoiceChannel;
+        var voiceChannel = user.VoiceChannel;
         var searchResponse = await SearchAsync(query).ConfigureAwait(false);
         if (searchResponse is null)
         {
-            await interaction
-                .FollowupAsync(embed: new EmbedBuilder().WithColor(Color.Red).WithTitle("No matches!").Build())
-                .ConfigureAwait(false);
-            return;
+            return new EmbedBuilder().WithColor(Color.Red).WithTitle("No matches!").Build();
         }
-        var message = await interaction.GetOriginalResponseAsync().ConfigureAwait(false);
-        var users = await voiceChannel.GetUsersAsync().FlattenAsync().ConfigureAwait(false);
-        var skipVotesNeeded = users.Count(x => !x.IsBot) / 2;
         var player = _lavaNode.HasPlayer(guild.Id)
             ? _lavaNode.GetPlayer<MusicPlayer>(guild.Id)
             : await _lavaNode
                 .JoinAsync(() => new MusicPlayer(
                         voiceChannel,
                         message,
-                        skipVotesNeeded,
                         _youtubeService,
                         _lavaNode),
                     guild.Id,
@@ -101,58 +102,39 @@ public class AudioService : IInjectable
         {
             if (isPlaylist)
             {
-                foreach (var track in searchResponse.Tracks!) track.Context = new TrackContext(user);
+                foreach (var track in searchResponse.Tracks!) track.Context = user;
                 await player.EnqueueAsync(searchResponse.Tracks).ConfigureAwait(false);
-                _ = Task.Run(async () =>
-                {
-                    var msg = await interaction.FollowupAsync(embed:
-                        new EmbedBuilder().AddedToQueueEmbed(searchResponse.Tracks)).ConfigureAwait(false);
-                    await Task.Delay(1750).ConfigureAwait(false);
-                    await msg.DeleteAsync().ConfigureAwait(false);
-                });
-                return;
+                return new EmbedBuilder().AddedToQueueEmbed(searchResponse.Tracks);
             }
 
-            searchResponse.Tracks![0].Context = new TrackContext(user);
-            player.EnqueueAsync(searchResponse.Tracks![0]);
-            _ = Task.Run(async () =>
-            {
-                var msg = await interaction.FollowupAsync(embed:
-                        new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack> {searchResponse.Tracks[0]}))
-                    .ConfigureAwait(false);
-                await Task.Delay(1750).ConfigureAwait(false);
-                await msg.DeleteAsync().ConfigureAwait(false);
-            });
-            return;
+            searchResponse.Tracks![0].Context = user;
+            await player.EnqueueAsync(searchResponse.Tracks![0]).ConfigureAwait(false);
+            return new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack> {searchResponse.Tracks[0]});
         }
 
         if (isPlaylist)
         {
-            foreach (var track in searchResponse.Tracks!) track.Context = new TrackContext(user);
+            foreach (var track in searchResponse.Tracks!) track.Context = user;
             await player.PlayAsync(searchResponse.Tracks![0]).ConfigureAwait(false);
             await player.EnqueueAsync(searchResponse.Tracks.Skip(1)).ConfigureAwait(false);
-            return;
+            return null;
         }
-        searchResponse.Tracks![0].Context = new TrackContext(user);
+        searchResponse.Tracks![0].Context = user;
         await player.PlayAsync(searchResponse.Tracks![0]).ConfigureAwait(false);
+        return null;
     }
 
-    public async Task PlayFromSearchAsync(IGuild guild, SocketMessageComponent interaction, string id)
+    public async Task<Embed?> PlayFromSearchAsync(IGuild guild, SocketGuildUser user, IUserMessage message, string id)
     {
-        var user = interaction.User;
-        var voiceChannel = ((IVoiceState) user).VoiceChannel;
-        var message = interaction.Message;
-        
+        var voiceChannel = user.VoiceChannel;
         var track = await _lavaNode.GetTrackAsync("https://www.youtube.com/watch?v=" + id).ConfigureAwait(false);
-        track!.Context = new TrackContext(user);
-        var skipVotesNeeded = await voiceChannel.GetUsersAsync().CountAsync().ConfigureAwait(false) / 2;
+        track!.Context = user;
         var player = _lavaNode.HasPlayer(guild.Id)
             ? _lavaNode.GetPlayer<MusicPlayer>(guild.Id)
             : await _lavaNode
                 .JoinAsync(() => new MusicPlayer(
                         voiceChannel,
                         message,
-                        skipVotesNeeded,
                         _youtubeService,
                         _lavaNode), guild.Id,
                     voiceChannel.Id).ConfigureAwait(false);
@@ -161,18 +143,10 @@ public class AudioService : IInjectable
         {
             await player.EnqueueAsync(track).ConfigureAwait(false);
             await message.DeleteAsync().ConfigureAwait(false);
-
-            _ = Task.Run(async () =>
-            {
-                var msg = await interaction
-                    .FollowupAsync(embed: new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack> {track}))
-                    .ConfigureAwait(false);
-                await Task.Delay(1750).ConfigureAwait(false);
-                await msg.DeleteAsync().ConfigureAwait(false);
-            });
-            return;
+            return new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack> {track});
         }
         await player.PlayAsync(track).ConfigureAwait(false);
+        return null;
     }
 
     public async Task StopAsync(IGuild guild, SocketUser user)
@@ -276,12 +250,7 @@ public class AudioService : IInjectable
             return new EmbedBuilder().WithColor(Color.Red)
                 .WithDescription("**Only the person who added the currently playing song can control the bot!**")
                 .Build();
-        var noFiltersPayload = new PlayerFiltersPayload(guild.Id, new Dictionary<string, IFilterOptions>());
-        await _lavaNode.SendPayloadAsync(noFiltersPayload).ConfigureAwait(false);
-
-        player.FilterEnabled = _filterActions[filterType](player.Filters);
-        await player.Filters.CommitAsync().ConfigureAwait(false);
-        //await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
+        await player.SetFilterAsync(filterType, _filterActions[filterType]).ConfigureAwait(false);
         return null;
     }
 
@@ -303,10 +272,7 @@ public class AudioService : IInjectable
                 .WithDescription("**Only the person who added the currently playing song can control the bot!**")
                 .Build();
 
-        var noFiltersPayload = new PlayerFiltersPayload(guild.Id, new Dictionary<string, IFilterOptions>());
-        await _lavaNode.SendPayloadAsync(noFiltersPayload).ConfigureAwait(false);
-        player.FilterEnabled = null;
-        //await player.UpdateNowPlayingMessageAsync().ConfigureAwait(false);
+        await player.SetFilterAsync(FilterType.None, _filterActions[FilterType.None]).ConfigureAwait(false);
         return null;
     }
 

@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048
+using System;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace KBot.Models;

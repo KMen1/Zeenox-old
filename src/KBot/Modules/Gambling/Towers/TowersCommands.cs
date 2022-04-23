@@ -9,21 +9,31 @@ namespace KBot.Modules.Gambling.Towers;
 [Group("towers", "Roobet Towers")]
 public class TowersCommands : SlashModuleBase
 {
-    public TowersService TowersService { get; set; }
+    private readonly TowersService _towersService;
+    public TowersCommands(TowersService towersService)
+    {
+        _towersService = towersService;
+    }
 
     [SlashCommand("start", "Starts a new game of towers")]
     public async Task CreateTowersGameAsync([MinValue(100)] [MaxValue(1000000)] int bet, Difficulty diff)
     {
-        await DeferAsync().ConfigureAwait(false);
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         if (dbUser.Balance < bet)
         {
-            await FollowupAsync("Insufficient balance.").ConfigureAwait(false);
+            await RespondAsync("Insufficient balance.").ConfigureAwait(false);
             return;
         }
 
-        var msg = await FollowupAsync("Starting...").ConfigureAwait(false);
-        var game = TowersService.CreateGame((SocketGuildUser)Context.User, msg, bet, diff);
+        if (dbUser.MinimumBet > bet)
+        {
+            await RespondAsync($"You must bet at least {dbUser.MinimumBet} credits.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        await RespondAsync("Starting Game...").ConfigureAwait(false);
+        var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
+        var game = _towersService.CreateGame((SocketGuildUser)Context.User, msg, bet, diff);
         await game.StartAsync().ConfigureAwait(false);
     }
 
@@ -31,7 +41,7 @@ public class TowersCommands : SlashModuleBase
     public async Task StopTowersGameAsync(string id)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var game = TowersService.GetGame(id);
+        var game = _towersService.GetGame(id);
         if (game is null)
         {
             await FollowupAsync("No game found for that id.").ConfigureAwait(false);

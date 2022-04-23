@@ -64,12 +64,12 @@ public class ModerationLog : IInjectable
         await arg.DeleteAsync().ConfigureAwait(false);
     }
 
-    private async Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
+    private async Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> arg1, SocketMessage afterMessage, ISocketMessageChannel arg3)
     {
         var beforeMessage = arg1.Value;
         if (beforeMessage.Author.IsBot || beforeMessage.Author.IsWebhook)
             return;
-        var afterMessage = arg2;
+        if (beforeMessage.Content.Equals(afterMessage.Content, StringComparison.OrdinalIgnoreCase)) return;
         var channel = arg3 as SocketTextChannel;
         var guild = channel!.Guild;
 

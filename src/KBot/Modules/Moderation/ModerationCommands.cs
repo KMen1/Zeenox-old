@@ -73,7 +73,7 @@ public class ModerationCommands : SlashModuleBase
     public async Task WarnsAsync(SocketUser user)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var warns = await Mongo.GetWarnsAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
+        var warns = (await Mongo.GetWarnsAsync((SocketGuildUser)Context.User).ConfigureAwait(false)).ToList();
         if (warns.Count == 0)
         {
             await FollowupWithEmbedAsync(Color.Gold, "😎 Good job!",
@@ -81,11 +81,8 @@ public class ModerationCommands : SlashModuleBase
             return;
         }
 
-        var warnString = new StringBuilder();
-        foreach (var warn in warns)
-            warnString.AppendLine(
-                $"`{warn.Id}`:`{warn.Date.ToString(CultureInfo.InvariantCulture)}` **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`");
-        await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} has {warns.Count} warns", warnString.ToString(),
+        var warnString = warns.Aggregate("", (current, warn) => current + $"`{warn.Id}`:`{warn.Date.ToString(CultureInfo.InvariantCulture)}` **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`\n");
+        await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} has {warns.Count} warns", warnString,
             ephemeral: true).ConfigureAwait(false);
     }
 

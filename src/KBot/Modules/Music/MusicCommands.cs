@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -11,8 +12,8 @@ namespace KBot.Modules.Music;
 [Group("music", "Music")]
 public class MusicCommands : SlashModuleBase
 {
-    private readonly AudioService _audioService;
-    public MusicCommands(AudioService audioService)
+    private readonly MusicService _audioService;
+    public MusicCommands(MusicService audioService)
     {
         _audioService = audioService;
     }
@@ -23,7 +24,7 @@ public class MusicCommands : SlashModuleBase
         var channel = ((IVoiceState) Context.User).VoiceChannel;
         if (channel is null)
         {
-            await RespondAsync("You are not in a voice channel", ephemeral: true);
+            await RespondAsync("You are not in a voice channel", ephemeral: true).ConfigureAwait(false);
             return;
         }
 
@@ -43,33 +44,47 @@ public class MusicCommands : SlashModuleBase
     {
         if (((IVoiceState) Context.User).VoiceChannel is null)
         {
-            await RespondAsync(embed: new EmbedBuilder().ErrorEmbed("You are not in a voice channel!"))
+            await RespondAsync(embed: new EmbedBuilder().ErrorEmbed("You are not in a voice channel!"), ephemeral: true)
                 .ConfigureAwait(false);
             return;
         }
-        await RespondAsync("Searching...").ConfigureAwait(false);
 
-        await _audioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
+        var isPlaying = _audioService.IsPlayingInGuild(Context.Guild);
+        if (isPlaying)
+        {
+            await DeferAsync(true).ConfigureAwait(false);
+            var embed = await _audioService.PlayAsync(Context.Guild, (SocketGuildUser)Context.User, null!, query).ConfigureAwait(false);
+            await FollowupAsync(embed: embed).ConfigureAwait(false);
+        }
+        else
+        {
+            await DeferAsync().ConfigureAwait(false);
+            var msg = await FollowupWithEmbedAsync(Color.Orange, "Starting player...", "").ConfigureAwait(false);
+            await _audioService.PlayAsync(Context.Guild, (SocketGuildUser)Context.User, msg, query).ConfigureAwait(false);
+        }
     }
 
     [SlashCommand("search", "Searches for a song")]
     public async Task SearchAsync(string query)
     {
-        await DeferAsync().ConfigureAwait(false);
         if (Uri.IsWellFormedUriString(query, UriKind.Absolute))
         {
-            await _audioService.PlayAsync(Context.Guild, Context.Interaction, query).ConfigureAwait(false);
+            var eEb = new EmbedBuilder()
+                .WithTitle("Please use /music play <url> if you want to play a song from a url")
+                .WithColor(Color.Red)
+                .Build();
+            await RespondAsync(embed:eEb, ephemeral: true).ConfigureAwait(false);
             return;
         }
-
+        await DeferAsync().ConfigureAwait(false);
         var search = await _audioService.SearchAsync(query).ConfigureAwait(false);
         if (search is null)
         {
-            await FollowupAsync("No matches!").ConfigureAwait(false);
+            await FollowupAsync("No matches!", ephemeral: true).ConfigureAwait(false);
             return;
         }
 
-        var tracks = search.Tracks.ToList(); //
+        var tracks = search.Tracks!.ToList();
         var desc = tracks.Take(10).Aggregate("",
             (current, track) =>
                 current +
@@ -96,7 +111,7 @@ public class MusicCommands : SlashModuleBase
         }
 
         var eb = new EmbedBuilder()
-            .WithTitle("Search Results")
+            .WithTitle("Please select a song")
             .WithColor(Color.Blue)
             .WithDescription(desc)
             .Build();
@@ -114,8 +129,11 @@ public class MusicCommands : SlashModuleBase
         }
 
         await DeferAsync().ConfigureAwait(false);
-        await _audioService.PlayFromSearchAsync(Context.Guild, (SocketMessageComponent) Context.Interaction, identifier)
+        var msg = ((SocketMessageComponent) Context.Interaction).Message;
+        var result = await _audioService.PlayFromSearchAsync(Context.Guild, (SocketGuildUser)Context.User, msg, identifier)
             .ConfigureAwait(false);
+        if (result is null) return;
+        await FollowupAsync(embed: result, ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("volume", "Sets the volume")]

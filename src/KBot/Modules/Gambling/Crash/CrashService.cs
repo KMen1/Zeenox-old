@@ -32,7 +32,7 @@ public class CrashService : IInjectable
         return game;
     }
 
-    private async void OnGameEndedAsync(object sender, GameEndedEventArgs e)
+    private async void OnGameEndedAsync(object? sender, GameEndedArgs e)
     {
         var game = (CrashGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
@@ -75,21 +75,21 @@ public class CrashService : IInjectable
         return 0.80 * e / (e - h);
     }
 
-    public CrashGame GetGame(string id)
+    public CrashGame? GetGame(string id)
     {
-        return _games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task StopGameAsync(string id)
     {
-        var game = _games.Find(x => x.Id == id);
+        var game = _games.Find(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
         if (game == null)
             return;
         await game.StopAsync().ConfigureAwait(false);
     }
 }
 
-public sealed class CrashGame : IGamblingGame
+public sealed class CrashGame : IGame
 {
     public CrashGame(
         SocketGuildUser user,
@@ -115,7 +115,7 @@ public sealed class CrashGame : IGamblingGame
     public int Profit => (int) (Bet * Multiplier - Bet);
     private CancellationTokenSource TokenSource { get; }
     private CancellationToken StoppingToken { get; }
-    public event EventHandler<GameEndedEventArgs> GameEnded;
+    public event EventHandler<GameEndedArgs>? GameEnded;
 
     public async Task StartAsync()
     {
@@ -138,10 +138,10 @@ public sealed class CrashGame : IGamblingGame
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().CrashEmbed(this,
-                        $"Crashed at: `{CrashPoint:0.00}x`\nYou lost **{Bet}** credits`", Color.Red);
+                        $"**Crashed at:** {CrashPoint:0.00}x\n**Result:** You lost **{Bet}** credits", Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Crash: LOSE", false));
+                OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Crash: LOSE", false));
                 break;
             }
 
@@ -154,15 +154,15 @@ public sealed class CrashGame : IGamblingGame
         TokenSource.Cancel();
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().CrashEmbed(this, $"Stopped at: `{Multiplier:0.00}x`\n" +
-                                                          $"Crashpoint: `{CrashPoint:0.00}x`\n" +
-                                                          $"You won **{Profit:0}** credits", Color.Green);
+            x.Embed = new EmbedBuilder().CrashEmbed(this, $"**Stopped at:** {Multiplier:0.00}x\n" +
+                                                          $"**Crashpoint:** {CrashPoint:0.00}x\n" +
+                                                          $"**Result:** You win **{Profit:0}** credits", Color.Green);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Profit, $"CR: {Multiplier:0.0}x", false));
+        OnGameEnded(new GameEndedArgs(Id, User, Bet, Profit, $"Crash: {Multiplier:0.0}x", false));
     }
 
-    private void OnGameEnded(GameEndedEventArgs e)
+    private void OnGameEnded(GameEndedArgs e)
     {
         GameEnded?.Invoke(this, e);
     }

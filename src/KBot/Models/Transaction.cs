@@ -1,4 +1,7 @@
-﻿using System;
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048, MA0016
+using System;
+using System.Globalization;
 using KBot.Enums;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -6,7 +9,7 @@ namespace KBot.Models;
 
 public class Transaction
 {
-    public Transaction(string id, TransactionType source, int amount, string description, string from, string to)
+    public Transaction(string id, TransactionType source, int amount, string? description, ulong from, ulong to)
     {
         Id = id;
         Source = source;
@@ -32,11 +35,11 @@ public class Transaction
     [BsonElement("amount")] public int Amount { get; set; }
     [BsonElement("date")] public DateTime Date { get; set; }
     [BsonElement("desc")] public string? Description { get; set; }
-    [BsonElement("from")] public string? From { get; set; }
-    [BsonElement("to")] public string? To { get; set; }
+    [BsonElement("from")] public ulong? From { get; set; }
+    [BsonElement("to")] public ulong? To { get; set; }
 
     public override string ToString()
     {
-        return $"`ID: {Id}` `Date: {Date.ToString("yyyy.MM.dd")}` `Amount: {Amount}`";
+        return $"`ID: {Id}` `Date: {Date.ToString("yyyy.MM.dd", CultureInfo.InvariantCulture)}` `Amount: {Amount}`";
     }
 }

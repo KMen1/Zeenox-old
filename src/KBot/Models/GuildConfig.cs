@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048
+using System.Collections.Generic;
 using Discord;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -22,7 +24,9 @@ public class GuildConfig
         LevelRoles = new List<LevelRole>();
         SuggestionChannelId = 0;
         EpicNotificationChannelId = 0;
+        EpicNotificationRoleId = 0;
         DbdNotificationChannelId = 0;
+        DbdNotificationRoleId = 0;
     }
     
     [BsonId] public ulong GuildId { get; set; }
@@ -43,5 +47,7 @@ public class GuildConfig
 
     [BsonElement("suggestion_channel_id")] public ulong SuggestionChannelId { get; set; }
     [BsonElement("epic_notification_channel_id")] public ulong EpicNotificationChannelId { get; set; }
+    [BsonElement("epic_notification_role_id")] public ulong EpicNotificationRoleId { get; set; }
     [BsonElement("dbd_notification_channel_id")] public ulong DbdNotificationChannelId { get; set; }
+    [BsonElement("dbd_notification_role_id")] public ulong DbdNotificationRoleId { get; set; }
 }

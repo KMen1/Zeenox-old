@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048
+using Newtonsoft.Json;
 
 namespace KBot.Models;
 
@@ -28,6 +30,6 @@ public partial class Shrines
 {
     public static Shrines FromJson(string json)
     {
-        return JsonConvert.DeserializeObject<Shrines>(json);
+        return JsonConvert.DeserializeObject<Shrines>(json)!;
     }
 }

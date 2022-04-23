@@ -1,11 +1,25 @@
-﻿using Lavalink4NET.Filters;
+﻿using System.Collections.Generic;
+using Lavalink4NET.Filters;
 using Lavalink4NET.Player;
 
 namespace KBot.Extensions;
 
 public static class PlayerFilterMapExtensions
 {
-    public static string EnableBassBoost(this PlayerFilterMap map)
+    public static void Clear(this PlayerFilterMap map)
+    {
+        map.Distortion = null;
+        map.Equalizer = null;
+        map.Karaoke = null;
+        map.Rotation = null;
+        map.Timescale = null;
+        map.Tremolo = null;
+        map.Vibrato = null;
+        map.ChannelMix = null;
+        map.LowPass = null;
+    }
+    
+    public static void EnableBassBoost(this PlayerFilterMap map)
     {
         map.Equalizer = new EqualizerFilterOptions
         {
@@ -16,10 +30,9 @@ public static class PlayerFilterMapExtensions
                 new(2, 0.2f)
             }
         };
-        return "Basszus Erősítés";
     }
 
-    public static string EnablePop(this PlayerFilterMap map)
+    public static void EnablePop(this PlayerFilterMap map)
     {
         map.Equalizer = new EqualizerFilterOptions
         {
@@ -37,10 +50,9 @@ public static class PlayerFilterMapExtensions
                 new(9, 0.6f)
             }
         };
-        return "Pop";
     }
 
-    public static string EnableSoft(this PlayerFilterMap map)
+    public static void EnableSoft(this PlayerFilterMap map)
     {
         map.Equalizer = new EqualizerFilterOptions
         {
@@ -54,10 +66,9 @@ public static class PlayerFilterMapExtensions
                 new(13, -0.25f)
             }
         };
-        return "Pop";
     }
 
-    public static string EnableTreblebass(this PlayerFilterMap map)
+    public static void EnableTreblebass(this PlayerFilterMap map)
     {
         map.Equalizer = new EqualizerFilterOptions
         {
@@ -77,10 +88,9 @@ public static class PlayerFilterMapExtensions
                 new(12, 0.55f)
             }
         };
-        return "Pop";
     }
 
-    public static string EnableNightcore(this PlayerFilterMap map)
+    public static void EnableNightcore(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
         {
@@ -88,19 +98,17 @@ public static class PlayerFilterMapExtensions
             Pitch = 1.125f,
             Rate = 1.05f
         };
-        return "Nightcore";
     }
 
-    public static string EnableEightd(this PlayerFilterMap map)
+    public static void EnableEightd(this PlayerFilterMap map)
     {
         map.Rotation = new RotationFilterOptions
         {
             Frequency = 0.2f
         };
-        return "8D";
     }
 
-    public static string EnableVaporwave(this PlayerFilterMap map)
+    public static void EnableVaporwave(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
         {
@@ -108,7 +116,6 @@ public static class PlayerFilterMapExtensions
             Pitch = 0.5f,
             Rate = 1.0f
         };
-        return "Vaporwave";
         /*
 new TremoloFilter()
 {
@@ -117,18 +124,17 @@ new TremoloFilter()
 }*/
     }
 
-    public static string EnableDoubletime(this PlayerFilterMap map)
+    public static void EnableDoubletime(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
         {
-            Speed = 1.0f,
-            Pitch = 0.5f,
+            Speed = 2.0f,
+            Pitch = 1.0f,
             Rate = 1.0f
         };
-        return "Gyorsítás";
     }
 
-    public static string EnableSlowmotion(this PlayerFilterMap map)
+    public static void EnableSlowmotion(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
         {
@@ -136,10 +142,9 @@ new TremoloFilter()
             Pitch = 1.0f,
             Rate = 0.8f
         };
-        return "Lassítás";
     }
 
-    public static string EnableChipmunk(this PlayerFilterMap map)
+    public static void EnableChipmunk(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
         {
@@ -147,10 +152,9 @@ new TremoloFilter()
             Pitch = 1.35f,
             Rate = 1.25f
         };
-        return "Alvin és a mókusok";
     }
 
-    public static string EnableDarthvader(this PlayerFilterMap map)
+    public static void EnableDarthvader(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
         {
@@ -158,10 +162,9 @@ new TremoloFilter()
             Pitch = 0.5f,
             Rate = 0.8f
         };
-        return "Darth Vader";
     }
 
-    public static string EnableDance(this PlayerFilterMap map)
+    public static void EnableDance(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
         {
@@ -169,10 +172,9 @@ new TremoloFilter()
             Pitch = 1.25f,
             Rate = 1.25f
         };
-        return "Tánc";
     }
 
-    public static string EnableChina(this PlayerFilterMap map)
+    public static void EnableChina(this PlayerFilterMap map)
     {
         map.Timescale = new TimescaleFilterOptions
         {
@@ -180,27 +182,24 @@ new TremoloFilter()
             Pitch = 1.25f,
             Rate = 1.25f
         };
-        return "Kína";
     }
 
-    public static string EnableVibrato(this PlayerFilterMap map)
+    public static void EnableVibrato(this PlayerFilterMap map)
     {
         map.Vibrato = new VibratoFilterOptions
         {
             Frequency = 4.0f,
             Depth = 0.75f
         };
-        return "Vibrato";
     }
 
-    public static string EnableTremolo(this PlayerFilterMap map)
+    public static void EnableTremolo(this PlayerFilterMap map)
     {
         map.Tremolo = new TremoloFilterOptions
         {
             Frequency = 4.0f,
             Depth = 0.75f
         };
-        return "Tremolo";
     }
 
     /*public static IEnumerable<IFilter> Vibrate()

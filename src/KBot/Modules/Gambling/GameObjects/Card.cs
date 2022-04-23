@@ -2,7 +2,7 @@
 using System.Reflection;
 using KBot.Enums;
 
-namespace KBot.Modules.Gambling.Objects;
+namespace KBot.Modules.Gambling.GameObjects;
 
 public class Card
 {

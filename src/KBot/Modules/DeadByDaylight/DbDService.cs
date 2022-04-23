@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
@@ -35,7 +36,7 @@ public class DbDService : IInjectable
         
         while (true)
         {
-            await Task.Delay(TimeSpan.FromMinutes(30)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMinutes(1)).ConfigureAwait(false);
 
             var refreshDate = await _redis.GetDbdRefreshDateAsync().ConfigureAwait(false);
             if (DateTime.UtcNow < refreshDate) continue;
@@ -57,7 +58,7 @@ public class DbDService : IInjectable
                 .WithTitle("Shrine of Secrets")
                 .WithColor(Color.DarkOrange)
                 .WithDescription($"🏁 <t:{refreshDate.AddDays(7).ToUnixTimeStamp()}:R>")
-                .WithFooter($"{sw.ElapsedMilliseconds.ToString()} ms");
+                .WithFooter($"{sw.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)} ms");
             foreach (var perk in shrines) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
             
             foreach (var textChannel in channels)
@@ -69,7 +70,7 @@ public class DbDService : IInjectable
         }
     }
 
-    public async Task<List<Perk>> GetShrinesAsync()
+    public async Task<IEnumerable<Perk>> GetShrinesAsync()
     {
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
@@ -146,71 +147,6 @@ public class DbDService : IInjectable
             268435480 => "The Cenobite",
             268435481 => "The Artist",
             268435482 => "The Onryō",
-            _ => "Ismeretlen"
-        };
-    }
-
-    private string GetCharacterIdFromNumberId(long jsonCharacter)
-    {
-        return jsonCharacter switch
-        {
-            0 => "Dwight",
-            1 => "Meg",
-            2 => "Claudette",
-            3 => "Jake",
-            4 => "Nea",
-            5 => "Laurie",
-            6 => "Ace",
-            7 => "Bill",
-            8 => "Feng",
-            9 => "Smoke",
-            10 => "Kate",
-            11 => "Quentin",
-            12 => "Eric",
-            13 => "Adam",
-            14 => "Jeff",
-            15 => "Jane",
-            16 => "Ash",
-            17 => "Nancy",
-            18 => "Steve",
-            19 => "Yui",
-            20 => "Zarina",
-            21 => "S22",
-            22 => "S23",
-            23 => "S24",
-            24 => "S25",
-            25 => "S26",
-            26 => "S27",
-            27 => "S28",
-            28 => "S29",
-            29 => "S30",
-            268435456 => "Chuckles",
-            268435457 => "Bob",
-            268435458 => "HillBilly",
-            268435459 => "Nurse",
-            268435460 => "Witch",
-            268435461 => "Shape",
-            268435462 => "Killer07",
-            268435463 => "Bear",
-            268435464 => "Cannibal",
-            268435465 => "Nightmare",
-            268435466 => "Pig",
-            268435467 => "Clown",
-            268435468 => "Spirit",
-            268435469 => "Legion",
-            268435470 => "Plague",
-            268435471 => "Ghostface",
-            268435472 => "Demogorgon",
-            268435473 => "Oni",
-            268435474 => "Gunslinger",
-            268435475 => "K20",
-            268435476 => "K21",
-            268435477 => "K22",
-            268435478 => "K23",
-            268435479 => "K24",
-            268435480 => "K25",
-            268435481 => "K26",
-            268435482 => "K27",
             _ => "Ismeretlen"
         };
     }

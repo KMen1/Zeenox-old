@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -8,7 +9,7 @@ using KBot.Models;
 namespace KBot.Modules.SelfRoles;
 
 [Group("selfrole", "Self assignable roles using select menus")]
-public class ButtonRoleCommands : SlashModuleBase
+public class SelfRoleCommands : SlashModuleBase
 {
     [RequireUserPermission(GuildPermission.ManageRoles)]
     [SlashCommand("create", "Creates a new button role message")]
@@ -112,7 +113,7 @@ public class ButtonRoleCommands : SlashModuleBase
         var roleIds = rr.Roles.Select(x => x.RoleId).ToArray();
         var selectedIds = selections.Select(ulong.Parse).ToArray();
         var rolesToRemove = roleIds.Except(selectedIds).Select(x => Context.Guild.GetRole(x)).Where(x => x != null).ToArray();
-        var rolesToAdd = selections.Select(x => Context.Guild.GetRole(ulong.Parse(x))).Where(x => x != null).ToArray();
+        var rolesToAdd = selections.Select(x => Context.Guild.GetRole(ulong.Parse(x, NumberStyles.Any, CultureInfo.InvariantCulture))).Where(x => x != null).ToArray();
         await ((SocketGuildUser)Context.User).AddRolesAsync(rolesToAdd).ConfigureAwait(false);
         await ((SocketGuildUser)Context.User).RemoveRolesAsync(rolesToRemove).ConfigureAwait(false);
 

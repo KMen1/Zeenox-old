@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -8,7 +8,7 @@ using Discord.WebSocket;
 using Humanizer;
 using KBot.Enums;
 using KBot.Extensions;
-using StackExchange.Redis.KeyspaceIsolation;
+using KBot.Models;
 
 namespace KBot.Modules.Gambling;
 
@@ -16,7 +16,7 @@ namespace KBot.Modules.Gambling;
 public class GamblingCommands : SlashModuleBase
 {
     [SlashCommand("profile", "Gets your gambling statistics")]
-    public async Task SendGamblingProfileAsync(SocketUser vuser = null)
+    public async Task SendGamblingProfileAsync(SocketUser? vuser = null)
     {
         var user = vuser ?? Context.User;
         if (user.IsBot) await FollowupAsync("You can't get a bot's profile.").ConfigureAwait(false);
@@ -25,9 +25,9 @@ public class GamblingCommands : SlashModuleBase
     }
 
     [SlashCommand("transactions", "Gets you transactions")]
-    public async Task SendTransactionsAsync(SocketUser user = null)
+    public async Task SendTransactionsAsync(SocketUser? user = null)
     {
-        var transactions = await Mongo.GetTransactionsAsync((SocketGuildUser)(user ?? Context.User)).ConfigureAwait(false);
+        var transactions = (await Mongo.GetTransactionsAsync((SocketGuildUser)(user ?? Context.User)).ConfigureAwait(false)).ToList();
         if (transactions.Count == 0)
         {
             await RespondAsync("You have no transactions.", ephemeral: true).ConfigureAwait(false);
@@ -35,7 +35,7 @@ public class GamblingCommands : SlashModuleBase
         }
         var chunks = transactions.ChunkBy(500);
 
-        var embeds = chunks.ConvertAll(chunk => new EmbedBuilder()
+        var embeds = chunks.ToList().ConvertAll(chunk => new EmbedBuilder()
             .WithTitle($"{(user ?? Context.User).Username}'s transactions")
             .WithDescription("To get more information on a transaction use **/gamble transaction <id>**")
             .WithColor(Color.Blue)
@@ -57,33 +57,41 @@ public class GamblingCommands : SlashModuleBase
         var embed = new EmbedBuilder()
             .WithTitle($"Transaction - {transaction.Id}")
             .WithColor(Color.Blue)
-            .AddField("Date", transaction.Date.ToString("G"), true)
-            .AddField("Amount", $"`{transaction.Amount.ToString("N1")}`", true)
-            .AddField("Type", $"`{transaction.Source.GetDescription()}`", true)
-            .AddField("Reason", $"```{transaction.Description}```")
-            .Build();
+            .AddField("Date", transaction.Date.ToString("G", CultureInfo.InvariantCulture), true)
+            .AddField("Amount", $"`{transaction.Amount:N1}`", true)
+            .AddField("Type", $"`{transaction.Source.GetDescription()}`", true);
+            
+        if (transaction.From is not null)
+            embed.AddField("From", $"`{Context.Guild.GetUser((ulong) transaction.From).Mention}`", true);
+        if (transaction.To is not null)
+            embed.AddField("To", $"`{Context.Guild.GetUser((ulong) transaction.To).Mention}`", true);
+        if (transaction.Description is not null)
+            embed.AddField("Reason", $"```{transaction.Description}```");
 
-        await RespondAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
+        await RespondAsync(embed: embed.Build(), ephemeral: true).ConfigureAwait(false);
     }
 
-    [RequireUserPermission(GuildPermission.KickMembers)]
-    [SlashCommand("changemoney", "Change someones balance (admin)")]
+    [RequireUserPermission(GuildPermission.Administrator)]
+    [SlashCommand("changebalance", "Change someones balance (admin)")]
     public async Task ChangeBalanceAsync(SocketGuildUser user, int offset, string reason)
     {
         await DeferAsync(true).ConfigureAwait(false);
         if (user.IsBot) await FollowupAsync("You can't change a bot's balance.").ConfigureAwait(false);
         var id = Guid.NewGuid().ToShortId();
-        var dbUser = await Mongo.UpdateUserAsync(user, x =>
-        {
-            x.Balance += offset;
-            x.TransactionIds.Add(id);
-        }).ConfigureAwait(false);
+        await Mongo.AddTransactionAsync(new Transaction(
+            id,
+            TransactionType.Correction,
+            offset,
+            reason,
+            Context.User.Id,
+            user.Id), user).ConfigureAwait(false);
+        var dbUser = await Mongo.UpdateUserAsync(user, x => x.Balance += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Money set!",
-            $"{user.Mention} now has a balance of: **{dbUser.Balance.ToString()}**").ConfigureAwait(false);
+            $"{user.Mention} now has a balance of: **{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}**").ConfigureAwait(false);
     }
 
     [SlashCommand("transfer", "Sends money to another user")]
-    public async Task TransferBalanceAsync(SocketGuildUser user, [MinValue(1)] int amount)
+    public async Task TransferBalanceAsync(SocketGuildUser user, [MinValue(1), MaxValue(10000000)] int amount)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var sourceUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
@@ -94,16 +102,22 @@ public class GamblingCommands : SlashModuleBase
         }
 
         var id = Guid.NewGuid().ToShortId();
-        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x =>
-        {
-            x.Balance -= amount;
-            x.TransactionIds.Add(id);
-        }).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync(user, x =>
-        {
-            x.Balance += amount;
-            x.TransactionIds.Add(id);
-        }).ConfigureAwait(false);
+        await Mongo.AddTransactionAsync(new Transaction(
+            id,
+            TransactionType.TransferSend,
+            -amount,
+            null,
+            Context.User.Id,
+            user.Id), (SocketGuildUser)Context.User).ConfigureAwait(false);
+        await Mongo.AddTransactionAsync(new Transaction(
+            id,
+            TransactionType.TransferReceive,
+            amount,
+            null,
+            Context.User.Id,
+            user.Id), user).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.Balance -= amount).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync(user, x => x.Balance += amount).ConfigureAwait(false);
         var eb = new EmbedBuilder()
             .WithTitle("Transfer successful!")
             .WithColor(Color.Green)
@@ -132,13 +146,10 @@ public class GamblingCommands : SlashModuleBase
             }).ConfigureAwait(false);
             await FollowupWithEmbedAsync(Color.Green, $"Succesfully collected {reward} coins", "", ephemeral: true)
                 .ConfigureAwait(false);
+            return;
         }
-        else
-        {
-            var timeLeft = lastDaily.AddDays(1) - DateTime.UtcNow;
-            await FollowupWithEmbedAsync(Color.Green, "Unable to collect",
-                    $"Come back in {timeLeft.Humanize()}", ephemeral: true)
-                .ConfigureAwait(false);
-        }
+        var timeLeft = lastDaily.AddDays(1) - DateTime.UtcNow;
+        await FollowupWithEmbedAsync(Color.Green, "Unable to collect",
+                $"Come back in {timeLeft.Humanize()}", ephemeral: true).ConfigureAwait(false);
     }
 }

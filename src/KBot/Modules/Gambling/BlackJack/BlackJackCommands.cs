@@ -6,21 +6,32 @@ namespace KBot.Modules.Gambling.BlackJack;
 
 public class BlackJackCommands : SlashModuleBase
 {
-    public BlackJackService BlackJackService { get; set; }
+    private readonly BlackJackService _blackJackService;
+
+    public BlackJackCommands(BlackJackService blackJackService)
+    {
+        _blackJackService = blackJackService;
+    }
 
     [SlashCommand("blackjack", "Starts a new game of Blackjack")]
-    public async Task StartBlackJackAsync([MinValue(100)] [MaxValue(1000000)] int bet)
+    public async Task StartBlackJackAsync([MinValue(1)] [MaxValue(10000000)] int bet)
     {
-        await DeferAsync().ConfigureAwait(false);
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         if (dbUser.Balance < bet)
         {
-            await FollowupAsync("Insufficient balance.").ConfigureAwait(false);
+            await RespondAsync("Insufficient balance.").ConfigureAwait(false);
             return;
         }
 
-        var msg = await FollowupAsync("Starting...").ConfigureAwait(false);
-        var game = BlackJackService.CreateGame((SocketGuildUser)Context.User, msg, bet);
+        if (dbUser.MinimumBet > bet)
+        {
+            await RespondAsync($"You must bet at least {dbUser.MinimumBet} credits.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        await RespondAsync("Starting Game...").ConfigureAwait(false);
+        var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
+        var game = _blackJackService.CreateGame((SocketGuildUser)Context.User, msg, bet);
         await game.StartAsync().ConfigureAwait(false);
     }
 }

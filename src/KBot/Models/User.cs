@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048, MA0016
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -21,7 +23,7 @@ public class User
         VoiceChannelJoin = DateTime.MinValue;
         Roles = new List<ulong>();
         Roles.AddRange(user.Roles.Select(x => x.Id));
-        Balance = 10000;
+        Balance = 1000;
         DailyBalanceClaim = DateTime.MinValue;
         Wins = 0;
         Losses = 0;
@@ -55,10 +57,20 @@ public class User
     [BsonElement("wins")] public int Wins { get; set; }
     [BsonElement("losses")] public int Losses { get; set; }
     [BsonIgnore] public int GamesPlayed => Wins + Losses;
+    [BsonIgnore] public int GambleLevel => GamesPlayed / 10;
+    [BsonIgnore] public int MinimumBet
+    {
+        get
+        {
+            if (GambleLevel >= 100) return 1000000;
+            return (int) Math.Round(Math.Pow(GambleLevel, 2.99996) + 185);
+        }
+    }
+
     [BsonElement("money_won")] public int MoneyWon { get; set; }
     [BsonElement("money_lost")] public int MoneyLost { get; set; }
     [BsonElement("transaction_ids")] public List<string> TransactionIds { get; set; }
-    //[BsonElement("game_result_ids")] public List<string> GameResultIds { get; set; }
+    [BsonElement("game_result_ids")] public List<string> GameResultIds { get; set; }
     [BsonElement("warn_ids")] public List<string> WarnIds { get; set; }
     [BsonIgnore] public double WinRate => Math.Round(Wins / (double) GamesPlayed * 100, 2);
     
@@ -67,11 +79,13 @@ public class User
         return new EmbedBuilder()
             .WithAuthor(user.Username, user.GetAvatarUrl())
             .WithColor(Color.Gold)
-            .AddField("💳 Balance", $"`{Balance.ToString()}`", true)
-            .AddField("💰 Money Won", $"`{MoneyWon.ToString()}`", true)
-            .AddField("💸 Money Lost", $"`{MoneyLost.ToString()}`", true)
+            .AddField("🆙 Level", $"`{GambleLevel.ToString(CultureInfo.InvariantCulture)}`")
+            .AddField("♦ Minimum Bet", $"`{MinimumBet.ToString(CultureInfo.InvariantCulture)}`")
+            .AddField("💳 Balance", $"`{Balance.ToString(CultureInfo.InvariantCulture)}`", true)
+            .AddField("💰 Money Won", $"`{MoneyWon.ToString(CultureInfo.InvariantCulture)}`", true)
+            .AddField("💸 Money Lost", $"`{MoneyLost.ToString(CultureInfo.InvariantCulture)}`", true)
             .AddField("📈 Winrate", $"`{WinRate.ToString(CultureInfo.InvariantCulture)}%`", true)
-            .AddField("🏆 Wins", $"`{Wins.ToString()}`", true)
-            .AddField("🚫 Loses", $"`{Losses.ToString()}`", true);
+            .AddField("🏆 Wins", $"`{Wins.ToString(CultureInfo.InvariantCulture)}`", true)
+            .AddField("🚫 Loses", $"`{Losses.ToString(CultureInfo.InvariantCulture)}`", true);
     }
 }

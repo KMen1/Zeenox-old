@@ -5,10 +5,10 @@ using Discord.Interactions;
 namespace KBot.Modules.Reddit;
 
 [Group("reddit", "Reddit commands")]
-public class Reddit : SlashModuleBase
+public class RedditCommands : SlashModuleBase
 {
     private readonly RedditService _redditService;
-    public Reddit(RedditService redditService)
+    public RedditCommands(RedditService redditService)
     {
         _redditService = redditService;
     }
@@ -20,7 +20,7 @@ public class Reddit : SlashModuleBase
         var post = await _redditService.GetRandomPostFromSubredditAsync(subreddit).ConfigureAwait(false);
         if (post is null)
         {
-            await FollowupWithEmbedAsync(Color.Red, "Nem található ilyen subreddit.", "").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "The subreddit doesn't exist.", "").ConfigureAwait(false);
             return;
         }
 

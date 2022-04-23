@@ -4,15 +4,15 @@ using Discord.WebSocket;
 
 namespace KBot.Modules.Gambling;
 
-public interface IGamblingGame
+public interface IGame
 {
     Task StartAsync();
-    event EventHandler<GameEndedEventArgs> GameEnded;
+    event EventHandler<GameEndedArgs> GameEnded;
 }
 
-public class GameEndedEventArgs
+public class GameEndedArgs
 {
-    public GameEndedEventArgs(string gameId, SocketGuildUser user, int bet, int prize, string description, bool isWin)
+    public GameEndedArgs(string gameId, SocketGuildUser user, int bet, int prize, string description, bool isWin)
     {
         Prize = prize;
         User = user;

@@ -139,17 +139,17 @@ public class LevelingModule : IInjectable
             if (before.IsDeafened && !before.IsMuted && after.IsMuted && after.IsDeafened)
                 return;
             if (before.VoiceChannel is not null)
-                await ScanVoiceChannelAsync(before.VoiceChannel);
+                await ScanVoiceChannelAsync(before.VoiceChannel).ConfigureAwait(false);
             if (after.VoiceChannel is not null && after.VoiceChannel != before.VoiceChannel)
-                await ScanVoiceChannelAsync(after.VoiceChannel);
+                await ScanVoiceChannelAsync(after.VoiceChannel).ConfigureAwait(false);
             else if (after.VoiceChannel is null)
-                await UserLeftChannelAsync(user);
+                await UserLeftChannelAsync(user).ConfigureAwait(false);
         }).ConfigureAwait(false);
     }
 
     private async Task ScanVoiceChannelAsync(SocketVoiceChannel channel)
     {
-        foreach (var user in channel.Users) await ScanUserAsync(user);
+        foreach (var user in channel.Users) await ScanUserAsync(user).ConfigureAwait(false);
     }
 
     private async Task ScanUserAsync(SocketGuildUser user)

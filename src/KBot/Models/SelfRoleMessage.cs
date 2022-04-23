@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048
+using System.Collections.Generic;
 using Discord;
 using MongoDB.Bson.Serialization.Attributes;
 

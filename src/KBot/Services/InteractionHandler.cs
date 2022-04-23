@@ -98,7 +98,7 @@ public class InteractionHandler : DiscordClientService
             case InteractionCommandError.UnmetPrecondition:
             {
                 await interaction.FollowupAsync(embed:
-                        new EmbedBuilder().ErrorEmbed("Nem rendelkezel megfelelő jogokkal a parancs futtatásához"))
+                        new EmbedBuilder().ErrorEmbed("You don't have enough permissions to use this command!"))
                     .ConfigureAwait(false);
                 break;
             }
@@ -150,7 +150,7 @@ public class InteractionHandler : DiscordClientService
                 await interaction
                     .FollowupAsync(
                         embed: new EmbedBuilder().ErrorEmbed(
-                            "Nem rendelkezel megfelelő jogokkal a parancs futtatásához")).ConfigureAwait(false);
+                            "You don't have enough permissions to use this command!")).ConfigureAwait(false);
                 break;
             }
             case InteractionCommandError.ParseFailed:

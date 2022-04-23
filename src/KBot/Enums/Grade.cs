@@ -9,7 +9,7 @@ public enum Grade
     B,
     A,
     S,
-    SH,
+    Sh,
     X,
-    XH
+    Xh
 }

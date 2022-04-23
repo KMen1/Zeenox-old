@@ -8,21 +8,31 @@ namespace KBot.Modules.Gambling.Crash;
 
 public class CrashCommands : SlashModuleBase
 {
-    public CrashService CrashService { get; set; }
+    private readonly CrashService _crashService;
+    public CrashCommands(CrashService crashService)
+    {
+        _crashService = crashService;
+    }
 
     [SlashCommand("crash", "Starts a new game of crash.")]
     public async Task StartCrashGameAsync([MinValue(100)] [MaxValue(1000000)] int bet)
     {
-        await DeferAsync().ConfigureAwait(false);
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         if (dbUser.Balance < bet)
         {
-            await FollowupAsync("Insufficient balance.").ConfigureAwait(false);
+            await RespondAsync("Insufficient balance.").ConfigureAwait(false);
             return;
         }
 
-        var msg = await FollowupAsync("Starting...").ConfigureAwait(false);
-        var game = CrashService.CreateGame((SocketGuildUser)Context.User, msg, bet);
+        if (dbUser.MinimumBet > bet)
+        {
+            await RespondAsync($"You must bet at least {dbUser.MinimumBet} credits.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        await RespondAsync("Starting Game...").ConfigureAwait(false);
+        var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
+        var game = _crashService.CreateGame((SocketGuildUser)Context.User, msg, bet);
         await game.StartAsync().ConfigureAwait(false);
     }
 
@@ -30,9 +40,9 @@ public class CrashCommands : SlashModuleBase
     public async Task StopCrashGameAsync(string id)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = CrashService.GetGame(id);
+        var game = _crashService.GetGame(id);
         if (Context.User.Id != game.User.Id)
             return;
-        await CrashService.StopGameAsync(id).ConfigureAwait(false);
+        await _crashService.StopGameAsync(id).ConfigureAwait(false);
     }
 }

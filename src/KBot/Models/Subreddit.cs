@@ -1,4 +1,5 @@
-﻿using System;
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048, MA0016
 using System.Collections.Generic;
 using Newtonsoft.Json;
 

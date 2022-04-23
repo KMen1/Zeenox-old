@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -29,9 +31,8 @@ public class Levels : SlashModuleBase
         var embed = new EmbedBuilder()
             .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
             .WithColor(Color.Gold)
-            .AddField("Level", $"`{level}`", true)
-            .AddField("XP", $"`{xp}`", true)
-            .AddField("Required XP", $"`{requiredXP}`", true)
+            .AddField("🆙 Level", $"`{level}`")
+            .AddField("➡ XP/Required", $"`{xp}/{requiredXP}`")
             .Build();
 
         await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
@@ -41,7 +42,7 @@ public class Levels : SlashModuleBase
     public async Task GetTopAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var top = await Mongo.GetTopUsersAsync(Context.Guild, 10).ConfigureAwait(false);
+        var top = (await Mongo.GetTopUsersAsync(Context.Guild, 10).ConfigureAwait(false)).ToList();
 
         var userColumn = "";
         var levelColumn = "";
@@ -89,24 +90,24 @@ public class Levels : SlashModuleBase
         }
     }
 
-    [RequireUserPermission(GuildPermission.KickMembers)]
+    [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("changexp", "Change someone's XP")]
     public async Task ChangeXpAsync(SocketGuildUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Mongo.UpdateUserAsync(user, x => x.Xp += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "XP set!",
-            $"{user.Mention} now has an XP of **{dbUser.Xp.ToString()}**").ConfigureAwait(false);
+            $"{user.Mention} now has an XP of **{dbUser.Xp.ToString(CultureInfo.InvariantCulture)}**").ConfigureAwait(false);
     }
 
-    [RequireUserPermission(GuildPermission.KickMembers)]
+    [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("changelevel", "Change someone's level")]
     public async Task ChangeLevelAsync(SocketGuildUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Mongo.UpdateUserAsync(user, x => x.Level += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Level set!",
-            $"{user.Mention} now has a level of **{dbUser.Level.ToString()}**").ConfigureAwait(false);
+            $"{user.Mention} now has a level of **{dbUser.Level.ToString(CultureInfo.InvariantCulture)}**").ConfigureAwait(false);
     }
     
     [RequireUserPermission(GuildPermission.Administrator)]

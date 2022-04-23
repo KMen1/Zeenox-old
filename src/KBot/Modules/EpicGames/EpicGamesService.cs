@@ -36,7 +36,7 @@ public class EpicGamesService : IInjectable
 
         while (true)
         {
-            await Task.Delay(TimeSpan.FromMinutes(30)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMinutes(1)).ConfigureAwait(false);
 
             var refreshDate = await _redis.GetEpicRefreshDateAsync().ConfigureAwait(false);
             if (DateTime.UtcNow < refreshDate) continue;
@@ -78,6 +78,6 @@ public class EpicGamesService : IInjectable
             .ConfigureAwait(false);
 
         var search = EpicStore.FromJson(response);
-        return search.CurrentGames;
+        return search.CurrentGames!;
     }
 }

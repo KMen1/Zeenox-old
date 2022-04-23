@@ -15,12 +15,18 @@ namespace KBot.Modules.Gambling;
 [Group("shop", "Stuff to buy with your money")]
 public class ShopCommands : SlashModuleBase
 {
+    private readonly InteractiveService _interactive;
     private const int CategoryPrice = 150000000;
-    private const int VoicePrice = 200000000;
-    private const int TextPrice = 175000000;
-    private const int RolePrice = 125000000;
+    private const int VoicePrice = 150000000;
+    private const int TextPrice = 125000000;
+    private const int RolePrice = 100000000;
 
-    public InteractiveService Interactive { get; set; }
+    public ShopCommands(InteractiveService interactive)
+    {
+        _interactive = interactive;
+    }
+
+    
 
     [SlashCommand("level", "Buy extra levels")]
     public async Task BuyLevelAsync([MinValue(1), MaxValue(10)] int amount)
@@ -32,9 +38,9 @@ public class ShopCommands : SlashModuleBase
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString()}`")
-            .AddField("Levels", $"`{amount.ToString()}`", true)
-            .AddField("Price", $"`{required.ToString()}`", true);
+            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
+            .AddField("Levels", $"`{amount.ToString(CultureInfo.InvariantCulture)}`", true)
+            .AddField("Price", $"`{required.ToString(CultureInfo.InvariantCulture)}`", true);
 
         if (dbUser.Balance < required)
         {
@@ -50,8 +56,8 @@ public class ShopCommands : SlashModuleBase
 
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
-        var result = await Interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
+        var result = await _interactive
+            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
         if (!result.IsSuccess)
         {
@@ -79,7 +85,7 @@ public class ShopCommands : SlashModuleBase
             x.Embed = eb.WithDescription($"Successful purchase! 😎\nRemaining balance: `{dbUser.Balance - required}`")
                 .WithColor(Color.Green).Build();
             x.Components = new ComponentBuilder().Build();
-        });
+        }).ConfigureAwait(false);
     }
 
     [SlashCommand("role", "Buy your own role")]
@@ -91,9 +97,9 @@ public class ShopCommands : SlashModuleBase
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString()}`")
+            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
             .AddField("Role", $"`{name}`", true)
-            .AddField("Price", $"`{RolePrice.ToString()}`", true);
+            .AddField("Price", $"`{RolePrice.ToString(CultureInfo.InvariantCulture)}`", true);
 
         if (dbUser.Balance < RolePrice)
         {
@@ -118,8 +124,8 @@ public class ShopCommands : SlashModuleBase
 
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
-        var result = await Interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
+        var result = await _interactive
+            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)
@@ -165,9 +171,9 @@ public class ShopCommands : SlashModuleBase
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString()}`")
+            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
             .AddField("Category", $"`{name}`", true)
-            .AddField("Price", $"`{CategoryPrice.ToString()}`", true);
+            .AddField("Price", $"`{CategoryPrice.ToString(CultureInfo.InvariantCulture)}`", true);
 
         if (dbUser.Balance < CategoryPrice)
         {
@@ -183,8 +189,8 @@ public class ShopCommands : SlashModuleBase
 
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
-        var result = await Interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
+        var result = await _interactive
+            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)
@@ -233,9 +239,9 @@ public class ShopCommands : SlashModuleBase
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString()}`")
+            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
             .AddField("Csatorna", $"`{name}`", true)
-            .AddField("Price", $"`{TextPrice.ToString()}`", true);
+            .AddField("Price", $"`{TextPrice.ToString(CultureInfo.InvariantCulture)}`", true);
 
         if (dbUser.Balance < TextPrice)
         {
@@ -251,8 +257,8 @@ public class ShopCommands : SlashModuleBase
 
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
-        var result = await Interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
+        var result = await _interactive
+            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)
@@ -300,9 +306,9 @@ public class ShopCommands : SlashModuleBase
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString()}`")
+            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
             .AddField("Channel", $"`{name}`", true)
-            .AddField("Price", $"`{VoicePrice.ToString()}`", true);
+            .AddField("Price", $"`{VoicePrice.ToString(CultureInfo.InvariantCulture)}`", true);
 
         if (dbUser.Balance < VoicePrice)
         {
@@ -318,8 +324,8 @@ public class ShopCommands : SlashModuleBase
 
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
-        var result = await Interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId == $"shop-buy:{id}", timeout: TimeSpan.FromMinutes(1))
+        var result = await _interactive
+            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)

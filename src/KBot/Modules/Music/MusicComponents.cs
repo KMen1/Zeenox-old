@@ -7,7 +7,7 @@ namespace KBot.Modules.Music;
 
 public class MusicComponents : SlashModuleBase
 {
-    public AudioService AudioService { get; set; }
+    public MusicService AudioService { get; set; }
 
     [ComponentInteraction("filterselectmenu")]
     public async Task ApplyFilterAsync(params string[] selections)

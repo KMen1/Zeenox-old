@@ -1,4 +1,6 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+#pragma warning disable CS8618, MA0048
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace KBot.Models;
 
@@ -10,6 +12,6 @@ public class LevelRole
         Id = id;
     }
 
-    [BsonElement("role_id")] public ulong Id { get; }
-    [BsonElement("level")] public int Level { get; }
+    [BsonElement("role_id")] public ulong Id { get; set; }
+    [BsonElement("level")] public int Level { get; set; }
 }

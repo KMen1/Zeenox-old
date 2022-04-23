@@ -12,7 +12,7 @@ using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Extensions;
 using KBot.Models;
-using KBot.Modules.Gambling.Objects;
+using KBot.Modules.Gambling.GameObjects;
 using KBot.Services;
 using Color = Discord.Color;
 using Face = KBot.Enums.Face;
@@ -41,7 +41,7 @@ public class BlackJackService : IInjectable
         return game;
     }
 
-    private async void OnGameEndedAsync(object sender, GameEndedEventArgs e)
+    private async void OnGameEndedAsync(object? sender, GameEndedArgs e)
     {
         var game = (BlackJackGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
@@ -83,13 +83,13 @@ public class BlackJackService : IInjectable
         }).ConfigureAwait(false);
     }
 
-    public BlackJackGame GetGame(string id)
+    public BlackJackGame? GetGame(string id)
     {
-        return _games.Find(x => x.Id == id);
+        return _games.Find(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 }
 
-public sealed class BlackJackGame : IGamblingGame
+public sealed class BlackJackGame : IGame
 {
     public BlackJackGame(
         SocketGuildUser player,
@@ -120,7 +120,7 @@ public sealed class BlackJackGame : IGamblingGame
     public int Bet { get; }
     public bool Hidden { get; private set; }
     private Cloudinary CloudinaryClient { get; }
-    public event EventHandler<GameEndedEventArgs> GameEnded;
+    public event EventHandler<GameEndedArgs>? GameEnded;
 
     public Task StartAsync()
     {
@@ -147,11 +147,11 @@ public sealed class BlackJackGame : IGamblingGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"😭 Dealer Wins!\nYou lost **{Bet}** credits!",
+                        $"**Result:** You lose **{Bet}** credits!",
                         Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: PLAYER BUST", false));
+                OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Blackjack: PLAYER BUST", false));
                 return;
             }
             case 21:
@@ -162,11 +162,11 @@ public sealed class BlackJackGame : IGamblingGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"🥳 Player Wins!\nYou won **{reward}** credits!",
+                        $"**Result:** You win **{reward}** credits!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
+                OnGameEnded(new GameEndedArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
                 return;
             }
         }
@@ -187,11 +187,11 @@ public sealed class BlackJackGame : IGamblingGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"🥳 Player Wins!\nYou won **{Bet}** credits!",
+                        $"**Result:** You win **{reward}** credits!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: DEALER BUST", true));
+                OnGameEnded(new GameEndedArgs(Id, User, Bet, reward, "Blackjack: DEALER BUST", true));
                 return;
             }
             case 21:
@@ -200,11 +200,11 @@ public sealed class BlackJackGame : IGamblingGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"😭 Dealer Wins!\nYou lost **{Bet}** credits!",
+                        $"**Result:** You lose **{Bet}** credits!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
+                OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
                 return;
             }
         }
@@ -216,11 +216,11 @@ public sealed class BlackJackGame : IGamblingGame
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"🥳 Player Wins!\nYou won **{reward}** credits!",
+                    $"**Result:** You win **{reward}** credits!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
+            OnGameEnded(new GameEndedArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
             return;
         }
 
@@ -231,11 +231,11 @@ public sealed class BlackJackGame : IGamblingGame
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"🥳 Player Wins!\nYou won **{reward}** credits!",
+                    $"**Result:** You win **{reward}** credits!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER WIN", true));
+            OnGameEnded(new GameEndedArgs(Id, User, Bet, reward, "Blackjack: PLAYER WIN", true));
             return;
         }
 
@@ -245,11 +245,11 @@ public sealed class BlackJackGame : IGamblingGame
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"😭 Dealer Wins!\nYou lost **{Bet}** credits!",
+                    $"**Result:** You lose **{Bet}** credits!",
                     Color.Red);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
+            OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
             return;
         }
 
@@ -257,11 +257,11 @@ public sealed class BlackJackGame : IGamblingGame
         {
             x.Embed = new EmbedBuilder().BlackJackEmbed(
                 this,
-                "😕 Tie!",
+                "**Result:** Tie - You get your bet back!",
                 Color.Blue);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, -1, "Blackjack: PUSH", false));
+        OnGameEnded(new GameEndedArgs(Id, User, Bet, -1, "Blackjack: PUSH", false));
     }
 
     public string GetTablePicUrl()
@@ -358,7 +358,7 @@ public sealed class BlackJackGame : IGamblingGame
         return bitmap;
     }
 
-    private void OnGameEnded(GameEndedEventArgs e)
+    private void OnGameEnded(GameEndedArgs e)
     {
         GameEnded?.Invoke(this, e);
     }
