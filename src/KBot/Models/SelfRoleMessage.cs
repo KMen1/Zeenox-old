@@ -1,7 +1,7 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 #pragma warning disable CS8618, MA0048
 using System.Collections.Generic;
-using CloudinaryDotNet.Actions;
 using Discord;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -57,12 +57,13 @@ public class SelfRoleMessage
             var emoteResult = Emote.TryParse(role.Emote, out var emote);
             var emojiResult = Emoji.TryParse(role.Emote, out var emoji);
             if (emoteResult)
-                select.AddOption(role.Title, $"{role.RoleId}", role.Description, emote: emote);
+                select.AddOption(role.Title, $"{role.RoleId}", role.Description, emote);
             else if (emojiResult)
-                select.AddOption(role.Title, $"{role.RoleId}", role.Description, emote: emoji);
+                select.AddOption(role.Title, $"{role.RoleId}", role.Description, emoji);
             else
                 select.AddOption(role.Title, $"{role.RoleId}", role.Description);
         }
+
         comp.WithSelectMenu(select);
         return comp.Build();
     }

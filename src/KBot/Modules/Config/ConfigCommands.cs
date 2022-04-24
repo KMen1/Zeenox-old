@@ -41,7 +41,8 @@ public class Announcements : SlashModuleBase
     public async Task SetLeaveAsync(ITextChannel? channel = null)
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.LeaveChannelId = channel?.Id ?? 0)
-            .ConfigureAwait(false);var eb = new EmbedBuilder()
+            .ConfigureAwait(false);
+        var eb = new EmbedBuilder()
             .WithColor(channel is null ? Color.Red : Color.Green)
             .WithDescription(channel is null
                 ? "**Goodbye messages will no longer be sent**"

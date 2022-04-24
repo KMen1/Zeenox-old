@@ -21,5 +21,5 @@ public enum TransactionType
     [Description("Category")] CategoryPurchase,
     [Description("Role")] RolePurchase,
     [Description("Text Channel")] TextPurchase,
-    [Description("Voice Channel")] VoicePurchase,
+    [Description("Voice Channel")] VoicePurchase
 }

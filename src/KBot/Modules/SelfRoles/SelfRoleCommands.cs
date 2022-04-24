@@ -45,7 +45,8 @@ public class SelfRoleCommands : SlashModuleBase
         string emote, string? description = null)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var parseResult = ulong.TryParse(messageIdString, NumberStyles.Any, CultureInfo.InvariantCulture, out var messageId);
+        var parseResult = ulong.TryParse(messageIdString, NumberStyles.Any, CultureInfo.InvariantCulture,
+            out var messageId);
         var msg = await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
         if (msg is null)
         {
@@ -88,7 +89,8 @@ public class SelfRoleCommands : SlashModuleBase
     public async Task RemoveRoleFromMessageAsync([Summary("messageid")] string messageIdString, IRole role)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var parseResult = ulong.TryParse(messageIdString, NumberStyles.Any, CultureInfo.InvariantCulture, out var messageId);
+        var parseResult = ulong.TryParse(messageIdString, NumberStyles.Any, CultureInfo.InvariantCulture,
+            out var messageId);
         var msg = await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
         if (msg is null)
         {
@@ -134,10 +136,13 @@ public class SelfRoleCommands : SlashModuleBase
         var rr = await Mongo.GetSelfRoleMessageAsync(msgId).ConfigureAwait(false);
         var roleIds = rr.Roles.Select(x => x.RoleId).ToArray();
         var selectedIds = selections.Select(ulong.Parse).ToArray();
-        var rolesToRemove = roleIds.Except(selectedIds).Select(x => Context.Guild.GetRole(x)).Where(x => x != null).ToArray();
-        var rolesToAdd = selections.Select(x => Context.Guild.GetRole(ulong.Parse(x, NumberStyles.Any, CultureInfo.InvariantCulture))).Where(x => x != null).ToArray();
-        await ((SocketGuildUser)Context.User).AddRolesAsync(rolesToAdd).ConfigureAwait(false);
-        await ((SocketGuildUser)Context.User).RemoveRolesAsync(rolesToRemove).ConfigureAwait(false);
+        var rolesToRemove = roleIds.Except(selectedIds).Select(x => Context.Guild.GetRole(x)).Where(x => x != null)
+            .ToArray();
+        var rolesToAdd = selections
+            .Select(x => Context.Guild.GetRole(ulong.Parse(x, NumberStyles.Any, CultureInfo.InvariantCulture)))
+            .Where(x => x != null).ToArray();
+        await ((SocketGuildUser) Context.User).AddRolesAsync(rolesToAdd).ConfigureAwait(false);
+        await ((SocketGuildUser) Context.User).RemoveRolesAsync(rolesToRemove).ConfigureAwait(false);
 
         var eb = new EmbedBuilder()
             .WithDescription($"Successfully added {rolesToAdd.Length} roles and removed {rolesToRemove.Length} roles!")

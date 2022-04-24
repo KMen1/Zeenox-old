@@ -73,9 +73,7 @@ public class GuildEvents : IInjectable
     private async Task ClientOnGuildAvailableAsync(SocketGuild guild)
     {
         if (await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false) is null)
-        {
             await _mongo.CreateGuildConfigAsync(guild).ConfigureAwait(false);
-        }
     }
 
     private async Task AnnounceUserJoinedAsync(SocketGuildUser user)
@@ -135,7 +133,7 @@ public class GuildEvents : IInjectable
         var entry = log.First();
         var admin = entry.User;
         var reason = entry.Reason;
-        
+
         var channel = guild.GetTextChannel(config.BanChannelId);
         var eb = new EmbedBuilder()
             .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())

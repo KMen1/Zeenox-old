@@ -6,6 +6,7 @@ namespace KBot.Modules.Gambling.Towers;
 public class TowersComponents : SlashModuleBase
 {
     private readonly TowersService _towersService;
+
     public TowersComponents(TowersService towersService)
     {
         _towersService = towersService;

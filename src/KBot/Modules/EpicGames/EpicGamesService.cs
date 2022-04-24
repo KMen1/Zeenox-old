@@ -14,10 +14,10 @@ namespace KBot.Modules.EpicGames;
 
 public class EpicGamesService : IInjectable
 {
-    private readonly HttpClient _httpClient;
-    private readonly RedisService _redis;
     private readonly DiscordSocketClient _client;
+    private readonly HttpClient _httpClient;
     private readonly MongoService _mongo;
+    private readonly RedisService _redis;
 
     public EpicGamesService(HttpClient httpClient, RedisService redis, DiscordSocketClient client, MongoService mongo)
     {
@@ -51,6 +51,7 @@ public class EpicGamesService : IInjectable
                 if (channel is null) continue;
                 channels.Add(channel);
             }
+
             var embeds = games.Select(game =>
                 new EmbedBuilder()
                     .WithTitle(game.Title)
@@ -66,7 +67,10 @@ public class EpicGamesService : IInjectable
                 await textChannel.SendMessageAsync("@here", embeds: embeds).ConfigureAwait(false);
                 await Task.Delay(TimeSpan.FromSeconds(7)).ConfigureAwait(false);
             }
-            await _redis.SetEpicRefreshDateAsync(DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).AddHours(17).AddMinutes(10).DateTime).ConfigureAwait(false);
+
+            await _redis
+                .SetEpicRefreshDateAsync(DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).AddHours(17).AddMinutes(10)
+                    .DateTime).ConfigureAwait(false);
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using Discord.Interactions;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 #pragma warning disable CS8618, MA0048
 

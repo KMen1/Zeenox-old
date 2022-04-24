@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -13,8 +14,8 @@ namespace KBot.Modules.Gambling.Mines;
 
 public class MinesService : IInjectable
 {
-    private readonly MongoService _mongo;
     private readonly List<MinesGame> _games = new();
+    private readonly MongoService _mongo;
 
     public MinesService(MongoService mongo)
     {
@@ -38,10 +39,10 @@ public class MinesService : IInjectable
         if (e.IsWin)
         {
             await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Mines,
-                e.Prize,
-                e.Description),
+                    e.GameId,
+                    TransactionType.Mines,
+                    e.Prize,
+                    e.Description),
                 e.User).ConfigureAwait(false);
 
             await _mongo.UpdateUserAsync(e.User, x =>
@@ -52,11 +53,12 @@ public class MinesService : IInjectable
             }).ConfigureAwait(false);
             return;
         }
+
         await _mongo.AddTransactionAsync(new Transaction(
-            e.GameId,
-            TransactionType.Mines,
-            -e.Bet,
-            e.Description),
+                e.GameId,
+                TransactionType.Mines,
+                -e.Bet,
+                e.Description),
             e.User).ConfigureAwait(false);
 
         await _mongo.UpdateUserAsync(e.User, x =>
@@ -126,7 +128,7 @@ public sealed class MinesGame : IGame
             var one = Factorial(25) * Factorial(25 - Mines - Clicked);
             var two = Factorial(25 - Mines) * Factorial(25 - Clicked);
             var t = one / two * 0.97;
-            return Math.Round((decimal)t, 2);
+            return Math.Round((decimal) t, 2);
         }
     }
 
@@ -137,7 +139,8 @@ public sealed class MinesGame : IGame
         var eb = new EmbedBuilder()
             .WithTitle($"Mines | {Id}")
             .WithColor(Color.Gold)
-            .WithDescription($"**Bet:** {Bet} credits\n**Mines:** {Mines}\n**Exit:** `/mine stop {Id}`")
+            .WithDescription(
+                $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {Mines}\n**Exit:** `/mine stop {Id}`")
             .Build();
         var comp = new ComponentBuilder();
         var size = Math.Sqrt(_points.Count);
@@ -175,10 +178,10 @@ public sealed class MinesGame : IGame
         if (!_points.Any(x => !x.IsClicked && !x.IsMine))
         {
             await StopAsync(false).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, (int)(Bet*Multiplier), "Mines: WIN", false));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, (int) (Bet * Multiplier), "Mines: WIN", false));
             return;
         }
-        
+
         var comp = new ComponentBuilder();
         for (var i = 0; i < Math.Sqrt(_points.Count); i++)
         {
@@ -226,8 +229,11 @@ public sealed class MinesGame : IGame
             x.Embed = new EmbedBuilder()
                 .WithTitle($"Mines | {Id}")
                 .WithColor(lost ? Color.Red : Color.Green)
-                .WithDescription($"**Bet:** {Bet} credits\n**Mines:** {Mines}\n" +
-                                 (lost ? $"**Result:** You lose **{Bet}** credits" : $"**Result:** You win **{prize}** credits"))
+                .WithDescription(
+                    $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {Mines}\n" +
+                    (lost
+                        ? $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits"
+                        : $"**Result:** You win **{prize.ToString("N0", CultureInfo.InvariantCulture)}** credits"))
                 .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -14,8 +14,8 @@ namespace KBot.Modules.Gambling.Towers;
 
 public class TowersService : IInjectable
 {
-    private readonly MongoService _mongo;
     private readonly List<TowersGame> _games = new();
+    private readonly MongoService _mongo;
 
     public TowersService(MongoService mongo)
     {
@@ -38,10 +38,10 @@ public class TowersService : IInjectable
         if (e.IsWin)
         {
             await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Towers,
-                e.Prize,
-                e.Description),
+                    e.GameId,
+                    TransactionType.Towers,
+                    e.Prize,
+                    e.Description),
                 e.User).ConfigureAwait(false);
             await _mongo.UpdateUserAsync(e.User, x =>
             {
@@ -51,11 +51,12 @@ public class TowersService : IInjectable
             }).ConfigureAwait(false);
             return;
         }
+
         await _mongo.AddTransactionAsync(new Transaction(
-            e.GameId,
-            TransactionType.Towers,
-            -e.Bet,
-            e.Description),
+                e.GameId,
+                TransactionType.Towers,
+                -e.Bet,
+                e.Description),
             e.User).ConfigureAwait(false);
         await _mongo.UpdateUserAsync(e.User, x =>
         {
@@ -165,7 +166,9 @@ public sealed class TowersGame : IGame
         if (x == 5)
         {
             await Message.ModifyAsync(u => u.Embed = new EmbedBuilder().TowersEmbed(this,
-                    Lost ? $"**Result:** You lost **{Bet}** credits!" : $"**Result:** You won **{Prize}** credits!",
+                    Lost
+                        ? $"**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                        : $"**Result:** You won **{Prize.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                     Lost ? Color.Red : Color.Green))
                 .ConfigureAwait(false);
             OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Prize, "Towers: WIN", true));
@@ -175,8 +178,8 @@ public sealed class TowersGame : IGame
         var index = Fields.FindIndex(f => f.X == x);
         var orig = Fields[index];
         Fields[index] = orig with {Disabled = true};
-        Fields[index+1] = orig with {Disabled = true, Y = orig.Y - 1};
-        Fields[index+2] = orig with {Disabled = true, Y = orig.Y - 2};
+        Fields[index + 1] = orig with {Disabled = true, Y = orig.Y - 1};
+        Fields[index + 2] = orig with {Disabled = true, Y = orig.Y - 2};
         for (var i = 5; i > 0; i--)
         {
             var row = new ActionRowBuilder();
@@ -216,7 +219,9 @@ public sealed class TowersGame : IGame
         await Message.ModifyAsync(x =>
         {
             x.Embed = new EmbedBuilder().TowersEmbed(this,
-                Lost ? $"**Result:** You lost **{Bet}** credits!" : $"**Result:** You won **{Prize}** credits!",
+                Lost
+                    ? $"**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                    : $"**Result:** You won **{Prize.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                 Lost ? Color.Red : Color.Green);
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);

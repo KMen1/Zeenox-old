@@ -24,12 +24,13 @@ public class LevelingCommands : SlashModuleBase
             return;
         }
 
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)setUser).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) setUser).ConfigureAwait(false);
         var embed = new EmbedBuilder()
             .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
             .WithColor(Color.Gold)
             .AddField("🆙 Level", $"`{dbUser.Level.ToString(CultureInfo.InvariantCulture)}`")
-            .AddField("➡ XP/Required", $"`{dbUser.Xp.ToString(CultureInfo.InvariantCulture)}/{dbUser.RequiredXp.ToString(CultureInfo.InvariantCulture)}`")
+            .AddField("➡ XP/Required",
+                $"`{dbUser.Xp.ToString("N0", CultureInfo.InvariantCulture)}/{dbUser.RequiredXp.ToString(CultureInfo.InvariantCulture)}`")
             .Build();
 
         await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
@@ -48,7 +49,7 @@ public class LevelingCommands : SlashModuleBase
         {
             userColumn += $"{top.IndexOf(user) + 1}. {Context.Guild.GetUser(user.UserId).Mention}\n";
             levelColumn += $"{user.Level}\n";
-            xpColumn += $"{user.Xp}\n";
+            xpColumn += $"{user.Xp:N0}\n";
         }
 
         await FollowupAsync(embed: new EmbedBuilder()
@@ -64,18 +65,19 @@ public class LevelingCommands : SlashModuleBase
     public async Task GetDailyAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
         var lastDaily = dbUser.DailyXpClaim;
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
             var xp = new Random().Next(1000, 5000);
-            await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x =>
+            await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x =>
             {
                 x.DailyXpClaim = DateTime.UtcNow;
                 x.Xp += xp;
             }).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(Color.Green, $"Successfully collected your daily XP of {xp}", "",
+            await FollowupWithEmbedAsync(Color.Green,
+                $"Successfully collected your daily XP of {xp.ToString("N0", CultureInfo.InvariantCulture)}", "",
                 ephemeral: true).ConfigureAwait(false);
         }
         else
@@ -94,7 +96,8 @@ public class LevelingCommands : SlashModuleBase
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Mongo.UpdateUserAsync(user, x => x.Xp += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "XP set!",
-            $"{user.Mention} now has an XP of **{dbUser.Xp.ToString(CultureInfo.InvariantCulture)}**").ConfigureAwait(false);
+                $"{user.Mention} now has an XP of **{dbUser.Xp.ToString("N0", CultureInfo.InvariantCulture)}**")
+            .ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.Administrator)]
@@ -104,9 +107,10 @@ public class LevelingCommands : SlashModuleBase
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Mongo.UpdateUserAsync(user, x => x.Level += offset).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Level set!",
-            $"{user.Mention} now has a level of **{dbUser.Level.ToString(CultureInfo.InvariantCulture)}**").ConfigureAwait(false);
+                $"{user.Mention} now has a level of **{dbUser.Level.ToString(CultureInfo.InvariantCulture)}**")
+            .ConfigureAwait(false);
     }
-    
+
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("setchannel", "Set the channel for level up messages")]
     public async Task SetChannelAsync(ITextChannel? channel = null)
@@ -121,7 +125,7 @@ public class LevelingCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
-    
+
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("setafk", "Set the AFK channel")]
     public async Task SetAfkChannelAsync(IVoiceChannel? channel = null)
@@ -136,7 +140,7 @@ public class LevelingCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
-    
+
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("addrole", "Add a role to the leveling roles")]
     public async Task AddRoleAsync(IRole role, [MinValue(1)] int level)
@@ -150,7 +154,7 @@ public class LevelingCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
-    
+
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("removerole", "Remove a role from the leveling roles")]
     public async Task RemoveRoleAsync(IRole role)

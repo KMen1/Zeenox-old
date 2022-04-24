@@ -1,4 +1,5 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 #pragma warning disable CS8618, MA0048
 using System.Collections.Generic;
 using Discord;
@@ -28,7 +29,7 @@ public class GuildConfig
         DbdNotificationChannelId = 0;
         DbdNotificationRoleId = 0;
     }
-    
+
     [BsonId] public ulong GuildId { get; set; }
     [BsonElement("welcome_channel_id")] public ulong WelcomeChannelId { get; set; }
     [BsonElement("welcome_role_id")] public ulong WelcomeRoleId { get; set; }
@@ -38,16 +39,27 @@ public class GuildConfig
     [BsonElement("modlog_channel_id")] public ulong ModLogChannelId { get; set; }
     [BsonElement("appeal_channel_id")] public ulong AppealChannelId { get; set; }
 
-    [BsonElement("temporary_voice_category_id")] public ulong TemporaryVoiceCategoryId { get; set; }
-    [BsonElement("temporary_voice_create_id")] public ulong TemporaryVoiceCreateId { get; set; }
+    [BsonElement("temporary_voice_category_id")]
+    public ulong TemporaryVoiceCategoryId { get; set; }
+
+    [BsonElement("temporary_voice_create_id")]
+    public ulong TemporaryVoiceCreateId { get; set; }
 
     [BsonElement("levelup_channel_id")] public ulong LevelUpChannelId { get; set; }
     [BsonElement("afk_channel_id")] public ulong AfkChannelId { get; set; }
     [BsonElement("level_roles")] public List<LevelRole> LevelRoles { get; set; }
 
     [BsonElement("suggestion_channel_id")] public ulong SuggestionChannelId { get; set; }
-    [BsonElement("epic_notification_channel_id")] public ulong EpicNotificationChannelId { get; set; }
-    [BsonElement("epic_notification_role_id")] public ulong EpicNotificationRoleId { get; set; }
-    [BsonElement("dbd_notification_channel_id")] public ulong DbdNotificationChannelId { get; set; }
-    [BsonElement("dbd_notification_role_id")] public ulong DbdNotificationRoleId { get; set; }
+
+    [BsonElement("epic_notification_channel_id")]
+    public ulong EpicNotificationChannelId { get; set; }
+
+    [BsonElement("epic_notification_role_id")]
+    public ulong EpicNotificationRoleId { get; set; }
+
+    [BsonElement("dbd_notification_channel_id")]
+    public ulong DbdNotificationChannelId { get; set; }
+
+    [BsonElement("dbd_notification_role_id")]
+    public ulong DbdNotificationRoleId { get; set; }
 }

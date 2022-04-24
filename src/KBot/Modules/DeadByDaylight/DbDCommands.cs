@@ -12,6 +12,7 @@ namespace KBot.Modules.DeadByDaylight;
 public class DbDCommands : SlashModuleBase
 {
     private readonly DbDService _dbDService;
+
     public DbDCommands(DbDService dbDService)
     {
         _dbDService = dbDService;
@@ -39,7 +40,8 @@ public class DbDCommands : SlashModuleBase
     [SlashCommand("set", "Sets the channel to receive weekyl shrines")]
     public async Task SetDbdChannelAsync(ITextChannel? channel = null)
     {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.DbdNotificationChannelId = channel?.Id ?? 0).ConfigureAwait(false);
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.DbdNotificationChannelId = channel?.Id ?? 0)
+            .ConfigureAwait(false);
         var eb = new EmbedBuilder()
             .WithColor(channel is null ? Color.Red : Color.Green)
             .WithDescription(channel is null

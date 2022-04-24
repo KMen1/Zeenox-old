@@ -14,8 +14,9 @@ public class Warn
         Reason = reason;
         Date = date;
     }
+
     [BsonId] public string Id { get; set; }
-    [BsonElement("guildid")] public ulong GuildId { get; set;}
+    [BsonElement("guildid")] public ulong GuildId { get; set; }
     [BsonElement("given_by_id")] public ulong GivenById { get; set; }
     [BsonElement("give_to_id")] public ulong GivenToId { get; set; }
     [BsonElement("reason")] public string Reason { get; set; }

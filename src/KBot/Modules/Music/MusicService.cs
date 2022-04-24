@@ -7,10 +7,7 @@ using Discord.WebSocket;
 using Google.Apis.YouTube.v3;
 using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models;
 using Lavalink4NET;
-using Lavalink4NET.Filters;
-using Lavalink4NET.Payloads.Player;
 using Lavalink4NET.Player;
 using Lavalink4NET.Rest;
 
@@ -82,10 +79,7 @@ public class MusicService : IInjectable
     {
         var voiceChannel = user.VoiceChannel;
         var searchResponse = await SearchAsync(query).ConfigureAwait(false);
-        if (searchResponse is null)
-        {
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("No matches!").Build();
-        }
+        if (searchResponse is null) return new EmbedBuilder().WithColor(Color.Red).WithTitle("No matches!").Build();
         var player = _lavaNode.HasPlayer(guild.Id)
             ? _lavaNode.GetPlayer<MusicPlayer>(guild.Id)
             : await _lavaNode
@@ -119,6 +113,7 @@ public class MusicService : IInjectable
             await player.EnqueueAsync(searchResponse.Tracks.Skip(1)).ConfigureAwait(false);
             return null;
         }
+
         searchResponse.Tracks![0].Context = user;
         await player.PlayAsync(searchResponse.Tracks![0]).ConfigureAwait(false);
         return null;
@@ -145,6 +140,7 @@ public class MusicService : IInjectable
             await message.DeleteAsync().ConfigureAwait(false);
             return new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack> {track});
         }
+
         await player.PlayAsync(track).ConfigureAwait(false);
         return null;
     }
@@ -212,8 +208,8 @@ public class MusicService : IInjectable
                 .WithDescription("**Only the person who added the currently playing song can control the bot!**")
                 .Build();
         var currentVolume = player.Volume;
-        if (currentVolume == 0f && buttonType == VoiceButtonType.VolumeDown ||
-            currentVolume == 1f && buttonType == VoiceButtonType.VolumeUp)
+        if ((currentVolume == 0f && buttonType == VoiceButtonType.VolumeDown) ||
+            (currentVolume == 1f && buttonType == VoiceButtonType.VolumeUp))
             return new EmbedBuilder().WithColor(Color.Red).WithTitle("Volume must be between 0 and 100!").Build();
         switch (buttonType)
         {

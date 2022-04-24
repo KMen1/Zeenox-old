@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using StackExchange.Redis.KeyspaceIsolation;
 
 namespace KBot.Modules.Suggestions;
 
@@ -41,9 +40,9 @@ public class SuggestionCommands : SlashModuleBase
     [SlashCommand("channel", "Set the channel for suggestion messages")]
     public async Task SetChannelAsync(ITextChannel? channel = null)
     {
-        
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.SuggestionChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync(channel is null ? "Suggestions disabled!" : "Channel set!", ephemeral: true).ConfigureAwait(false);
+        await RespondAsync(channel is null ? "Suggestions disabled!" : "Channel set!", ephemeral: true)
+            .ConfigureAwait(false);
     }
 }

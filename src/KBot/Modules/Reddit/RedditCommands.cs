@@ -8,6 +8,7 @@ namespace KBot.Modules.Reddit;
 public class RedditCommands : SlashModuleBase
 {
     private readonly RedditService _redditService;
+
     public RedditCommands(RedditService redditService)
     {
         _redditService = redditService;
@@ -39,6 +40,7 @@ public class RedditCommands : SlashModuleBase
                 .ConfigureAwait(false);
             return;
         }
+
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -54,6 +56,7 @@ public class RedditCommands : SlashModuleBase
                 .ConfigureAwait(false);
             return;
         }
+
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -69,6 +72,7 @@ public class RedditCommands : SlashModuleBase
                 .ConfigureAwait(false);
             return;
         }
+
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -85,6 +89,7 @@ public class RedditCommands : SlashModuleBase
                 .ConfigureAwait(false);
             return;
         }
+
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -101,6 +106,7 @@ public class RedditCommands : SlashModuleBase
                 .ConfigureAwait(false);
             return;
         }
+
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }
@@ -117,6 +123,7 @@ public class RedditCommands : SlashModuleBase
                 .ConfigureAwait(false);
             return;
         }
+
         await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
             .ConfigureAwait(false);
     }

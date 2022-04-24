@@ -35,7 +35,7 @@ public class LevelingModule : IInjectable
 
             if (usersToUpdate.Count == 0)
                 continue;
-            
+
             var toNotify = new List<(SocketGuildUser, int, ulong)>();
             foreach (var item in usersToUpdate)
             {
@@ -133,7 +133,7 @@ public class LevelingModule : IInjectable
 
         _ = Task.Run(async () =>
         {
-            if (before.IsSelfMuted && !before.IsSelfDeafened && after.IsSelfMuted && after.IsSelfDeafened )
+            if (before.IsSelfMuted && !before.IsSelfDeafened && after.IsSelfMuted && after.IsSelfDeafened)
                 return;
             switch (before.IsMuted)
             {
@@ -142,6 +142,7 @@ public class LevelingModule : IInjectable
                 case true when before.IsDeafened && after.IsMuted && !after.IsDeafened:
                     return;
             }
+
             if (before.IsDeafened && !before.IsMuted && after.IsMuted && after.IsDeafened)
                 return;
             if (before.VoiceChannel is not null)

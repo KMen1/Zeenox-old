@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -23,8 +24,8 @@ namespace KBot.Modules.Gambling.HighLow;
 public class HighLowService : IInjectable
 {
     private readonly Cloudinary _cloudinary;
-    private readonly MongoService _mongo;
     private readonly List<HighLowGame> _games = new();
+    private readonly MongoService _mongo;
 
     public HighLowService(MongoService database, Cloudinary cloudinary)
     {
@@ -49,10 +50,10 @@ public class HighLowService : IInjectable
         if (e.IsWin)
         {
             await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Highlow,
-                e.Prize,
-                e.Description),
+                    e.GameId,
+                    TransactionType.Highlow,
+                    e.Prize,
+                    e.Description),
                 e.User).ConfigureAwait(false);
 
             await _mongo.UpdateUserAsync(e.User, x =>
@@ -63,11 +64,12 @@ public class HighLowService : IInjectable
             }).ConfigureAwait(false);
             return;
         }
+
         await _mongo.AddTransactionAsync(new Transaction(
-            e.GameId,
-            TransactionType.Highlow,
-            -e.Bet,
-            e.Description),
+                e.GameId,
+                TransactionType.Highlow,
+                -e.Bet,
+                e.Description),
             e.User).ConfigureAwait(false);
 
         await _mongo.UpdateUserAsync(e.User, x =>
@@ -168,7 +170,8 @@ public sealed class HighLowGame : IGame
         Hidden = false;
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"**Result:** You lost **{Bet}** credits!", Color.Red);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this,
+                $"**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
@@ -188,7 +191,8 @@ public sealed class HighLowGame : IGame
         Hidden = false;
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"**Result:** You lost **{Bet}** credits!", Color.Red);
+            x.Embed = new EmbedBuilder().HighLowEmbed(this,
+                $"**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
@@ -199,7 +203,8 @@ public sealed class HighLowGame : IGame
         Hidden = false;
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().HighLowEmbed(this, $"**Result:** You win **{Stake}** credits!",
+            x.Embed = new EmbedBuilder().HighLowEmbed(this,
+                $"**Result:** You win **{Stake.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                 Color.Green);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);

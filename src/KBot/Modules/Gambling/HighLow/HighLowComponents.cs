@@ -6,6 +6,7 @@ namespace KBot.Modules.Gambling.HighLow;
 public class HighLowComponents : SlashModuleBase
 {
     private readonly HighLowService _highLowService;
+
     public HighLowComponents(HighLowService highLowService)
     {
         _highLowService = highLowService;

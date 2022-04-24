@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 #pragma warning disable CS8618, MA0048
 

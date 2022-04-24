@@ -14,7 +14,7 @@ public class OwnerCommands : SlashModuleBase
 {
     private const string VersionUrl = "https://pastebin.com/raw/1gh1hT32";
     private const string UpdateUrl = "https://pastebin.com/raw/ru9hWYcj";
-    
+
     [RequireOwner]
     [SlashCommand("restart", "Restarts the bot")]
     public async Task ResetAsync()

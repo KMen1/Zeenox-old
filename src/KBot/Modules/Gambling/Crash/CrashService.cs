@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,9 +15,9 @@ namespace KBot.Modules.Gambling.Crash;
 
 public class CrashService : IInjectable
 {
-    private readonly MongoService _mongo;
     private readonly List<CrashGame> _games = new();
     private readonly RandomNumberGenerator _generator = RandomNumberGenerator.Create();
+    private readonly MongoService _mongo;
 
     public CrashService(MongoService mongo)
     {
@@ -40,10 +41,10 @@ public class CrashService : IInjectable
         if (e.IsWin)
         {
             await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Crash,
-                e.Prize,
-                e.Description),
+                    e.GameId,
+                    TransactionType.Crash,
+                    e.Prize,
+                    e.Description),
                 e.User).ConfigureAwait(false);
 
             await _mongo.UpdateUserAsync(e.User, x =>
@@ -54,6 +55,7 @@ public class CrashService : IInjectable
             }).ConfigureAwait(false);
             return;
         }
+
         await _mongo.AddTransactionAsync(new Transaction(
                 e.GameId,
                 TransactionType.Crash,
@@ -138,7 +140,8 @@ public sealed class CrashGame : IGame
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().CrashEmbed(this,
-                        $"**Crashed at:** {CrashPoint:0.00}x\n**Result:** You lost **{Bet}** credits", Color.Red);
+                        $"**Crashed at:** {CrashPoint:0.00}x\n**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits",
+                        Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
                 OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Crash: LOSE", false));
@@ -156,7 +159,8 @@ public sealed class CrashGame : IGame
         {
             x.Embed = new EmbedBuilder().CrashEmbed(this, $"**Stopped at:** {Multiplier:0.00}x\n" +
                                                           $"**Crashpoint:** {CrashPoint:0.00}x\n" +
-                                                          $"**Result:** You win **{Profit:0}** credits", Color.Green);
+                                                          $"**Result:** You win **{Profit.ToString("N0", CultureInfo.InvariantCulture)}** credits",
+                Color.Green);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
         OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Profit, $"Crash: {Multiplier:0.0}x", false));

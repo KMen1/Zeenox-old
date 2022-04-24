@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using KBot.Extensions;
 
 namespace KBot.Modules.Music;
 
@@ -13,6 +11,7 @@ namespace KBot.Modules.Music;
 public class MusicCommands : SlashModuleBase
 {
     private readonly MusicService _audioService;
+
     public MusicCommands(MusicService audioService)
     {
         _audioService = audioService;
@@ -32,14 +31,17 @@ public class MusicCommands : SlashModuleBase
             return;
         }
 
-        await RespondAsync(embed: await _audioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false), ephemeral: true)
+        await RespondAsync(embed: await _audioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false),
+                ephemeral: true)
             .ConfigureAwait(false);
     }
 
     [SlashCommand("leave", "Leaves the voice channel the bot is in")]
     public async Task DisconnectPlayerAsync()
     {
-        await RespondAsync(embed: await _audioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false), ephemeral: true)
+        await RespondAsync(
+                embed: await _audioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false),
+                ephemeral: true)
             .ConfigureAwait(false);
     }
 
@@ -60,14 +62,16 @@ public class MusicCommands : SlashModuleBase
         if (isPlaying)
         {
             await DeferAsync(true).ConfigureAwait(false);
-            var embed = await _audioService.PlayAsync(Context.Guild, (SocketGuildUser)Context.User, null!, query).ConfigureAwait(false);
+            var embed = await _audioService.PlayAsync(Context.Guild, (SocketGuildUser) Context.User, null!, query)
+                .ConfigureAwait(false);
             await FollowupAsync(embed: embed).ConfigureAwait(false);
         }
         else
         {
             await DeferAsync().ConfigureAwait(false);
             var msg = await FollowupWithEmbedAsync(Color.Orange, "Starting player...", "").ConfigureAwait(false);
-            await _audioService.PlayAsync(Context.Guild, (SocketGuildUser)Context.User, msg, query).ConfigureAwait(false);
+            await _audioService.PlayAsync(Context.Guild, (SocketGuildUser) Context.User, msg, query)
+                .ConfigureAwait(false);
         }
     }
 
@@ -80,9 +84,10 @@ public class MusicCommands : SlashModuleBase
                 .WithDescription("**Please use /music play <url> if you want to play a song from a url**")
                 .WithColor(Color.Red)
                 .Build();
-            await RespondAsync(embed:eEb, ephemeral: true).ConfigureAwait(false);
+            await RespondAsync(embed: eEb, ephemeral: true).ConfigureAwait(false);
             return;
         }
+
         await DeferAsync().ConfigureAwait(false);
         var search = await _audioService.SearchAsync(query).ConfigureAwait(false);
         if (search is null)
@@ -145,7 +150,8 @@ public class MusicCommands : SlashModuleBase
 
         await DeferAsync().ConfigureAwait(false);
         var msg = ((SocketMessageComponent) Context.Interaction).Message;
-        var result = await _audioService.PlayFromSearchAsync(Context.Guild, (SocketGuildUser)Context.User, msg, identifier)
+        var result = await _audioService
+            .PlayFromSearchAsync(Context.Guild, (SocketGuildUser) Context.User, msg, identifier)
             .ConfigureAwait(false);
         if (result is null) return;
         await FollowupAsync(embed: result, ephemeral: true).ConfigureAwait(false);
@@ -169,7 +175,8 @@ public class MusicCommands : SlashModuleBase
     [SlashCommand("clearqueue", "Clears the current queue")]
     public async Task ClearQueueAsync()
     {
-        await RespondAsync(embed: await _audioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false), ephemeral: true)
+        await RespondAsync(embed: await _audioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false),
+                ephemeral: true)
             .ConfigureAwait(false);
     }
 }

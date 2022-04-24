@@ -1,11 +1,14 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 #pragma warning disable CS8618, MA0048
 namespace KBot.Models;
 
 public class BotConfig
 {
-    public BotConfig() { }
-    
+    public BotConfig()
+    {
+    }
+
     public BotConfig(
         ClientConfig client,
         LavalinkConfig lavalink,
@@ -33,11 +36,12 @@ public class BotConfig
     public RedisConfig Redis { get; init; }
 }
 
-
 public class ClientConfig
 {
-    public ClientConfig() { }
-    
+    public ClientConfig()
+    {
+    }
+
     public ClientConfig(string token, string game)
     {
         Token = token;
@@ -50,8 +54,10 @@ public class ClientConfig
 
 public class LavalinkConfig
 {
-    public LavalinkConfig() { }
-    
+    public LavalinkConfig()
+    {
+    }
+
     public LavalinkConfig(string host, ushort port, string password)
     {
         Host = host;
@@ -66,8 +72,10 @@ public class LavalinkConfig
 
 public class MongoDbConfig
 {
-    public MongoDbConfig() { }
-    
+    public MongoDbConfig()
+    {
+    }
+
     public MongoDbConfig(
         string connectionString,
         string database,
@@ -100,8 +108,10 @@ public class MongoDbConfig
 
 public class OsuApiConfig
 {
-    public OsuApiConfig() { }
-    
+    public OsuApiConfig()
+    {
+    }
+
     public OsuApiConfig(ulong appId, string appSecret)
     {
         AppId = appId;
@@ -114,8 +124,10 @@ public class OsuApiConfig
 
 public class CloudinaryConfig
 {
-    public CloudinaryConfig() { }
-    
+    public CloudinaryConfig()
+    {
+    }
+
     public CloudinaryConfig(string cloudName, string apiKey, string apiSecret)
     {
         CloudName = cloudName;
@@ -130,7 +142,10 @@ public class CloudinaryConfig
 
 public class GoogleConfig
 {
-    public GoogleConfig() { }
+    public GoogleConfig()
+    {
+    }
+
     public GoogleConfig(string apiKey)
     {
         ApiKey = apiKey;
@@ -141,7 +156,10 @@ public class GoogleConfig
 
 public class RedisConfig
 {
-    public RedisConfig() { }
+    public RedisConfig()
+    {
+    }
+
     public RedisConfig(string endpoint)
     {
         Endpoint = endpoint;

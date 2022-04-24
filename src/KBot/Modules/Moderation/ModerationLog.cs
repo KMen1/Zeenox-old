@@ -13,6 +13,7 @@ public class ModerationLog : IInjectable
 {
     private readonly DiscordSocketClient _client;
     private readonly MongoService _database;
+
     private readonly Regex _inviteRegex = new(
         @"(https?://)?(www.)?(discord.(gg|io|me|li)|discordapp.com/invite)/[^\s/]+?(?=\b)"
         , RegexOptions.Compiled);
@@ -46,7 +47,7 @@ public class ModerationLog : IInjectable
             return;
         if (!_inviteRegex.IsMatch(arg.Content)) return;
         var invites = _inviteRegex.Matches(arg.Content);
-        
+
         var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         foreach (Match match in invites)
@@ -64,7 +65,8 @@ public class ModerationLog : IInjectable
         await arg.DeleteAsync().ConfigureAwait(false);
     }
 
-    private async Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> arg1, SocketMessage afterMessage, ISocketMessageChannel arg3)
+    private async Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> arg1, SocketMessage afterMessage,
+        ISocketMessageChannel arg3)
     {
         var beforeMessage = await arg1.GetOrDownloadAsync().ConfigureAwait(false);
         if (beforeMessage.Author.IsBot || beforeMessage.Author.IsWebhook)

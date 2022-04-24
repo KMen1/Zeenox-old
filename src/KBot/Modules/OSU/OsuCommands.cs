@@ -21,6 +21,7 @@ namespace KBot.Modules.OSU;
 public class OsuCommands : SlashModuleBase
 {
     private readonly OsuClient _osuClient;
+
     public OsuCommands(OsuClient osuClient)
     {
         _osuClient = osuClient;
@@ -29,7 +30,8 @@ public class OsuCommands : SlashModuleBase
     [SlashCommand("set", "Link your osu! profile")]
     public async Task SetOsuProfileAsync(string link)
     {
-        if (!link.Contains("osu.ppy.sh/users", StringComparison.OrdinalIgnoreCase) || !link.Contains("osu.ppy.sh/u", StringComparison.OrdinalIgnoreCase))
+        if (!link.Contains("osu.ppy.sh/users", StringComparison.OrdinalIgnoreCase) ||
+            !link.Contains("osu.ppy.sh/u", StringComparison.OrdinalIgnoreCase))
         {
             var eb = new EmbedBuilder()
                 .WithColor(Color.Red)
@@ -40,8 +42,9 @@ public class OsuCommands : SlashModuleBase
         }
 
         await DeferAsync(true).ConfigureAwait(false);
-        var result = ulong.TryParse(link.Split("/").Last(), NumberStyles.Any, CultureInfo.InvariantCulture, out var osuId);
-        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
+        var result = ulong.TryParse(link.Split("/").Last(), NumberStyles.Any, CultureInfo.InvariantCulture,
+            out var osuId);
+        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Red, "Succesfully linked your osu! profile!",
             "https://osu.ppy.sh/u/" + osuId).ConfigureAwait(false);
     }
@@ -51,7 +54,7 @@ public class OsuCommands : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var osuId = (await Mongo.GetUserAsync((SocketGuildUser)(user ?? Context.User)).ConfigureAwait(false)).OsuId;
+        var osuId = (await Mongo.GetUserAsync((SocketGuildUser) (user ?? Context.User)).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked!",
@@ -76,7 +79,7 @@ public class OsuCommands : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var osuId = (await Mongo.GetUserAsync((SocketGuildUser)(user ?? Context.User)).ConfigureAwait(false)).OsuId;
+        var osuId = (await Mongo.GetUserAsync((SocketGuildUser) (user ?? Context.User)).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked!",
@@ -85,22 +88,28 @@ public class OsuCommands : SlashModuleBase
         }
 
         var osuUser = await _osuClient.GetUserAsync((long) osuId, GameMode.Osu).ConfigureAwait(false);
-        var playStyle = string.Equals(osuUser.Playstyle[0], "mouse", StringComparison.OrdinalIgnoreCase) ? "Mouse" : "Tablet";
+        var playStyle = string.Equals(osuUser.Playstyle[0], "mouse", StringComparison.OrdinalIgnoreCase)
+            ? "Mouse"
+            : "Tablet";
         var eb = new EmbedBuilder()
             .WithAuthor(osuUser.Username, osuUser.AvatarUrl.ToString(), $"https://osu.ppy.sh/users/{osuUser.Id}")
             .WithColor(Color.Gold)
             .AddField("📅 Registered", $"`{osuUser.JoinDate.Humanize()}`", true)
             .AddField("🌍 Country", $"`{osuUser.Country.Name}`", true)
-            .AddField("🎚️ Level", $"`{osuUser.Statistics.UserLevel.Current.ToString(CultureInfo.InvariantCulture)}`", true)
+            .AddField("🎚️ Level", $"`{osuUser.Statistics.UserLevel.Current.ToString(CultureInfo.InvariantCulture)}`",
+                true)
             .AddField("🥇 Global Rank",
                 $"`# {osuUser.Statistics.GlobalRank.ToString("n0", CultureInfo.InvariantCulture)} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)}PP)`",
                 true)
-            .AddField("🥇 Country Rank", $"`# {osuUser.Statistics.CountryRank.ToString("n0", CultureInfo.InvariantCulture)}`", true)
-            .AddField("🎯 Accuracy", $"`{Math.Round(osuUser.Statistics.HitAccuracy, 1).ToString(CultureInfo.InvariantCulture)} %`", true)
+            .AddField("🥇 Country Rank",
+                $"`# {osuUser.Statistics.CountryRank.ToString("n0", CultureInfo.InvariantCulture)}`", true)
+            .AddField("🎯 Accuracy",
+                $"`{Math.Round(osuUser.Statistics.HitAccuracy, 1).ToString(CultureInfo.InvariantCulture)} %`", true)
             .AddField("🕐 Playtime",
                 $"`{TimeSpan.FromSeconds(osuUser.Statistics.PlayTime).Humanize()} ({osuUser.Statistics.PlayCount.ToString(CultureInfo.InvariantCulture)} játék)`",
                 true)
-            .AddField("🎮 Max Combo", $"`{osuUser.Statistics.MaximumCombo.ToString(CultureInfo.InvariantCulture)} x`", true)
+            .AddField("🎮 Max Combo", $"`{osuUser.Statistics.MaximumCombo.ToString(CultureInfo.InvariantCulture)} x`",
+                true)
             .AddField("🎹 Plays with", $"`{playStyle}`", true);
         sw.Stop();
         eb.WithDescription($"{sw.ElapsedMilliseconds} ms");
@@ -128,7 +137,8 @@ public class OsuCommands : SlashModuleBase
         foreach (var (user, osuUser) in userOsuPairList)
         {
             i++;
-            desc += $"{i}. {user.Mention} : [`# {osuUser.Statistics.GlobalRank:n0} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)} PP)`](https://osu.ppy.sh/u/{osuUser.Id})\n";
+            desc +=
+                $"{i}. {user.Mention} : [`# {osuUser.Statistics.GlobalRank:n0} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)} PP)`](https://osu.ppy.sh/u/{osuUser.Id})\n";
         }
 
         eb.WithDescription(desc);
@@ -142,7 +152,7 @@ public class OsuCommands : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var sw = new Stopwatch();
-        var osuId = (await Mongo.GetUserAsync((SocketGuildUser)(user ?? Context.User)).ConfigureAwait(false)).OsuId;
+        var osuId = (await Mongo.GetUserAsync((SocketGuildUser) (user ?? Context.User)).ConfigureAwait(false)).OsuId;
         if (osuId == 0)
         {
             await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked",
@@ -165,7 +175,8 @@ public class OsuCommands : SlashModuleBase
             .WithAuthor(
                 $"{score.Beatmapset.Title} [{score.Beatmap.Version}] +{mods} [{score.Beatmap.DifficultyRating.ToString(CultureInfo.InvariantCulture).Replace(",", ".", StringComparison.OrdinalIgnoreCase)}★]",
                 score.User.AvatarUrl.ToString(), score.Beatmap.Url)
-            .WithThumbnailUrl($"https://b.ppy.sh/thumb/{score.Beatmapset.Id.ToString(CultureInfo.InvariantCulture)}.jpg")
+            .WithThumbnailUrl(
+                $"https://b.ppy.sh/thumb/{score.Beatmapset.Id.ToString(CultureInfo.InvariantCulture)}.jpg")
             .WithDescription(
                 $"▸ {Enum.Parse<Grade>(score.Rank).GetGradeEmoji()}▸ {score.Accuracy:P2} ▸ **{pp.ToString(CultureInfo.InvariantCulture)}PP** \n " +
                 $"▸ {score.TotalScore:n0} ▸ x{score.MaxCombo.ToString(CultureInfo.InvariantCulture)}/{beatmap.MaxCombo.ToString()} ▸ [{score.Statistics.Count300.ToString(CultureInfo.InvariantCulture)}/{score.Statistics.Count100.ToString(CultureInfo.InvariantCulture)}/{score.Statistics.Count50.ToString(CultureInfo.InvariantCulture)}/{score.Statistics.CountMiss.ToString(CultureInfo.InvariantCulture)}]")

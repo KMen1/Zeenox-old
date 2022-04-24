@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Lavalink4NET.Filters;
+﻿using Lavalink4NET.Filters;
 using Lavalink4NET.Player;
 
 namespace KBot.Extensions;
@@ -18,7 +17,7 @@ public static class PlayerFilterMapExtensions
         map.ChannelMix = null;
         map.LowPass = null;
     }
-    
+
     public static void EnableBassBoost(this PlayerFilterMap map)
     {
         map.Equalizer = new EqualizerFilterOptions

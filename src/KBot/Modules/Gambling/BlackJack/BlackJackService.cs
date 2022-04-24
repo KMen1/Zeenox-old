@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -24,8 +25,8 @@ namespace KBot.Modules.Gambling.BlackJack;
 public class BlackJackService : IInjectable
 {
     private readonly Cloudinary _cloudinary;
-    private readonly MongoService _mongo;
     private readonly List<BlackJackGame> _games = new();
+    private readonly MongoService _mongo;
 
     public BlackJackService(MongoService mongo, Cloudinary cloudinary)
     {
@@ -50,10 +51,10 @@ public class BlackJackService : IInjectable
         if (e.IsWin)
         {
             await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Blackjack,
-                e.Prize,
-                e.Description),
+                    e.GameId,
+                    TransactionType.Blackjack,
+                    e.Prize,
+                    e.Description),
                 e.User).ConfigureAwait(false);
 
             await _mongo.UpdateUserAsync(e.User, x =>
@@ -64,17 +65,15 @@ public class BlackJackService : IInjectable
             }).ConfigureAwait(false);
             return;
         }
-        if (e.Prize == -1)
-        {
-            return;
-        }
+
+        if (e.Prize == -1) return;
         await _mongo.AddTransactionAsync(new Transaction(
-            e.GameId,
-            TransactionType.Blackjack,
-            -e.Bet,
-            e.Description),
+                e.GameId,
+                TransactionType.Blackjack,
+                -e.Bet,
+                e.Description),
             e.User).ConfigureAwait(false);
-            
+
         await _mongo.UpdateUserAsync(e.User, x =>
         {
             x.Balance -= e.Bet;
@@ -147,7 +146,7 @@ public sealed class BlackJackGame : IGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"**Result:** You lose **{Bet}** credits!",
+                        $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                         Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -162,7 +161,7 @@ public sealed class BlackJackGame : IGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"**Result:** You win **{reward}** credits!",
+                        $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -182,12 +181,12 @@ public sealed class BlackJackGame : IGame
         {
             case > 21:
             {
-                var reward = (Bet * 2) - Bet;
+                var reward = Bet * 2 - Bet;
                 await Message.ModifyAsync(x =>
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"**Result:** You win **{reward}** credits!",
+                        $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -200,7 +199,7 @@ public sealed class BlackJackGame : IGame
                 {
                     x.Embed = new EmbedBuilder().BlackJackEmbed(
                         this,
-                        $"**Result:** You lose **{Bet}** credits!",
+                        $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
@@ -216,7 +215,7 @@ public sealed class BlackJackGame : IGame
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"**Result:** You win **{reward}** credits!",
+                    $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
@@ -226,12 +225,12 @@ public sealed class BlackJackGame : IGame
 
         if (PlayerScore > DealerScore)
         {
-            var reward = (Bet * 2) - Bet;
+            var reward = Bet * 2 - Bet;
             await Message.ModifyAsync(x =>
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"**Result:** You win **{reward}** credits!",
+                    $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
@@ -245,7 +244,7 @@ public sealed class BlackJackGame : IGame
             {
                 x.Embed = new EmbedBuilder().BlackJackEmbed(
                     this,
-                    $"**Result:** You lose **{Bet}** credits!",
+                    $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
                     Color.Red);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);

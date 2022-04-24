@@ -11,14 +11,15 @@ namespace KBot.Modules.EpicGames;
 [Group("epic", "Set epic channel or get free games")]
 public class EpicCommands : SlashModuleBase
 {
-    private readonly HttpClient _httpClient;
     private readonly EpicGamesService _epicGamesService;
+    private readonly HttpClient _httpClient;
+
     public EpicCommands(HttpClient httpClient, EpicGamesService epicGamesService)
     {
         _httpClient = httpClient;
         _epicGamesService = epicGamesService;
     }
-    
+
     [SlashCommand("free", "Send the current free games on the Epic Games Store.")]
     public async Task GetEpicFreeGameAsync()
     {

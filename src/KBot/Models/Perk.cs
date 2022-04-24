@@ -1,4 +1,5 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 #pragma warning disable CS8618, MA0048
 using KBot.Modules.DeadByDaylight;
 using Newtonsoft.Json;

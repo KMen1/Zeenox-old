@@ -6,11 +6,12 @@ namespace KBot.Modules.Gambling.Mines;
 public class MineComponents : SlashModuleBase
 {
     private readonly MinesService _minesService;
+
     public MineComponents(MinesService minesService)
     {
         _minesService = minesService;
     }
-    
+
     [ComponentInteraction("mine:*:*:*")]
     public async Task HandleMineAsync(string id, int x, int y)
     {

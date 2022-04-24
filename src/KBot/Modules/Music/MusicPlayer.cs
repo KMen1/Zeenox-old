@@ -38,7 +38,7 @@ public class MusicPlayer : LavalinkPlayer
 
     public bool Loop { get; private set; }
     public string? FilterEnabled { get; private set; }
-    public SocketUser LastRequestedBy => (SocketUser)CurrentTrack!.Context!;
+    public SocketUser LastRequestedBy => (SocketUser) CurrentTrack!.Context!;
     private IUserMessage NowPlayingMessage { get; }
     public List<LavalinkTrack> Queue { get; }
     public int QueueCount => Queue.Count;
@@ -77,13 +77,13 @@ public class MusicPlayer : LavalinkPlayer
         Loop = !Loop;
         return UpdateNowPlayingMessageAsync();
     }
-    
+
     public Task ToggleAutoPlayAsync()
     {
         AutoPlay = !AutoPlay;
         return UpdateNowPlayingMessageAsync();
     }
-    
+
     public Task EnqueueAsync(LavalinkTrack track)
     {
         Queue.Add(track);
@@ -143,21 +143,25 @@ public class MusicPlayer : LavalinkPlayer
         return PlayAsync(track);
     }
 
-    public override async Task PlayAsync(LavalinkTrack track, TimeSpan? startTime = null, TimeSpan? endTime = null, bool noReplace = false)
+    public override async Task PlayAsync(LavalinkTrack track, TimeSpan? startTime = null, TimeSpan? endTime = null,
+        bool noReplace = false)
     {
         await base.PlayAsync(track, startTime, endTime, noReplace).ConfigureAwait(false);
         await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
+
     public override async Task PauseAsync()
     {
         await base.PauseAsync().ConfigureAwait(false);
         await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
+
     public override async Task ResumeAsync()
     {
         await base.ResumeAsync().ConfigureAwait(false);
         await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
+
     public override async Task SetVolumeAsync(float volume = 1, bool normalize = false, bool force = false)
     {
         await base.SetVolumeAsync(volume, normalize, force).ConfigureAwait(false);
@@ -200,6 +204,7 @@ public class MusicPlayer : LavalinkPlayer
             await PlayAsync(track).ConfigureAwait(false);
             return;
         }
+
         await DisconnectAsync().ConfigureAwait(false);
         await base.OnTrackEndAsync(eventArgs).ConfigureAwait(false);
     }

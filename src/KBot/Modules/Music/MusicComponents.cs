@@ -8,11 +8,12 @@ namespace KBot.Modules.Music;
 public class MusicComponents : SlashModuleBase
 {
     private readonly MusicService _audioService;
+
     public MusicComponents(MusicService audioService)
     {
         _audioService = audioService;
     }
-    
+
     [ComponentInteraction("filterselectmenu")]
     public async Task ApplyFilterAsync(params string[] selections)
     {
@@ -79,8 +80,8 @@ public class MusicComponents : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         await _audioService.ToggleRepeatAsync(Context.Guild).ConfigureAwait(false);
-    }    
-    
+    }
+
     [ComponentInteraction("autoplay")]
     public async Task ToggleAutoplayAsync()
     {

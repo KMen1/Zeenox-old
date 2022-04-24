@@ -1,4 +1,5 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 #pragma warning disable CS8618, MA0048, MA0016
 using System;
 using System.Globalization;
@@ -19,6 +20,7 @@ public class Transaction
         To = to;
         Date = DateTime.UtcNow;
     }
+
     public Transaction(string id, TransactionType source, int amount, string? description = null)
     {
         Id = id;

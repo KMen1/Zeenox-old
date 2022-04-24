@@ -15,24 +15,23 @@ namespace KBot.Modules.Gambling;
 [Group("shop", "Stuff to buy with your money")]
 public class ShopCommands : SlashModuleBase
 {
-    private readonly InteractiveService _interactive;
     private const int CategoryPrice = 150000000;
     private const int VoicePrice = 150000000;
     private const int TextPrice = 125000000;
     private const int RolePrice = 100000000;
+    private readonly InteractiveService _interactive;
 
     public ShopCommands(InteractiveService interactive)
     {
         _interactive = interactive;
     }
 
-    
 
     [SlashCommand("level", "Buy extra levels")]
-    public async Task BuyLevelAsync([MinValue(1), MaxValue(10)] int amount)
+    public async Task BuyLevelAsync([MinValue(1)] [MaxValue(10)] int amount)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
         var required = dbUser.MoneyToBuyLevel(amount);
 
         var eb = new EmbedBuilder()
@@ -57,7 +56,9 @@ public class ShopCommands : SlashModuleBase
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
         var result = await _interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
+            .NextMessageComponentAsync(
+                x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase),
+                timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
         if (!result.IsSuccess)
         {
@@ -73,8 +74,8 @@ public class ShopCommands : SlashModuleBase
             id,
             TransactionType.LevelPurchase,
             -required,
-            $"{amount}"), (SocketGuildUser)Context.User).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x =>
+            $"{amount}"), (SocketGuildUser) Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x =>
         {
             x.Balance -= required;
             x.Level += amount;
@@ -92,7 +93,7 @@ public class ShopCommands : SlashModuleBase
     public async Task BuyRoleAsync(string name, string hexcolor)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
 
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
@@ -125,7 +126,9 @@ public class ShopCommands : SlashModuleBase
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
         var result = await _interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
+            .NextMessageComponentAsync(
+                x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase),
+                timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)
@@ -142,13 +145,13 @@ public class ShopCommands : SlashModuleBase
             .ConfigureAwait(false);
         await ((SocketGuildUser) Context.User).AddRoleAsync(role).ConfigureAwait(false);
 
-        
+
         await Mongo.AddTransactionAsync(new Transaction(
             id,
             TransactionType.RolePurchase,
             -RolePrice,
-            role.Mention), (SocketGuildUser)Context.User).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x =>
+            role.Mention), (SocketGuildUser) Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x =>
         {
             x.Balance -= RolePrice;
             x.Roles.Add(role.Id);
@@ -166,7 +169,7 @@ public class ShopCommands : SlashModuleBase
     public async Task BuyCategoryAsync(string name)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
 
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
@@ -190,7 +193,9 @@ public class ShopCommands : SlashModuleBase
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
         var result = await _interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
+            .NextMessageComponentAsync(
+                x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase),
+                timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)
@@ -218,8 +223,9 @@ public class ShopCommands : SlashModuleBase
             id,
             TransactionType.CategoryPurchase,
             -CategoryPrice,
-            category.Name), (SocketGuildUser)Context.User).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.Balance -= CategoryPrice).ConfigureAwait(false);
+            category.Name), (SocketGuildUser) Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x => x.Balance -= CategoryPrice)
+            .ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
         {
@@ -234,7 +240,7 @@ public class ShopCommands : SlashModuleBase
     public async Task BuyTextChannelAsync(string name)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
 
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
@@ -258,7 +264,9 @@ public class ShopCommands : SlashModuleBase
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
         var result = await _interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
+            .NextMessageComponentAsync(
+                x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase),
+                timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)
@@ -286,8 +294,8 @@ public class ShopCommands : SlashModuleBase
             id,
             TransactionType.TextPurchase,
             -TextPrice,
-            channel.Mention), (SocketGuildUser)Context.User).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.Balance -= TextPrice).ConfigureAwait(false);
+            channel.Mention), (SocketGuildUser) Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x => x.Balance -= TextPrice).ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
         {
@@ -301,7 +309,7 @@ public class ShopCommands : SlashModuleBase
     public async Task BuyVoiceChannelAsync(string name)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
 
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
@@ -325,7 +333,9 @@ public class ShopCommands : SlashModuleBase
         await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
 
         var result = await _interactive
-            .NextMessageComponentAsync(x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase), timeout: TimeSpan.FromMinutes(1))
+            .NextMessageComponentAsync(
+                x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase),
+                timeout: TimeSpan.FromMinutes(1))
             .ConfigureAwait(false);
 
         if (!result.IsSuccess)
@@ -350,8 +360,8 @@ public class ShopCommands : SlashModuleBase
             id,
             TransactionType.VoicePurchase,
             -VoicePrice,
-            channel.Mention), (SocketGuildUser)Context.User).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.Balance -= VoicePrice).ConfigureAwait(false);
+            channel.Mention), (SocketGuildUser) Context.User).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x => x.Balance -= VoicePrice).ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
         {

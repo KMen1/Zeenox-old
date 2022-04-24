@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -65,15 +64,16 @@ public class ModerationCommands : SlashModuleBase
             await FollowupWithEmbedAsync(Color.Red, $"Warn with id({warnId}) does not exist", "").ConfigureAwait(false);
             return;
         }
+
         await FollowupWithEmbedAsync(Color.Green,
-            $"Succesfully deleted warn!", "").ConfigureAwait(false);
+            "Succesfully deleted warn!", "").ConfigureAwait(false);
     }
 
     [SlashCommand("warns", "Gets the warns of a user.")]
     public async Task WarnsAsync(SocketUser user)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var warns = (await Mongo.GetWarnsAsync((SocketGuildUser)Context.User).ConfigureAwait(false)).ToList();
+        var warns = (await Mongo.GetWarnsAsync((SocketGuildUser) Context.User).ConfigureAwait(false)).ToList();
         if (warns.Count == 0)
         {
             await FollowupWithEmbedAsync(Color.Gold, "😎 Good job!",
@@ -81,7 +81,10 @@ public class ModerationCommands : SlashModuleBase
             return;
         }
 
-        var warnString = warns.Aggregate("", (current, warn) => current + $"`{warn.Id}`:`{warn.Date.ToString(CultureInfo.InvariantCulture)}` **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`\n");
+        var warnString = warns.Aggregate("",
+            (current, warn) =>
+                current +
+                $"`{warn.Id}`:`{warn.Date.ToString(CultureInfo.InvariantCulture)}` **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`\n");
         await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} has {warns.Count} warns", warnString,
             ephemeral: true).ConfigureAwait(false);
     }
@@ -96,6 +99,7 @@ public class ModerationCommands : SlashModuleBase
             await FollowupWithEmbedAsync(Color.Red, $"Warn with id({warnId}) does not exist", "").ConfigureAwait(false);
             return;
         }
+
         var moderator = Context.Client.GetUser(warn.GivenById);
         var user = Context.Client.GetUser(warn.GivenToId);
         var eb = new EmbedBuilder()
@@ -157,7 +161,7 @@ public class ModerationCommands : SlashModuleBase
             .AddTextInput("Why are you making an appeal?", "appeal-reason", TextInputStyle.Paragraph,
                 "The admin warned me because he was angry, stb.", required: true)
             .AddTextInput("Why were you punished?", "appeal-punishreason", TextInputStyle.Paragraph,
-                    "Rule breaking", required: true);
+                "Rule breaking", required: true);
         await RespondWithModalAsync(modal.Build()).ConfigureAwait(false);
     }
 
@@ -174,8 +178,8 @@ public class ModerationCommands : SlashModuleBase
                 : $"**Moderation log will be sent to {channel.Mention}**")
             .Build();
         await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-    }    
-    
+    }
+
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("setappeal", "Sets the channel to send appeals to for the server.")]
     public async Task SetAppealChannelAsync(ITextChannel? channel = null)

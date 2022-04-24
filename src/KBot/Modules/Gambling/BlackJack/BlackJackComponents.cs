@@ -6,6 +6,7 @@ namespace KBot.Modules.Gambling.BlackJack;
 public class BlackJackComponents : SlashModuleBase
 {
     private readonly BlackJackService _blackJackService;
+
     public BlackJackComponents(BlackJackService blackJackService)
     {
         _blackJackService = blackJackService;
