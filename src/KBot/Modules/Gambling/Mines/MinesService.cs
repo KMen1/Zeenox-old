@@ -29,7 +29,7 @@ public class MinesService : IInjectable
         return game;
     }
 
-    private async void OnGameEndedAsync(object? sender, GameEndedArgs e)
+    private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
         var game = (MinesGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
@@ -87,6 +87,7 @@ public sealed class MinesGame : IGame
         Message = message;
         User = user;
         Bet = bet;
+        Mines = mines;
         var random = new Random();
         for (var i = 0; i < 5; i++)
         for (var j = 0; j < 5; j++)
@@ -114,21 +115,22 @@ public sealed class MinesGame : IGame
     public SocketGuildUser User { get; }
     public int Bet { get; }
     public bool CanStop { get; private set; }
-    private int Mines => _points.Count(x => x.IsMine);
-    private int Clicked => _points.Count(x => x.IsClicked && !x.IsMine);
+    private int Mines { get; }
+    private int Clicked { get; set; }
 
     private decimal Multiplier
     {
         get
         {
-            var szam = Factorial(25 - Mines) * Factorial(25 - Clicked);
-            var oszt = Factorial(25) * Factorial(25 - Mines - Clicked);
-            var t = (decimal) Math.Round(szam / oszt, 2);
-            return Math.Round((decimal) .97 * (1 / t), 2);
+            //(25! (25 - b - s)!) / ((25 - b)! (25 - s)!) * .97
+            var one = Factorial(25) * Factorial(25 - Mines - Clicked);
+            var two = Factorial(25 - Mines) * Factorial(25 - Clicked);
+            var t = one / two * 0.97;
+            return Math.Round((decimal)t, 2);
         }
     }
 
-    public event EventHandler<GameEndedArgs>? GameEnded;
+    public event EventHandler<GameEndedEventArgs>? GameEnded;
 
     public Task StartAsync()
     {
@@ -164,11 +166,19 @@ public sealed class MinesGame : IGame
         if (orig.IsMine)
         {
             await StopAsync(true).ConfigureAwait(false);
-            OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Mines: LOSE", false));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Mines: LOSE", false));
             return;
         }
 
+        Clicked++;
         _points[index] = orig with {IsClicked = true, Label = $"{Multiplier}x"};
+        if (!_points.Any(x => !x.IsClicked && !x.IsMine))
+        {
+            await StopAsync(false).ConfigureAwait(false);
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, (int)(Bet*Multiplier), "Mines: WIN", false));
+            return;
+        }
+        
         var comp = new ComponentBuilder();
         for (var i = 0; i < Math.Sqrt(_points.Count); i++)
         {
@@ -217,20 +227,20 @@ public sealed class MinesGame : IGame
                 .WithTitle($"Mines | {Id}")
                 .WithColor(lost ? Color.Red : Color.Green)
                 .WithDescription($"**Bet:** {Bet} credits\n**Mines:** {Mines}\n" +
-                                 (lost ? $"**Result:** You lose **{Bet}** credits" : $"**Result:** You win **{prize - Bet}** credits"))
+                                 (lost ? $"**Result:** You lose **{Bet}** credits" : $"**Result:** You win **{prize}** credits"))
                 .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedArgs(Id, User, Bet, prize, lost ? "Mines: LOSE" : "Mines: WIN", !lost));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, lost ? "Mines: LOSE" : "Mines: WIN", !lost));
     }
 
-    private void OnGameEnded(GameEndedArgs e)
+    private void OnGameEnded(GameEndedEventArgs e)
     {
         GameEnded?.Invoke(this, e);
     }
 }
 
-struct Point
+internal struct Point
 {
     public Emoji Emoji;
     public bool IsClicked;
@@ -238,5 +248,4 @@ struct Point
     public string Label;
     public int X;
     public int Y;
-
 }

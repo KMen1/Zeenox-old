@@ -163,19 +163,31 @@ public class ModerationCommands : SlashModuleBase
 
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("setlog", "Sets the moderation log channel for the server.")]
-    public async Task SetLogChannelAsync(ITextChannel channel)
+    public async Task SetLogChannelAsync(ITextChannel? channel = null)
     {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.ModLogChannelId = channel.Id)
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.ModLogChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Moderation Log disabled!**"
+                : $"**Moderation log will be sent to {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }    
     
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("setappeal", "Sets the channel to send appeals to for the server.")]
-    public async Task SetAppealChannelAsync(ITextChannel channel)
+    public async Task SetAppealChannelAsync(ITextChannel? channel = null)
     {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.AppealChannelId = channel.Id)
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.AppealChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Appeals disabled**"
+                : $"**Appeals will now be sent to {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 }

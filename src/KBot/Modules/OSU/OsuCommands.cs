@@ -31,12 +31,16 @@ public class OsuCommands : SlashModuleBase
     {
         if (!link.Contains("osu.ppy.sh/users", StringComparison.OrdinalIgnoreCase) || !link.Contains("osu.ppy.sh/u", StringComparison.OrdinalIgnoreCase))
         {
-            await RespondAsync("That's not a osu! profile link!", ephemeral: true).ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Please provide a valid osu! profile link**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 
         await DeferAsync(true).ConfigureAwait(false);
-        var result = ulong.TryParse(link.Split("/").Last(), out var osuId);
+        var result = ulong.TryParse(link.Split("/").Last(), NumberStyles.Any, CultureInfo.InvariantCulture, out var osuId);
         await Mongo.UpdateUserAsync((SocketGuildUser)Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Red, "Succesfully linked your osu! profile!",
             "https://osu.ppy.sh/u/" + osuId).ConfigureAwait(false);

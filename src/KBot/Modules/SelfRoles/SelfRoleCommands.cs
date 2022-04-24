@@ -45,12 +45,15 @@ public class SelfRoleCommands : SlashModuleBase
         string emote, string? description = null)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var parseResult = ulong.TryParse(messageIdString, out var messageId);
+        var parseResult = ulong.TryParse(messageIdString, NumberStyles.Any, CultureInfo.InvariantCulture, out var messageId);
         var msg = await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
         if (msg is null)
         {
-            await FollowupAsync($"Could not find message with id({messageIdString}) in the current channel!.")
-                .ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Could not find message with specified id in the current channel!.**")
+                .Build();
+            await FollowupAsync(embed: eb).ConfigureAwait(false);
             return;
         }
 
@@ -61,7 +64,11 @@ public class SelfRoleCommands : SlashModuleBase
         ).ConfigureAwait(false);
         if (!result)
         {
-            await FollowupAsync("Could not find the specified message in the database.").ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Could not find message in the database!.**")
+                .Build();
+            await FollowupAsync(embed: eb).ConfigureAwait(false);
             return;
         }
 
@@ -69,7 +76,11 @@ public class SelfRoleCommands : SlashModuleBase
             .GetMessageAsync(reactionRoleMessage.MessageId).ConfigureAwait(false) as IUserMessage;
 
         await dMessage!.ModifyAsync(x => x.Components = reactionRoleMessage.ToButtons()).ConfigureAwait(false);
-        await FollowupAsync("Role added!").ConfigureAwait(false);
+        var seb = new EmbedBuilder()
+            .WithColor(Color.Red)
+            .WithDescription($"**Succesfully added {role.Mention} to the message**")
+            .Build();
+        await FollowupAsync(embed: seb).ConfigureAwait(false);
     }
 
     [RequireUserPermission(GuildPermission.ManageRoles)]
@@ -77,12 +88,15 @@ public class SelfRoleCommands : SlashModuleBase
     public async Task RemoveRoleFromMessageAsync([Summary("messageid")] string messageIdString, IRole role)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var parseResult = ulong.TryParse(messageIdString, out var messageId);
+        var parseResult = ulong.TryParse(messageIdString, NumberStyles.Any, CultureInfo.InvariantCulture, out var messageId);
         var msg = await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
         if (msg is null)
         {
-            await FollowupAsync($"Could not find message with id({messageIdString}) in the current channel!.")
-                .ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Could not find message with specified id in the current channel!.**")
+                .Build();
+            await FollowupAsync(embed: eb).ConfigureAwait(false);
             return;
         }
 
@@ -93,7 +107,11 @@ public class SelfRoleCommands : SlashModuleBase
         ).ConfigureAwait(false);
         if (!result)
         {
-            await FollowupAsync("Could not find the specified message in the database.").ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Could not find message in the database!.**")
+                .Build();
+            await FollowupAsync(embed: eb).ConfigureAwait(false);
             return;
         }
 
@@ -101,7 +119,11 @@ public class SelfRoleCommands : SlashModuleBase
             .GetMessageAsync(reactionRoleMessage.MessageId).ConfigureAwait(false) as IUserMessage;
 
         await dMessage!.ModifyAsync(x => x.Components = reactionRoleMessage.ToButtons()).ConfigureAwait(false);
-        await FollowupAsync("Role removed!").ConfigureAwait(false);
+        var seb = new EmbedBuilder()
+            .WithColor(Color.Red)
+            .WithDescription("**Succesfully removed role from the message!.**")
+            .Build();
+        await FollowupAsync(embed: seb).ConfigureAwait(false);
     }
 
     [ComponentInteraction("roleselect", true)]

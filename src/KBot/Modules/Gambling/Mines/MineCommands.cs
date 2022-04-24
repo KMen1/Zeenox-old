@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Globalization;
+using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using KBot.Enums;
@@ -22,17 +24,33 @@ public class MineCommands : SlashModuleBase
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         if (dbUser.Balance < bet)
         {
-            await RespondAsync("Insufficient balance.").ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Insufficient balance!**")
+                .AddField("Balance", $"{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}", true)
+                .AddField("Bet", $"{bet.ToString(CultureInfo.InvariantCulture)}", true)
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 
         if (dbUser.MinimumBet > bet)
         {
-            await RespondAsync($"You must bet at least {dbUser.MinimumBet} credits.", ephemeral: true).ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**You must bet at least you minimum bet!**")
+                .AddField("Minimum bet", $"{dbUser.MinimumBet.ToString(CultureInfo.InvariantCulture)}", true)
+                .AddField("Bet", $"{bet.ToString(CultureInfo.InvariantCulture)}", true)
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 
-        await RespondAsync("Starting Game...").ConfigureAwait(false);
+        var sEb = new EmbedBuilder()
+            .WithColor(Color.Orange)
+            .WithDescription("**Starting Game...**")
+            .Build();
+        await RespondAsync(embed: sEb).ConfigureAwait(false);
         var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
         var game = _minesService.CreateGame((SocketGuildUser)Context.User, msg, bet, mines);
         await game.StartAsync().ConfigureAwait(false);

@@ -1,6 +1,7 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
 #pragma warning disable CS8618, MA0048
 using System.Collections.Generic;
+using CloudinaryDotNet.Actions;
 using Discord;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -37,7 +38,10 @@ public class SelfRoleMessage
     {
         if (!Roles.Exists(x => x.RoleId == role.Id))
             return false;
-        Roles.Remove(Roles.Find(x => x.RoleId == role.Id));
+        var roleItem = Roles.Find(x => x.RoleId == role.Id);
+        if (roleItem is null)
+            return false;
+        Roles.Remove(roleItem);
         return true;
     }
 
@@ -66,7 +70,7 @@ public class SelfRoleMessage
 
 public class SelfRole
 {
-    public SelfRole(ulong roleId, string title, string emote, string description)
+    public SelfRole(ulong roleId, string title, string emote, string? description)
     {
         RoleId = roleId;
         Title = title;
@@ -76,6 +80,6 @@ public class SelfRole
 
     [BsonElement("role_id")] public ulong RoleId { get; set; }
     [BsonElement("title")] public string Title { get; set; }
-    [BsonElement("title")] public string Description { get; set; }
+    [BsonElement("title")] public string? Description { get; set; }
     [BsonElement("emote")] public string Emote { get; set; }
 }

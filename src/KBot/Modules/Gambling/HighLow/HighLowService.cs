@@ -40,7 +40,7 @@ public class HighLowService : IInjectable
         return game;
     }
 
-    private async void OnGameEndedAsync(object? sender, GameEndedArgs e)
+    private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
         var game = (HighLowGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
@@ -107,8 +107,8 @@ public sealed class HighLowGame : IGame
     private IUserMessage Message { get; }
     private Deck Deck { get; set; }
     public int RemainCards => Deck.Cards.Count;
-    private Card PlayerHand { get; set; }
-    private Card DealerHand { get; set; }
+    private Card PlayerHand { get; set; } = null!;
+    private Card DealerHand { get; set; } = null!;
     public int Stake { get; private set; }
     public int Bet { get; }
     public int HighStake { get; private set; }
@@ -117,7 +117,7 @@ public sealed class HighLowGame : IGame
     public decimal LowMultiplier { get; private set; }
     private bool Hidden { get; set; }
     private Cloudinary CloudinaryClient { get; }
-    public event EventHandler<GameEndedArgs>? GameEnded;
+    public event EventHandler<GameEndedEventArgs>? GameEnded;
 
     public Task StartAsync()
     {
@@ -171,7 +171,7 @@ public sealed class HighLowGame : IGame
             x.Embed = new EmbedBuilder().HighLowEmbed(this, $"**Result:** You lost **{Bet}** credits!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
     }
 
     public async Task GuessLowerAsync()
@@ -191,7 +191,7 @@ public sealed class HighLowGame : IGame
             x.Embed = new EmbedBuilder().HighLowEmbed(this, $"**Result:** You lost **{Bet}** credits!", Color.Red);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "HighLow: LOSE", false));
     }
 
     public async Task FinishAsync()
@@ -203,7 +203,7 @@ public sealed class HighLowGame : IGame
                 Color.Green);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedArgs(Id, User, Bet, Stake, "HighLow: WIN", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Stake, "HighLow: WIN", false));
     }
 
     public string GetTablePicUrl()
@@ -238,7 +238,7 @@ public sealed class HighLowGame : IGame
         return bitmap;
     }
 
-    private void OnGameEnded(GameEndedArgs e)
+    private void OnGameEnded(GameEndedEventArgs e)
     {
         GameEnded?.Invoke(this, e);
     }

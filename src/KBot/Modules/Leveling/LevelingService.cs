@@ -89,7 +89,13 @@ public class LevelingModule : IInjectable
                 var level = item.Item2;
                 var channelId = item.Item3;
                 if (user.Guild.GetTextChannel(channelId) is not { } channel) continue;
-                await channel.SendMessageAsync($"🥳 Congrats {user.Mention}, you reached level **{level}**")
+                var eb = new EmbedBuilder()
+                    .WithAuthor($"{user.Username}{user.Discriminator}", user.GetAvatarUrl())
+                    .WithColor(Color.Gold)
+                    .WithDescription($"**Congrats {user.Mention}, you reached level {level}**")
+                    .WithThumbnailUrl(user.GetAvatarUrl())
+                    .Build();
+                await channel.SendMessageAsync(embed: eb)
                     .ConfigureAwait(false);
             }
         }

@@ -9,7 +9,7 @@ public abstract class SlashModuleBase : InteractionModuleBase<SocketInteractionC
 {
     public MongoService Mongo { get; set; } = null!;
 
-    protected async Task<IUserMessage> FollowupWithEmbedAsync(Color color, string title, string? description,
+    protected async Task<IUserMessage> FollowupWithEmbedAsync(Color color, string title, string? description = null,
         string? url = null, string? imageUrl = null, bool ephemeral = false)
     {
         var embed = new EmbedBuilder()

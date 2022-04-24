@@ -25,7 +25,7 @@ public class BlackJackComponents : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var game = _blackJackService.GetGame(Id);
-        if (game.User.Id != Context.User.Id) return;
+        if (game?.User.Id != Context.User.Id) return;
         await game.StandAsync().ConfigureAwait(false);
     }
 }

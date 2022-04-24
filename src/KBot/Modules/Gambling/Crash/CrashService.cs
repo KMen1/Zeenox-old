@@ -32,7 +32,7 @@ public class CrashService : IInjectable
         return game;
     }
 
-    private async void OnGameEndedAsync(object? sender, GameEndedArgs e)
+    private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
         var game = (CrashGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
@@ -115,7 +115,7 @@ public sealed class CrashGame : IGame
     public int Profit => (int) (Bet * Multiplier - Bet);
     private CancellationTokenSource TokenSource { get; }
     private CancellationToken StoppingToken { get; }
-    public event EventHandler<GameEndedArgs>? GameEnded;
+    public event EventHandler<GameEndedEventArgs>? GameEnded;
 
     public async Task StartAsync()
     {
@@ -141,7 +141,7 @@ public sealed class CrashGame : IGame
                         $"**Crashed at:** {CrashPoint:0.00}x\n**Result:** You lost **{Bet}** credits", Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Crash: LOSE", false));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Crash: LOSE", false));
                 break;
             }
 
@@ -159,10 +159,10 @@ public sealed class CrashGame : IGame
                                                           $"**Result:** You win **{Profit:0}** credits", Color.Green);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedArgs(Id, User, Bet, Profit, $"Crash: {Multiplier:0.0}x", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Profit, $"Crash: {Multiplier:0.0}x", false));
     }
 
-    private void OnGameEnded(GameEndedArgs e)
+    private void OnGameEnded(GameEndedEventArgs e)
     {
         GameEnded?.Invoke(this, e);
     }

@@ -30,7 +30,7 @@ public class TowersService : IInjectable
         return game;
     }
 
-    private async void HandleGameEndedAsync(object? sender, GameEndedArgs e)
+    private async void HandleGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
         var game = (TowersGame) sender!;
         game.GameEnded -= HandleGameEndedAsync;
@@ -124,7 +124,7 @@ public sealed class TowersGame : IGame
     private List<Field> Fields { get; }
     private bool Lost { get; set; }
     private int Prize { get; set; }
-    public event EventHandler<GameEndedArgs>? GameEnded;
+    public event EventHandler<GameEndedEventArgs>? GameEnded;
 
     public Task StartAsync()
     {
@@ -168,7 +168,7 @@ public sealed class TowersGame : IGame
                     Lost ? $"**Result:** You lost **{Bet}** credits!" : $"**Result:** You won **{Prize}** credits!",
                     Lost ? Color.Red : Color.Green))
                 .ConfigureAwait(false);
-            OnGameEnded(new GameEndedArgs(Id, User, Bet, Prize, "Towers: WIN", true));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Prize, "Towers: WIN", true));
         }
 
         var comp = new ComponentBuilder();
@@ -221,17 +221,17 @@ public sealed class TowersGame : IGame
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
         OnGameEnded(Lost
-            ? new GameEndedArgs(Id, User, Bet, prize, "Towers: LOSE", false)
-            : new GameEndedArgs(Id, User, Bet, prize, "Towers: WIN", true));
+            ? new GameEndedEventArgs(Id, User, Bet, prize, "Towers: LOSE", false)
+            : new GameEndedEventArgs(Id, User, Bet, prize, "Towers: WIN", true));
     }
 
-    private void OnGameEnded(GameEndedArgs e)
+    private void OnGameEnded(GameEndedEventArgs e)
     {
         GameEnded?.Invoke(this, e);
     }
 }
 
-struct Field
+internal struct Field
 {
     public int X { get; set; }
     public int Y { get; set; }

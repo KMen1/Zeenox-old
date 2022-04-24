@@ -11,7 +11,7 @@ using KBot.Models;
 namespace KBot.Modules.Leveling;
 
 [Group("level", "Leveling system commands")]
-public class Levels : SlashModuleBase
+public class LevelingCommands : SlashModuleBase
 {
     [SlashCommand("rank", "Gets a users level")]
     public async Task GetLevelAsync(SocketUser? user = null)
@@ -25,14 +25,11 @@ public class Levels : SlashModuleBase
         }
 
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser)setUser).ConfigureAwait(false);
-        var level = dbUser.Level;
-        var requiredXP = Math.Pow(level * 4, 2);
-        var xp = dbUser.Xp;
         var embed = new EmbedBuilder()
             .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
             .WithColor(Color.Gold)
-            .AddField("🆙 Level", $"`{level}`")
-            .AddField("➡ XP/Required", $"`{xp}/{requiredXP}`")
+            .AddField("🆙 Level", $"`{dbUser.Level.ToString(CultureInfo.InvariantCulture)}`")
+            .AddField("➡ XP/Required", $"`{dbUser.Xp.ToString(CultureInfo.InvariantCulture)}/{dbUser.RequiredXp.ToString(CultureInfo.InvariantCulture)}`")
             .Build();
 
         await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
@@ -112,20 +109,32 @@ public class Levels : SlashModuleBase
     
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("setchannel", "Set the channel for level up messages")]
-    public async Task SetChannelAsync(ITextChannel channel)
+    public async Task SetChannelAsync(ITextChannel? channel = null)
     {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.LevelUpChannelId = channel.Id)
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.LevelUpChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Leveling system is now disabled**"
+                : $"**Level up messages will be sent to {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
     
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("setafk", "Set the AFK channel")]
-    public async Task SetAfkChannelAsync(IVoiceChannel channel)
+    public async Task SetAfkChannelAsync(IVoiceChannel? channel = null)
     {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.AfkChannelId = channel.Id)
+        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.AfkChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync("Channel set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**AFK Channel disabled**"
+                : $"**{channel.Mention} is set to be the AFK channel**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
     
     [RequireUserPermission(GuildPermission.Administrator)]
@@ -135,7 +144,11 @@ public class Levels : SlashModuleBase
         await Mongo
             .UpdateGuildConfigAsync(Context.Guild, x => x.LevelRoles.Add(new LevelRole(role.Id, level)))
             .ConfigureAwait(false);
-        await RespondAsync("Role Added!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(Color.Green)
+            .WithDescription($"**{role.Mention} will now be granted after reaching level {level}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
     
     [RequireUserPermission(GuildPermission.Administrator)]
@@ -144,6 +157,10 @@ public class Levels : SlashModuleBase
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.LevelRoles.RemoveAll(y => y.Id == role.Id))
             .ConfigureAwait(false);
-        await RespondAsync("Role Removed", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(Color.Red)
+            .WithDescription($"**{role.Mention} removed from level roles**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 }

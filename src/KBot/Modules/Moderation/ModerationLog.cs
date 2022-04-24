@@ -66,7 +66,7 @@ public class ModerationLog : IInjectable
 
     private async Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> arg1, SocketMessage afterMessage, ISocketMessageChannel arg3)
     {
-        var beforeMessage = arg1.Value;
+        var beforeMessage = await arg1.GetOrDownloadAsync().ConfigureAwait(false);
         if (beforeMessage.Author.IsBot || beforeMessage.Author.IsWebhook)
             return;
         if (beforeMessage.Content.Equals(afterMessage.Content, StringComparison.OrdinalIgnoreCase)) return;
@@ -91,10 +91,10 @@ public class ModerationLog : IInjectable
 
     private async Task OnMessageDeletedAsync(Cacheable<IMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2)
     {
-        var message = arg1.Value;
+        var message = await arg1.GetOrDownloadAsync().ConfigureAwait(false);
         if (message.Author.IsBot || message.Author.IsWebhook)
             return;
-        var channel = arg2.Value as SocketTextChannel;
+        var channel = await arg2.GetOrDownloadAsync().ConfigureAwait(false) as SocketTextChannel;
         var guild = channel!.Guild;
 
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);

@@ -41,7 +41,7 @@ public class BlackJackService : IInjectable
         return game;
     }
 
-    private async void OnGameEndedAsync(object? sender, GameEndedArgs e)
+    private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
         var game = (BlackJackGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
@@ -120,7 +120,7 @@ public sealed class BlackJackGame : IGame
     public int Bet { get; }
     public bool Hidden { get; private set; }
     private Cloudinary CloudinaryClient { get; }
-    public event EventHandler<GameEndedArgs>? GameEnded;
+    public event EventHandler<GameEndedEventArgs>? GameEnded;
 
     public Task StartAsync()
     {
@@ -151,7 +151,7 @@ public sealed class BlackJackGame : IGame
                         Color.Red);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Blackjack: PLAYER BUST", false));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: PLAYER BUST", false));
                 return;
             }
             case 21:
@@ -166,7 +166,7 @@ public sealed class BlackJackGame : IGame
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
                 return;
             }
         }
@@ -191,7 +191,7 @@ public sealed class BlackJackGame : IGame
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedArgs(Id, User, Bet, reward, "Blackjack: DEALER BUST", true));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: DEALER BUST", true));
                 return;
             }
             case 21:
@@ -204,7 +204,7 @@ public sealed class BlackJackGame : IGame
                         Color.Green);
                     x.Components = new ComponentBuilder().Build();
                 }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
+                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
                 return;
             }
         }
@@ -220,7 +220,7 @@ public sealed class BlackJackGame : IGame
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
             return;
         }
 
@@ -235,7 +235,7 @@ public sealed class BlackJackGame : IGame
                     Color.Green);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedArgs(Id, User, Bet, reward, "Blackjack: PLAYER WIN", true));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER WIN", true));
             return;
         }
 
@@ -249,7 +249,7 @@ public sealed class BlackJackGame : IGame
                     Color.Red);
                 x.Components = new ComponentBuilder().Build();
             }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
+            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
             return;
         }
 
@@ -261,7 +261,7 @@ public sealed class BlackJackGame : IGame
                 Color.Blue);
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedArgs(Id, User, Bet, -1, "Blackjack: PUSH", false));
+        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, -1, "Blackjack: PUSH", false));
     }
 
     public string GetTablePicUrl()
@@ -358,7 +358,7 @@ public sealed class BlackJackGame : IGame
         return bitmap;
     }
 
-    private void OnGameEnded(GameEndedArgs e)
+    private void OnGameEnded(GameEndedEventArgs e)
     {
         GameEnded?.Invoke(this, e);
     }

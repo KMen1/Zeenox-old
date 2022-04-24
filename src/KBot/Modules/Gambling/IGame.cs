@@ -7,12 +7,12 @@ namespace KBot.Modules.Gambling;
 public interface IGame
 {
     Task StartAsync();
-    event EventHandler<GameEndedArgs> GameEnded;
+    event EventHandler<GameEndedEventArgs> GameEnded;
 }
 
-public class GameEndedArgs
+public class GameEndedEventArgs : EventArgs
 {
-    public GameEndedArgs(string gameId, SocketGuildUser user, int bet, int prize, string description, bool isWin)
+    public GameEndedEventArgs(string gameId, SocketGuildUser user, int bet, int prize, string description, bool isWin)
     {
         Prize = prize;
         User = user;

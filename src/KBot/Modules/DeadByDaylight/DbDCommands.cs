@@ -40,8 +40,12 @@ public class DbDCommands : SlashModuleBase
     public async Task SetDbdChannelAsync(ITextChannel? channel = null)
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.DbdNotificationChannelId = channel?.Id ?? 0).ConfigureAwait(false);
-        await RespondAsync(channel is null ?
-            "Weekly shrine notification disabled"
-            : "Channel set to receive weekly shrines", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Weekly shrine notifications are now disabled**"
+                : $"**Weekly shrine notifications will be sent to {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 }

@@ -16,7 +16,7 @@ public class TowersComponents : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var game = _towersService.GetGame(id);
-        if (game.User.Id != Context.User.Id)
+        if (game?.User.Id != Context.User.Id)
             return;
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }

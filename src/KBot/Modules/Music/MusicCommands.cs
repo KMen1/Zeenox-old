@@ -24,7 +24,11 @@ public class MusicCommands : SlashModuleBase
         var channel = ((IVoiceState) Context.User).VoiceChannel;
         if (channel is null)
         {
-            await RespondAsync("You are not in a voice channel", ephemeral: true).ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**You are not in a voice channel**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 
@@ -44,8 +48,11 @@ public class MusicCommands : SlashModuleBase
     {
         if (((IVoiceState) Context.User).VoiceChannel is null)
         {
-            await RespondAsync(embed: new EmbedBuilder().ErrorEmbed("You are not in a voice channel!"), ephemeral: true)
-                .ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**You are not in a voice channel**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 
@@ -70,7 +77,7 @@ public class MusicCommands : SlashModuleBase
         if (Uri.IsWellFormedUriString(query, UriKind.Absolute))
         {
             var eEb = new EmbedBuilder()
-                .WithTitle("Please use /music play <url> if you want to play a song from a url")
+                .WithDescription("**Please use /music play <url> if you want to play a song from a url**")
                 .WithColor(Color.Red)
                 .Build();
             await RespondAsync(embed:eEb, ephemeral: true).ConfigureAwait(false);
@@ -80,7 +87,11 @@ public class MusicCommands : SlashModuleBase
         var search = await _audioService.SearchAsync(query).ConfigureAwait(false);
         if (search is null)
         {
-            await FollowupAsync("No matches!", ephemeral: true).ConfigureAwait(false);
+            var eeb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**No matches, please try again!**")
+                .Build();
+            await FollowupAsync(embed: eeb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 
@@ -124,7 +135,11 @@ public class MusicCommands : SlashModuleBase
         var channel = ((IVoiceState) Context.User).VoiceChannel;
         if (channel is null)
         {
-            await RespondAsync("You are not in a voice channel", ephemeral: true).ConfigureAwait(false);
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**You are not in a voice channel**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 

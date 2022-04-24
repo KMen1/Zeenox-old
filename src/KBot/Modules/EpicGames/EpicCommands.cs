@@ -42,8 +42,12 @@ public class EpicCommands : SlashModuleBase
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.EpicNotificationChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync(channel is null ?
-            "Epic announcements disabled!"
-            : "Channel set to receive weekly free games from the epic game store.", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Weekly epic notifications are now disabled**"
+                : $"**Weekly epic notifications will be sent to {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 }

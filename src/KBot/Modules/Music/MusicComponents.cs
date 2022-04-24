@@ -7,8 +7,12 @@ namespace KBot.Modules.Music;
 
 public class MusicComponents : SlashModuleBase
 {
-    public MusicService AudioService { get; set; }
-
+    private readonly MusicService _audioService;
+    public MusicComponents(MusicService audioService)
+    {
+        _audioService = audioService;
+    }
+    
     [ComponentInteraction("filterselectmenu")]
     public async Task ApplyFilterAsync(params string[] selections)
     {
@@ -16,7 +20,7 @@ public class MusicComponents : SlashModuleBase
         if (result)
         {
             await DeferAsync().ConfigureAwait(false);
-            var embed = await AudioService.SetFiltersAsync(Context.Guild, Context.User, filterType)
+            var embed = await _audioService.SetFiltersAsync(Context.Guild, Context.User, filterType)
                 .ConfigureAwait(false);
             if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
         }
@@ -26,15 +30,15 @@ public class MusicComponents : SlashModuleBase
     public async Task StopPlayerAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await AudioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
+        var embed = await _audioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
     [ComponentInteraction("volumeup")]
     public async Task IncreaseVolumeAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeUp)
+        var embed = await _audioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeUp)
             .ConfigureAwait(false);
         if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
@@ -43,7 +47,7 @@ public class MusicComponents : SlashModuleBase
     public async Task DecreaseVolumeAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await AudioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeDown)
+        var embed = await _audioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeDown)
             .ConfigureAwait(false);
         if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
@@ -52,7 +56,7 @@ public class MusicComponents : SlashModuleBase
     public async Task PausePlayerAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await AudioService.PauseOrResumeAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        var embed = await _audioService.PauseOrResumeAsync(Context.Guild, Context.User).ConfigureAwait(false);
         if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
@@ -60,35 +64,35 @@ public class MusicComponents : SlashModuleBase
     public async Task SkipAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.PlayNextTrackAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        await _audioService.PlayNextTrackAsync(Context.Guild, Context.User).ConfigureAwait(false);
     }
 
     [ComponentInteraction("previous")]
     public async Task GoBackAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.PlayPreviousTrackAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        await _audioService.PlayPreviousTrackAsync(Context.Guild, Context.User).ConfigureAwait(false);
     }
 
     [ComponentInteraction("repeat")]
     public async Task ToggleLoopAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.ToggleRepeatAsync(Context.Guild).ConfigureAwait(false);
+        await _audioService.ToggleRepeatAsync(Context.Guild).ConfigureAwait(false);
     }    
     
     [ComponentInteraction("autoplay")]
     public async Task ToggleAutoplayAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.ToggleAutoplayAsync(Context.Guild).ConfigureAwait(false);
+        await _audioService.ToggleAutoplayAsync(Context.Guild).ConfigureAwait(false);
     }
 
     [ComponentInteraction("clearfilters")]
     public async Task ClearFiltersAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await AudioService.ClearFiltersAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        var embed = await _audioService.ClearFiltersAsync(Context.Guild, Context.User).ConfigureAwait(false);
         if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 }

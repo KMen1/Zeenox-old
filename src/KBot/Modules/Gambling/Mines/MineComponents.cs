@@ -16,7 +16,7 @@ public class MineComponents : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var game = _minesService.GetGame(id);
-        if (game.User.Id != Context.User.Id) return;
+        if (game?.User.Id != Context.User.Id) return;
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }
 }

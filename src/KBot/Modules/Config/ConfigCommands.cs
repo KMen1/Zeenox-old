@@ -14,7 +14,13 @@ public class Announcements : SlashModuleBase
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.WelcomeChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync(channel is null ? "Welcome messages disabled!" :"Channel set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Welcome messages will no longer be sent**"
+                : $"**Welcome messages will be sent in channel {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("autorole", "Set the auto-role for new members")]
@@ -22,15 +28,26 @@ public class Announcements : SlashModuleBase
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.WelcomeRoleId = role?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync(role is null ? "Auto role disabled!" : "Role set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(role is null ? Color.Red : Color.Green)
+            .WithDescription(role is null
+                ? "**New members will no longer be assigned a role when they join**"
+                : $"**New members will get {role.Mention} role when they join**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("leave", "Set the leave message channel")]
     public async Task SetLeaveAsync(ITextChannel? channel = null)
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.LeaveChannelId = channel?.Id ?? 0)
-            .ConfigureAwait(false);
-        await RespondAsync(channel is null ? "Goodbye messages disabled!" : "Channel set!", ephemeral: true).ConfigureAwait(false);
+            .ConfigureAwait(false);var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Goodbye messages will no longer be sent**"
+                : $"**Goodbye messages will be sent in channel {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("ban", "Set the ban message channel")]
@@ -38,7 +55,13 @@ public class Announcements : SlashModuleBase
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.BanChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync(channel is null ? "Ban messages disabled!" : "Channel set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Ban messages will no longer be sent**"
+                : $"**Ban messages will be sent in channel {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("unban", "Set the unban message channel")]
@@ -46,7 +69,13 @@ public class Announcements : SlashModuleBase
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.UnbanChannelId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync(channel is null ? "Unban messages disabled!" : "Channel set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Unban messages will no longer be sent**"
+                : $"**Unban messages will be sent in channel {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 }
 
@@ -59,7 +88,13 @@ public class TemporaryVoice : SlashModuleBase
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.TemporaryVoiceCategoryId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync(channel is null ? "Temporary voice channels disabled!" : "Category set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Temporary voice channels disabled**"
+                : $"**Temporary voice channel category set to {channel.Name}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("channel", "Set the channel for creating temporary voice channels")]
@@ -67,6 +102,12 @@ public class TemporaryVoice : SlashModuleBase
     {
         await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.TemporaryVoiceCreateId = channel?.Id ?? 0)
             .ConfigureAwait(false);
-        await RespondAsync(channel is null ? "Temporary voice channels disabled!" : "Channel set!", ephemeral: true).ConfigureAwait(false);
+        var eb = new EmbedBuilder()
+            .WithColor(channel is null ? Color.Red : Color.Green)
+            .WithDescription(channel is null
+                ? "**Temporary voice channels disabled**"
+                : $"**Temporary voice channels can now be created by joining {channel.Mention}**")
+            .Build();
+        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
     }
 }
