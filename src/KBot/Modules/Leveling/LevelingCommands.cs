@@ -30,7 +30,7 @@ public class LevelingCommands : SlashModuleBase
             .WithColor(Color.Gold)
             .AddField("🆙 Level", $"`{dbUser.Level.ToString(CultureInfo.InvariantCulture)}`")
             .AddField("➡ XP/Required",
-                $"`{dbUser.Xp.ToString("N0", CultureInfo.InvariantCulture)}/{dbUser.RequiredXp.ToString(CultureInfo.InvariantCulture)}`")
+                $"`{dbUser.Xp.ToString("N0", CultureInfo.InvariantCulture)}/{dbUser.RequiredXp.ToString("N0", CultureInfo.InvariantCulture)}`")
             .Build();
 
         await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);

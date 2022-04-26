@@ -91,7 +91,7 @@ public class MongoService : IInjectable
     {
         var dbUser = await GetUserAsync(user).ConfigureAwait(false);
         action(dbUser);
-        await _userCollection.ReplaceOneAsync(x => x.GuildId == user.Guild.Id && x.UserId == user.Id, dbUser)
+        await _userCollection.ReplaceOneAsync(x => x.UniqueId == dbUser.UniqueId, dbUser)
             .ConfigureAwait(false);
         return dbUser;
     }

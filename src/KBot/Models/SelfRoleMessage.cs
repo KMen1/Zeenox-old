@@ -81,6 +81,6 @@ public class SelfRole
 
     [BsonElement("role_id")] public ulong RoleId { get; set; }
     [BsonElement("title")] public string Title { get; set; }
-    [BsonElement("title")] public string? Description { get; set; }
+    [BsonElement("description")] public string? Description { get; set; }
     [BsonElement("emote")] public string Emote { get; set; }
 }

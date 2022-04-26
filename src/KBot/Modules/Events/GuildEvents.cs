@@ -94,7 +94,7 @@ public class GuildEvents : IInjectable
         if (config.WelcomeChannelId == 0) return;
         var channel = user.Guild.GetTextChannel(config.WelcomeChannelId);
         var eb = new EmbedBuilder()
-            .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
+            .WithAuthor($"{user.Username}#{user.Discriminator}", user.GetAvatarUrl())
             .WithColor(Color.Green)
             .WithDescription($"Welcome to **{user.Guild.Name}** {user.Mention}!\n" +
                              $"You are the **{user.Guild.Users.Count.Ordinalize(CultureInfo.InvariantCulture)}** member!\n" +
@@ -113,7 +113,7 @@ public class GuildEvents : IInjectable
         if (await guild.GetBanAsync(user).ConfigureAwait(false) is not null) return;
         var channel = guild.GetTextChannel(config.LeaveChannelId);
         var eb = new EmbedBuilder()
-            .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
+            .WithAuthor($"{user.Username}#{user.Discriminator}", user.GetAvatarUrl())
             .WithColor(Color.Red)
             .WithDescription($"{user.Mention} left the server!\n" +
                              $"Account created: **{user.CreatedAt.Humanize()}**")
@@ -136,7 +136,7 @@ public class GuildEvents : IInjectable
 
         var channel = guild.GetTextChannel(config.BanChannelId);
         var eb = new EmbedBuilder()
-            .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
+            .WithAuthor($"{user.Username}#{user.Discriminator}", user.GetAvatarUrl())
             .WithColor(Color.Red)
             .WithDescription($"**{user.Mention}** has been banned!\n" +
                              $"Account created: **{user.CreatedAt.Humanize()}**")
@@ -155,7 +155,7 @@ public class GuildEvents : IInjectable
         if (config.UnbanChannelId == 0) return;
         var channel = guild.GetTextChannel(config.UnbanChannelId);
         var eb = new EmbedBuilder()
-            .WithAuthor($"{user.Username}#{user.DiscriminatorValue}", user.GetAvatarUrl())
+            .WithAuthor($"{user.Username}#{user.Discriminator}", user.GetAvatarUrl())
             .WithColor(Color.Green)
             .WithDescription($"{user.Mention} has been unbanned!\n" +
                              $"Account created: **{user.CreatedAt.Humanize()}**")

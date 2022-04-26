@@ -43,11 +43,11 @@ public static class EmbedBuilderExtensions
             .WithColor(color == default ? Color.Gold : color)
             .WithImageUrl(game.GetTablePicUrl())
             .AddField("Higher",
-                $"Multiplier: **{game.HighMultiplier.ToString("0.00", CultureInfo.InvariantCulture)}**\n" +
-                $"Prize: **{game.HighStake.ToString("N0", CultureInfo.InvariantCulture)}**", true)
+                $"Multiplier: **{game.HighMultiplier.ToString("0.00", CultureInfo.InvariantCulture)}x**\n" +
+                $"Prize: **{game.HighStake.ToString("N0", CultureInfo.InvariantCulture)} credits**", true)
             .AddField("Lower",
-                $"Multiplier: **{game.LowMultiplier.ToString("0.00", CultureInfo.InvariantCulture)}**\n" +
-                $"Prize: **{game.LowStake.ToString("N0", CultureInfo.InvariantCulture)}**", true)
+                $"Multiplier: **{game.LowMultiplier.ToString("0.00", CultureInfo.InvariantCulture)}x**\n" +
+                $"Prize: **{game.LowStake.ToString("N0", CultureInfo.InvariantCulture)} credits**", true)
             .Build();
     }
 

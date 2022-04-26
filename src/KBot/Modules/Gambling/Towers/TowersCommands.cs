@@ -64,7 +64,7 @@ public class TowersCommands : SlashModuleBase
                 .WithColor(Color.Red)
                 .WithDescription("**No game found with that id.**")
                 .Build();
-            await RespondAsync(embed: sEb).ConfigureAwait(false);
+            await RespondAsync(embed: sEb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 
@@ -74,11 +74,11 @@ public class TowersCommands : SlashModuleBase
                 .WithColor(Color.Red)
                 .WithDescription("**You can't stop another players game!**")
                 .Build();
-            await RespondAsync(embed: sEb).ConfigureAwait(false);
+            await RespondAsync(embed: sEb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 
-        await DeferAsync().ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
         var eb = new EmbedBuilder()
             .WithColor(Color.Green)
             .WithDescription("**Stopped.**")

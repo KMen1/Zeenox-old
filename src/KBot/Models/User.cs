@@ -21,7 +21,6 @@ public class User
         Xp = 0;
         Level = 1;
         DailyXpClaim = DateTime.MinValue;
-        VoiceChannelJoin = DateTime.MinValue;
         Roles = new List<ulong>();
         Roles.AddRange(user.Roles.Select(x => x.Id));
         Balance = 1000;
@@ -44,7 +43,6 @@ public class User
     [BsonElement("level")] public int Level { get; set; }
     [BsonElement("osu_id")] public ulong OsuId { get; set; }
     [BsonElement("daily_xp_claim")] public DateTime DailyXpClaim { get; set; }
-    [BsonElement("voice_channel_join")] public DateTime VoiceChannelJoin { get; set; }
     [BsonElement("roles")] public List<ulong> Roles { get; set; }
 
     [BsonElement("balance")] public int Balance { get; set; }
@@ -70,13 +68,7 @@ public class User
     [BsonElement("game_result_ids")] public List<string> GameResultIds { get; set; }
     [BsonElement("warn_ids")] public List<string> WarnIds { get; set; }
     [BsonIgnore] public double WinRate => Math.Round(Wins / (double) GamesPlayed * 100, 2);
-
-    public int MoneyToBuyLevel(int level)
-    {
-        var total = 0;
-        for (var i = 0; i < level; i++) total += (int) Math.Pow((Level + i) * 4, 2);
-        return (int) Math.Round((decimal) (total * 2) - Xp);
-    }
+    [BsonIgnore] public int MoneyToBuyNextLevel => RequiredXp * 100;
 
     public EmbedBuilder ToEmbedBuilder(IUser user)
     {

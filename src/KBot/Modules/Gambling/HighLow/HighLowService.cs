@@ -236,10 +236,10 @@ public sealed class HighLowGame : IGame
             ? player.Height
             : dealer.Height;
 
-        var bitmap = new Bitmap(165, height);
+        var bitmap = new Bitmap(200, height);
         using var g = Graphics.FromImage(bitmap);
         g.DrawImage(player, 0, 0);
-        g.DrawImage(dealer, 90, 0);
+        g.DrawImage(dealer, 120, 0);
         return bitmap;
     }
 

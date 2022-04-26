@@ -56,9 +56,19 @@ public class CrashCommands : SlashModuleBase
     [ComponentInteraction("crash:*")]
     public async Task StopCrashGameAsync(string id)
     {
-        await DeferAsync().ConfigureAwait(false);
         var game = _crashService.GetGame(id);
-        if (Context.User.Id != game?.User.Id)
+        if (game is null)
+        {
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Game not found!**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        await DeferAsync().ConfigureAwait(false);
+        if (Context.User.Id != game.User.Id)
             return;
         await _crashService.StopGameAsync(id).ConfigureAwait(false);
     }

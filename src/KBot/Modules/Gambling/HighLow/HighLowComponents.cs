@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 
 namespace KBot.Modules.Gambling.HighLow;
@@ -36,7 +37,18 @@ public class HighLowComponents : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var game = _highLowService.GetGame(Id);
-        if (game?.User.Id != Context.User.Id) return;
+        if (game is null)
+        {
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Game not found!**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        await DeferAsync().ConfigureAwait(false);
+        if (game.User.Id != Context.User.Id) return;
 
         await game.FinishAsync().ConfigureAwait(false);
     }

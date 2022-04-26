@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 
 namespace KBot.Modules.Gambling.Towers;
@@ -17,7 +18,19 @@ public class TowersComponents : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var game = _towersService.GetGame(id);
-        if (game?.User.Id != Context.User.Id)
+        
+        if (game is null)
+        {
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Game not found!**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        await DeferAsync().ConfigureAwait(false);
+        if (game.User.Id != Context.User.Id)
             return;
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }

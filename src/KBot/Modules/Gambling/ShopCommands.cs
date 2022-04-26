@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
@@ -15,9 +14,6 @@ namespace KBot.Modules.Gambling;
 [Group("shop", "Stuff to buy with your money")]
 public class ShopCommands : SlashModuleBase
 {
-    private const int CategoryPrice = 150000000;
-    private const int VoicePrice = 150000000;
-    private const int TextPrice = 125000000;
     private const int RolePrice = 100000000;
     private readonly InteractiveService _interactive;
 
@@ -27,19 +23,18 @@ public class ShopCommands : SlashModuleBase
     }
 
 
-    [SlashCommand("level", "Buy extra levels")]
-    public async Task BuyLevelAsync([MinValue(1)] [MaxValue(10)] int amount)
+    [SlashCommand("level", "Buy one level")]
+    public async Task BuyLevelAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
-        var required = dbUser.MoneyToBuyLevel(amount);
+        var required = dbUser.MoneyToBuyNextLevel;
 
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
-            .AddField("Levels", $"`{amount.ToString(CultureInfo.InvariantCulture)}`", true)
-            .AddField("Price", $"`{required.ToString(CultureInfo.InvariantCulture)}`", true);
+            .WithDescription($"Balance: `{dbUser.Balance.ToString("N0", CultureInfo.InvariantCulture)}`")
+            .AddField("Price", $"`{required.ToString("N0", CultureInfo.InvariantCulture)}`", true);
 
         if (dbUser.Balance < required)
         {
@@ -73,12 +68,11 @@ public class ShopCommands : SlashModuleBase
         await Mongo.AddTransactionAsync(new Transaction(
             id,
             TransactionType.LevelPurchase,
-            -required,
-            $"{amount}"), (SocketGuildUser) Context.User).ConfigureAwait(false);
+            -required), (SocketGuildUser) Context.User).ConfigureAwait(false);
         await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x =>
         {
             x.Balance -= required;
-            x.Level += amount;
+            x.Level++;
         }).ConfigureAwait(false);
 
         await ModifyOriginalResponseAsync(x =>
@@ -98,9 +92,9 @@ public class ShopCommands : SlashModuleBase
         var eb = new EmbedBuilder()
             .WithTitle("Shop")
             .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
+            .WithDescription($"Balance: `{dbUser.Balance.ToString("N0", CultureInfo.InvariantCulture)}`")
             .AddField("Role", $"`{name}`", true)
-            .AddField("Price", $"`{RolePrice.ToString(CultureInfo.InvariantCulture)}`", true);
+            .AddField("Price", $"`{RolePrice.ToString("N0", CultureInfo.InvariantCulture)}`", true);
 
         if (dbUser.Balance < RolePrice)
         {
@@ -145,7 +139,6 @@ public class ShopCommands : SlashModuleBase
             .ConfigureAwait(false);
         await ((SocketGuildUser) Context.User).AddRoleAsync(role).ConfigureAwait(false);
 
-
         await Mongo.AddTransactionAsync(new Transaction(
             id,
             TransactionType.RolePurchase,
@@ -160,212 +153,6 @@ public class ShopCommands : SlashModuleBase
         await ModifyOriginalResponseAsync(x =>
         {
             x.Embed = eb.WithDescription($"Successful purchase! 😎\nRemaining Balance: `{dbUser.Balance - RolePrice}`")
-                .WithColor(Color.Green).Build();
-            x.Components = new ComponentBuilder().Build();
-        }).ConfigureAwait(false);
-    }
-
-    [SlashCommand("category", "Buy your own category")]
-    public async Task BuyCategoryAsync(string name)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
-
-        var eb = new EmbedBuilder()
-            .WithTitle("Shop")
-            .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
-            .AddField("Category", $"`{name}`", true)
-            .AddField("Price", $"`{CategoryPrice.ToString(CultureInfo.InvariantCulture)}`", true);
-
-        if (dbUser.Balance < CategoryPrice)
-        {
-            await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
-            return;
-        }
-
-        var id = Guid.NewGuid().ToShortId();
-
-        var comp = new ComponentBuilder()
-            .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
-            .Build();
-
-        await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
-
-        var result = await _interactive
-            .NextMessageComponentAsync(
-                x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase),
-                timeout: TimeSpan.FromMinutes(1))
-            .ConfigureAwait(false);
-
-        if (!result.IsSuccess)
-        {
-            await ModifyOriginalResponseAsync(x =>
-            {
-                x.Embed = eb.WithDescription("Time is up!").WithColor(Color.Red).Build();
-                x.Components = new ComponentBuilder().Build();
-            }).ConfigureAwait(false);
-            return;
-        }
-
-        var category = await Context.Guild.CreateCategoryChannelAsync(name, x =>
-        {
-            x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
-            {
-                new Overwrite(Context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)),
-                new Overwrite(Context.User.Id, PermissionTarget.User,
-                    new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
-            });
-        }).ConfigureAwait(false);
-
-        await Mongo.AddTransactionAsync(new Transaction(
-            id,
-            TransactionType.CategoryPurchase,
-            -CategoryPrice,
-            category.Name), (SocketGuildUser) Context.User).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x => x.Balance -= CategoryPrice)
-            .ConfigureAwait(false);
-
-        await ModifyOriginalResponseAsync(x =>
-        {
-            x.Embed = eb
-                .WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Balance - CategoryPrice}`")
-                .WithColor(Color.Green).Build();
-            x.Components = new ComponentBuilder().Build();
-        }).ConfigureAwait(false);
-    }
-
-    [SlashCommand("text", "Buy your own text channel")]
-    public async Task BuyTextChannelAsync(string name)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
-
-        var eb = new EmbedBuilder()
-            .WithTitle("Shop")
-            .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
-            .AddField("Csatorna", $"`{name}`", true)
-            .AddField("Price", $"`{TextPrice.ToString(CultureInfo.InvariantCulture)}`", true);
-
-        if (dbUser.Balance < TextPrice)
-        {
-            await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
-            return;
-        }
-
-        var id = Guid.NewGuid().ToShortId();
-
-        var comp = new ComponentBuilder()
-            .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
-            .Build();
-
-        await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
-
-        var result = await _interactive
-            .NextMessageComponentAsync(
-                x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase),
-                timeout: TimeSpan.FromMinutes(1))
-            .ConfigureAwait(false);
-
-        if (!result.IsSuccess)
-        {
-            await ModifyOriginalResponseAsync(x =>
-            {
-                x.Embed = eb.WithDescription("Time is up!").WithColor(Color.Red).Build();
-                x.Components = new ComponentBuilder().Build();
-            }).ConfigureAwait(false);
-            return;
-        }
-
-        var channel = await Context.Guild.CreateTextChannelAsync(name, x =>
-        {
-            x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
-            {
-                new Overwrite(Context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)),
-                new Overwrite(Context.User.Id, PermissionTarget.User,
-                    new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
-            });
-        }).ConfigureAwait(false);
-
-        await Mongo.AddTransactionAsync(new Transaction(
-            id,
-            TransactionType.TextPurchase,
-            -TextPrice,
-            channel.Mention), (SocketGuildUser) Context.User).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x => x.Balance -= TextPrice).ConfigureAwait(false);
-
-        await ModifyOriginalResponseAsync(x =>
-        {
-            x.Embed = eb.WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Balance - TextPrice}`")
-                .WithColor(Color.Green).Build();
-            x.Components = new ComponentBuilder().Build();
-        }).ConfigureAwait(false);
-    }
-
-    [SlashCommand("voice", "Buy your own voice channel")]
-    public async Task BuyVoiceChannelAsync(string name)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
-
-        var eb = new EmbedBuilder()
-            .WithTitle("Shop")
-            .WithColor(Color.Gold)
-            .WithDescription($"Balance: `{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}`")
-            .AddField("Channel", $"`{name}`", true)
-            .AddField("Price", $"`{VoicePrice.ToString(CultureInfo.InvariantCulture)}`", true);
-
-        if (dbUser.Balance < VoicePrice)
-        {
-            await FollowupAsync(embed: eb.WithDescription("Insufficient funds! 😭").Build()).ConfigureAwait(false);
-            return;
-        }
-
-        var id = Guid.NewGuid().ToShortId();
-
-        var comp = new ComponentBuilder()
-            .WithButton("Buy", $"shop-buy:{id}", ButtonStyle.Success, new Emoji("🛒"))
-            .Build();
-
-        await FollowupAsync(embed: eb.Build(), components: comp).ConfigureAwait(false);
-
-        var result = await _interactive
-            .NextMessageComponentAsync(
-                x => x.Data.CustomId.Equals($"shop-buy:{id}", StringComparison.OrdinalIgnoreCase),
-                timeout: TimeSpan.FromMinutes(1))
-            .ConfigureAwait(false);
-
-        if (!result.IsSuccess)
-            await ModifyOriginalResponseAsync(x =>
-            {
-                x.Embed = eb.WithDescription("Time is up!").WithColor(Color.Red).Build();
-                x.Components = new ComponentBuilder().Build();
-            }).ConfigureAwait(false);
-
-        var channel = await Context.Guild.CreateVoiceChannelAsync(name, x =>
-        {
-            x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
-            {
-                new Overwrite(Context.Guild.EveryoneRole.Id, PermissionTarget.Role,
-                    new OverwritePermissions(viewChannel: PermValue.Deny)),
-                new Overwrite(Context.User.Id, PermissionTarget.User,
-                    new OverwritePermissions(manageRoles: PermValue.Allow, viewChannel: PermValue.Allow))
-            });
-        }).ConfigureAwait(false);
-
-        await Mongo.AddTransactionAsync(new Transaction(
-            id,
-            TransactionType.VoicePurchase,
-            -VoicePrice,
-            channel.Mention), (SocketGuildUser) Context.User).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x => x.Balance -= VoicePrice).ConfigureAwait(false);
-
-        await ModifyOriginalResponseAsync(x =>
-        {
-            x.Embed = eb.WithDescription($"Successful Purchase! 😎\nRemaining Balance: `{dbUser.Balance - VoicePrice}`")
                 .WithColor(Color.Green).Build();
             x.Components = new ComponentBuilder().Build();
         }).ConfigureAwait(false);

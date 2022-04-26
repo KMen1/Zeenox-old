@@ -9,6 +9,8 @@ using Discord.WebSocket;
 using KBot.Extensions;
 using KBot.Models;
 using KBot.Services;
+using Serilog;
+using StackExchange.Redis;
 
 namespace KBot.Modules.DeadByDaylight;
 
@@ -17,13 +19,13 @@ public class DbDService : IInjectable
     private readonly DiscordSocketClient _client;
     private readonly HttpClient _httpClient;
     private readonly MongoService _mongo;
-    private readonly RedisService _redis;
+    private readonly IConnectionMultiplexer _redis;
 
-    public DbDService(HttpClient httpClient, RedisService redisService, MongoService mongoService,
+    public DbDService(HttpClient httpClient, IConnectionMultiplexer redis, MongoService mongoService,
         DiscordSocketClient client)
     {
         _httpClient = httpClient;
-        _redis = redisService;
+        _redis = redis;
         _mongo = mongoService;
         _client = client;
 
@@ -32,45 +34,59 @@ public class DbDService : IInjectable
 
     private async Task CheckForNewShrinesAsync()
     {
-        var next = DateTime.UtcNow.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).DateTime;
-        await _redis.SetDbdRefreshDateAsync(next).ConfigureAwait(false);
+        const string key = "next_dbd_shrine";
+        var next = DateTime.UtcNow.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
+        await _redis.GetDatabase().StringSetAsync(key, next)
+            .ConfigureAwait(false);
 
         while (true)
         {
-            await Task.Delay(TimeSpan.FromMinutes(1)).ConfigureAwait(false);
-
-            var refreshDate = await _redis.GetDbdRefreshDateAsync().ConfigureAwait(false);
-            if (DateTime.UtcNow < refreshDate) continue;
-
-            var sw = Stopwatch.StartNew();
-            var shrines = await GetShrinesAsync().ConfigureAwait(false);
-            sw.Stop();
-            var channels = new List<ITextChannel>();
-            foreach (var guild in _client.Guilds)
+            await Task.Delay(TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+            try
             {
-                var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
-                if (config.DbdNotificationChannelId == 0) continue;
-                var channel = guild.GetTextChannel(config.DbdNotificationChannelId);
-                if (channel is null) continue;
-                channels.Add(channel);
+                var value = await _redis.GetDatabase().StringGetAsync(key).ConfigureAwait(false);
+                if (value.IsNull) return;
+                if (!value.TryParse(out long nextUnixTime))
+                    return;
+                var refreshDate = DateTimeOffset.FromUnixTimeSeconds(nextUnixTime);
+                
+                if (DateTimeOffset.UtcNow < refreshDate) continue;
+
+                var sw = Stopwatch.StartNew();
+                var shrines = await GetShrinesAsync().ConfigureAwait(false);
+                sw.Stop();
+                var channels = new List<ITextChannel>();
+                foreach (var guild in _client.Guilds)
+                {
+                    var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
+                    if (config.DbdNotificationChannelId == 0) continue;
+                    var channel = guild.GetTextChannel(config.DbdNotificationChannelId);
+                    if (channel is null) continue;
+                    channels.Add(channel);
+                }
+
+                var eb = new EmbedBuilder()
+                    .WithTitle("Shrine of Secrets")
+                    .WithColor(Color.DarkOrange)
+                    .WithDescription($"🏁 <t:{refreshDate.AddDays(7).ToUnixTimeSeconds()}:R>")
+                    .WithFooter($"{sw.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)} ms");
+                foreach (var perk in shrines) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
+
+                foreach (var textChannel in channels)
+                {
+                    await textChannel.SendMessageAsync(embed: eb.Build()).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromSeconds(7)).ConfigureAwait(false);
+                }
+
+                
+                next = DateTime.UtcNow.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
+                await _redis.GetDatabase().StringSetAsync(key, next)
+                    .ConfigureAwait(false);
             }
-
-            var eb = new EmbedBuilder()
-                .WithTitle("Shrine of Secrets")
-                .WithColor(Color.DarkOrange)
-                .WithDescription($"🏁 <t:{refreshDate.AddDays(7).ToUnixTimeStamp()}:R>")
-                .WithFooter($"{sw.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)} ms");
-            foreach (var perk in shrines) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
-
-            foreach (var textChannel in channels)
+            catch (Exception e)
             {
-                await textChannel.SendMessageAsync(embed: eb.Build()).ConfigureAwait(false);
-                await Task.Delay(TimeSpan.FromSeconds(7)).ConfigureAwait(false);
+                Log.Logger.Error(e, "Error in DBD loop");
             }
-
-            await _redis
-                .SetDbdRefreshDateAsync(DateTime.UtcNow.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).DateTime)
-                .ConfigureAwait(false);
         }
     }
 
