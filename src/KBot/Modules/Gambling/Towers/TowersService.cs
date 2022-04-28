@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -9,6 +10,7 @@ using KBot.Enums;
 using KBot.Extensions;
 using KBot.Models;
 using KBot.Services;
+using Serilog;
 
 namespace KBot.Modules.Gambling.Towers;
 
@@ -86,23 +88,27 @@ public sealed class TowersGame : IGame
         Bet = bet;
         Difficulty = difficulty;
         Fields = new List<Field>();
-        var rand = new Random();
         for (var x = 5; x > 0; x--)
         {
             var row = new List<Field>();
             for (var y = Columns; y > 0; y--)
                 row.Add(new Field
                 {
-                    X = x, Y = y, IsMine = false, Label = $"{Math.Round(Bet * x * Multiplier)}", Emoji = new Emoji("🪙")
+                    X = x,
+                    Y = y,
+                    IsMine = false,
+                    Label = $"{Math.Round(Bet * x * Multiplier).ToString("N0", CultureInfo.InvariantCulture)}",
+                    Prize = (int)Math.Round(Bet * x * Multiplier),
+                    Emoji = new Emoji("🪙")
                 });
 
-            while (row.Count(z => z.IsMine) < Mines)
+            for (var i = 0; i < Mines; i++)
             {
-                var index = rand.Next(0, row.Count);
+                var index = RandomNumberGenerator.GetInt32(0, row.Count);
+                while (row[index].IsMine) index = RandomNumberGenerator.GetInt32(0, row.Count);
                 var orig = row[index];
-                row[index] = orig with {IsMine = true, Emoji = new Emoji("💣")};
+                row[index] = orig with {Emoji = new Emoji("💣"), IsMine = true};
             }
-
             Fields.AddRange(row);
         }
     }
@@ -161,7 +167,7 @@ public sealed class TowersGame : IGame
             return;
         }
 
-        Prize = (int) Math.Round(Bet * Multiplier) - Bet;
+        Prize = point.Prize;
 
         if (x == 5)
         {
@@ -173,13 +179,14 @@ public sealed class TowersGame : IGame
                 .ConfigureAwait(false);
             OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Prize, "Towers: WIN", true));
         }
-
+        
         var comp = new ComponentBuilder();
         var index = Fields.FindIndex(f => f.X == x);
         var orig = Fields[index];
-        Fields[index] = orig with {Disabled = true};
-        Fields[index + 1] = orig with {Disabled = true, Y = orig.Y - 1};
-        Fields[index + 2] = orig with {Disabled = true, Y = orig.Y - 2};
+        for (var i = 0; i < Columns; i++)
+        {
+            Fields[index + i] = orig with {Disabled = true, Y = orig.Y - i, Emoji = Fields[index + i].Emoji};
+        }
         for (var i = 5; i > 0; i--)
         {
             var row = new ActionRowBuilder();
@@ -243,6 +250,7 @@ internal struct Field
     public bool IsMine { get; set; }
     public Emoji Emoji { get; set; }
     public string Label { get; set; }
+    public int Prize { get; set; }
     public bool Disabled { get; set; }
 }
 

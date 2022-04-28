@@ -20,8 +20,8 @@
         <PackageProjectUrl>https://github.com/KMen1/KBot</PackageProjectUrl>
         <Configurations>Debug;Release</Configurations>
         <PackageVersion>3.2.0.2</PackageVersion>
-        <AssemblyVersion>3.8.0.6</AssemblyVersion>
-        <FileVersion>3.8.0.6</FileVersion>
+        <AssemblyVersion>3.8.0.8</AssemblyVersion>
+        <FileVersion>3.8.0.8</FileVersion>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
         <LangVersion>latestmajor</LangVersion>
