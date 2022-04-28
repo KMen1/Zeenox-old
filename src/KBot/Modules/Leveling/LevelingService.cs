@@ -84,7 +84,7 @@ public class LevelingService : IInjectable
                         .WithColor(Color.Gold)
                         .WithDescription($"**🎉 Congrats {user.Mention}, you reached level {level}! 🎉**")
                         .Build();
-                    await channel.SendMessageAsync(embed: eb)
+                    await channel.SendMessageAsync(user.Mention, embed: eb)
                         .ConfigureAwait(false);
                 }
             }

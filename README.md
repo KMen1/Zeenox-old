@@ -1,5 +1,13 @@
-# KBot
-
+<table>
+   <tr>
+      <td>
+         <img src="https://loathsome-condition.000webhostapp.com/icon.png" style="margin: 0px; padding: 0px;" width="50" height="50">
+      </td>
+      <td>
+         <p style="font-size: 50px; margin: 0px 0px 13px 0px; padding: 0px;">KBot</p>
+      </td>
+   </tr>
+</table>
 
 [![Discord](https://discordapp.com/api/guilds/863751874922676234/widget.png)](https://discord.gg/hGxaMkfMBR)
 [![License](https://img.shields.io/github/license/kmen1/kbot)](https://github.com/KMen1/KBot/blob/master/LICENSE)
