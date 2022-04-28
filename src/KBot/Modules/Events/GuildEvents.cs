@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace KBot.Modules.Events;
 
 public class GuildEvents : IInjectable
 {
-    private readonly List<(SocketUser user, ulong channelId)> _channels;
+    private readonly List<(SocketGuildUser user, ulong channelId)> _channels;
     private readonly DiscordSocketClient _client;
     private readonly MongoService _mongo;
 
@@ -26,8 +27,37 @@ public class GuildEvents : IInjectable
         client.UserBanned += AnnounceUserBannedAsync;
         client.UserUnbanned += AnnounceUserUnbannedAsync;
         client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
-        _channels = new List<(SocketUser user, ulong channelId)>();
-        Log.Logger.Information("GuildEvents Module Loaded");
+        _channels = new List<(SocketGuildUser user, ulong channelId)>();
+        Task.Run(DeleteChannelsAsync);
+    }
+
+    private async Task DeleteChannelsAsync()
+    {
+        while (true)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            try
+            {
+                foreach (var (user, channelId) in _channels)
+                {
+                    var channel = user.Guild.GetVoiceChannel(channelId);
+                    if (channel is null)
+                    {
+                        _channels.Remove((user, channelId));
+                        continue;
+                    }
+                
+                    if (channel.Users.Count > 0) continue;
+                
+                    await channel.DeleteAsync().ConfigureAwait(false);
+                    _channels.Remove((user, channelId));
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error(e, "Error in temporary channel deletion");
+            }
+        }
     }
 
     private async Task OnUserVoiceStateUpdatedAsync(SocketUser argUser, SocketVoiceState before, SocketVoiceState after)
@@ -42,7 +72,7 @@ public class GuildEvents : IInjectable
 
         if (after.VoiceChannel is not null && after.VoiceChannel.Id == config.TemporaryVoiceCreateId)
         {
-            var voiceChannel = await guild.CreateVoiceChannelAsync($"{user.Username} Társalgója", x =>
+            var voiceChannel = await guild.CreateVoiceChannelAsync($"{user.Username}'s Voice", x =>
             {
                 x.UserLimit = 2;
                 x.CategoryId = config.TemporaryVoiceCategoryId;
@@ -50,8 +80,7 @@ public class GuildEvents : IInjectable
                 x.PermissionOverwrites = new Optional<IEnumerable<Overwrite>>(new[]
                 {
                     new Overwrite(user.Id, PermissionTarget.User,
-                        new OverwritePermissions(connect: PermValue.Allow, manageRoles: PermValue.Allow,
-                            moveMembers: PermValue.Allow)),
+                        new OverwritePermissions(connect: PermValue.Allow, moveMembers: PermValue.Allow, manageChannel: PermValue.Allow)),
                     new Overwrite(guild.EveryoneRole.Id, PermissionTarget.Role,
                         new OverwritePermissions(connect: PermValue.Allow)),
                     new Overwrite(_client.CurrentUser.Id, PermissionTarget.User,
@@ -61,12 +90,6 @@ public class GuildEvents : IInjectable
             }).ConfigureAwait(false);
             await user.ModifyAsync(x => x.Channel = voiceChannel).ConfigureAwait(false);
             _channels.Add((user, voiceChannel.Id));
-        }
-        else if (before.VoiceChannel is not null && _channels.Contains((user, before.VoiceChannel.Id)))
-        {
-            var (puser, channelId) = _channels.First(x => x.user == user && x.channelId == before.VoiceChannel.Id);
-            await guild.GetVoiceChannel(channelId).DeleteAsync().ConfigureAwait(false);
-            _channels.Remove((puser, channelId));
         }
     }
 
@@ -98,7 +121,7 @@ public class GuildEvents : IInjectable
             .WithColor(Color.Green)
             .WithDescription($"Welcome to **{user.Guild.Name}** {user.Mention}!\n" +
                              $"You are the **{user.Guild.Users.Count.Ordinalize(CultureInfo.InvariantCulture)}** member!\n" +
-                             $"Account created: **{user.CreatedAt.Humanize()}**")
+                             $"Account created: **<t:{user.CreatedAt.ToUnixTimeSeconds()}:R>**")
             .WithCurrentTimestamp()
             .WithThumbnailUrl(user.GetAvatarUrl())
             .Build();
@@ -116,7 +139,7 @@ public class GuildEvents : IInjectable
             .WithAuthor($"{user.Username}#{user.Discriminator}", user.GetAvatarUrl())
             .WithColor(Color.Red)
             .WithDescription($"{user.Mention} left the server!\n" +
-                             $"Account created: **{user.CreatedAt.Humanize()}**")
+                             $"Account created: **<t:{user.CreatedAt.ToUnixTimeSeconds()}:R>**")
             .WithCurrentTimestamp()
             .WithThumbnailUrl(user.GetAvatarUrl())
             .Build();
@@ -139,7 +162,7 @@ public class GuildEvents : IInjectable
             .WithAuthor($"{user.Username}#{user.Discriminator}", user.GetAvatarUrl())
             .WithColor(Color.Red)
             .WithDescription($"**{user.Mention}** has been banned!\n" +
-                             $"Account created: **{user.CreatedAt.Humanize()}**")
+                             $"Account created: **<t:{user.CreatedAt.ToUnixTimeSeconds()}:R>**")
             .AddField("Banned by", $"{admin.Mention}", true)
             .AddField("Reason", reason is not null ? $"`{reason}`" : "`No reason given.`", true)
             .WithCurrentTimestamp()
@@ -158,7 +181,7 @@ public class GuildEvents : IInjectable
             .WithAuthor($"{user.Username}#{user.Discriminator}", user.GetAvatarUrl())
             .WithColor(Color.Green)
             .WithDescription($"{user.Mention} has been unbanned!\n" +
-                             $"Account created: **{user.CreatedAt.Humanize()}**")
+                             $"Account created: **<t:{user.CreatedAt.ToUnixTimeSeconds()}:R>**")
             .WithCurrentTimestamp()
             .WithThumbnailUrl(user.GetAvatarUrl())
             .Build();

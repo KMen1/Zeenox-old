@@ -68,7 +68,7 @@ public class GamblingCommands : SlashModuleBase
             .WithTitle($"Transaction - {transaction.Id}")
             .WithColor(Color.Blue)
             .AddField("Date", transaction.Date.ToString("G", CultureInfo.InvariantCulture), true)
-            .AddField("Amount", $"`{transaction.Amount:N1}`", true)
+            .AddField("Amount", $"`{transaction.Amount.ToString("N0", CultureInfo.InvariantCulture)}`", true)
             .AddField("Type", $"`{transaction.Source.GetDescription()}`", true);
 
         if (transaction.From is not null)
@@ -127,24 +127,25 @@ public class GamblingCommands : SlashModuleBase
         var id = Guid.NewGuid().ToShortId();
         await Mongo.AddTransactionAsync(new Transaction(
             id,
-            TransactionType.TransferSend,
-            -amount,
-            null,
-            Context.User.Id,
-            user.Id), (SocketGuildUser) Context.User).ConfigureAwait(false);
-        await Mongo.AddTransactionAsync(new Transaction(
-            id,
-            TransactionType.TransferReceive,
+            TransactionType.Transfer,
             amount,
             null,
             Context.User.Id,
-            user.Id), user).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x => x.Balance -= amount).ConfigureAwait(false);
-        await Mongo.UpdateUserAsync(user, x => x.Balance += amount).ConfigureAwait(false);
+            user.Id), null).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x =>
+        {
+            x.Balance -= amount;
+            x.TransactionIds.Add(id);
+        }).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync(user, x =>
+        {
+            x.Balance += amount;
+            x.TransactionIds.Add(id);
+        }).ConfigureAwait(false);
         var eb = new EmbedBuilder()
             .WithTitle("Transfer successful!")
             .WithColor(Color.Green)
-            .AddField("Amount", $"`{amount}`", true)
+            .AddField("Amount", $"`{amount.ToString("N0", CultureInfo.InvariantCulture)}`", true)
             .AddField("To", $"{user.Mention}", true)
             .Build();
         await FollowupAsync(embed: eb).ConfigureAwait(false);

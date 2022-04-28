@@ -23,7 +23,6 @@ public class LevelingService : IInjectable
         _redis = redis;
         client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
         client.MessageReceived += OnMessageReceivedAsync;
-        Log.Logger.Information("Leveling Module Loaded");
         Task.Run(CheckForLevelUpAsync);
     }
 
@@ -110,8 +109,8 @@ public class LevelingService : IInjectable
                 return;
             var rate = new Random().NextDouble();
             var msgLength = message.Content.Length;
-            var pointsToGive = (int) Math.Floor(rate * 100 + (int)Math.Round((decimal)msgLength / 2));
-            if (message.Content.Length > 1000)
+            var pointsToGive = (int) Math.Floor(rate * msgLength);
+            if (pointsToGive > 1000)
                 pointsToGive = 1000;
             _xpQueue.Enqueue((user, pointsToGive));
         }).ConfigureAwait(false);
@@ -124,11 +123,11 @@ public class LevelingService : IInjectable
 
         _ = Task.Run(() =>
         {
-            if (before.VoiceChannel != null)
+            if (before.VoiceChannel is not null)
                 ScanChannelForVoiceXp(before.VoiceChannel);
-            if (after.VoiceChannel != null && after.VoiceChannel != before.VoiceChannel)
+            if (after.VoiceChannel is not null && after.VoiceChannel != before.VoiceChannel)
                 ScanChannelForVoiceXp(after.VoiceChannel);
-            else if (after.VoiceChannel == null)
+            else if (after.VoiceChannel is null)
                 UserLeftVoiceChannel(user);
         });
         return Task.CompletedTask;

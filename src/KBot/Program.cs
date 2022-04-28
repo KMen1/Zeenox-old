@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -40,6 +38,7 @@ public static class Program
     private static Task Main()
     {
         Log.Logger = new LoggerConfiguration()
+            .Enrich.FromLogContext()
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
             .WriteTo.Console()
@@ -132,11 +131,11 @@ public static class Program
                     ApplicationName = "KBot"
                 });
                 services.AddSingleton<YouTubeService>();
-                services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(new ConfigurationOptions()
+                services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(new ConfigurationOptions
                 {
-                    EndPoints = { "redis-15978.c135.eu-central-1-1.ec2.cloud.redislabs.com:15978" },
-                    Password = "5k0wjJKEdYriKtSyo5ZG9F6ohg0VBADT"
-                }));
+                    EndPoints = {config.Redis.Endpoint},
+                    Password = config.Redis.Password
+                })); 
             })
             .UseSerilog()
             .UseConsoleLifetime()

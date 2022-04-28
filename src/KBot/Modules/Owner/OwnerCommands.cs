@@ -27,7 +27,7 @@ public class OwnerCommands : SlashModuleBase
             WindowStyle = ProcessWindowStyle.Normal,
             FileName = $"C:\\KBot\\{version}\\KBot.exe"
         };
-        await RespondAsync("A bot újraindult.").ConfigureAwait(false);
+        await RespondAsync("Restarted", ephemeral: true).ConfigureAwait(false);
         Process.Start(pInfo);
         Environment.Exit(0);
     }

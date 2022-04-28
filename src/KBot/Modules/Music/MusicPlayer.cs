@@ -212,8 +212,19 @@ public class MusicPlayer : LavalinkPlayer
     public override async Task OnTrackExceptionAsync(TrackExceptionEventArgs eventArgs)
     {
         await StopAsync().ConfigureAwait(false);
-        Queue.RemoveAt(0);
-        await PlayAsync(Queue[0]).ConfigureAwait(false);
+        if (Queue.Count >= 1)
+        {
+            await PlayAsync(Queue[0]).ConfigureAwait(false);
+            Queue.RemoveAt(0);
+            return;
+        }
+
+        var eb = new EmbedBuilder()
+            .WithDescription("**Error occured during playback of current track.**")
+            .WithColor(Color.Red)
+            .Build();
+        await NowPlayingMessage.Channel.SendMessageAsync(embed: eb).ConfigureAwait(false);
+        
         await base.OnTrackExceptionAsync(eventArgs).ConfigureAwait(false);
     }
 

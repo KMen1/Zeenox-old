@@ -160,10 +160,12 @@ public class RedisConfig
     {
     }
 
-    public RedisConfig(string endpoint)
+    public RedisConfig(string endpoint, string password)
     {
         Endpoint = endpoint;
+        Password = password;
     }
 
     public string Endpoint { get; init; }
+    public string Password { get; init; }
 }

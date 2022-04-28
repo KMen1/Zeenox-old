@@ -8,8 +8,10 @@ using Google.Apis.YouTube.v3;
 using KBot.Enums;
 using KBot.Extensions;
 using Lavalink4NET;
+using Lavalink4NET.Logging;
 using Lavalink4NET.Player;
 using Lavalink4NET.Rest;
+using Serilog;
 
 namespace KBot.Modules.Music;
 
@@ -42,7 +44,33 @@ public class MusicService : IInjectable
     {
         _lavaNode = lavaNode;
         _youtubeService = youtubeService;
+        ((EventLogger)_lavaNode.Logger!).LogMessage += LogLava;
         client.Ready += async () => await _lavaNode.InitializeAsync().ConfigureAwait(false);
+    }
+
+    private static void LogLava(object? sender, LogMessageEventArgs arg)
+    {
+        switch (arg.Level)
+        {
+            case LogLevel.Error:
+                Log.Logger.Error(arg.Exception, arg.Message);
+                break;
+            case LogLevel.Warning:
+                Log.Logger.Error(arg.Exception, arg.Message);
+                break;
+            case LogLevel.Information:
+                Log.Logger.Information(arg.Exception, arg.Message);
+                break;
+            case LogLevel.Trace:
+                Log.Logger.Verbose(arg.Exception, arg.Message);
+                break;
+            case LogLevel.Debug:
+                Log.Logger.Debug(arg.Exception, arg.Message);
+                break;
+            default:
+                Log.Logger.Information(arg.Exception, arg.Message);
+                break;
+        }
     }
 
     public bool IsPlayingInGuild(IGuild guild)

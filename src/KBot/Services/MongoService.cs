@@ -158,9 +158,11 @@ public class MongoService : IInjectable
         _cache.Remove(guild.Id.ToString(CultureInfo.InvariantCulture));
     }
 
-    public async Task AddTransactionAsync(Transaction transaction, SocketGuildUser user)
+    public async Task AddTransactionAsync(Transaction transaction, SocketGuildUser? user)
     {
         await _transactionCollection.InsertOneAsync(transaction).ConfigureAwait(false);
+        if (user is null)
+            return;
         await UpdateUserAsync(user, x => x.TransactionIds.Add(transaction.Id)).ConfigureAwait(false);
     }
 
