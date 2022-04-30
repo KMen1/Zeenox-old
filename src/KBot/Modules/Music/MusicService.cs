@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Google.Apis.YouTube.v3;
+using Humanizer;
 using KBot.Enums;
 using KBot.Extensions;
+using KBot.Modules.Music.Embeds;
 using Lavalink4NET;
 using Lavalink4NET.Logging;
 using Lavalink4NET.Player;
@@ -90,7 +93,9 @@ public class MusicService : IInjectable
                 .WithDescription("**Only the person who added the currently playing song can control the bot!**")
                 .Build();
         await player.DisconnectAsync().ConfigureAwait(false);
-        return new EmbedBuilder().LeaveEmbed(player.VoiceChannel);
+        return new EmbedBuilder().WithDescription($"**Successfully left {player.VoiceChannel.Mention}**")
+            .WithColor(Color.Green)
+            .Build();
     }
 
     public async Task<Embed> MoveAsync(IGuild guild, IVoiceChannel channel)
@@ -100,7 +105,9 @@ public class MusicService : IInjectable
 
         var player = _lavaNode.GetPlayer(guild.Id);
         await player!.ConnectAsync(channel.Id).ConfigureAwait(false);
-        return new EmbedBuilder().MoveEmbed(channel);
+        return new EmbedBuilder().WithDescription($"**Succesfully moved to {channel.Mention}**")
+            .WithColor(Color.Green)
+            .Build();
     }
 
     public async Task<Embed?> PlayAsync(IGuild guild, SocketGuildUser user, IUserMessage message, string query)
@@ -126,12 +133,12 @@ public class MusicService : IInjectable
             {
                 foreach (var track in searchResponse.Tracks!) track.Context = user;
                 await player.EnqueueAsync(searchResponse.Tracks).ConfigureAwait(false);
-                return new EmbedBuilder().AddedToQueueEmbed(searchResponse.Tracks);
+                return new AddedToQueueEmbedBuilder(searchResponse.Tracks).Build();
             }
 
             searchResponse.Tracks![0].Context = user;
             await player.EnqueueAsync(searchResponse.Tracks![0]).ConfigureAwait(false);
-            return new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack> {searchResponse.Tracks[0]});
+            return new AddedToQueueEmbedBuilder(new List<LavalinkTrack> {searchResponse.Tracks[0]}).Build();
         }
 
         if (isPlaylist)
@@ -166,7 +173,7 @@ public class MusicService : IInjectable
         {
             await player.EnqueueAsync(track).ConfigureAwait(false);
             await message.DeleteAsync().ConfigureAwait(false);
-            return new EmbedBuilder().AddedToQueueEmbed(new List<LavalinkTrack> {track});
+            return new AddedToQueueEmbedBuilder(new List<LavalinkTrack> {track}).Build();
         }
 
         await player.PlayAsync(track).ConfigureAwait(false);
@@ -202,10 +209,13 @@ public class MusicService : IInjectable
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player is null)
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithTitle("Not currently playing in this server!").Build();
 
         if (player.LastRequestedBy.Id != user.Id)
-            return new EmbedBuilder().WithColor(Color.Red)
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
                 .WithDescription("**Only the person who added the currently playing song can control the bot!**")
                 .Build();
         switch (player.State)
@@ -229,16 +239,21 @@ public class MusicService : IInjectable
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player is null)
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithTitle("Not currently playing in this server!").Build();
 
         if (player.LastRequestedBy.Id != user.Id)
-            return new EmbedBuilder().WithColor(Color.Red)
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
                 .WithDescription("**Only the person who added the currently playing song can control the bot!**")
                 .Build();
         var currentVolume = player.Volume;
         if ((currentVolume == 0f && buttonType == VoiceButtonType.VolumeDown) ||
             (currentVolume == 1f && buttonType == VoiceButtonType.VolumeUp))
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Volume must be between 0 and 100!").Build();
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithTitle("Volume must be between 0 and 100!").Build();
         switch (buttonType)
         {
             case VoiceButtonType.VolumeUp:
@@ -260,18 +275,26 @@ public class MusicService : IInjectable
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player is null)
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithTitle("Not currently playing in this server!").Build();
         await player.SetVolumeAsync(volume).ConfigureAwait(false);
-        return new EmbedBuilder().VolumeEmbed(player);
+        return new EmbedBuilder()
+            .WithDescription($"**Successfully set volume to {player.Volume.ToString(CultureInfo.InvariantCulture)}**")
+            .WithColor(Color.Green)
+            .Build();
     }
 
     public async Task<Embed?> SetFiltersAsync(IGuild guild, SocketUser user, FilterType filterType)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player is null)
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithTitle("Not currently playing in this server!").Build();
         if (player.LastRequestedBy.Id != user.Id)
-            return new EmbedBuilder().WithColor(Color.Red)
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
                 .WithDescription("**Only the person who added the currently playing song can control the bot!**")
                 .Build();
         await player.SetFilterAsync(filterType, _filterActions[filterType]).ConfigureAwait(false);
@@ -289,10 +312,13 @@ public class MusicService : IInjectable
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player is not {State: PlayerState.Playing})
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithTitle("Not currently playing in this server!").Build();
 
         if (player.LastRequestedBy.Id != user.Id)
-            return new EmbedBuilder().WithColor(Color.Red)
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
                 .WithDescription("**Only the person who added the currently playing song can control the bot!**")
                 .Build();
 
@@ -303,18 +329,44 @@ public class MusicService : IInjectable
     public Embed GetQueue(IGuild guild)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
-        return player is null
-            ? new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build()
-            : new EmbedBuilder().QueueEmbed(player);
+        if (player is null)
+        {
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithTitle("Not currently playing in this server!")
+                .Build();
+        }
+
+        var eb = new EmbedBuilder();
+        eb.WithTitle("Current queue").WithColor(Color.Green);
+        if (player.QueueCount == 0)
+        {
+            eb.WithDescription("`No songs in queue`");
+        }
+        else
+        {
+            var desc = player.Queue.Aggregate("",
+                (current, track) =>
+                    current +
+                    $":{(player.Queue.TakeWhile(n => n != track).Count() + 1).ToWords()}: [`{track.Title}`]({track.Source}) | Added by: {((SocketUser) track.Context!).Mention}\n");
+
+            eb.WithDescription(desc);
+        }
+        return eb.Build();
     }
 
     public async Task<Embed> ClearQueueAsync(IGuild guild)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player is null)
-            return new EmbedBuilder().WithColor(Color.Red).WithTitle("Not currently playing in this server!").Build();
+            return new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithTitle("Not currently playing in this server!").Build();
         await player.ClearQueueAsync().ConfigureAwait(false);
-        return new EmbedBuilder().QueueEmbed(player, true);
+        return new EmbedBuilder()
+            .WithColor(Color.Green)
+            .WithDescription("**Queue cleared**")
+            .Build();
     }
 
     public async Task<TrackLoadResponsePayload?> SearchAsync(string query)

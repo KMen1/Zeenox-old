@@ -14,7 +14,7 @@ public class CrashCommands : SlashModuleBase
     {
         _crashService = crashService;
     }
-
+    
     [SlashCommand("crash", "Starts a new game of crash.")]
     public async Task StartCrashGameAsync([MinValue(100)] [MaxValue(1000000)] int bet)
     {
@@ -53,23 +53,5 @@ public class CrashCommands : SlashModuleBase
         await game.StartAsync().ConfigureAwait(false);
     }
 
-    [ComponentInteraction("crash:*")]
-    public async Task StopCrashGameAsync(string id)
-    {
-        var game = _crashService.GetGame(id);
-        if (game is null)
-        {
-            var eb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**Game not found!**")
-                .Build();
-            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-            return;
-        }
-
-        await DeferAsync().ConfigureAwait(false);
-        if (Context.User.Id != game.User.Id)
-            return;
-        await _crashService.StopGameAsync(id).ConfigureAwait(false);
-    }
+    
 }

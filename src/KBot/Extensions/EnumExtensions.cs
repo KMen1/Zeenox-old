@@ -30,9 +30,9 @@ public static class EnumExtensions
             Grade.B => "<:osuB:936588252830380042>",
             Grade.A => "<:osuA:936588252754882570>",
             Grade.S => "<:osuS:936588252872318996>",
-            Grade.Sh => "<:osuSH:936588252834574336>",
+            Grade.SH => "<:osuSH:936588252834574336>",
             Grade.X => "<:osuX:936588252402573333>",
-            Grade.Xh => "<:osuXH:936588252822007818>",
+            Grade.XH => "<:osuXH:936588252822007818>",
             _ => "<:osuF:936588252763271168>"
         };
     }
@@ -48,9 +48,9 @@ public static class EnumExtensions
             Grade.B => Color.Blue,
             Grade.A => Color.Green,
             Grade.S => Color.Gold,
-            Grade.Sh => Color.LightGrey,
+            Grade.SH => Color.LightGrey,
             Grade.X => Color.Gold,
-            Grade.Xh => Color.LightGrey,
+            Grade.XH => Color.LightGrey,
             _ => Color.Default
         };
     }

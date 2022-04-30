@@ -6,7 +6,7 @@ using Discord.WebSocket;
 
 namespace KBot.Modules.Suggestions;
 
-public class SuggestionComponents : SlashModuleBase
+public class SuggestionInteractions : SlashModuleBase
 {
     [RequireUserPermission(GuildPermission.KickMembers)]
     [ComponentInteraction("suggest-accept:*")]

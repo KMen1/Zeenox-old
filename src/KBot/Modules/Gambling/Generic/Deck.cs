@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using KBot.Enums;
+using KBot.Modules.Gambling.Generic;
 
 namespace KBot.Modules.Gambling.GameObjects;
 
@@ -12,10 +14,9 @@ public class Deck
         foreach (Suit suit in Enum.GetValues(typeof(Suit)))
         foreach (Face face in Enum.GetValues(typeof(Face)))
             Cards.Add(new Card(suit, face));
-        var rnd = new Random();
         for (var i = 0; i < Cards.Count; i++)
         {
-            var r = rnd.Next(i, Cards.Count);
+            var r = RandomNumberGenerator.GetInt32(i, Cards.Count);
             (Cards[i], Cards[r]) = (Cards[r], Cards[i]);
         }
     }
@@ -25,7 +26,7 @@ public class Deck
     public Card Draw()
     {
         var card = Cards[0];
-        Cards.Remove(card);
+        Cards.RemoveAt(0);
         return card;
     }
 

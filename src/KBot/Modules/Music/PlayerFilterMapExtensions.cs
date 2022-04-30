@@ -1,7 +1,7 @@
 ﻿using Lavalink4NET.Filters;
 using Lavalink4NET.Player;
 
-namespace KBot.Extensions;
+namespace KBot.Modules.Music;
 
 public static class PlayerFilterMapExtensions
 {

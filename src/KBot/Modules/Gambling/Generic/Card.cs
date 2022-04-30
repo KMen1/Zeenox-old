@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Reflection;
 using KBot.Enums;
+using KBot.Modules.Gambling.Generic;
 
 namespace KBot.Modules.Gambling.GameObjects;
 

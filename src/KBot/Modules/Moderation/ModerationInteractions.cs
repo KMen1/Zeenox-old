@@ -7,7 +7,7 @@ using Discord.WebSocket;
 
 namespace KBot.Modules.Moderation;
 
-public class ModerationComponents : SlashModuleBase
+public class ModerationInteractions : SlashModuleBase
 {
     [ModalInteraction("appeal:*")]
     public async Task HandleAppealAsync(ulong adminId, AppealModal submission)

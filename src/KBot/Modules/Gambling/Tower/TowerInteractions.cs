@@ -2,13 +2,13 @@
 using Discord;
 using Discord.Interactions;
 
-namespace KBot.Modules.Gambling.Towers;
+namespace KBot.Modules.Gambling.Tower;
 
-public class TowersComponents : SlashModuleBase
+public class TowerInteractions : SlashModuleBase
 {
-    private readonly TowersService _towersService;
+    private readonly TowerService _towersService;
 
-    public TowersComponents(TowersService towersService)
+    public TowerInteractions(TowerService towersService)
     {
         _towersService = towersService;
     }
@@ -17,7 +17,6 @@ public class TowersComponents : SlashModuleBase
     public async Task ClickFieldAsync(string id, int x, int y)
     {
         var game = _towersService.GetGame(id);
-        
         if (game is null)
         {
             var eb = new EmbedBuilder()
@@ -27,10 +26,18 @@ public class TowersComponents : SlashModuleBase
             await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
-        
-        await DeferAsync().ConfigureAwait(false);
+
         if (game.User.Id != Context.User.Id)
+        {
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**This is not your game!**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
+        }
+
+        await DeferAsync().ConfigureAwait(false);
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }
 }

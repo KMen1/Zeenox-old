@@ -34,21 +34,21 @@ public class EpicGamesService : IInjectable
     private async Task CheckForNewGamesAsync()
     {
         const string key = "next_epic_free";
-        var next = DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).AddHours(17).AddMinutes(10).ToUnixTimeSeconds();
+        var next = ((DateTimeOffset)DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).AddHours(17).AddMinutes(5).ToUnixTimeSeconds();
         await _redis.GetDatabase().StringSetAsync(key, next).ConfigureAwait(false);
 
         while (true)
         {
-            await Task.Delay(TimeSpan.FromMinutes(1)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMinutes(5)).ConfigureAwait(false);
             try
             {
                 var value = await _redis.GetDatabase().StringGetAsync(key).ConfigureAwait(false);
                 if (value.IsNull) return;
                 if (!value.TryParse(out long nextUnixTime))
-                    return;
+                    continue;
                 var refreshDate = DateTimeOffset.FromUnixTimeSeconds(nextUnixTime);
                 
-                if (DateTimeOffset.UtcNow < refreshDate) continue;
+                if (DateTimeOffset.Now < refreshDate) continue;
 
                 var games = await GetCurrentFreeGamesAsync().ConfigureAwait(false);
                 var channels = new List<ITextChannel>();
@@ -66,8 +66,8 @@ public class EpicGamesService : IInjectable
                         .WithTitle(game.Title)
                         .WithDescription($"`{game.Description}`\n\n" +
                                          $"💰 **{game.Price.TotalPrice.FmtPrice.OriginalPrice} -> Free** \n\n" +
-                                         $"🏁 <t:{DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).AddHours(17).ToUnixTimeSeconds()}:R>\n\n" +
-                                         $"[Browser]({game.EpicUrl}) • [Epic Games Launcher](http://epicfreegames.net/redirect?slug={game.UrlSlug})")
+                                         $"🏁 <t:{((DateTimeOffset)DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).AddHours(17).ToUnixTimeSeconds()}:R>\n\n" +
+                                         $"[Open in browser]({game.EpicUrl})")
                         .WithImageUrl(game.KeyImages[0].Url.ToString())
                         .WithColor(Color.Gold).Build()).ToArray();
 
@@ -76,7 +76,7 @@ public class EpicGamesService : IInjectable
                     await textChannel.SendMessageAsync("@here", embeds: embeds).ConfigureAwait(false);
                 }
 
-                next = DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).AddHours(17).AddMinutes(10).ToUnixTimeSeconds();
+                next = ((DateTimeOffset)DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).AddHours(17).AddMinutes(10).ToUnixTimeSeconds();
                 await _redis.GetDatabase().StringSetAsync(key, next).ConfigureAwait(false);
             }
             catch (Exception e)

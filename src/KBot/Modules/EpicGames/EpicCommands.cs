@@ -12,11 +12,9 @@ namespace KBot.Modules.EpicGames;
 public class EpicCommands : SlashModuleBase
 {
     private readonly EpicGamesService _epicGamesService;
-    private readonly HttpClient _httpClient;
 
-    public EpicCommands(HttpClient httpClient, EpicGamesService epicGamesService)
+    public EpicCommands(EpicGamesService epicGamesService)
     {
-        _httpClient = httpClient;
         _epicGamesService = epicGamesService;
     }
 
@@ -30,13 +28,13 @@ public class EpicCommands : SlashModuleBase
                 .WithTitle(game.Title)
                 .WithDescription($"`{game.Description}`\n\n" +
                                  $"💰 **{game.Price.TotalPrice.FmtPrice.OriginalPrice} -> Free** \n\n" +
-                                 $"🏁 <t:{DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).AddHours(17).ToUnixTimeSeconds()}:R>\n\n" +
-                                 $"[Böngésző]({game.EpicUrl}) • [Epic Games Launcher](http://epicfreegames.net/redirect?slug={game.UrlSlug})")
+                                 $"🏁 <t:{((DateTimeOffset)DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).AddHours(17).ToUnixTimeSeconds()}:R>\n\n" +
+                                 $"[Open in browser]({game.EpicUrl})")
                 .WithImageUrl(game.KeyImages[0].Url.ToString())
                 .WithColor(Color.Gold).Build()).ToArray();
         await FollowupAsync(embeds: embeds).ConfigureAwait(false);
     }
-
+    
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("set", "Sets the channel to receive weekly epic free games.")]
     public async Task SetEpicChannelAsync(ITextChannel? channel = null)

@@ -5,11 +5,11 @@ using KBot.Enums;
 
 namespace KBot.Modules.Music;
 
-public class MusicComponents : SlashModuleBase
+public class MusicInteractions : SlashModuleBase
 {
     private readonly MusicService _audioService;
 
-    public MusicComponents(MusicService audioService)
+    public MusicInteractions(MusicService audioService)
     {
         _audioService = audioService;
     }

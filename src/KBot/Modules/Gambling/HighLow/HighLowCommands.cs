@@ -14,7 +14,7 @@ public class HighLowCommands : SlashModuleBase
     {
         _highLowService = highLowService;
     }
-
+    
     [SlashCommand("highlow", "Starts a new game of higher/lower.")]
     public async Task StartHighLowAsync([MinValue(100)] [MaxValue(1000000)] int bet)
     {

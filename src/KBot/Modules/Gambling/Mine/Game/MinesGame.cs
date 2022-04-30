@@ -5,79 +5,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models;
-using KBot.Services;
 
-namespace KBot.Modules.Gambling.Mines;
-
-public class MinesService : IInjectable
-{
-    private readonly List<MinesGame> _games = new();
-    private readonly MongoService _mongo;
-
-    public MinesService(MongoService mongo)
-    {
-        _mongo = mongo;
-    }
-
-    public MinesGame CreateGame(SocketGuildUser user, IUserMessage message, int bet, int mines)
-    {
-        var game = new MinesGame(message, user, bet, mines);
-        game.GameEnded += OnGameEndedAsync;
-        _games.Add(game);
-        return game;
-    }
-
-    private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
-    {
-        var game = (MinesGame) sender!;
-        game.GameEnded -= OnGameEndedAsync;
-        _games.Remove(game);
-
-        if (e.IsWin)
-        {
-            await _mongo.AddTransactionAsync(new Transaction(
-                    e.GameId,
-                    TransactionType.Mines,
-                    e.Prize,
-                    e.Description),
-                e.User).ConfigureAwait(false);
-
-            await _mongo.UpdateUserAsync(e.User, x =>
-            {
-                x.Balance += e.Prize;
-                x.Wins++;
-                x.MoneyWon += e.Prize;
-            }).ConfigureAwait(false);
-            return;
-        }
-
-        await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Mines,
-                -e.Bet,
-                e.Description),
-            e.User).ConfigureAwait(false);
-
-        await _mongo.UpdateUserAsync(e.User, x =>
-        {
-            x.Balance -= e.Bet;
-            x.Losses++;
-            x.MoneyLost += e.Bet;
-        }).ConfigureAwait(false);
-    }
-
-    public MinesGame? GetGame(string id)
-    {
-        return _games.Find(x => x.Id.Equals(id, StringComparison.Ordinal));
-    }
-}
+namespace KBot.Modules.Gambling.Mine.Game;
 
 public sealed class MinesGame : IGame
 {
-    private readonly List<Point> _points = new();
+    private readonly List<Field> _points = new();
 
     public MinesGame(
         IUserMessage message,
@@ -93,7 +27,7 @@ public sealed class MinesGame : IGame
         var random = new Random();
         for (var i = 0; i < 5; i++)
         for (var j = 0; j < 5; j++)
-            _points.Add(new Point
+            _points.Add(new Field
             {
                 Emoji = new Emoji("🪙"),
                 IsClicked = false,
@@ -175,7 +109,7 @@ public sealed class MinesGame : IGame
 
         Clicked++;
         _points[index] = orig with {IsClicked = true, Label = $"{Multiplier}x"};
-        if (!_points.Any(x => !x.IsClicked && !x.IsMine))
+        if (!_points.Any(u => !u.IsClicked && !u.IsMine))
         {
             await StopAsync(false).ConfigureAwait(false);
             OnGameEnded(new GameEndedEventArgs(Id, User, Bet, (int) (Bet * Multiplier), "Mines: WIN", false));
@@ -244,14 +178,4 @@ public sealed class MinesGame : IGame
     {
         GameEnded?.Invoke(this, e);
     }
-}
-
-internal struct Point
-{
-    public Emoji Emoji;
-    public bool IsClicked;
-    public bool IsMine;
-    public string Label;
-    public int X;
-    public int Y;
 }

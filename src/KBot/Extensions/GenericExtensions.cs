@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using Discord;
-using Discord.WebSocket;
 using KBot.Modules.Music;
 using Lavalink4NET.Player;
 
@@ -11,7 +10,7 @@ namespace KBot.Extensions;
 
 public static class GenericExtensions
 {
-    public static DateTimeOffset GetNextWeekday(this DateTime date, DayOfWeek day)
+    public static DateTimeOffset GetNextWeekday(this DateTimeOffset date, DayOfWeek day)
     {
         var result = date.Date.AddDays(1);
         while (result.DayOfWeek != day)

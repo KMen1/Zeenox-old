@@ -1,12 +1,4 @@
-﻿namespace KBot.Enums;
-
-public enum Suit
-{
-    Clubs,
-    Spades,
-    Diamonds,
-    Hearts
-}
+﻿namespace KBot.Modules.Gambling.Generic;
 
 public enum Face
 {

@@ -35,9 +35,8 @@ public class DbDService : IInjectable
     private async Task CheckForNewShrinesAsync()
     {
         const string key = "next_dbd_shrine";
-        var next = DateTime.UtcNow.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
-        await _redis.GetDatabase().StringSetAsync(key, next)
-            .ConfigureAwait(false);
+        var next = DateTimeOffset.Now.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
+        await _redis.GetDatabase().StringSetAsync(key, next).ConfigureAwait(false);
 
         while (true)
         {
@@ -47,10 +46,10 @@ public class DbDService : IInjectable
                 var value = await _redis.GetDatabase().StringGetAsync(key).ConfigureAwait(false);
                 if (value.IsNull) return;
                 if (!value.TryParse(out long nextUnixTime))
-                    return;
+                    continue;
                 var refreshDate = DateTimeOffset.FromUnixTimeSeconds(nextUnixTime);
                 
-                if (DateTimeOffset.UtcNow < refreshDate) continue;
+                if (DateTimeOffset.Now < refreshDate) continue;
 
                 var sw = Stopwatch.StartNew();
                 var shrines = await GetShrinesAsync().ConfigureAwait(false);
@@ -78,8 +77,7 @@ public class DbDService : IInjectable
                     await Task.Delay(TimeSpan.FromSeconds(7)).ConfigureAwait(false);
                 }
 
-                
-                next = DateTime.UtcNow.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
+                next = DateTimeOffset.Now.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
                 await _redis.GetDatabase().StringSetAsync(key, next)
                     .ConfigureAwait(false);
             }

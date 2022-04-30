@@ -1,38 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
-using CloudinaryDotNet;
 using Discord;
 using Discord.WebSocket;
 using KBot.Enums;
 using KBot.Models;
-using KBot.Modules.Gambling.BlackJack.Game;
+using KBot.Modules.Gambling.Mine.Game;
 using KBot.Services;
 
-namespace KBot.Modules.Gambling.BlackJack;
+namespace KBot.Modules.Gambling.Mine;
 
-public class BlackJackService : IInjectable
+public class MineService : IInjectable
 {
-    private readonly Cloudinary _cloudinary;
-    private readonly List<BlackJackGame> _games = new();
+    private readonly List<MinesGame> _games = new();
     private readonly MongoService _mongo;
 
-    public BlackJackService(MongoService mongo, Cloudinary cloudinary)
+    public MineService(MongoService mongo)
     {
         _mongo = mongo;
-        _cloudinary = cloudinary;
     }
 
-    public BlackJackGame CreateGame(SocketGuildUser user, IUserMessage message, int stake)
+    public MinesGame CreateGame(SocketGuildUser user, IUserMessage message, int bet, int mines)
     {
-        var game = new BlackJackGame(user, message, stake, _cloudinary);
-        _games.Add(game);
+        var game = new MinesGame(message, user, bet, mines);
         game.GameEnded += OnGameEndedAsync;
+        _games.Add(game);
         return game;
     }
 
     private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
-        var game = (BlackJackGame) sender!;
+        var game = (MinesGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
         _games.Remove(game);
 
@@ -40,7 +37,7 @@ public class BlackJackService : IInjectable
         {
             await _mongo.AddTransactionAsync(new Transaction(
                     e.GameId,
-                    TransactionType.Blackjack,
+                    TransactionType.Mines,
                     e.Prize,
                     e.Description),
                 e.User).ConfigureAwait(false);
@@ -54,10 +51,9 @@ public class BlackJackService : IInjectable
             return;
         }
 
-        if (e.Prize == -1) return;
         await _mongo.AddTransactionAsync(new Transaction(
                 e.GameId,
-                TransactionType.Blackjack,
+                TransactionType.Mines,
                 -e.Bet,
                 e.Description),
             e.User).ConfigureAwait(false);
@@ -70,8 +66,8 @@ public class BlackJackService : IInjectable
         }).ConfigureAwait(false);
     }
 
-    public BlackJackGame? GetGame(string id)
+    public MinesGame? GetGame(string id)
     {
-        return _games.Find(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        return _games.Find(x => x.Id.Equals(id, StringComparison.Ordinal));
     }
 }

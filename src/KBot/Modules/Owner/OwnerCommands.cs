@@ -19,13 +19,13 @@ public class OwnerCommands : SlashModuleBase
     [SlashCommand("restart", "Restarts the bot")]
     public async Task ResetAsync()
     {
-        var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
         var pInfo = new ProcessStartInfo
         {
             UseShellExecute = true,
             CreateNoWindow = false,
             WindowStyle = ProcessWindowStyle.Normal,
-            FileName = $"C:\\KBot\\{version}\\KBot.exe"
+            FileName = "dotnet",
+            Arguments = $"{Assembly.GetExecutingAssembly().Location}"
         };
         await RespondAsync("Restarted", ephemeral: true).ConfigureAwait(false);
         Process.Start(pInfo);
@@ -68,9 +68,7 @@ public class OwnerCommands : SlashModuleBase
     public async Task UpdateYesAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var bmsg = await Context.Interaction.GetOriginalResponseAsync().ConfigureAwait(false);
-        await bmsg.DeleteAsync().ConfigureAwait(false);
-        var msg = await bmsg.Channel.SendMessageAsync("Downloading update...").ConfigureAwait(false);
+        var msg = await FollowupAsync("Downloading update...").ConfigureAwait(false);
         using var client = new HttpClient();
         var newVersion = await client.GetStringAsync(VersionUrl).ConfigureAwait(false);
         var uri = new Uri(await client.GetStringAsync(UpdateUrl).ConfigureAwait(false));

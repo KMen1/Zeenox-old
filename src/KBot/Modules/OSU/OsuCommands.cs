@@ -28,149 +28,130 @@ public class OsuCommands : SlashModuleBase
     }
 
     [SlashCommand("set", "Link your osu! profile")]
-    public async Task SetOsuProfileAsync(string link)
+    public async Task SetOsuProfileAsync(string username)
     {
-        if (!link.Contains("osu.ppy.sh/users", StringComparison.OrdinalIgnoreCase) ||
-            !link.Contains("osu.ppy.sh/u", StringComparison.OrdinalIgnoreCase))
-        {
-            var eb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**Please provide a valid osu! profile link**")
-                .Build();
-            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-            return;
-        }
-
         await DeferAsync(true).ConfigureAwait(false);
-        var result = ulong.TryParse(link.Split("/").Last(), NumberStyles.Any, CultureInfo.InvariantCulture,
-            out var osuId);
-        await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x => x.OsuId = osuId).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.Red, "Succesfully linked your osu! profile!",
-            "https://osu.ppy.sh/u/" + osuId).ConfigureAwait(false);
+
+        var user = await _osuClient.GetUserAsync(username, GameMode.Osu).ConfigureAwait(false);
+        await Mongo.UpdateUserAsync(GuildUser, x => x.OsuId = (ulong)user.Id).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Green, "Succesfully linked your osu! profile!",
+            $"https://osu.ppy.sh/u/{user.Id}").ConfigureAwait(false);
     }
 
     [SlashCommand("recent", "Gets the recent play of a user")]
-    public async Task SendRecentOsuPlayAsync(SocketUser? user = null)
+    public async Task SendRecentOsuPlayAsync(string? username = null)
     {
         await DeferAsync().ConfigureAwait(false);
-        var sw = Stopwatch.StartNew();
-        var osuId = (await Mongo.GetUserAsync((SocketGuildUser) (user ?? Context.User)).ConfigureAwait(false)).OsuId;
-        if (osuId == 0)
+        IReadOnlyList<IScore> scores;
+        if (username is null)
         {
-            await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked!",
-                "Please link your osu! profile using **/osu set**!").ConfigureAwait(false);
+            var user = await Mongo.GetUserAsync(GuildUser).ConfigureAwait(false);
+            if (user.OsuId == 0)
+            {
+                await FollowupWithEmbedAsync(Color.Red, "You haven't linked your osu! profile yet!",
+                    "Use `osu set <username>` to link your osu! profile").ConfigureAwait(false);
+                return;
+            }
+            scores = await _osuClient.GetUserScoresAsync((long)user.OsuId, ScoreType.Recent, true, GameMode.Osu, 1).ConfigureAwait(false);
+        }
+        else
+        {
+            var user = await _osuClient.GetUserAsync(username, GameMode.Osu).ConfigureAwait(false);
+            scores = await _osuClient.GetUserScoresAsync(user.Id, ScoreType.Recent, true, GameMode.Osu, 1).ConfigureAwait(false);
+        }
+        
+        if (scores.Count == 0)
+        {
+            await FollowupWithEmbedAsync(Color.Red, "User has not played in the last 24 hours!",
+                "Try again later!").ConfigureAwait(false);
             return;
         }
-
-        var score = await _osuClient.GetUserScoresAsync((long) osuId, ScoreType.Recent, true, GameMode.Osu, 1)
-            .ConfigureAwait(false);
-        if (score.Count == 0)
-        {
-            await FollowupWithEmbedAsync(Color.Red, "No recent plays in the last 24 hours!",
-                "Come back after playing!").ConfigureAwait(false);
-            return;
-        }
-
-        await FollowUpWithScoreAsync(score[0], sw).ConfigureAwait(false);
+        
+        await FollowUpWithScoreAsync(scores[0]).ConfigureAwait(false);
     }
 
-    [SlashCommand("stats", "osu! statistics")]
-    public async Task SendOsuStatsAsync(SocketUser? user = null)
+    [SlashCommand("profile", "Check someones osu! profile")]
+    public async Task SendOsuStatsAsync(string? username = null)
     {
         await DeferAsync().ConfigureAwait(false);
-        var sw = Stopwatch.StartNew();
-        var osuId = (await Mongo.GetUserAsync((SocketGuildUser) (user ?? Context.User)).ConfigureAwait(false)).OsuId;
-        if (osuId == 0)
+        IGlobalUser? profile;
+        if (username is null)
         {
-            await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked!",
-                "Please link your osu! profile using **/osu set**").ConfigureAwait(false);
-            return;
+            var user = await Mongo.GetUserAsync(GuildUser).ConfigureAwait(false);
+            if (user.OsuId == 0)
+            {
+                await FollowupWithEmbedAsync(Color.Red, "You haven't linked your osu! profile yet!",
+                    "Use `osu set <username>` to link your osu! profile").ConfigureAwait(false);
+                return;
+            }
+            profile = await _osuClient.GetUserAsync((long)user.OsuId, GameMode.Osu).ConfigureAwait(false);
         }
-
-        var osuUser = await _osuClient.GetUserAsync((long) osuId, GameMode.Osu).ConfigureAwait(false);
-        var playStyle = string.Equals(osuUser.Playstyle[0], "mouse", StringComparison.OrdinalIgnoreCase)
-            ? "Mouse"
-            : "Tablet";
+        else
+        {
+            profile = await _osuClient.GetUserAsync(username, GameMode.Osu).ConfigureAwait(false);
+        }
+        var playStyle = string.Equals(profile.Playstyle[0], "mouse", StringComparison.OrdinalIgnoreCase)
+            ? "Mouse + Keyboard"
+            : "Tablet + Keyboard";
         var eb = new EmbedBuilder()
-            .WithAuthor(osuUser.Username, osuUser.AvatarUrl.ToString(), $"https://osu.ppy.sh/users/{osuUser.Id}")
+            .WithAuthor(profile.Username, profile.AvatarUrl.ToString(), $"https://osu.ppy.sh/users/{profile.Id}")
             .WithColor(Color.Gold)
-            .AddField("📅 Registered", $"`{osuUser.JoinDate.Humanize()}`", true)
-            .AddField("🌍 Country", $"`{osuUser.Country.Name}`", true)
-            .AddField("🎚️ Level", $"`{osuUser.Statistics.UserLevel.Current.ToString(CultureInfo.InvariantCulture)}`",
+            .AddField("📅 Registered", $"<t:{profile.JoinDate.ToUnixTimeSeconds()}:R>", true)
+            .AddField("🌍 Country", $"`{profile.Country.Name}`", true)
+            .AddField("🎚️ Level", $"`{profile.Statistics.UserLevel.Current.ToString(CultureInfo.InvariantCulture)}`",
                 true)
             .AddField("🥇 Global Rank",
-                $"`# {osuUser.Statistics.GlobalRank.ToString("n0", CultureInfo.InvariantCulture)} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)}PP)`",
+                $"`# {profile.Statistics.GlobalRank.ToString("n0", CultureInfo.InvariantCulture)} ({Math.Round(profile.Statistics.Pp).ToString(CultureInfo.CurrentCulture)}PP)`",
                 true)
             .AddField("🥇 Country Rank",
-                $"`# {osuUser.Statistics.CountryRank.ToString("n0", CultureInfo.InvariantCulture)}`", true)
+                $"`# {profile.Statistics.CountryRank.ToString("n0", CultureInfo.InvariantCulture)}`", true)
             .AddField("🎯 Accuracy",
-                $"`{Math.Round(osuUser.Statistics.HitAccuracy, 1).ToString(CultureInfo.InvariantCulture)} %`", true)
+                $"`{Math.Round(profile.Statistics.HitAccuracy, 1).ToString(CultureInfo.InvariantCulture)} %`", true)
             .AddField("🕐 Playtime",
-                $"`{TimeSpan.FromSeconds(osuUser.Statistics.PlayTime).Humanize()} ({osuUser.Statistics.PlayCount.ToString(CultureInfo.InvariantCulture)} játék)`",
+                $"`{TimeSpan.FromSeconds(profile.Statistics.PlayTime).Humanize()} ({profile.Statistics.PlayCount.ToString(CultureInfo.InvariantCulture)} plays)`",
                 true)
-            .AddField("🎮 Max Combo", $"`{osuUser.Statistics.MaximumCombo.ToString(CultureInfo.InvariantCulture)} x`",
+            .AddField("🎮 Max Combo", $"`{profile.Statistics.MaximumCombo.ToString(CultureInfo.InvariantCulture)} x`",
                 true)
             .AddField("🎹 Plays with", $"`{playStyle}`", true);
-        sw.Stop();
-        eb.WithDescription($"{sw.ElapsedMilliseconds} ms");
         await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
     }
 
-    [SlashCommand("topserver", "Sends the top 10 osu! players in the server")]
-    public async Task SendTopOsuPlayersAsync()
+    [SlashCommand("top", "Sends the top play of a user")]
+    public async Task SendOsuTopPlayAsync(string? username = null)
     {
         await DeferAsync().ConfigureAwait(false);
-        var sw = Stopwatch.StartNew();
-        var users = await Mongo.GetOsuIdsAsync(Context.Guild, 10).ConfigureAwait(false);
-        var userOsuPair = new Dictionary<SocketUser, IUser>();
-        foreach (var (userId, osuId) in users)
-            userOsuPair.Add(Context.Client.GetUser(userId),
-                await _osuClient.GetUserAsync((long) osuId, GameMode.Osu).ConfigureAwait(false));
-
-        var userOsuPairList = userOsuPair.ToList();
-        userOsuPairList.Sort((x, y) => x.Value.Statistics.GlobalRank.CompareTo(y.Value.Statistics.GlobalRank));
-        var eb = new EmbedBuilder()
-            .WithColor(Color.Gold)
-            .WithTitle("Top 10 osu! players in the server");
-        var desc = "";
-        var i = 0;
-        foreach (var (user, osuUser) in userOsuPairList)
+        IReadOnlyList<IScore> scores;
+        if (username is null)
         {
-            i++;
-            desc +=
-                $"{i}. {user.Mention} : [`# {osuUser.Statistics.GlobalRank:n0} ({Math.Round(osuUser.Statistics.Pp).ToString(CultureInfo.CurrentCulture)} PP)`](https://osu.ppy.sh/u/{osuUser.Id})\n";
+            var user = await Mongo.GetUserAsync(GuildUser).ConfigureAwait(false);
+            if (user.OsuId == 0)
+            {
+                await FollowupWithEmbedAsync(Color.Red, "You haven't linked your osu! profile yet!",
+                    "Use `osu set <username>` to link your osu! profile").ConfigureAwait(false);
+                return;
+            }
+            scores = await _osuClient.GetUserScoresAsync((long)user.OsuId, ScoreType.Best, true, GameMode.Osu, 1).ConfigureAwait(false);
+        }
+        else
+        {
+            var user = await _osuClient.GetUserAsync(username, GameMode.Osu).ConfigureAwait(false);
+            scores = await _osuClient.GetUserScoresAsync(user.Id, ScoreType.Best, true, GameMode.Osu, 1).ConfigureAwait(false);
         }
 
-        eb.WithDescription(desc);
-        sw.Stop();
-        eb.WithFooter($"{sw.ElapsedMilliseconds} ms");
-        await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
-    }
-
-    [SlashCommand("topplay", "Sends the top play of a user")]
-    public async Task SendOsuTopPlayAsync(SocketUser? user = null)
-    {
-        await DeferAsync().ConfigureAwait(false);
-        var sw = new Stopwatch();
-        var osuId = (await Mongo.GetUserAsync((SocketGuildUser) (user ?? Context.User)).ConfigureAwait(false)).OsuId;
-        if (osuId == 0)
+        if (scores.Count == 0)
         {
-            await FollowupWithEmbedAsync(Color.Red, "No osu! profile linked",
-                "Please link your osu! profile using **/osu set**").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "User has no plays!",
+                "Try again later!").ConfigureAwait(false);
             return;
         }
-
-        var score = await _osuClient.GetUserScoresAsync((long) osuId, ScoreType.Best, true, GameMode.Osu, 1)
-            .ConfigureAwait(false);
-        await FollowUpWithScoreAsync(score[0], sw).ConfigureAwait(false);
+        await FollowUpWithScoreAsync(scores[0]).ConfigureAwait(false);
     }
 
-    private async Task FollowUpWithScoreAsync(IScore score, Stopwatch sw)
+    private async Task FollowUpWithScoreAsync(IScore score)
     {
         var beatmap = await score.Client.GetBeatmapAsync(score.Beatmap.Id).ConfigureAwait(false);
         var pp = score.PerformancePoints is null ? 0 : Math.Round((double) score.PerformancePoints, 2);
         var mods = score.Mods.Count == 0 ? "No Mod" : string.Concat(score.Mods).ToUpper(CultureInfo.InvariantCulture);
-        sw.Stop();
         var eb = new EmbedBuilder()
             .WithAuthor(
                 $"{score.Beatmapset.Title} [{score.Beatmap.Version}] +{mods} [{score.Beatmap.DifficultyRating.ToString(CultureInfo.InvariantCulture).Replace(",", ".", StringComparison.OrdinalIgnoreCase)}★]",
@@ -182,7 +163,7 @@ public class OsuCommands : SlashModuleBase
                 $"▸ {score.TotalScore:n0} ▸ x{score.MaxCombo.ToString(CultureInfo.InvariantCulture)}/{beatmap.MaxCombo.ToString()} ▸ [{score.Statistics.Count300.ToString(CultureInfo.InvariantCulture)}/{score.Statistics.Count100.ToString(CultureInfo.InvariantCulture)}/{score.Statistics.Count50.ToString(CultureInfo.InvariantCulture)}/{score.Statistics.CountMiss.ToString(CultureInfo.InvariantCulture)}]")
             .WithColor(Enum.Parse<Grade>(score.Rank).GetGradeColor())
             .WithFooter(
-                $"{score.User.Username} - {score.CreatedAt.Humanize(culture: new CultureInfo("hu-HU"))} - {sw.ElapsedMilliseconds} ms",
+                $"{score.User.Username} - {score.CreatedAt.Humanize(culture: new CultureInfo("hu-HU"))}",
                 "https://cdn.discordapp.com/emojis/864051085810991164.webp?size=96&quality=lossless")
             .Build();
         await FollowupAsync(embed: eb).ConfigureAwait(false);

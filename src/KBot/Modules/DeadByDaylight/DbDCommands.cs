@@ -30,12 +30,12 @@ public class DbDCommands : SlashModuleBase
         var perks = await _dbDService.GetShrinesAsync().ConfigureAwait(false);
 
         foreach (var perk in perks) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
-        eb.WithDescription($"🏁 <t:{DateTime.Today.GetNextWeekday(DayOfWeek.Thursday).ToUnixTimeSeconds()}:R>");
+        eb.WithDescription($"🏁 <t:{((DateTimeOffset)DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).ToUnixTimeSeconds()}:R>");
         sw.Stop();
         eb.WithFooter($"{sw.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)} ms");
         await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
     }
-
+    
     [RequireUserPermission(GuildPermission.Administrator)]
     [SlashCommand("set", "Sets the channel to receive weekyl shrines")]
     public async Task SetDbdChannelAsync(ITextChannel? channel = null)

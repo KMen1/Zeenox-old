@@ -143,12 +143,6 @@ public class MongoService : IInjectable
         return users.OrderByDescending(x => x.Level).Take(limit).ToList();
     }
 
-    public async Task<IEnumerable<(ulong userId, ulong osuId)>> GetOsuIdsAsync(IGuild guild, int limit)
-    {
-        var users = await _userCollection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false);
-        return users.ToList().Where(x => x.OsuId != 0).Take(limit).Select(x => (x.UserId, x.OsuId));
-    }
-
     public async Task UpdateGuildConfigAsync(IGuild guild, Action<GuildConfig> action)
     {
         var config = (await _configCollection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false))

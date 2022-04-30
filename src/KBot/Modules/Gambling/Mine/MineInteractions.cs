@@ -2,13 +2,13 @@
 using Discord;
 using Discord.Interactions;
 
-namespace KBot.Modules.Gambling.Mines;
+namespace KBot.Modules.Gambling.Mine;
 
-public class MineComponents : SlashModuleBase
+public class MineInteractions : SlashModuleBase
 {
-    private readonly MinesService _minesService;
+    private readonly MineService _minesService;
 
-    public MineComponents(MinesService minesService)
+    public MineInteractions(MineService minesService)
     {
         _minesService = minesService;
     }
@@ -27,8 +27,17 @@ public class MineComponents : SlashModuleBase
             return;
         }
 
+        if (game.User.Id != Context.User.Id)
+        {
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**This is not your game!**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
         await DeferAsync().ConfigureAwait(false);
-        if (game.User.Id != Context.User.Id) return;
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }
 }

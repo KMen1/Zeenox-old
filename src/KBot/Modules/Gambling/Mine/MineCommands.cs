@@ -4,20 +4,21 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 
-namespace KBot.Modules.Gambling.Towers;
+namespace KBot.Modules.Gambling.Mine;
 
-[Group("towers", "Roobet Towers")]
-public class TowersCommands : SlashModuleBase
+[Group("mine", "Roobet Mine")]
+public class MineCommands : SlashModuleBase
 {
-    private readonly TowersService _towersService;
+    private readonly MineService _minesService;
 
-    public TowersCommands(TowersService towersService)
+    public MineCommands(MineService minesService)
     {
-        _towersService = towersService;
+        _minesService = minesService;
     }
 
-    [SlashCommand("start", "Starts a new game of towers")]
-    public async Task CreateTowersGameAsync([MinValue(100)] [MaxValue(1000000)] int bet, Difficulty diff)
+    [SlashCommand("start", "Starts a new game of mine")]
+    public async Task StartMinesAsync([MinValue(100)] [MaxValue(1000000)] int bet,
+        [MinValue(5)] [MaxValue(24)] int mines)
     {
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
         if (dbUser.Balance < bet)
@@ -50,14 +51,14 @@ public class TowersCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: sEb).ConfigureAwait(false);
         var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
-        var game = _towersService.CreateGame((SocketGuildUser) Context.User, msg, bet, diff);
+        var game = _minesService.CreateGame((SocketGuildUser) Context.User, msg, bet, mines);
         await game.StartAsync().ConfigureAwait(false);
     }
 
     [SlashCommand("stop", "Stops the specified game")]
-    public async Task StopTowersGameAsync(string id)
+    public async Task StopMinesAsync(string id)
     {
-        var game = _towersService.GetGame(id);
+        var game = _minesService.GetGame(id);
         if (game is null)
         {
             var sEb = new EmbedBuilder()
@@ -78,12 +79,22 @@ public class TowersCommands : SlashModuleBase
             return;
         }
 
+        if (!game.CanStop)
+        {
+            var sEb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**You need to click at least one field to be able to stop the game.**")
+                .Build();
+            await RespondAsync(embed: sEb, ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
         await DeferAsync(true).ConfigureAwait(false);
         var eb = new EmbedBuilder()
             .WithColor(Color.Green)
             .WithDescription("**Stopped.**")
             .Build();
-        await game.StopAsync().ConfigureAwait(false);
+        await game.StopAsync(false).ConfigureAwait(false);
         await FollowupAsync(embed: eb).ConfigureAwait(false);
     }
 }

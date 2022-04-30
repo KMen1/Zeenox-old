@@ -1,82 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using KBot.Enums;
 using KBot.Extensions;
-using KBot.Models;
-using KBot.Services;
-using Serilog;
 
-namespace KBot.Modules.Gambling.Towers;
+namespace KBot.Modules.Gambling.Tower.Game;
 
-public class TowersService : IInjectable
+public sealed class TowerGame : IGame
 {
-    private readonly List<TowersGame> _games = new();
-    private readonly MongoService _mongo;
-
-    public TowersService(MongoService mongo)
-    {
-        _mongo = mongo;
-    }
-
-    public TowersGame CreateGame(SocketGuildUser user, IUserMessage message, int bet, Difficulty difficulty)
-    {
-        var game = new TowersGame(user, message, bet, difficulty);
-        _games.Add(game);
-        game.GameEnded += HandleGameEndedAsync;
-        return game;
-    }
-
-    private async void HandleGameEndedAsync(object? sender, GameEndedEventArgs e)
-    {
-        var game = (TowersGame) sender!;
-        game.GameEnded -= HandleGameEndedAsync;
-        _games.Remove(game);
-        if (e.IsWin)
-        {
-            await _mongo.AddTransactionAsync(new Transaction(
-                    e.GameId,
-                    TransactionType.Towers,
-                    e.Prize,
-                    e.Description),
-                e.User).ConfigureAwait(false);
-            await _mongo.UpdateUserAsync(e.User, x =>
-            {
-                x.Balance += e.Prize;
-                x.Wins++;
-                x.MoneyWon += e.Prize;
-            }).ConfigureAwait(false);
-            return;
-        }
-
-        await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Towers,
-                -e.Bet,
-                e.Description),
-            e.User).ConfigureAwait(false);
-        await _mongo.UpdateUserAsync(e.User, x =>
-        {
-            x.Balance -= e.Bet;
-            x.Losses++;
-            x.MoneyLost += e.Bet;
-        }).ConfigureAwait(false);
-    }
-
-    public TowersGame? GetGame(string id)
-    {
-        return _games.Find(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
-    }
-}
-
-public sealed class TowersGame : IGame
-{
-    public TowersGame(
+    public TowerGame(
         SocketGuildUser user,
         IUserMessage message,
         int bet,
@@ -152,7 +87,7 @@ public sealed class TowersGame : IGame
         return Message.ModifyAsync(x =>
         {
             x.Content = "";
-            x.Embed = new EmbedBuilder().TowersEmbed(this, $"Exit: `/towers stop {Id}`");
+            x.Embed = new TowerEmbedBuilder(this, $"Exit: `/towers stop {Id}`").Build();
             x.Components = comp.Build();
         });
     }
@@ -171,11 +106,12 @@ public sealed class TowersGame : IGame
 
         if (x == 5)
         {
-            await Message.ModifyAsync(u => u.Embed = new EmbedBuilder().TowersEmbed(this,
+            await Message.ModifyAsync(u => u.Embed = new TowerEmbedBuilder(this,
                     Lost
                         ? $"**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
-                        : $"**Result:** You won **{Prize.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
-                    Lost ? Color.Red : Color.Green))
+                        : $"**Result:** You won **{Prize.ToString("N0", CultureInfo.InvariantCulture)}** credits!")
+                    .WithColor(Lost ? Color.Red : Color.Green)
+                    .Build())
                 .ConfigureAwait(false);
             OnGameEnded(new GameEndedEventArgs(Id, User, Bet, Prize, "Towers: WIN", true));
         }
@@ -225,11 +161,12 @@ public sealed class TowersGame : IGame
 
         await Message.ModifyAsync(x =>
         {
-            x.Embed = new EmbedBuilder().TowersEmbed(this,
+            x.Embed = new TowerEmbedBuilder(this,
                 Lost
                     ? $"**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
-                    : $"**Result:** You won **{Prize.ToString("N0", CultureInfo.InvariantCulture)}** credits!",
-                Lost ? Color.Red : Color.Green);
+                    : $"**Result:** You won **{Prize.ToString("N0", CultureInfo.InvariantCulture)}** credits!")
+                .WithColor(Lost ? Color.Red : Color.Green)
+                .Build();
             x.Components = revealComponents.Build();
         }).ConfigureAwait(false);
         OnGameEnded(Lost
@@ -241,22 +178,4 @@ public sealed class TowersGame : IGame
     {
         GameEnded?.Invoke(this, e);
     }
-}
-
-internal struct Field
-{
-    public int X { get; set; }
-    public int Y { get; set; }
-    public bool IsMine { get; set; }
-    public Emoji Emoji { get; set; }
-    public string Label { get; set; }
-    public int Prize { get; set; }
-    public bool Disabled { get; set; }
-}
-
-public enum Difficulty
-{
-    Easy = 1,
-    Medium = 2,
-    Hard = 3
 }

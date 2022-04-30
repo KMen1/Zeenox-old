@@ -3,22 +3,22 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Modules.Gambling.Tower.Game;
 
-namespace KBot.Modules.Gambling.Mines;
+namespace KBot.Modules.Gambling.Tower;
 
-[Group("mine", "Roobet Mine")]
-public class MineCommands : SlashModuleBase
+[Group("tower", "Roobet Towers")]
+public class TowerCommands : SlashModuleBase
 {
-    private readonly MinesService _minesService;
+    private readonly TowerService _towersService;
 
-    public MineCommands(MinesService minesService)
+    public TowerCommands(TowerService towersService)
     {
-        _minesService = minesService;
+        _towersService = towersService;
     }
 
-    [SlashCommand("start", "Starts a new game of mine")]
-    public async Task StartMinesAsync([MinValue(100)] [MaxValue(1000000)] int bet,
-        [MinValue(5)] [MaxValue(24)] int mines)
+    [SlashCommand("start", "Starts a new game of towers")]
+    public async Task CreateTowersGameAsync([MinValue(100)] [MaxValue(1000000)] int bet, Difficulty diff)
     {
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
         if (dbUser.Balance < bet)
@@ -51,14 +51,14 @@ public class MineCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: sEb).ConfigureAwait(false);
         var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
-        var game = _minesService.CreateGame((SocketGuildUser) Context.User, msg, bet, mines);
+        var game = _towersService.CreateGame((SocketGuildUser) Context.User, msg, bet, diff);
         await game.StartAsync().ConfigureAwait(false);
     }
 
     [SlashCommand("stop", "Stops the specified game")]
-    public async Task StopMinesAsync(string id)
+    public async Task StopTowersGameAsync(string id)
     {
-        var game = _minesService.GetGame(id);
+        var game = _towersService.GetGame(id);
         if (game is null)
         {
             var sEb = new EmbedBuilder()
@@ -79,22 +79,12 @@ public class MineCommands : SlashModuleBase
             return;
         }
 
-        if (!game.CanStop)
-        {
-            var sEb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**You need to click at least one field to be able to stop the game.**")
-                .Build();
-            await RespondAsync(embed: sEb, ephemeral: true).ConfigureAwait(false);
-            return;
-        }
-
         await DeferAsync(true).ConfigureAwait(false);
         var eb = new EmbedBuilder()
             .WithColor(Color.Green)
             .WithDescription("**Stopped.**")
             .Build();
-        await game.StopAsync(false).ConfigureAwait(false);
+        await game.StopAsync().ConfigureAwait(false);
         await FollowupAsync(embed: eb).ConfigureAwait(false);
     }
 }

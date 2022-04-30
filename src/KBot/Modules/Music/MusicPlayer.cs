@@ -7,6 +7,7 @@ using Discord.WebSocket;
 using Google.Apis.YouTube.v3;
 using KBot.Enums;
 using KBot.Extensions;
+using KBot.Modules.Music.Embeds;
 using Lavalink4NET;
 using Lavalink4NET.Events;
 using Lavalink4NET.Player;
@@ -58,7 +59,7 @@ public class MusicPlayer : LavalinkPlayer
         return NowPlayingMessage.ModifyAsync(x =>
         {
             x.Content = "";
-            x.Embed = new EmbedBuilder().NowPlayingEmbed(this);
+            x.Embed = new NowPlayingEmbedBuilder(this).Build();
             x.Components = new ComponentBuilder().NowPlayerComponents(this);
         });
     }
@@ -130,7 +131,7 @@ public class MusicPlayer : LavalinkPlayer
     {
         if (SkipVotes.Contains(user.Id)) return Task.CompletedTask;
         SkipVotes.Add(user.Id);
-        if (SkipVotes.Count < SkipVotesNeeded) return Task.CompletedTask;
+        if (SkipVotes.Count < SkipVotesNeeded) return UpdateNowPlayingMessageAsync();
         SkipVotes.Clear();
         return SkipAsync();
     }
@@ -138,7 +139,7 @@ public class MusicPlayer : LavalinkPlayer
     public Task PlayPreviousAsync()
     {
         if (QueueHistory.Count == 0) return Task.CompletedTask;
-        var track = QueueHistory.Last();
+        var track = QueueHistory[^1];
         QueueHistory.Remove(track);
         return PlayAsync(track);
     }
