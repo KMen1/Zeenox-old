@@ -38,7 +38,7 @@ public class GuildEvents : IInjectable
             await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
             try
             {
-                foreach (var (user, channelId) in _channels)
+                foreach (var (user, channelId) in _channels.ToList())
                 {
                     var channel = user.Guild.GetVoiceChannel(channelId);
                     if (channel is null)
