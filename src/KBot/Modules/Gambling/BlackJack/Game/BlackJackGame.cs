@@ -12,6 +12,7 @@ using Discord;
 using Discord.WebSocket;
 using KBot.Extensions;
 using KBot.Modules.Gambling.GameObjects;
+using KBot.Modules.Gambling.Generic;
 using Color = Discord.Color;
 using Face = KBot.Modules.Gambling.Generic.Face;
 using Image = System.Drawing.Image;

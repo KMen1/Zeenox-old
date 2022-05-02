@@ -20,24 +20,24 @@ namespace KBot.Modules.Music;
 
 public class MusicService : IInjectable
 {
-    private readonly Dictionary<FilterType, Action<PlayerFilterMap>> _filterActions = new()
+    private readonly Dictionary<FilterTypes, Action<PlayerFilterMap>> _filterActions = new()
     {
-        {FilterType.None, x => x.Clear()},
-        {FilterType.Bassboost, x => x.EnableBassBoost()},
-        {FilterType.Pop, x => x.EnablePop()},
-        {FilterType.Soft, x => x.EnableSoft()},
-        {FilterType.Treblebass, x => x.EnableTreblebass()},
-        {FilterType.Nightcore, x => x.EnableNightcore()},
-        {FilterType.Eightd, x => x.EnableEightd()},
-        {FilterType.Vaporwave, x => x.EnableVaporwave()},
-        {FilterType.Doubletime, x => x.EnableDoubletime()},
-        {FilterType.Slowmotion, x => x.EnableSlowmotion()},
-        {FilterType.Chipmunk, x => x.EnableChipmunk()},
-        {FilterType.Darthvader, x => x.EnableDarthvader()},
-        {FilterType.Dance, x => x.EnableDance()},
-        {FilterType.China, x => x.EnableChina()},
-        {FilterType.Vibrato, x => x.EnableVibrato()},
-        {FilterType.Tremolo, x => x.EnableTremolo()}
+        {FilterTypes.None, x => x.Clear()},
+        {FilterTypes.Bassboost, x => x.EnableBassBoost()},
+        {FilterTypes.Pop, x => x.EnablePop()},
+        {FilterTypes.Soft, x => x.EnableSoft()},
+        {FilterTypes.Treblebass, x => x.EnableTreblebass()},
+        {FilterTypes.Nightcore, x => x.EnableNightcore()},
+        {FilterTypes.Eightd, x => x.EnableEightd()},
+        {FilterTypes.Vaporwave, x => x.EnableVaporwave()},
+        {FilterTypes.Doubletime, x => x.EnableDoubletime()},
+        {FilterTypes.Slowmotion, x => x.EnableSlowmotion()},
+        {FilterTypes.Chipmunk, x => x.EnableChipmunk()},
+        {FilterTypes.Darthvader, x => x.EnableDarthvader()},
+        {FilterTypes.Dance, x => x.EnableDance()},
+        {FilterTypes.China, x => x.EnableChina()},
+        {FilterTypes.Vibrato, x => x.EnableVibrato()},
+        {FilterTypes.Tremolo, x => x.EnableTremolo()}
     };
 
     private readonly LavalinkNode _lavaNode;
@@ -285,7 +285,7 @@ public class MusicService : IInjectable
             .Build();
     }
 
-    public async Task<Embed?> SetFiltersAsync(IGuild guild, SocketUser user, FilterType filterType)
+    public async Task<Embed?> SetFiltersAsync(IGuild guild, SocketUser user, FilterTypes filterType)
     {
         var player = _lavaNode.GetPlayer<MusicPlayer>(guild.Id);
         if (player is null)
@@ -322,7 +322,7 @@ public class MusicService : IInjectable
                 .WithDescription("**Only the person who added the currently playing song can control the bot!**")
                 .Build();
 
-        await player.SetFilterAsync(FilterType.None, _filterActions[FilterType.None]).ConfigureAwait(false);
+        await player.SetFilterAsync(FilterTypes.None, _filterActions[FilterTypes.None]).ConfigureAwait(false);
         return null;
     }
 

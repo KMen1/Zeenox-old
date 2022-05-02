@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -42,22 +44,19 @@ public class LevelingCommands : SlashModuleBase
         await DeferAsync(true).ConfigureAwait(false);
         var top = (await Mongo.GetTopUsersAsync(Context.Guild, 10).ConfigureAwait(false)).ToList();
 
-        var userColumn = "";
-        var levelColumn = "";
-        var xpColumn = "";
+        var userColumn = new StringBuilder();
+        var levelColumn = new StringBuilder();
         foreach (var user in top)
         {
-            userColumn += $"{top.IndexOf(user) + 1}. {Context.Guild.GetUser(user.UserId).Mention}\n";
-            levelColumn += $"{user.Level}\n";
-            xpColumn += $"{user.Xp:N0}\n";
+            userColumn.Append(CultureInfo.InvariantCulture, $"{top.IndexOf(user) + 1}. {Context.Guild.GetUser(user.UserId).Mention}\n");
+            levelColumn.Append(CultureInfo.InvariantCulture, $"{user.Level}\n");
         }
 
         await FollowupAsync(embed: new EmbedBuilder()
             .WithTitle("Top 10 Users")
             .WithColor(Color.Green)
-            .AddField("User", userColumn, true)
-            .AddField("Level", levelColumn, true)
-            .AddField("XP", xpColumn, true)
+            .AddField("User", userColumn.ToString(), true)
+            .AddField("Level", levelColumn.ToString(), true)
             .Build(), ephemeral: true).ConfigureAwait(false);
     }
 
@@ -70,7 +69,7 @@ public class LevelingCommands : SlashModuleBase
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
-            var xp = new Random().Next(1000, 5000);
+            var xp = RandomNumberGenerator.GetInt32(1000, 5000);
             await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x =>
             {
                 x.DailyXpClaim = DateTime.UtcNow;

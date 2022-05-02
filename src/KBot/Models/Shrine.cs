@@ -7,14 +7,7 @@ namespace KBot.Models;
 
 public partial class Shrines
 {
-    //[JsonProperty("id")]
-    //public long Id { get; set; }
-
     [JsonProperty("perks")] public ShrinePerk[] Perks { get; set; }
-
-    //[JsonProperty("start")]
-    //public long Start { get; set; }
-
     [JsonProperty("end")] public long End { get; set; }
 }
 

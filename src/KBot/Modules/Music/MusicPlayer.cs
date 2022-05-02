@@ -16,8 +16,8 @@ namespace KBot.Modules.Music;
 
 public class MusicPlayer : LavalinkPlayer
 {
-    public readonly SocketVoiceChannel VoiceChannel;
-
+    public SocketVoiceChannel VoiceChannel { get; }
+    
     public MusicPlayer(
         SocketVoiceChannel voiceChannel,
         IUserMessage nowPlayingMessage,
@@ -64,11 +64,11 @@ public class MusicPlayer : LavalinkPlayer
         });
     }
 
-    public async Task SetFilterAsync(FilterType filterType, Action<PlayerFilterMap> action)
+    public async Task SetFilterAsync(FilterTypes filterType, Action<PlayerFilterMap> action)
     {
         Filters.Clear();
         action(Filters);
-        FilterEnabled = filterType is FilterType.None ? null : filterType.GetDescription();
+        FilterEnabled = filterType is FilterTypes.None ? null : filterType.GetDescription();
         await Filters.CommitAsync().ConfigureAwait(false);
         await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }

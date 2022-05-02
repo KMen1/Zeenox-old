@@ -115,12 +115,6 @@ public static class PlayerFilterMapExtensions
             Pitch = 0.5f,
             Rate = 1.0f
         };
-        /*
-new TremoloFilter()
-{
-    Depth = 0.3,
-    Frequency = 14
-}*/
     }
 
     public static void EnableDoubletime(this PlayerFilterMap map)
@@ -200,21 +194,4 @@ new TremoloFilter()
             Depth = 0.75f
         };
     }
-
-    /*public static IEnumerable<IFilter> Vibrate()
-{
-    return new IFilter[]
-    {
-        new VibratoFilter
-        {
-            Frequency = 4.0,
-            Depth = 0.75
-        },
-        new TremoloFilter
-        {
-            Frequency = 4.0,
-            Depth = 0.75
-        }
-    };
-}*/
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -24,23 +25,26 @@ public sealed class MinesGame : IGame
         User = user;
         Bet = bet;
         Mines = mines;
-        var random = new Random();
         for (var i = 0; i < 5; i++)
-        for (var j = 0; j < 5; j++)
-            _points.Add(new Field
+        {
+            for (var j = 0; j < 5; j++)
             {
-                Emoji = new Emoji("🪙"),
-                IsClicked = false,
-                IsMine = false,
-                Label = " ",
-                X = i,
-                Y = j
-            });
+                _points.Add(new Field
+                {
+                    Emoji = new Emoji("🪙"),
+                    IsClicked = false,
+                    IsMine = false,
+                    Label = " ",
+                    X = i,
+                    Y = j
+                });
+            }
+        }
 
         for (var i = 0; i < mines; i++)
         {
-            var index = random.Next(0, _points.Count);
-            while (_points[index].IsMine) index = random.Next(0, _points.Count);
+            var index = RandomNumberGenerator.GetInt32(0, _points.Count);
+            while (_points[index].IsMine) index = RandomNumberGenerator.GetInt32(0, _points.Count);
             var orig = _points[index];
             _points[index] = orig with {Emoji = new Emoji("💣"), IsMine = true, Label = " "};
         }

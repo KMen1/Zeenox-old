@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Extensions;
 
 namespace KBot.Modules.Gambling.Mine;
 
@@ -21,26 +22,9 @@ public class MineCommands : SlashModuleBase
         [MinValue(5)] [MaxValue(24)] int mines)
     {
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
-        if (dbUser.Balance < bet)
+        var result = dbUser.CanStartGame(bet, out var eb);
+        if (!result)
         {
-            var eb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**Insufficient balance!**")
-                .AddField("Balance", $"{dbUser.Balance.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .AddField("Bet", $"{bet.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .Build();
-            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-            return;
-        }
-
-        if (dbUser.MinimumBet > bet)
-        {
-            var eb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**You must bet at least you minimum bet!**")
-                .AddField("Minimum bet", $"{dbUser.MinimumBet.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .AddField("Bet", $"{bet.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .Build();
             await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
@@ -59,27 +43,14 @@ public class MineCommands : SlashModuleBase
     public async Task StopMinesAsync(string id)
     {
         var game = _minesService.GetGame(id);
-        if (game is null)
+        var result = game.CheckIfInteractionIsPossible(Context.User.Id, out var eb);
+        if (!result)
         {
-            var sEb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**No game found with that id.**")
-                .Build();
-            await RespondAsync(embed: sEb, ephemeral: true).ConfigureAwait(false);
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
 
-        if (game.User.Id != Context.User.Id)
-        {
-            var sEb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**You can't stop another players game!**")
-                .Build();
-            await RespondAsync(embed: sEb, ephemeral: true).ConfigureAwait(false);
-            return;
-        }
-
-        if (!game.CanStop)
+        if (!game!.CanStop)
         {
             var sEb = new EmbedBuilder()
                 .WithColor(Color.Red)
@@ -90,11 +61,11 @@ public class MineCommands : SlashModuleBase
         }
 
         await DeferAsync(true).ConfigureAwait(false);
-        var eb = new EmbedBuilder()
+        var stopEb = new EmbedBuilder()
             .WithColor(Color.Green)
             .WithDescription("**Stopped.**")
             .Build();
         await game.StopAsync(false).ConfigureAwait(false);
-        await FollowupAsync(embed: eb).ConfigureAwait(false);
+        await FollowupAsync(embed: stopEb).ConfigureAwait(false);
     }
 }

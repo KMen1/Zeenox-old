@@ -39,7 +39,7 @@ public class InteractionHandler : DiscordClientService
         }
         catch (Exception e)
         {
-            Logger.LogError(e, "Failed to load modules");
+            Log.Logger.Error(e, "Failed to add modules");
         }
 
         await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
@@ -58,7 +58,7 @@ public class InteractionHandler : DiscordClientService
         }
         catch (Exception e)
         {
-            Log.Logger.Error(e, "Failed to load modules");
+            Log.Logger.Error(e, "Failed to add modules to {0}", arg.Name);
             throw;
         }
     }

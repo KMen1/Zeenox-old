@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using KBot.Enums;
-using KBot.Modules.Gambling.Generic;
+using KBot.Modules.Gambling.GameObjects;
 
-namespace KBot.Modules.Gambling.GameObjects;
+namespace KBot.Modules.Gambling.Generic;
 
 public class Deck
 {
@@ -12,8 +11,12 @@ public class Deck
     {
         Cards = new List<Card>();
         foreach (Suit suit in Enum.GetValues(typeof(Suit)))
-        foreach (Face face in Enum.GetValues(typeof(Face)))
-            Cards.Add(new Card(suit, face));
+        {
+            foreach (Face face in Enum.GetValues(typeof(Face)))
+            {
+                Cards.Add(new Card(suit, face));
+            }
+        }
         for (var i = 0; i < Cards.Count; i++)
         {
             var r = RandomNumberGenerator.GetInt32(i, Cards.Count);

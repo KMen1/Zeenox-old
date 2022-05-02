@@ -20,6 +20,8 @@ public class EpicGamesService : IInjectable
     private readonly HttpClient _httpClient;
     private readonly MongoService _mongo;
     private readonly IConnectionMultiplexer _redis;
+    private const string Url =
+        "https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=US&allowCountries=HU";
 
     public EpicGamesService(HttpClient httpClient, IConnectionMultiplexer redis, DiscordSocketClient client, MongoService mongo)
     {
@@ -43,33 +45,20 @@ public class EpicGamesService : IInjectable
             try
             {
                 var value = await _redis.GetDatabase().StringGetAsync(key).ConfigureAwait(false);
-                if (value.IsNull) return;
-                if (!value.TryParse(out long nextUnixTime))
-                    continue;
-                var refreshDate = DateTimeOffset.FromUnixTimeSeconds(nextUnixTime);
+                if (value.IsNull || !value.TryParse(out long nextUnixTime)) continue;
                 
+                var refreshDate = DateTimeOffset.FromUnixTimeSeconds(nextUnixTime);
                 if (DateTimeOffset.Now < refreshDate) continue;
 
-                var games = await GetCurrentFreeGamesAsync().ConfigureAwait(false);
-                var channels = new List<ITextChannel>();
-                foreach (var guild in _client.Guilds)
-                {
-                    var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
-                    if (config.EpicNotificationChannelId == 0) continue;
-                    var channel = guild.GetTextChannel(config.EpicNotificationChannelId);
-                    if (channel is null) continue;
-                    channels.Add(channel);
-                }
+                var channelIds = await _mongo.GetEpicNotificationChannelIds().ConfigureAwait(false);
+                var channels = channelIds.Select(id => (ITextChannel) _client.GetChannel(id))
+                    .Where(channel => channel is not null)
+                    .ToList();
 
-                var embeds = games.Select(game =>
-                    new EmbedBuilder()
-                        .WithTitle(game.Title)
-                        .WithDescription($"`{game.Description}`\n\n" +
-                                         $"💰 **{game.Price.TotalPrice.FmtPrice.OriginalPrice} -> Free** \n\n" +
-                                         $"🏁 <t:{((DateTimeOffset)DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).AddHours(17).ToUnixTimeSeconds()}:R>\n\n" +
-                                         $"[Open in browser]({game.EpicUrl})")
-                        .WithImageUrl(game.KeyImages[0].Url.ToString())
-                        .WithColor(Color.Gold).Build()).ToArray();
+                if (channels.Count == 0) continue;
+                
+                var games = await GetCurrentFreeGamesAsync().ConfigureAwait(false);
+                var embeds = games.ToEmbedArray();
 
                 foreach (var textChannel in channels)
                 {
@@ -88,11 +77,7 @@ public class EpicGamesService : IInjectable
 
     public async Task<IEnumerable<Game>> GetCurrentFreeGamesAsync()
     {
-        var response = await _httpClient
-            .GetStringAsync(
-                "https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=US&allowCountries=HU")
-            .ConfigureAwait(false);
-
+        var response = await _httpClient.GetStringAsync(Url).ConfigureAwait(false);
         var search = EpicStore.FromJson(response);
         return search.CurrentGames!;
     }

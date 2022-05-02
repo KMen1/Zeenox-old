@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
@@ -20,6 +21,7 @@ public class DbDService : IInjectable
     private readonly HttpClient _httpClient;
     private readonly MongoService _mongo;
     private readonly IConnectionMultiplexer _redis;
+    private const string ShrineUrl = "https://dbd.onteh.net.au/api/shrine/";
 
     public DbDService(HttpClient httpClient, IConnectionMultiplexer redis, MongoService mongoService,
         DiscordSocketClient client)
@@ -44,37 +46,26 @@ public class DbDService : IInjectable
             try
             {
                 var value = await _redis.GetDatabase().StringGetAsync(key).ConfigureAwait(false);
-                if (value.IsNull) return;
-                if (!value.TryParse(out long nextUnixTime))
-                    continue;
-                var refreshDate = DateTimeOffset.FromUnixTimeSeconds(nextUnixTime);
+                if (value.IsNull || !value.TryParse(out long nextUnixTime)) continue;
                 
+                var refreshDate = DateTimeOffset.FromUnixTimeSeconds(nextUnixTime);
                 if (DateTimeOffset.Now < refreshDate) continue;
 
-                var sw = Stopwatch.StartNew();
-                var shrines = await GetShrinesAsync().ConfigureAwait(false);
-                sw.Stop();
-                var channels = new List<ITextChannel>();
-                foreach (var guild in _client.Guilds)
-                {
-                    var config = await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false);
-                    if (config.DbdNotificationChannelId == 0) continue;
-                    var channel = guild.GetTextChannel(config.DbdNotificationChannelId);
-                    if (channel is null) continue;
-                    channels.Add(channel);
-                }
+                var channelIds = await _mongo.GetDbdNotificationChannelIds().ConfigureAwait(false);
+                var channels = channelIds.Select(id => (ITextChannel) _client.GetChannel(id))
+                    .Where(channel => channel is not null)
+                    .ToList();
+                
+                if (channels.Count == 0) continue;
 
-                var eb = new EmbedBuilder()
-                    .WithTitle("Shrine of Secrets")
-                    .WithColor(Color.DarkOrange)
+                var shrines = await GetShrinesAsync().ConfigureAwait(false);
+                var eb = shrines.ToEmbedBuilder()
                     .WithDescription($"🏁 <t:{refreshDate.AddDays(7).ToUnixTimeSeconds()}:R>")
-                    .WithFooter($"{sw.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)} ms");
-                foreach (var perk in shrines) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
+                    .Build();
 
                 foreach (var textChannel in channels)
                 {
-                    await textChannel.SendMessageAsync(embed: eb.Build()).ConfigureAwait(false);
-                    await Task.Delay(TimeSpan.FromSeconds(7)).ConfigureAwait(false);
+                    await textChannel.SendMessageAsync("@here", embed: eb).ConfigureAwait(false);
                 }
 
                 next = DateTimeOffset.Now.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
@@ -92,7 +83,7 @@ public class DbDService : IInjectable
     {
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
-        var response = await _httpClient.GetStringAsync("https://dbd.onteh.net.au/api/shrine/").ConfigureAwait(false);
+        var response = await _httpClient.GetStringAsync(ShrineUrl).ConfigureAwait(false);
         var shrine = Shrines.FromJson(response);
         var perks = new List<Perk>();
         foreach (var perk in shrine.Perks)

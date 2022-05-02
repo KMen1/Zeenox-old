@@ -45,6 +45,18 @@ public class MongoService : IInjectable
         });
     }
 
+    public async Task<IEnumerable<ulong>> GetDbdNotificationChannelIds()
+    {
+        return (await _configCollection.FindAsync(x => x.DbdNotificationChannelId != 0).ConfigureAwait(false)).ToList()
+            .Select(x => x.DbdNotificationChannelId);
+    }
+
+    public async Task<IEnumerable<ulong>> GetEpicNotificationChannelIds()
+    {
+        return (await _configCollection.FindAsync(x => x.EpicNotificationChannelId != 0).ConfigureAwait(false)).ToList()
+            .Select(x => x.EpicNotificationChannelId);
+    }
+
     public Task AddSelfRoleMessageAsync(SelfRoleMessage message)
     {
         return _brCollection.InsertOneAsync(message);

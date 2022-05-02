@@ -17,7 +17,7 @@ public class Card
             Face.Jack => 10,
             Face.Queen => 10,
             Face.King => 10,
-            _ => Value = (int) face + 1
+            _ => (int) face + 1
         };
     }
 

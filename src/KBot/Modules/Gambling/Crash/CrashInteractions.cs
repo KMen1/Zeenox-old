@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using KBot.Extensions;
 
 namespace KBot.Modules.Gambling.Crash;
 
@@ -17,22 +18,9 @@ public class CrashInteractions : SlashModuleBase
     public async Task StopCrashGameAsync(string id)
     {
         var game = _crashService.GetGame(id);
-        if (game is null)
+        var result = game.CheckIfInteractionIsPossible(Context.User.Id, out var eb);
+        if (!result)
         {
-            var eb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**Game not found!**")
-                .Build();
-            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-            return;
-        }
-        
-        if (game.User.Id != Context.User.Id)
-        {
-            var eb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**This is not your game!**")
-                .Build();
             await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }

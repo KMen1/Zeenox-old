@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using Discord;
+using KBot.Models;
+using KBot.Modules.Gambling;
 using KBot.Modules.Music;
 using Lavalink4NET.Player;
+using Game = KBot.Models.Game;
 
 namespace KBot.Extensions;
 
@@ -83,5 +87,83 @@ public static class GenericExtensions
             .GroupBy(x => x.Index / chunkSize)
             .Select(x => x.Select(v => v.Value).ToList())
             .ToList();
+    }
+
+    public static EmbedBuilder ToEmbedBuilder(this IEnumerable<Perk> perks)
+    {
+        var eb = new EmbedBuilder()
+            .WithTitle("Shrine of Secrets")
+            .WithColor(Color.DarkOrange);
+        foreach (var perk in perks) eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
+        return eb;
+    }
+
+    public static Embed[] ToEmbedArray(this IEnumerable<Game> games)
+    {
+        var date = ((DateTimeOffset) DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).AddHours(17)
+            .ToUnixTimeSeconds();
+        return games.Select(game =>
+            new EmbedBuilder()
+                .WithTitle(game.Title)
+                .WithDescription($"`{game.Description}`\n\n" +
+                                 $"💰 **{game.Price.TotalPrice.FmtPrice.OriginalPrice} -> Free** \n\n" +
+                                 $"🏁 <t:{date}:R>\n\n" +
+                                 $"[Open in browser]({game.EpicUrl})")
+                .WithImageUrl(game.KeyImages[0].Url.ToString())
+                .WithColor(Color.Gold)
+                .Build())
+            .ToArray();
+    }
+
+    public static bool CheckIfInteractionIsPossible(this IGame? game, ulong userId, out Embed? embed)
+    {
+        if (game is null)
+        {
+            embed = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Game not found!**")
+                .Build();
+            return false;
+        }
+
+        if (game.User.Id != userId)
+        {
+            embed = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**This is not your game!**")
+                .Build();
+            return false;
+        }
+
+        embed = null;
+        return true;
+    }
+
+    public static bool CanStartGame(this User user, int bet, out Embed? embed)
+    {
+        if (user.Balance < bet)
+        {
+            embed = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**Insufficient balance!**")
+                .AddField("Balance", $"{user.Balance.ToString("N0", CultureInfo.InvariantCulture)}", true)
+                .AddField("Bet", $"{bet.ToString("N0", CultureInfo.InvariantCulture)}", true)
+                .Build();
+            return false;
+        }
+
+        if (user.MinimumBet > bet)
+        {
+            embed = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**You must bet at least you minimum bet!**")
+                .AddField("Minimum bet", $"{user.MinimumBet.ToString("N0", CultureInfo.InvariantCulture)}", true)
+                .AddField("Bet", $"{bet.ToString("N0", CultureInfo.InvariantCulture)}", true)
+                .Build();
+            return false;
+        }
+
+        embed = null;
+        return true;
     }
 }

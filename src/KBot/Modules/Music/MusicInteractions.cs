@@ -17,7 +17,7 @@ public class MusicInteractions : SlashModuleBase
     [ComponentInteraction("filterselectmenu")]
     public async Task ApplyFilterAsync(params string[] selections)
     {
-        var result = Enum.TryParse(selections[0], out FilterType filterType);
+        var result = Enum.TryParse(selections[0], out FilterTypes filterType);
         if (result)
         {
             await DeferAsync().ConfigureAwait(false);

@@ -7,6 +7,8 @@ namespace KBot.Modules.Gambling;
 public interface IGame
 {
     Task StartAsync();
+    string Id { get; }
+    SocketGuildUser User { get; }
     event EventHandler<GameEndedEventArgs> GameEnded;
 }
 

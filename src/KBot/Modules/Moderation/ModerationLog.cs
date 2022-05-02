@@ -50,14 +50,14 @@ public class ModerationLog : IInjectable
 
         var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
-        foreach (Match match in invites)
+        foreach (var invite in invites.Select(match => match.Value))
         {
-            if ((await _client.GetInviteAsync(match.Value).ConfigureAwait(false)).GuildId == guild.Id) continue;
+            if ((await _client.GetInviteAsync(invite).ConfigureAwait(false)).GuildId == guild.Id) continue;
             var embed = new EmbedBuilder()
                 .WithAuthor("Invite Sent", arg.Author.GetAvatarUrl())
                 .AddField("User", arg.Author.Mention, true)
                 .AddField("Channel", channel.Mention, true)
-                .AddField("Invite", match.Value)
+                .AddField("Invite", invite)
                 .Build();
             await logChannel.SendMessageAsync(embed: embed).ConfigureAwait(false);
         }

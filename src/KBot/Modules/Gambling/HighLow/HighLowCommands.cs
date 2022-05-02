@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using KBot.Extensions;
 
 namespace KBot.Modules.Gambling.HighLow;
 
@@ -19,26 +20,9 @@ public class HighLowCommands : SlashModuleBase
     public async Task StartHighLowAsync([MinValue(100)] [MaxValue(1000000)] int bet)
     {
         var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
-        if (dbUser.Balance < bet)
+        var result = dbUser.CanStartGame(bet, out var eb);
+        if (!result)
         {
-            var eb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**Insufficient balance!**")
-                .AddField("Balance", $"{dbUser.Balance.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .AddField("Bet", $"{bet.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .Build();
-            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-            return;
-        }
-
-        if (dbUser.MinimumBet > bet)
-        {
-            var eb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**You must bet at least you minimum bet!**")
-                .AddField("Minimum bet", $"{dbUser.MinimumBet.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .AddField("Bet", $"{bet.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .Build();
             await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }

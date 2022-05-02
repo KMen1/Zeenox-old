@@ -5,7 +5,7 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Config;
 
-[RequireUserPermission(GuildPermission.Administrator)]
+[DefaultMemberPermissions(GuildPermission.ManageGuild)]
 [Group("announcements", "Setup announcements for your server")]
 public class Announcements : SlashModuleBase
 {
@@ -80,7 +80,7 @@ public class Announcements : SlashModuleBase
     }
 }
 
-[RequireUserPermission(GuildPermission.Administrator)]
+[DefaultMemberPermissions(GuildPermission.ManageGuild)]
 [Group("temporaryvoice", "Setup temporary voice channels")]
 public class TemporaryVoice : SlashModuleBase
 {

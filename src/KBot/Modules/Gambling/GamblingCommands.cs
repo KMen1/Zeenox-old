@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -161,7 +162,7 @@ public class GamblingCommands : SlashModuleBase
         if (lastDaily == DateTime.MinValue || canClaim)
         {
             var id = Guid.NewGuid().ToShortId();
-            var reward = new Random().Next(1000, 10000);
+            var reward = RandomNumberGenerator.GetInt32(1000, 10000);
             await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x =>
             {
                 x.DailyBalanceClaim = DateTime.UtcNow;

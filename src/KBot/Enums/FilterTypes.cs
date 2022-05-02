@@ -4,7 +4,7 @@ using System.ComponentModel;
 namespace KBot.Enums;
 
 [Flags]
-public enum FilterType
+public enum FilterTypes
 {
     [Description("None")] None = 0,
     [Description("Bass Boost")] Bassboost = 1,

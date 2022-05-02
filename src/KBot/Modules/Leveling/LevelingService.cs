@@ -70,7 +70,9 @@ public class LevelingService : IInjectable
 
                     foreach (var roleToRemove in roles.Skip(1).Select(x => user.Guild.GetRole(x.Id))
                                  .Where(x => user.Roles.Contains(x)))
+                    {
                         await user.RemoveRoleAsync(roleToRemove).ConfigureAwait(false);
+                    }
                 }
 
                 if (toNotify.Count == 0)
@@ -84,6 +86,7 @@ public class LevelingService : IInjectable
                         .WithColor(Color.Gold)
                         .WithDescription($"**🎉 Congrats {user.Mention}, you reached level {level}! 🎉**")
                         .Build();
+                    
                     await channel.SendMessageAsync(user.Mention, embed: eb)
                         .ConfigureAwait(false);
                 }

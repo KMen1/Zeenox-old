@@ -45,6 +45,16 @@ public class SelfRoleCommands : SlashModuleBase
         await DeferAsync(true).ConfigureAwait(false);
         var parseResult = ulong.TryParse(messageIdString, NumberStyles.Any, CultureInfo.InvariantCulture,
             out var messageId);
+        if (!parseResult)
+        {
+            var eb = new EmbedBuilder()
+                .WithDescription("**Invalid message id**")
+                .WithColor(Color.Red)
+                .Build();
+            await FollowupAsync(embed: eb).ConfigureAwait(false);
+            return;
+        }
+        
         var msg = await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
         if (msg is null)
         {
@@ -89,6 +99,16 @@ public class SelfRoleCommands : SlashModuleBase
         await DeferAsync(true).ConfigureAwait(false);
         var parseResult = ulong.TryParse(messageIdString, NumberStyles.Any, CultureInfo.InvariantCulture,
             out var messageId);
+        if (!parseResult)
+        {
+            var eb = new EmbedBuilder()
+                .WithDescription("**Invalid message id**")
+                .WithColor(Color.Red)
+                .Build();
+            await FollowupAsync(embed: eb).ConfigureAwait(false);
+            return;
+        }
+        
         var msg = await Context.Channel.GetMessageAsync(messageId).ConfigureAwait(false);
         if (msg is null)
         {
