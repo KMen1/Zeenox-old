@@ -101,8 +101,8 @@ public class MusicPlayer : LavalinkPlayer
     {
         if (Queue.Count > 0 && Queue.Contains(track))
         {
-            nextTrack = Queue[0];
             Queue.Remove(track);
+            nextTrack = Queue[0];
             return true;
         }
 

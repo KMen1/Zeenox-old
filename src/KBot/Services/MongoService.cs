@@ -89,7 +89,7 @@ public class MongoService : IInjectable
 
     private async Task<User> AddUserAsync(SocketGuildUser user)
     {
-        var users = await _userCollection.FindAsync(x => x.UserId == user.Id && x.GuildId == user.Guild.Id)
+        var users = await _userCollection.FindAsync(x => x.UniqueId == user.Id + user.Guild.Id)
             .ConfigureAwait(false);
         if (await users.AnyAsync().ConfigureAwait(false))
             return users.First();

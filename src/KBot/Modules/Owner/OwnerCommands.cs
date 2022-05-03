@@ -64,6 +64,7 @@ public class OwnerCommands : SlashModuleBase
         await FollowupAsync($"The current version is the latest ({currentVersion})").ConfigureAwait(false);
     }
 
+    [RequireOwner]
     [ComponentInteraction("update-yes")]
     public async Task UpdateYesAsync()
     {
@@ -97,7 +98,8 @@ public class OwnerCommands : SlashModuleBase
         Process.Start(pInfo);
         Environment.Exit(0);
     }
-
+    
+    [RequireOwner]
     [ComponentInteraction("update-no")]
     public async Task UpdateNoAsync()
     {

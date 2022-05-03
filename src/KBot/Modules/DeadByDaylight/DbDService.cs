@@ -22,6 +22,7 @@ public class DbDService : IInjectable
     private readonly MongoService _mongo;
     private readonly IConnectionMultiplexer _redis;
     private const string ShrineUrl = "https://dbd.onteh.net.au/api/shrine/";
+    public IEnumerable<Perk> CachedPerks { get; private set; }
 
     public DbDService(HttpClient httpClient, IConnectionMultiplexer redis, MongoService mongoService,
         DiscordSocketClient client)
@@ -30,7 +31,7 @@ public class DbDService : IInjectable
         _redis = redis;
         _mongo = mongoService;
         _client = client;
-
+        
         Task.Run(CheckForNewShrinesAsync);
     }
 
@@ -39,6 +40,7 @@ public class DbDService : IInjectable
         const string key = "next_dbd_shrine";
         var next = DateTimeOffset.Now.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
         await _redis.GetDatabase().StringSetAsync(key, next).ConfigureAwait(false);
+        CachedPerks = await GetShrinesAsync().ConfigureAwait(false);
 
         while (true)
         {
@@ -58,8 +60,8 @@ public class DbDService : IInjectable
                 
                 if (channels.Count == 0) continue;
 
-                var shrines = await GetShrinesAsync().ConfigureAwait(false);
-                var eb = shrines.ToEmbedBuilder()
+                CachedPerks = await GetShrinesAsync().ConfigureAwait(false);
+                var eb = CachedPerks.ToEmbedBuilder()
                     .WithDescription($"🏁 <t:{refreshDate.AddDays(7).ToUnixTimeSeconds()}:R>")
                     .Build();
 
@@ -79,7 +81,7 @@ public class DbDService : IInjectable
         }
     }
 
-    public async Task<IEnumerable<Perk>> GetShrinesAsync()
+    private async Task<IEnumerable<Perk>> GetShrinesAsync()
     {
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");

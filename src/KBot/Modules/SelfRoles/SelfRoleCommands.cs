@@ -6,10 +6,10 @@ using KBot.Models;
 
 namespace KBot.Modules.SelfRoles;
 
+[DefaultMemberPermissions(GuildPermission.ManageGuild)]
 [Group("selfrole", "Self assignable roles using select menus")]
 public class SelfRoleCommands : SlashModuleBase
 {
-    [RequireUserPermission(GuildPermission.ManageRoles)]
     [SlashCommand("create", "Creates a new button role message")]
     public async Task CreateButtonRoleMessageAsync(string title, string description)
     {
@@ -37,7 +37,6 @@ public class SelfRoleCommands : SlashModuleBase
         await FollowupAsync(embed: helpEmbed).ConfigureAwait(false);
     }
 
-    [RequireUserPermission(GuildPermission.ManageRoles)]
     [SlashCommand("add", "Adds a role to the specified button role message.")]
     public async Task AddRoleToMessageAsync([Summary("messageid")] string messageIdString, string title, IRole role,
         string emote, string? description = null)
@@ -92,7 +91,6 @@ public class SelfRoleCommands : SlashModuleBase
         await FollowupAsync(embed: seb).ConfigureAwait(false);
     }
 
-    [RequireUserPermission(GuildPermission.ManageRoles)]
     [SlashCommand("remove", "Removes a role from the specified button role message.")]
     public async Task RemoveRoleFromMessageAsync([Summary("messageid")] string messageIdString, IRole role)
     {

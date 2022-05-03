@@ -4,10 +4,9 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Suggestions;
 
-[Group("suggestion", "Suggestions")]
 public class SuggestionCommands : SlashModuleBase
 {
-    [SlashCommand("create", "Create a new suggestion")]
+    [SlashCommand("suggest", "Create a new suggestion")]
     public async Task CreateSuggestionAsync(string title, string description)
     {
         await DeferAsync().ConfigureAwait(false);
@@ -33,16 +32,6 @@ public class SuggestionCommands : SlashModuleBase
         var suggestionChannel = Context.Guild.GetTextChannel(config.SuggestionChannelId);
         await suggestionChannel.SendMessageAsync(embed: embed, components: comp).ConfigureAwait(false);
         await FollowupWithEmbedAsync(Color.Green, "Suggestion Created", $"In Channel: {suggestionChannel.Mention}")
-            .ConfigureAwait(false);
-    }
-
-    [RequireUserPermission(GuildPermission.Administrator)]
-    [SlashCommand("channel", "Set the channel for suggestion messages")]
-    public async Task SetChannelAsync(ITextChannel? channel = null)
-    {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.SuggestionChannelId = channel?.Id ?? 0)
-            .ConfigureAwait(false);
-        await RespondAsync(channel is null ? "Suggestions disabled!" : "Channel set!", ephemeral: true)
             .ConfigureAwait(false);
     }
 }

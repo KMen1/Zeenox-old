@@ -82,34 +82,6 @@ public class GamblingCommands : SlashModuleBase
         await RespondAsync(embed: embed.Build(), ephemeral: true).ConfigureAwait(false);
     }
 
-    [RequireUserPermission(GuildPermission.Administrator)]
-    [SlashCommand("changebalance", "Change someones balance (admin)")]
-    public async Task ChangeBalanceAsync(SocketGuildUser user, int offset, string reason)
-    {
-        if (user.IsBot)
-        {
-            var eb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**You can't change a bot's balance.**")
-                .Build();
-            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-        }
-
-        await DeferAsync(true).ConfigureAwait(false);
-        var id = Guid.NewGuid().ToShortId();
-        await Mongo.AddTransactionAsync(new Transaction(
-            id,
-            TransactionType.Correction,
-            offset,
-            reason,
-            Context.User.Id,
-            user.Id), user).ConfigureAwait(false);
-        var dbUser = await Mongo.UpdateUserAsync(user, x => x.Balance += offset).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.Green, "Money set!",
-                $"{user.Mention} now has a balance of: **{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}**")
-            .ConfigureAwait(false);
-    }
-
     [SlashCommand("transfer", "Sends money to another user")]
     public async Task TransferBalanceAsync(SocketGuildUser user, [MinValue(1)] [MaxValue(10000000)] int amount)
     {
@@ -177,5 +149,36 @@ public class GamblingCommands : SlashModuleBase
         var timeLeft = lastDaily.AddDays(1) - DateTime.UtcNow;
         await FollowupWithEmbedAsync(Color.Green, "Unable to collect",
             $"Come back in {timeLeft.Humanize()}", ephemeral: true).ConfigureAwait(false);
+    }
+}
+
+public class AdminCommands : SlashModuleBase
+{
+    [DefaultMemberPermissions(GuildPermission.ManageGuild)]
+    [SlashCommand("changebalance", "Change someones balance (admin)")]
+    public async Task ChangeBalanceAsync(SocketGuildUser user, int offset, string reason)
+    {
+        if (user.IsBot)
+        {
+            var eb = new EmbedBuilder()
+                .WithColor(Color.Red)
+                .WithDescription("**You can't change a bot's balance.**")
+                .Build();
+            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
+        }
+
+        await DeferAsync(true).ConfigureAwait(false);
+        var id = Guid.NewGuid().ToShortId();
+        await Mongo.AddTransactionAsync(new Transaction(
+            id,
+            TransactionType.Correction,
+            offset,
+            reason,
+            Context.User.Id,
+            user.Id), user).ConfigureAwait(false);
+        var dbUser = await Mongo.UpdateUserAsync(user, x => x.Balance += offset).ConfigureAwait(false);
+        await FollowupWithEmbedAsync(Color.Green, "Money set!",
+                $"{user.Mention} now has a balance of: **{dbUser.Balance.ToString(CultureInfo.InvariantCulture)}**")
+            .ConfigureAwait(false);
     }
 }

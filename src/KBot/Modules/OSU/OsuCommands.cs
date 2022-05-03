@@ -70,7 +70,7 @@ public class OsuCommands : SlashModuleBase
         await FollowUpWithScoreAsync(scores[0]).ConfigureAwait(false);
     }
 
-    [SlashCommand("profile", "Check someones osu! profile")]
+    [SlashCommand("profile", "Check someone's osu! profile")]
     public async Task SendOsuStatsAsync(string? username = null)
     {
         await DeferAsync().ConfigureAwait(false);

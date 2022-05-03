@@ -73,13 +73,6 @@ public static class GenericExtensions
         return id.ToString().Split("-")[0];
     }
 
-    public static long ToUnixTimeStamp(this DateTime date)
-    {
-        var unixTimestamp = date.Ticks - new DateTime(1970, 1, 1).Ticks;
-        unixTimestamp /= TimeSpan.TicksPerSecond;
-        return unixTimestamp;
-    }
-
     public static IEnumerable<IEnumerable<T>> ChunkBy<T>(this IEnumerable<T> source, int chunkSize)
     {
         return source

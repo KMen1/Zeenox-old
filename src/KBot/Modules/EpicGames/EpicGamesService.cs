@@ -22,6 +22,7 @@ public class EpicGamesService : IInjectable
     private readonly IConnectionMultiplexer _redis;
     private const string Url =
         "https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=US&allowCountries=HU";
+    public IEnumerable<Game> ChachedGames { get; private set; }
 
     public EpicGamesService(HttpClient httpClient, IConnectionMultiplexer redis, DiscordSocketClient client, MongoService mongo)
     {
@@ -38,7 +39,8 @@ public class EpicGamesService : IInjectable
         const string key = "next_epic_free";
         var next = ((DateTimeOffset)DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).AddHours(17).AddMinutes(5).ToUnixTimeSeconds();
         await _redis.GetDatabase().StringSetAsync(key, next).ConfigureAwait(false);
-
+        ChachedGames = await GetCurrentFreeGamesAsync().ConfigureAwait(false);
+        
         while (true)
         {
             await Task.Delay(TimeSpan.FromMinutes(5)).ConfigureAwait(false);
@@ -57,8 +59,8 @@ public class EpicGamesService : IInjectable
 
                 if (channels.Count == 0) continue;
                 
-                var games = await GetCurrentFreeGamesAsync().ConfigureAwait(false);
-                var embeds = games.ToEmbedArray();
+                ChachedGames = await GetCurrentFreeGamesAsync().ConfigureAwait(false);
+                var embeds = ChachedGames.ToEmbedArray();
 
                 foreach (var textChannel in channels)
                 {
@@ -75,7 +77,7 @@ public class EpicGamesService : IInjectable
         }
     }
 
-    public async Task<IEnumerable<Game>> GetCurrentFreeGamesAsync()
+    private async Task<IEnumerable<Game>> GetCurrentFreeGamesAsync()
     {
         var response = await _httpClient.GetStringAsync(Url).ConfigureAwait(false);
         var search = EpicStore.FromJson(response);

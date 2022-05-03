@@ -87,8 +87,11 @@ public class LevelingCommands : SlashModuleBase
                 .ConfigureAwait(false);
         }
     }
+}
 
-    [RequireUserPermission(GuildPermission.Administrator)]
+public class AdminCommands : SlashModuleBase
+{
+    [DefaultMemberPermissions(GuildPermission.ManageGuild)]
     [SlashCommand("changexp", "Change someone's XP")]
     public async Task ChangeXpAsync(SocketGuildUser user, int offset)
     {
@@ -99,7 +102,7 @@ public class LevelingCommands : SlashModuleBase
             .ConfigureAwait(false);
     }
 
-    [RequireUserPermission(GuildPermission.Administrator)]
+    [DefaultMemberPermissions(GuildPermission.ManageGuild)]
     [SlashCommand("changelevel", "Change someone's level")]
     public async Task ChangeLevelAsync(SocketGuildUser user, int offset)
     {
@@ -109,61 +112,4 @@ public class LevelingCommands : SlashModuleBase
                 $"{user.Mention} now has a level of **{dbUser.Level.ToString(CultureInfo.InvariantCulture)}**")
             .ConfigureAwait(false);
     }
-
-    [RequireUserPermission(GuildPermission.Administrator)]
-    [SlashCommand("setchannel", "Set the channel for level up messages")]
-    public async Task SetChannelAsync(ITextChannel? channel = null)
-    {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.LevelUpChannelId = channel?.Id ?? 0)
-            .ConfigureAwait(false);
-        var eb = new EmbedBuilder()
-            .WithColor(channel is null ? Color.Red : Color.Green)
-            .WithDescription(channel is null
-                ? "**Leveling system is now disabled**"
-                : $"**Level up messages will be sent to {channel.Mention}**")
-            .Build();
-        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-    }
-
-    [RequireUserPermission(GuildPermission.Administrator)]
-    [SlashCommand("setafk", "Set the AFK channel")]
-    public async Task SetAfkChannelAsync(IVoiceChannel? channel = null)
-    {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.AfkChannelId = channel?.Id ?? 0)
-            .ConfigureAwait(false);
-        var eb = new EmbedBuilder()
-            .WithColor(channel is null ? Color.Red : Color.Green)
-            .WithDescription(channel is null
-                ? "**AFK Channel disabled**"
-                : $"**{channel.Mention} is set to be the AFK channel**")
-            .Build();
-        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-    }
-
-    [RequireUserPermission(GuildPermission.Administrator)]
-    [SlashCommand("addrole", "Add a role to the leveling roles")]
-    public async Task AddRoleAsync(IRole role, [MinValue(1)] int level)
-    {
-        await Mongo
-            .UpdateGuildConfigAsync(Context.Guild, x => x.LevelRoles.Add(new LevelRole(role.Id, level)))
-            .ConfigureAwait(false);
-        var eb = new EmbedBuilder()
-            .WithColor(Color.Green)
-            .WithDescription($"**{role.Mention} will now be granted after reaching level {level}**")
-            .Build();
-        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-    }
-
-    [RequireUserPermission(GuildPermission.Administrator)]
-    [SlashCommand("removerole", "Remove a role from the leveling roles")]
-    public async Task RemoveRoleAsync(IRole role)
-    {
-        await Mongo.UpdateGuildConfigAsync(Context.Guild, x => x.LevelRoles.RemoveAll(y => y.Id == role.Id))
-            .ConfigureAwait(false);
-        var eb = new EmbedBuilder()
-            .WithColor(Color.Red)
-            .WithDescription($"**{role.Mention} removed from level roles**")
-            .Build();
-        await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
-    }
-}
+} 
