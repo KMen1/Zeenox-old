@@ -22,7 +22,7 @@ public class User
         Level = 1;
         DailyXpClaim = DateTime.MinValue;
         Roles = new List<ulong>();
-        Roles.AddRange(user.Roles.Select(x => x.Id));
+        Roles.AddRange(user.Roles.Where(x => !x.IsEveryone).Select(x => x.Id));
         Balance = 1000;
         DailyBalanceClaim = DateTime.MinValue;
         Wins = 0;

@@ -45,6 +45,11 @@ public class MongoService : IInjectable
         });
     }
 
+    public async Task<bool> IsGuildRegisteredAsync(IGuild guild)
+    {
+        return await (await _configCollection.FindAsync(x => x.GuildId == guild.Id).ConfigureAwait(false)).AnyAsync().ConfigureAwait(false);
+    }
+
     public async Task<IEnumerable<ulong>> GetDbdNotificationChannelIds()
     {
         return (await _configCollection.FindAsync(x => x.DbdNotificationChannelId != 0).ConfigureAwait(false)).ToList()

@@ -27,8 +27,23 @@ public class GuildEvents : IInjectable
         client.UserBanned += AnnounceUserBannedAsync;
         client.UserUnbanned += AnnounceUserUnbannedAsync;
         client.UserVoiceStateUpdated += OnUserVoiceStateUpdatedAsync;
+        client.GuildMemberUpdated += OnGuildMemberUpdatedAsync;
         _channels = new List<(SocketGuildUser user, ulong channelId)>();
         Task.Run(DeleteChannelsAsync);
+    }
+
+    private async Task OnGuildMemberUpdatedAsync(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
+    {
+        var beforeUser = await before.GetOrDownloadAsync().ConfigureAwait(false);
+        if (beforeUser is null)
+            return;
+        
+        var rolesChanged = beforeUser.Roles.OrderBy(x => x).SequenceEqual(after.Roles.OrderBy(x => x));
+        if (!rolesChanged)
+            return;
+        
+        await _mongo.UpdateUserAsync(after, x => x.Roles = after.Roles.Where(y => !y.IsEveryone).Select(z => z.Id).ToList())
+            .ConfigureAwait(false);
     }
 
     private async Task DeleteChannelsAsync()
@@ -46,9 +61,8 @@ public class GuildEvents : IInjectable
                         _channels.Remove((user, channelId));
                         continue;
                     }
-                
+
                     if (channel.Users.Count > 0) continue;
-                
                     await channel.DeleteAsync().ConfigureAwait(false);
                     _channels.Remove((user, channelId));
                 }
@@ -95,7 +109,7 @@ public class GuildEvents : IInjectable
 
     private async Task ClientOnGuildAvailableAsync(SocketGuild guild)
     {
-        if (await _mongo.GetGuildConfigAsync(guild).ConfigureAwait(false) is null)
+        if (!await _mongo.IsGuildRegisteredAsync(guild).ConfigureAwait(false))
             await _mongo.CreateGuildConfigAsync(guild).ConfigureAwait(false);
     }
 

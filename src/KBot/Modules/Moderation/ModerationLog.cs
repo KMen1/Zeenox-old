@@ -68,8 +68,8 @@ public class ModerationLog : IInjectable
     private async Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> before, SocketMessage afterMessage,
         ISocketMessageChannel iChannel)
     {
-        if (!before.HasValue) return;
-        var beforeMessage = before.Value;
+        var beforeMessage = await before.GetOrDownloadAsync().ConfigureAwait(false);
+        if (beforeMessage is null) return;
         if (beforeMessage.Author.IsBot || beforeMessage.Author.IsWebhook)
             return;
         if (beforeMessage.Content.Equals(afterMessage.Content, StringComparison.OrdinalIgnoreCase)) return;
@@ -94,12 +94,13 @@ public class ModerationLog : IInjectable
 
     private async Task OnMessageDeletedAsync(Cacheable<IMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2)
     {
-        if (!arg1.HasValue || !arg2.HasValue) return;
-        var message = arg1.Value;
+        var message = await arg1.GetOrDownloadAsync().ConfigureAwait(false);
+        var channel = await arg2.GetOrDownloadAsync().ConfigureAwait(false);
+        if (message is null || channel is null) return;
         if (message.Author.IsBot || message.Author.IsWebhook)
             return;
-        var channel = (SocketTextChannel)arg2.Value;
-        var guild = channel.Guild;
+        
+        var guild = ((SocketTextChannel)channel).Guild;
 
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
         if (config.ModLogChannelId == 0)
@@ -110,7 +111,7 @@ public class ModerationLog : IInjectable
         var embed = new EmbedBuilder()
             .WithAuthor("Message Deleted", message.Author.GetAvatarUrl())
             .AddField("User", message.Author.Mention, true)
-            .AddField("Channel", channel.Mention, true)
+            .AddField("Channel", ((SocketTextChannel)channel).Mention, true)
             .AddField("Content", $"```{message.Content}```");
 
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);

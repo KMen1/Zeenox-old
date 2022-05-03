@@ -74,7 +74,7 @@ public static class Program
                 {
                     LogLevel = LogSeverity.Verbose,
                     AlwaysDownloadUsers = true,
-                    MessageCacheSize = 100,
+                    MessageCacheSize = 500,
                     GatewayIntents = GatewayIntents.All,
                     LogGatewayIntentWarnings = false
                 };
@@ -135,7 +135,7 @@ public static class Program
                 {
                     EndPoints = {config.Redis.Endpoint},
                     Password = config.Redis.Password
-                })); 
+                }));
             })
             .UseSerilog()
             .UseConsoleLifetime()
@@ -156,7 +156,7 @@ public static class Program
 
     [ComImport]
     [Guid("00021401-0000-0000-C000-000000000046")]
-    private sealed class ShellLink
+    private class ShellLink
     {
     }
 

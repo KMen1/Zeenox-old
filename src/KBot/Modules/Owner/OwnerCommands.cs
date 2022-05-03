@@ -7,8 +7,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using KBot.Extensions;
-using KBot.Modules.Gambling.BlackJack.Game;
 
 namespace KBot.Modules.Owner;
 
