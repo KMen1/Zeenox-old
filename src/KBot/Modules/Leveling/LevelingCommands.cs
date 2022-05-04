@@ -26,13 +26,15 @@ public class LevelingCommands : SlashModuleBase
             return;
         }
 
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) setUser).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)setUser).ConfigureAwait(false);
         var embed = new EmbedBuilder()
             .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
             .WithColor(Color.Gold)
             .AddField("🆙 Level", $"`{dbUser.Level.ToString(CultureInfo.InvariantCulture)}`")
-            .AddField("➡ XP/Required",
-                $"`{dbUser.Xp.ToString("N0", CultureInfo.InvariantCulture)}/{dbUser.RequiredXp.ToString("N0", CultureInfo.InvariantCulture)}`")
+            .AddField(
+                "➡ XP/Required",
+                $"`{dbUser.Xp.ToString("N0", CultureInfo.InvariantCulture)}/{dbUser.RequiredXp.ToString("N0", CultureInfo.InvariantCulture)}`"
+            )
             .Build();
 
         await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
@@ -48,42 +50,62 @@ public class LevelingCommands : SlashModuleBase
         var levelColumn = new StringBuilder();
         foreach (var user in top)
         {
-            userColumn.Append(CultureInfo.InvariantCulture, $"{top.IndexOf(user) + 1}. {Context.Guild.GetUser(user.UserId).Mention}\n");
+            userColumn.Append(
+                CultureInfo.InvariantCulture,
+                $"{top.IndexOf(user) + 1}. {Context.Guild.GetUser(user.UserId).Mention}\n"
+            );
             levelColumn.Append(CultureInfo.InvariantCulture, $"{user.Level}\n");
         }
 
-        await FollowupAsync(embed: new EmbedBuilder()
-            .WithTitle("Top 10 Users")
-            .WithColor(Color.Green)
-            .AddField("User", userColumn.ToString(), true)
-            .AddField("Level", levelColumn.ToString(), true)
-            .Build(), ephemeral: true).ConfigureAwait(false);
+        await FollowupAsync(
+                embed: new EmbedBuilder()
+                    .WithTitle("Top 10 Users")
+                    .WithColor(Color.Green)
+                    .AddField("User", userColumn.ToString(), true)
+                    .AddField("Level", levelColumn.ToString(), true)
+                    .Build(),
+                ephemeral: true
+            )
+            .ConfigureAwait(false);
     }
 
     [SlashCommand("daily", "Collects your daily XP")]
     public async Task GetDailyAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         var lastDaily = dbUser.DailyXpClaim;
         var canClaim = lastDaily.AddDays(1) < DateTime.UtcNow;
         if (lastDaily == DateTime.MinValue || canClaim)
         {
             var xp = RandomNumberGenerator.GetInt32(1000, 5000);
-            await Mongo.UpdateUserAsync((SocketGuildUser) Context.User, x =>
-            {
-                x.DailyXpClaim = DateTime.UtcNow;
-                x.Xp += xp;
-            }).ConfigureAwait(false);
-            await FollowupWithEmbedAsync(Color.Green,
-                $"Successfully collected your daily XP of {xp.ToString("N0", CultureInfo.InvariantCulture)}", "",
-                ephemeral: true).ConfigureAwait(false);
+            await Mongo
+                .UpdateUserAsync(
+                    (SocketGuildUser)Context.User,
+                    x =>
+                    {
+                        x.DailyXpClaim = DateTime.UtcNow;
+                        x.Xp += xp;
+                    }
+                )
+                .ConfigureAwait(false);
+            await FollowupWithEmbedAsync(
+                    Color.Green,
+                    $"Successfully collected your daily XP of {xp.ToString("N0", CultureInfo.InvariantCulture)}",
+                    "",
+                    ephemeral: true
+                )
+                .ConfigureAwait(false);
         }
         else
         {
             var timeLeft = lastDaily.AddDays(1) - DateTime.UtcNow;
-            await FollowupWithEmbedAsync(Color.Green, "Unable to collect",
-                    $"Come back in {timeLeft.Humanize()}", ephemeral: true)
+            await FollowupWithEmbedAsync(
+                    Color.Green,
+                    "Unable to collect",
+                    $"Come back in {timeLeft.Humanize()}",
+                    ephemeral: true
+                )
                 .ConfigureAwait(false);
         }
     }
@@ -97,8 +119,11 @@ public class AdminCommands : SlashModuleBase
     {
         await DeferAsync(true).ConfigureAwait(false);
         var dbUser = await Mongo.UpdateUserAsync(user, x => x.Xp += offset).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.Green, "XP set!",
-                $"{user.Mention} now has an XP of **{dbUser.Xp.ToString("N0", CultureInfo.InvariantCulture)}**")
+        await FollowupWithEmbedAsync(
+                Color.Green,
+                "XP set!",
+                $"{user.Mention} now has an XP of **{dbUser.Xp.ToString("N0", CultureInfo.InvariantCulture)}**"
+            )
             .ConfigureAwait(false);
     }
 
@@ -107,9 +132,14 @@ public class AdminCommands : SlashModuleBase
     public async Task ChangeLevelAsync(SocketGuildUser user, int offset)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await Mongo.UpdateUserAsync(user, x => x.Level += offset).ConfigureAwait(false);
-        await FollowupWithEmbedAsync(Color.Green, "Level set!",
-                $"{user.Mention} now has a level of **{dbUser.Level.ToString(CultureInfo.InvariantCulture)}**")
+        var dbUser = await Mongo
+            .UpdateUserAsync(user, x => x.Level += offset)
+            .ConfigureAwait(false);
+        await FollowupWithEmbedAsync(
+                Color.Green,
+                "Level set!",
+                $"{user.Mention} now has a level of **{dbUser.Level.ToString(CultureInfo.InvariantCulture)}**"
+            )
             .ConfigureAwait(false);
     }
-} 
+}

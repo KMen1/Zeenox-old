@@ -18,10 +18,12 @@ public class MineCommands : SlashModuleBase
     }
 
     [SlashCommand("start", "Starts a new game of mine")]
-    public async Task StartMinesAsync([MinValue(100)] [MaxValue(1000000)] int bet,
-        [MinValue(5)] [MaxValue(24)] int mines)
+    public async Task StartMinesAsync(
+        [MinValue(100)] [MaxValue(1000000)] int bet,
+        [MinValue(5)] [MaxValue(24)] int mines
+    )
     {
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         var result = dbUser.CanStartGame(bet, out var eb);
         if (!result)
         {
@@ -35,7 +37,7 @@ public class MineCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: sEb).ConfigureAwait(false);
         var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
-        var game = _minesService.CreateGame((SocketGuildUser) Context.User, msg, bet, mines);
+        var game = _minesService.CreateGame((SocketGuildUser)Context.User, msg, bet, mines);
         await game.StartAsync().ConfigureAwait(false);
     }
 
@@ -54,7 +56,9 @@ public class MineCommands : SlashModuleBase
         {
             var sEb = new EmbedBuilder()
                 .WithColor(Color.Red)
-                .WithDescription("**You need to click at least one field to be able to stop the game.**")
+                .WithDescription(
+                    "**You need to click at least one field to be able to stop the game.**"
+                )
                 .Build();
             await RespondAsync(embed: sEb, ephemeral: true).ConfigureAwait(false);
             return;

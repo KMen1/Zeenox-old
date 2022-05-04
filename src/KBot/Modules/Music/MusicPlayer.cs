@@ -17,12 +17,13 @@ namespace KBot.Modules.Music;
 public class MusicPlayer : LavalinkPlayer
 {
     public SocketVoiceChannel VoiceChannel { get; }
-    
+
     public MusicPlayer(
         SocketVoiceChannel voiceChannel,
         IUserMessage nowPlayingMessage,
         YouTubeService youTubeService,
-        LavalinkNode lavalinkNode)
+        LavalinkNode lavalinkNode
+    )
     {
         VoiceChannel = voiceChannel;
         YouTubeService = youTubeService;
@@ -39,7 +40,7 @@ public class MusicPlayer : LavalinkPlayer
 
     public bool Loop { get; private set; }
     public string? FilterEnabled { get; private set; }
-    public SocketUser LastRequestedBy => (SocketUser) CurrentTrack!.Context!;
+    public SocketUser LastRequestedBy => (SocketUser)CurrentTrack!.Context!;
     private IUserMessage NowPlayingMessage { get; }
     public List<LavalinkTrack> Queue { get; }
     public int QueueCount => Queue.Count;
@@ -56,12 +57,14 @@ public class MusicPlayer : LavalinkPlayer
 
     private Task UpdateNowPlayingMessageAsync()
     {
-        return NowPlayingMessage.ModifyAsync(x =>
-        {
-            x.Content = "";
-            x.Embed = new NowPlayingEmbedBuilder(this).Build();
-            x.Components = new ComponentBuilder().NowPlayerComponents(this);
-        });
+        return NowPlayingMessage.ModifyAsync(
+            x =>
+            {
+                x.Content = "";
+                x.Embed = new NowPlayingEmbedBuilder(this).Build();
+                x.Components = new ComponentBuilder().NowPlayerComponents(this);
+            }
+        );
     }
 
     public async Task SetFilterAsync(FilterTypes filterType, Action<PlayerFilterMap> action)
@@ -112,7 +115,8 @@ public class MusicPlayer : LavalinkPlayer
 
     public async Task<bool> ClearQueueAsync()
     {
-        if (Queue.Count == 0) return false;
+        if (Queue.Count == 0)
+            return false;
         Queue.Clear();
         await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
         return true;
@@ -120,7 +124,8 @@ public class MusicPlayer : LavalinkPlayer
 
     public Task SkipAsync()
     {
-        if (CurrentTrack == null || Queue.Count == 0) return Task.CompletedTask;
+        if (CurrentTrack == null || Queue.Count == 0)
+            return Task.CompletedTask;
         QueueHistory.Add(CurrentTrack);
         var nextTrack = Queue[0];
         Queue.RemoveAt(0);
@@ -129,23 +134,30 @@ public class MusicPlayer : LavalinkPlayer
 
     public Task VoteSkipAsync(IUser user)
     {
-        if (SkipVotes.Contains(user.Id)) return Task.CompletedTask;
+        if (SkipVotes.Contains(user.Id))
+            return Task.CompletedTask;
         SkipVotes.Add(user.Id);
-        if (SkipVotes.Count < SkipVotesNeeded) return UpdateNowPlayingMessageAsync();
+        if (SkipVotes.Count < SkipVotesNeeded)
+            return UpdateNowPlayingMessageAsync();
         SkipVotes.Clear();
         return SkipAsync();
     }
 
     public Task PlayPreviousAsync()
     {
-        if (QueueHistory.Count == 0) return Task.CompletedTask;
+        if (QueueHistory.Count == 0)
+            return Task.CompletedTask;
         var track = QueueHistory[^1];
         QueueHistory.Remove(track);
         return PlayAsync(track);
     }
 
-    public override async Task PlayAsync(LavalinkTrack track, TimeSpan? startTime = null, TimeSpan? endTime = null,
-        bool noReplace = false)
+    public override async Task PlayAsync(
+        LavalinkTrack track,
+        TimeSpan? startTime = null,
+        TimeSpan? endTime = null,
+        bool noReplace = false
+    )
     {
         await base.PlayAsync(track, startTime, endTime, noReplace).ConfigureAwait(false);
         await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
@@ -163,7 +175,11 @@ public class MusicPlayer : LavalinkPlayer
         await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
     }
 
-    public override async Task SetVolumeAsync(float volume = 1, bool normalize = false, bool force = false)
+    public override async Task SetVolumeAsync(
+        float volume = 1,
+        bool normalize = false,
+        bool force = false
+    )
     {
         await base.SetVolumeAsync(volume, normalize, force).ConfigureAwait(false);
         await UpdateNowPlayingMessageAsync().ConfigureAwait(false);
@@ -171,7 +187,8 @@ public class MusicPlayer : LavalinkPlayer
 
     public override async Task OnTrackEndAsync(TrackEndEventArgs eventArgs)
     {
-        if (!eventArgs.MayStartNext) return;
+        if (!eventArgs.MayStartNext)
+            return;
         if (Loop)
         {
             await PlayAsync(CurrentTrack!).ConfigureAwait(false);
@@ -198,7 +215,8 @@ public class MusicPlayer : LavalinkPlayer
             var result = await searchListRequest.ExecuteAsync().ConfigureAwait(false);
             var next = result.Items.First(x => x.Snippet is not null).Id.VideoId;
 
-            var track = await LavalinkNode.GetTrackAsync($"https://www.youtube.com/watch?v={next}")
+            var track = await LavalinkNode
+                .GetTrackAsync($"https://www.youtube.com/watch?v={next}")
                 .ConfigureAwait(false);
             track!.Context = CurrentTrack.Context;
 
@@ -225,7 +243,7 @@ public class MusicPlayer : LavalinkPlayer
             .WithColor(Color.Red)
             .Build();
         await NowPlayingMessage.Channel.SendMessageAsync(embed: eb).ConfigureAwait(false);
-        
+
         await base.OnTrackExceptionAsync(eventArgs).ConfigureAwait(false);
     }
 

@@ -8,9 +8,11 @@ namespace KBot.Models;
 
 public partial class Perk
 {
-    [JsonProperty("name")] public string Name { get; set; }
+    [JsonProperty("name")]
+    public string Name { get; set; }
 
-    [JsonProperty("character")] public long CharacterId { get; set; }
+    [JsonProperty("character")]
+    public long CharacterId { get; set; }
 
     public string CharacterName => DbDService.GetCharacterNameFromId(CharacterId);
 }

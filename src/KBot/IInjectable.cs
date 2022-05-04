@@ -1,5 +1,3 @@
 ﻿namespace KBot;
 
-public interface IInjectable
-{
-}
+public interface IInjectable { }

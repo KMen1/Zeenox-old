@@ -26,7 +26,8 @@ public sealed class BlackJackGame : IGame
         SocketGuildUser player,
         IUserMessage message,
         int bet,
-        Cloudinary cloudinary)
+        Cloudinary cloudinary
+    )
     {
         Id = Guid.NewGuid().ToShortId();
         Message = message;
@@ -55,15 +56,17 @@ public sealed class BlackJackGame : IGame
 
     public Task StartAsync()
     {
-        return Message.ModifyAsync(x =>
-        {
-            x.Content = string.Empty;
-            x.Embed = new BlackJackEmbedBuilder(this).Build();
-            x.Components = new ComponentBuilder()
-                .WithButton("Hit", $"blackjack-hit:{Id}")
-                .WithButton("Stand", $"blackjack-stand:{Id}")
-                .Build();
-        });
+        return Message.ModifyAsync(
+            x =>
+            {
+                x.Content = string.Empty;
+                x.Embed = new BlackJackEmbedBuilder(this).Build();
+                x.Components = new ComponentBuilder()
+                    .WithButton("Hit", $"blackjack-hit:{Id}")
+                    .WithButton("Stand", $"blackjack-stand:{Id}")
+                    .Build();
+            }
+        );
     }
 
     public async Task HitAsync()
@@ -74,132 +77,194 @@ public sealed class BlackJackGame : IGame
             case > 21:
             {
                 Hidden = false;
-                await Message.ModifyAsync(x =>
-                {
-                    x.Embed = new BlackJackEmbedBuilder(
-                            this,
-                            $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!")
-                        .WithColor(Color.Red)
-                        .Build();
-                    x.Components = new ComponentBuilder().Build();
-                }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: PLAYER BUST", false));
+                await Message
+                    .ModifyAsync(
+                        x =>
+                        {
+                            x.Embed = new BlackJackEmbedBuilder(
+                                this,
+                                $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                            )
+                                .WithColor(Color.Red)
+                                .Build();
+                            x.Components = new ComponentBuilder().Build();
+                        }
+                    )
+                    .ConfigureAwait(false);
+                OnGameEnded(
+                    new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: PLAYER BUST", false)
+                );
                 return;
             }
             case 21:
             {
                 Hidden = false;
-                var reward = (int) (Bet * 2.5) - Bet;
-                await Message.ModifyAsync(x =>
-                {
-                    x.Embed = new BlackJackEmbedBuilder(
-                            this,
-                            $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!")
-                        .WithColor(Color.Green)
-                        .Build();
-                    x.Components = new ComponentBuilder().Build();
-                }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
+                var reward = (int)(Bet * 2.5) - Bet;
+                await Message
+                    .ModifyAsync(
+                        x =>
+                        {
+                            x.Embed = new BlackJackEmbedBuilder(
+                                this,
+                                $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                            )
+                                .WithColor(Color.Green)
+                                .Build();
+                            x.Components = new ComponentBuilder().Build();
+                        }
+                    )
+                    .ConfigureAwait(false);
+                OnGameEnded(
+                    new GameEndedEventArgs(
+                        Id,
+                        User,
+                        Bet,
+                        reward,
+                        "Blackjack: PLAYER BLACKJACK",
+                        true
+                    )
+                );
                 return;
             }
         }
 
-        await Message.ModifyAsync(x => x.Embed = new BlackJackEmbedBuilder(this).Build()).ConfigureAwait(false);
+        await Message
+            .ModifyAsync(x => x.Embed = new BlackJackEmbedBuilder(this).Build())
+            .ConfigureAwait(false);
     }
 
     public async Task StandAsync()
     {
         Hidden = false;
-        while (DealerScore < 17) DealerCards.Add(Deck.Draw());
+        while (DealerScore < 17)
+            DealerCards.Add(Deck.Draw());
         switch (DealerScore)
         {
             case > 21:
             {
                 var reward = Bet * 2 - Bet;
-                await Message.ModifyAsync(x =>
-                {
-                    x.Embed = new BlackJackEmbedBuilder(
-                            this,
-                            $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!")
-                        .WithColor(Color.Green)
-                        .Build();
-                    x.Components = new ComponentBuilder().Build();
-                }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: DEALER BUST", true));
+                await Message
+                    .ModifyAsync(
+                        x =>
+                        {
+                            x.Embed = new BlackJackEmbedBuilder(
+                                this,
+                                $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                            )
+                                .WithColor(Color.Green)
+                                .Build();
+                            x.Components = new ComponentBuilder().Build();
+                        }
+                    )
+                    .ConfigureAwait(false);
+                OnGameEnded(
+                    new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: DEALER BUST", true)
+                );
                 return;
             }
             case 21:
             {
-                await Message.ModifyAsync(x =>
-                {
-                    x.Embed = new BlackJackEmbedBuilder(
-                            this,
-                            $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!")
-                        .WithColor(Color.Red)
-                        .Build();
-                    x.Components = new ComponentBuilder().Build();
-                }).ConfigureAwait(false);
-                OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
+                await Message
+                    .ModifyAsync(
+                        x =>
+                        {
+                            x.Embed = new BlackJackEmbedBuilder(
+                                this,
+                                $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                            )
+                                .WithColor(Color.Red)
+                                .Build();
+                            x.Components = new ComponentBuilder().Build();
+                        }
+                    )
+                    .ConfigureAwait(false);
+                OnGameEnded(
+                    new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false)
+                );
                 return;
             }
         }
 
         if (PlayerScore == 21)
         {
-            var reward = (int) (Bet * 2.5) - Bet;
-            await Message.ModifyAsync(x =>
-            {
-                x.Embed = new BlackJackEmbedBuilder(
-                        this,
-                        $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!")
-                    .WithColor(Color.Green)
-                    .Build();
-                x.Components = new ComponentBuilder().Build();
-            }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true));
+            var reward = (int)(Bet * 2.5) - Bet;
+            await Message
+                .ModifyAsync(
+                    x =>
+                    {
+                        x.Embed = new BlackJackEmbedBuilder(
+                            this,
+                            $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                        )
+                            .WithColor(Color.Green)
+                            .Build();
+                        x.Components = new ComponentBuilder().Build();
+                    }
+                )
+                .ConfigureAwait(false);
+            OnGameEnded(
+                new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER BLACKJACK", true)
+            );
             return;
         }
 
         if (PlayerScore > DealerScore)
         {
             var reward = Bet * 2 - Bet;
-            await Message.ModifyAsync(x =>
-            {
-                x.Embed = new BlackJackEmbedBuilder(
-                        this,
-                        $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!")
-                    .WithColor(Color.Green)
-                    .Build();
-                x.Components = new ComponentBuilder().Build();
-            }).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER WIN", true));
+            await Message
+                .ModifyAsync(
+                    x =>
+                    {
+                        x.Embed = new BlackJackEmbedBuilder(
+                            this,
+                            $"**Result:** You win **{reward.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                        )
+                            .WithColor(Color.Green)
+                            .Build();
+                        x.Components = new ComponentBuilder().Build();
+                    }
+                )
+                .ConfigureAwait(false);
+            OnGameEnded(
+                new GameEndedEventArgs(Id, User, Bet, reward, "Blackjack: PLAYER WIN", true)
+            );
             return;
         }
 
         if (PlayerScore < DealerScore)
         {
-            await Message.ModifyAsync(x =>
-            {
-                x.Embed = new BlackJackEmbedBuilder(
-                        this,
-                        $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!")
-                    .WithColor(Color.Red)
-                    .Build();
-                x.Components = new ComponentBuilder().Build();
-            }).ConfigureAwait(false);
+            await Message
+                .ModifyAsync(
+                    x =>
+                    {
+                        x.Embed = new BlackJackEmbedBuilder(
+                            this,
+                            $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                        )
+                            .WithColor(Color.Red)
+                            .Build();
+                        x.Components = new ComponentBuilder().Build();
+                    }
+                )
+                .ConfigureAwait(false);
             OnGameEnded(new GameEndedEventArgs(Id, User, Bet, 0, "Blackjack: DEALER WIN", false));
             return;
         }
 
-        await Message.ModifyAsync(x =>
-        {
-            x.Embed = new BlackJackEmbedBuilder(
-                    this,
-                    "**Result:** Tie - You get your bet back!")
-                .WithColor(Color.Blue)
-                .Build();
-            x.Components = new ComponentBuilder().Build();
-        }).ConfigureAwait(false);
+        await Message
+            .ModifyAsync(
+                x =>
+                {
+                    x.Embed = new BlackJackEmbedBuilder(
+                        this,
+                        "**Result:** Tie - You get your bet back!"
+                    )
+                        .WithColor(Color.Blue)
+                        .Build();
+                    x.Components = new ComponentBuilder().Build();
+                }
+            )
+            .ConfigureAwait(false);
         OnGameEnded(new GameEndedEventArgs(Id, User, Bet, -1, "Blackjack: PUSH", false));
     }
 
@@ -209,8 +274,13 @@ public sealed class BlackJackGame : IGame
         if (Hidden)
         {
             dealerImages.Add(DealerCards[0].GetImage());
-            dealerImages.Add((Bitmap) Image.FromStream(Assembly.GetExecutingAssembly()
-                .GetManifestResourceStream("KBot.Resources.empty.png")!));
+            dealerImages.Add(
+                (Bitmap)Image.FromStream(
+                    Assembly
+                        .GetExecutingAssembly()
+                        .GetManifestResourceStream("KBot.Resources.empty.png")!
+                )
+            );
         }
         else
         {
@@ -267,9 +337,7 @@ public sealed class BlackJackGame : IGame
         foreach (var image in enumerable)
         {
             width += image.Width;
-            height = image.Height > height
-                ? image.Height
-                : height;
+            height = image.Height > height ? image.Height : height;
         }
 
         var bitmap = new Bitmap(width - enumerable[0].Width + 21, height);
@@ -286,9 +354,7 @@ public sealed class BlackJackGame : IGame
 
     private static Bitmap MergePlayerAndDealer(Image player, Image dealer)
     {
-        var height = player.Height > dealer.Height
-            ? player.Height
-            : dealer.Height;
+        var height = player.Height > dealer.Height ? player.Height : dealer.Height;
 
         var bitmap = new Bitmap(360, height);
         using var g = Graphics.FromImage(bitmap);

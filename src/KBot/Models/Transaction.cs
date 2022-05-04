@@ -10,7 +10,14 @@ namespace KBot.Models;
 
 public class Transaction
 {
-    public Transaction(string id, TransactionType source, int amount, string? description, ulong from, ulong to)
+    public Transaction(
+        string id,
+        TransactionType source,
+        int amount,
+        string? description,
+        ulong from,
+        ulong to
+    )
     {
         Id = id;
         Source = source;
@@ -32,13 +39,26 @@ public class Transaction
         Date = DateTime.UtcNow;
     }
 
-    [BsonId] public string Id { get; set; }
-    [BsonElement("type")] public TransactionType Source { get; set; }
-    [BsonElement("amount")] public int Amount { get; set; }
-    [BsonElement("date")] public DateTime Date { get; set; }
-    [BsonElement("desc")] public string? Description { get; set; }
-    [BsonElement("from")] public ulong? From { get; set; }
-    [BsonElement("to")] public ulong? To { get; set; }
+    [BsonId]
+    public string Id { get; set; }
+
+    [BsonElement("type")]
+    public TransactionType Source { get; set; }
+
+    [BsonElement("amount")]
+    public int Amount { get; set; }
+
+    [BsonElement("date")]
+    public DateTime Date { get; set; }
+
+    [BsonElement("desc")]
+    public string? Description { get; set; }
+
+    [BsonElement("from")]
+    public ulong? From { get; set; }
+
+    [BsonElement("to")]
+    public ulong? To { get; set; }
 
     public override string ToString()
     {

@@ -14,11 +14,7 @@ public sealed class MinesGame : IGame
 {
     private readonly List<Field> _points = new();
 
-    public MinesGame(
-        IUserMessage message,
-        SocketGuildUser user,
-        int bet,
-        int mines)
+    public MinesGame(IUserMessage message, SocketGuildUser user, int bet, int mines)
     {
         Id = Guid.NewGuid().ToShortId();
         Message = message;
@@ -29,24 +25,27 @@ public sealed class MinesGame : IGame
         {
             for (var j = 0; j < 5; j++)
             {
-                _points.Add(new Field
-                {
-                    Emoji = new Emoji("🪙"),
-                    IsClicked = false,
-                    IsMine = false,
-                    Label = " ",
-                    X = i,
-                    Y = j
-                });
+                _points.Add(
+                    new Field
+                    {
+                        Emoji = new Emoji("🪙"),
+                        IsClicked = false,
+                        IsMine = false,
+                        Label = " ",
+                        X = i,
+                        Y = j
+                    }
+                );
             }
         }
 
         for (var i = 0; i < mines; i++)
         {
             var index = RandomNumberGenerator.GetInt32(0, _points.Count);
-            while (_points[index].IsMine) index = RandomNumberGenerator.GetInt32(0, _points.Count);
+            while (_points[index].IsMine)
+                index = RandomNumberGenerator.GetInt32(0, _points.Count);
             var orig = _points[index];
-            _points[index] = orig with {Emoji = new Emoji("💣"), IsMine = true, Label = " "};
+            _points[index] = orig with { Emoji = new Emoji("💣"), IsMine = true, Label = " " };
         }
     }
 
@@ -66,7 +65,7 @@ public sealed class MinesGame : IGame
             var one = Factorial(25) * Factorial(25 - Mines - Clicked);
             var two = Factorial(25 - Mines) * Factorial(25 - Clicked);
             var t = one / two * 0.97;
-            return Math.Round((decimal) t, 2);
+            return Math.Round((decimal)t, 2);
         }
     }
 
@@ -78,7 +77,8 @@ public sealed class MinesGame : IGame
             .WithTitle($"Mines | {Id}")
             .WithColor(Color.Gold)
             .WithDescription(
-                $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {Mines}\n**Exit:** `/mine stop {Id}`")
+                $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {Mines}\n**Exit:** `/mine stop {Id}`"
+            )
             .Build();
         var comp = new ComponentBuilder();
         var size = Math.Sqrt(_points.Count);
@@ -86,17 +86,21 @@ public sealed class MinesGame : IGame
         {
             var row = new ActionRowBuilder();
             for (var y = 0; y < size; y++)
-                row.AddComponent(new ButtonBuilder(" ", $"mine:{Id}:{x}:{y}", emote: new Emoji("🪙")).Build());
+                row.AddComponent(
+                    new ButtonBuilder(" ", $"mine:{Id}:{x}:{y}", emote: new Emoji("🪙")).Build()
+                );
 
             comp.AddRow(row);
         }
 
-        return Message.ModifyAsync(x =>
-        {
-            x.Content = string.Empty;
-            x.Embed = eb;
-            x.Components = comp.Build();
-        });
+        return Message.ModifyAsync(
+            x =>
+            {
+                x.Content = string.Empty;
+                x.Embed = eb;
+                x.Components = comp.Build();
+            }
+        );
     }
 
     public async Task ClickFieldAsync(int x, int y)
@@ -112,11 +116,13 @@ public sealed class MinesGame : IGame
         }
 
         Clicked++;
-        _points[index] = orig with {IsClicked = true, Label = $"{Multiplier}x"};
+        _points[index] = orig with { IsClicked = true, Label = $"{Multiplier}x" };
         if (!_points.Any(u => !u.IsClicked && !u.IsMine))
         {
             await StopAsync(false).ConfigureAwait(false);
-            OnGameEnded(new GameEndedEventArgs(Id, User, Bet, (int) (Bet * Multiplier), "Mines: WIN", false));
+            OnGameEnded(
+                new GameEndedEventArgs(Id, User, Bet, (int)(Bet * Multiplier), "Mines: WIN", false)
+            );
             return;
         }
 
@@ -127,8 +133,14 @@ public sealed class MinesGame : IGame
             for (var j = 0; j < Math.Sqrt(_points.Count); j++)
             {
                 var tPonint = _points.Find(z => z.X == i && z.Y == j);
-                row.AddComponent(new ButtonBuilder(tPonint!.Label, $"mine:{Id}:{i}:{j}", emote: new Emoji("🪙"),
-                    isDisabled: tPonint.IsClicked).Build());
+                row.AddComponent(
+                    new ButtonBuilder(
+                        tPonint!.Label,
+                        $"mine:{Id}:{i}:{j}",
+                        emote: new Emoji("🪙"),
+                        isDisabled: tPonint.IsClicked
+                    ).Build()
+                );
             }
 
             comp.AddRow(row);
@@ -146,7 +158,7 @@ public sealed class MinesGame : IGame
 
     public async Task StopAsync(bool lost)
     {
-        var prize = lost ? 0 : (int) Math.Round(Bet * Multiplier);
+        var prize = lost ? 0 : (int)Math.Round(Bet * Multiplier);
 
         var revealComponents = new ComponentBuilder();
         for (var i = 0; i < Math.Sqrt(_points.Count); i++)
@@ -155,27 +167,42 @@ public sealed class MinesGame : IGame
             for (var j = 0; j < Math.Sqrt(_points.Count); j++)
             {
                 var tPonint = _points.Find(z => z.X == i && z.Y == j);
-                row.AddComponent(new ButtonBuilder(tPonint!.Label, $"mine:{Id}:{i}:{j}", emote: tPonint.Emoji,
-                    isDisabled: true).Build());
+                row.AddComponent(
+                    new ButtonBuilder(
+                        tPonint!.Label,
+                        $"mine:{Id}:{i}:{j}",
+                        emote: tPonint.Emoji,
+                        isDisabled: true
+                    ).Build()
+                );
             }
 
             revealComponents.AddRow(row);
         }
 
-        await Message.ModifyAsync(x =>
-        {
-            x.Embed = new EmbedBuilder()
-                .WithTitle($"Mines | {Id}")
-                .WithColor(lost ? Color.Red : Color.Green)
-                .WithDescription(
-                    $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {Mines}\n" +
-                    (lost
-                        ? $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits"
-                        : $"**Result:** You win **{prize.ToString("N0", CultureInfo.InvariantCulture)}** credits"))
-                .Build();
-            x.Components = revealComponents.Build();
-        }).ConfigureAwait(false);
-        OnGameEnded(new GameEndedEventArgs(Id, User, Bet, prize, lost ? "Mines: LOSE" : "Mines: WIN", !lost));
+        await Message
+            .ModifyAsync(
+                x =>
+                {
+                    x.Embed = new EmbedBuilder()
+                        .WithTitle($"Mines | {Id}")
+                        .WithColor(lost ? Color.Red : Color.Green)
+                        .WithDescription(
+                            $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {Mines}\n"
+                                + (
+                                    lost
+                                        ? $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits"
+                                        : $"**Result:** You win **{prize.ToString("N0", CultureInfo.InvariantCulture)}** credits"
+                                )
+                        )
+                        .Build();
+                    x.Components = revealComponents.Build();
+                }
+            )
+            .ConfigureAwait(false);
+        OnGameEnded(
+            new GameEndedEventArgs(Id, User, Bet, prize, lost ? "Mines: LOSE" : "Mines: WIN", !lost)
+        );
     }
 
     private void OnGameEnded(GameEndedEventArgs e)

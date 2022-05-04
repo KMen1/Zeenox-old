@@ -5,9 +5,7 @@ namespace KBot.Models;
 
 public class BotConfig
 {
-    public BotConfig()
-    {
-    }
+    public BotConfig() { }
 
     public BotConfig(
         ClientConfig client,
@@ -16,7 +14,8 @@ public class BotConfig
         OsuApiConfig osuApi,
         CloudinaryConfig cloudinary,
         GoogleConfig google,
-        RedisConfig redis)
+        RedisConfig redis
+    )
     {
         Client = client;
         Lavalink = lavalink;
@@ -38,9 +37,7 @@ public class BotConfig
 
 public class ClientConfig
 {
-    public ClientConfig()
-    {
-    }
+    public ClientConfig() { }
 
     public ClientConfig(string token, string game)
     {
@@ -54,9 +51,7 @@ public class ClientConfig
 
 public class LavalinkConfig
 {
-    public LavalinkConfig()
-    {
-    }
+    public LavalinkConfig() { }
 
     public LavalinkConfig(string host, ushort port, string password)
     {
@@ -72,9 +67,7 @@ public class LavalinkConfig
 
 public class MongoDbConfig
 {
-    public MongoDbConfig()
-    {
-    }
+    public MongoDbConfig() { }
 
     public MongoDbConfig(
         string connectionString,
@@ -84,7 +77,8 @@ public class MongoDbConfig
         string userCollection,
         string transactionCollection,
         string warnCollection,
-        string buttonRoleCollection)
+        string buttonRoleCollection
+    )
     {
         ConnectionString = connectionString;
         Database = database;
@@ -108,9 +102,7 @@ public class MongoDbConfig
 
 public class OsuApiConfig
 {
-    public OsuApiConfig()
-    {
-    }
+    public OsuApiConfig() { }
 
     public OsuApiConfig(ulong appId, string appSecret)
     {
@@ -124,9 +116,7 @@ public class OsuApiConfig
 
 public class CloudinaryConfig
 {
-    public CloudinaryConfig()
-    {
-    }
+    public CloudinaryConfig() { }
 
     public CloudinaryConfig(string cloudName, string apiKey, string apiSecret)
     {
@@ -142,9 +132,7 @@ public class CloudinaryConfig
 
 public class GoogleConfig
 {
-    public GoogleConfig()
-    {
-    }
+    public GoogleConfig() { }
 
     public GoogleConfig(string apiKey)
     {
@@ -156,9 +144,7 @@ public class GoogleConfig
 
 public class RedisConfig
 {
-    public RedisConfig()
-    {
-    }
+    public RedisConfig() { }
 
     public RedisConfig(string endpoint, string password)
     {

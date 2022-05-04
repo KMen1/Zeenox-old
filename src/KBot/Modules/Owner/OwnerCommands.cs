@@ -39,7 +39,9 @@ public class OwnerCommands : SlashModuleBase
         await DeferAsync().ConfigureAwait(false);
         using var client = new HttpClient();
         var newVersion = await client.GetStringAsync(VersionUrl).ConfigureAwait(false);
-        var currentVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+        var currentVersion = FileVersionInfo
+            .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
+            .FileVersion;
         if (!newVersion.Equals(currentVersion, StringComparison.OrdinalIgnoreCase))
         {
             var eb = new EmbedBuilder
@@ -61,7 +63,8 @@ public class OwnerCommands : SlashModuleBase
             return;
         }
 
-        await FollowupAsync($"The current version is the latest ({currentVersion})").ConfigureAwait(false);
+        await FollowupAsync($"The current version is the latest ({currentVersion})")
+            .ConfigureAwait(false);
     }
 
     [RequireOwner]
@@ -83,7 +86,10 @@ public class OwnerCommands : SlashModuleBase
         await msg.ModifyAsync(x => x.Content = "Downloaded update...").ConfigureAwait(false);
         await Task.Delay(1000).ConfigureAwait(false);
         await msg.ModifyAsync(x => x.Content = "Unpacking update...").ConfigureAwait(false);
-        ZipFile.ExtractToDirectory($"C:\\KBot\\{newVersion}\\update.zip", $"C:\\KBot\\{newVersion}");
+        ZipFile.ExtractToDirectory(
+            $"C:\\KBot\\{newVersion}\\update.zip",
+            $"C:\\KBot\\{newVersion}"
+        );
         await msg.ModifyAsync(x => x.Content = "Unpacked update...").ConfigureAwait(false);
         File.Delete($"C:\\KBot\\{newVersion}\\update.zip");
         await msg.ModifyAsync(x => x.Content = "Starting bot...").ConfigureAwait(false);
@@ -98,7 +104,7 @@ public class OwnerCommands : SlashModuleBase
         Process.Start(pInfo);
         Environment.Exit(0);
     }
-    
+
     [RequireOwner]
     [ComponentInteraction("update-no")]
     public async Task UpdateNoAsync()

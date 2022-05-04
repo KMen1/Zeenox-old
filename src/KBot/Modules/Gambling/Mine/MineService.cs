@@ -29,41 +29,51 @@ public class MineService : IInjectable
 
     private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
-        var game = (MinesGame) sender!;
+        var game = (MinesGame)sender!;
         game.GameEnded -= OnGameEndedAsync;
         _games.Remove(game);
 
         if (e.IsWin)
         {
-            await _mongo.AddTransactionAsync(new Transaction(
-                    e.GameId,
-                    TransactionType.Mines,
-                    e.Prize,
-                    e.Description),
-                e.User).ConfigureAwait(false);
+            await _mongo
+                .AddTransactionAsync(
+                    new Transaction(e.GameId, TransactionType.Mines, e.Prize, e.Description),
+                    e.User
+                )
+                .ConfigureAwait(false);
 
-            await _mongo.UpdateUserAsync(e.User, x =>
-            {
-                x.Balance += e.Prize;
-                x.Wins++;
-                x.MoneyWon += e.Prize;
-            }).ConfigureAwait(false);
+            await _mongo
+                .UpdateUserAsync(
+                    e.User,
+                    x =>
+                    {
+                        x.Balance += e.Prize;
+                        x.Wins++;
+                        x.MoneyWon += e.Prize;
+                    }
+                )
+                .ConfigureAwait(false);
             return;
         }
 
-        await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Mines,
-                -e.Bet,
-                e.Description),
-            e.User).ConfigureAwait(false);
+        await _mongo
+            .AddTransactionAsync(
+                new Transaction(e.GameId, TransactionType.Mines, -e.Bet, e.Description),
+                e.User
+            )
+            .ConfigureAwait(false);
 
-        await _mongo.UpdateUserAsync(e.User, x =>
-        {
-            x.Balance -= e.Bet;
-            x.Losses++;
-            x.MoneyLost += e.Bet;
-        }).ConfigureAwait(false);
+        await _mongo
+            .UpdateUserAsync(
+                e.User,
+                x =>
+                {
+                    x.Balance -= e.Bet;
+                    x.Losses++;
+                    x.MoneyLost += e.Bet;
+                }
+            )
+            .ConfigureAwait(false);
     }
 
     public MinesGame? GetGame(string id)

@@ -15,11 +15,11 @@ public class HighLowCommands : SlashModuleBase
     {
         _highLowService = highLowService;
     }
-    
+
     [SlashCommand("highlow", "Starts a new game of higher/lower.")]
     public async Task StartHighLowAsync([MinValue(100)] [MaxValue(1000000)] int bet)
     {
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         var result = dbUser.CanStartGame(bet, out var eb);
         if (!result)
         {
@@ -33,7 +33,7 @@ public class HighLowCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: sEb).ConfigureAwait(false);
         var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
-        var game = _highLowService.CreateGame((SocketGuildUser) Context.User, msg, bet);
+        var game = _highLowService.CreateGame((SocketGuildUser)Context.User, msg, bet);
         await game.StartAsync().ConfigureAwait(false);
     }
 }

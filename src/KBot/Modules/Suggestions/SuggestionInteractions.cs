@@ -12,17 +12,22 @@ public class SuggestionInteractions : SlashModuleBase
     [ComponentInteraction("suggest-accept:*")]
     public async Task AcceptSuggestionAsync(ulong userId)
     {
-        var message = ((SocketMessageComponent) Context.Interaction).Message;
+        var message = ((SocketMessageComponent)Context.Interaction).Message;
         var embed = message.Embeds.First();
-        var eb = embed.ToEmbedBuilder()
+        var eb = embed
+            .ToEmbedBuilder()
             .AddField("Accepted by", Context.User.Mention)
             .WithColor(Color.Green)
             .Build();
-        await message.ModifyAsync(x =>
-        {
-            x.Embed = eb;
-            x.Components = null;
-        }).ConfigureAwait(false);
+        await message
+            .ModifyAsync(
+                x =>
+                {
+                    x.Embed = eb;
+                    x.Components = null;
+                }
+            )
+            .ConfigureAwait(false);
 
         var user = await Context.Client.GetUserAsync(userId).ConfigureAwait(false);
         var userEb = new EmbedBuilder()
@@ -39,17 +44,22 @@ public class SuggestionInteractions : SlashModuleBase
     [ComponentInteraction("suggest-decline:*")]
     public async Task DeclineSuggestionAsync(ulong userId)
     {
-        var message = ((SocketMessageComponent) Context.Interaction).Message;
+        var message = ((SocketMessageComponent)Context.Interaction).Message;
         var embed = message.Embeds.First();
-        var eb = embed.ToEmbedBuilder()
+        var eb = embed
+            .ToEmbedBuilder()
             .AddField("Denied by", Context.User.Mention)
             .WithColor(Color.Red)
             .Build();
-        await message.ModifyAsync(x =>
-        {
-            x.Embed = eb;
-            x.Components = null;
-        }).ConfigureAwait(false);
+        await message
+            .ModifyAsync(
+                x =>
+                {
+                    x.Embed = eb;
+                    x.Components = null;
+                }
+            )
+            .ConfigureAwait(false);
 
         var user = await Context.Client.GetUserAsync(userId).ConfigureAwait(false);
 

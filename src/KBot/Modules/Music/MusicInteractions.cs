@@ -21,9 +21,11 @@ public class MusicInteractions : SlashModuleBase
         if (result)
         {
             await DeferAsync().ConfigureAwait(false);
-            var embed = await _audioService.SetFiltersAsync(Context.Guild, Context.User, filterType)
+            var embed = await _audioService
+                .SetFiltersAsync(Context.Guild, Context.User, filterType)
                 .ConfigureAwait(false);
-            if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
+            if (embed is not null)
+                await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
         }
     }
 
@@ -31,7 +33,9 @@ public class MusicInteractions : SlashModuleBase
     public async Task StopPlayerAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await _audioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        var embed = await _audioService
+            .DisconnectAsync(Context.Guild, Context.User)
+            .ConfigureAwait(false);
         await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
@@ -39,26 +43,33 @@ public class MusicInteractions : SlashModuleBase
     public async Task IncreaseVolumeAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await _audioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeUp)
+        var embed = await _audioService
+            .SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeUp)
             .ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
+        if (embed is not null)
+            await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
     [ComponentInteraction("volumedown")]
     public async Task DecreaseVolumeAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await _audioService.SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeDown)
+        var embed = await _audioService
+            .SetVolumeAsync(Context.Guild, Context.User, VoiceButtonType.VolumeDown)
             .ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
+        if (embed is not null)
+            await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
     [ComponentInteraction("pause")]
     public async Task PausePlayerAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await _audioService.PauseOrResumeAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
+        var embed = await _audioService
+            .PauseOrResumeAsync(Context.Guild, Context.User)
+            .ConfigureAwait(false);
+        if (embed is not null)
+            await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 
     [ComponentInteraction("next")]
@@ -72,7 +83,9 @@ public class MusicInteractions : SlashModuleBase
     public async Task GoBackAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await _audioService.PlayPreviousTrackAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        await _audioService
+            .PlayPreviousTrackAsync(Context.Guild, Context.User)
+            .ConfigureAwait(false);
     }
 
     [ComponentInteraction("repeat")]
@@ -93,7 +106,10 @@ public class MusicInteractions : SlashModuleBase
     public async Task ClearFiltersAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await _audioService.ClearFiltersAsync(Context.Guild, Context.User).ConfigureAwait(false);
-        if (embed is not null) await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
+        var embed = await _audioService
+            .ClearFiltersAsync(Context.Guild, Context.User)
+            .ConfigureAwait(false);
+        if (embed is not null)
+            await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
     }
 }

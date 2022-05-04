@@ -20,8 +20,12 @@ public class InteractionHandler : DiscordClientService
     private readonly InteractionService _interactionService;
     private readonly IServiceProvider _provider;
 
-    public InteractionHandler(DiscordSocketClient client, ILogger<DiscordClientService> logger,
-        IServiceProvider provider, InteractionService interactionService) : base(client, logger)
+    public InteractionHandler(
+        DiscordSocketClient client,
+        ILogger<DiscordClientService> logger,
+        IServiceProvider provider,
+        InteractionService interactionService
+    ) : base(client, logger)
     {
         _provider = provider;
         _interactionService = interactionService;
@@ -35,7 +39,9 @@ public class InteractionHandler : DiscordClientService
         _interactionService.ComponentCommandExecuted += HandleComponentCommandResultAsync;
         try
         {
-            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _provider).ConfigureAwait(false);
+            await _interactionService
+                .AddModulesAsync(Assembly.GetEntryAssembly(), _provider)
+                .ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -44,7 +50,10 @@ public class InteractionHandler : DiscordClientService
 
         await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
         await Client
-            .SetGameAsync("/" + _provider.GetRequiredService<BotConfig>().Client.Game, type: ActivityType.Listening)
+            .SetGameAsync(
+                "/" + _provider.GetRequiredService<BotConfig>().Client.Game,
+                type: ActivityType.Listening
+            )
             .ConfigureAwait(false);
         await Client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
     }
@@ -53,7 +62,8 @@ public class InteractionHandler : DiscordClientService
     {
         try
         {
-            await _interactionService.AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray())
+            await _interactionService
+                .AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray())
                 .ConfigureAwait(false);
         }
         catch (Exception e)
@@ -63,10 +73,14 @@ public class InteractionHandler : DiscordClientService
         }
     }
 
-    private static async Task HandleComponentCommandResultAsync(ComponentCommandInfo componentInfo,
-        IInteractionContext interactionContext, IResult result)
+    private static async Task HandleComponentCommandResultAsync(
+        ComponentCommandInfo componentInfo,
+        IInteractionContext interactionContext,
+        IResult result
+    )
     {
-        if (result.IsSuccess) return;
+        if (result.IsSuccess)
+            return;
         var interaction = interactionContext.Interaction;
         var eb = new EmbedBuilder()
             .WithAuthor("ERROR", "https://i.ibb.co/SrZZggy/x.png")
@@ -82,11 +96,14 @@ public class InteractionHandler : DiscordClientService
         await interaction.FollowupAsync(embed: eb).ConfigureAwait(false);
     }
 
-    private static async Task HandleSlashCommandResultAsync(SlashCommandInfo commandInfo,
+    private static async Task HandleSlashCommandResultAsync(
+        SlashCommandInfo commandInfo,
         IInteractionContext interactionContext,
-        IResult result)
+        IResult result
+    )
     {
-        if (result.IsSuccess) return;
+        if (result.IsSuccess)
+            return;
 
         var interaction = interactionContext.Interaction;
         var eb = new EmbedBuilder()

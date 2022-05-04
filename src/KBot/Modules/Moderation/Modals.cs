@@ -7,15 +7,19 @@ namespace KBot.Modules.Moderation;
 
 public class AppealModal : IModal
 {
-    [ModalTextInput("appeal-reason")] public string AppealReason { get; set; }
-    [ModalTextInput("appeal-acceptreason")] public string AcceptReason { get; set; }
+    [ModalTextInput("appeal-reason")]
+    public string AppealReason { get; set; }
+
+    [ModalTextInput("appeal-acceptreason")]
+    public string AcceptReason { get; set; }
 
     public string Title => "Appeal a warn";
 }
 
 public class ReasonModal : IModal
 {
-    [ModalTextInput("reason-input")] public string Reason { get; set; }
+    [ModalTextInput("reason-input")]
+    public string Reason { get; set; }
 
     public string Title => "Justify Decision";
 }

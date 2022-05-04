@@ -11,8 +11,14 @@ public abstract class SlashModuleBase : InteractionModuleBase<SocketInteractionC
     public MongoService Mongo { get; set; } = null!;
     public SocketGuildUser GuildUser => (SocketGuildUser)Context.User;
 
-    protected async Task<IUserMessage> FollowupWithEmbedAsync(Color color, string title, string? description = null,
-        string? url = null, string? imageUrl = null, bool ephemeral = false)
+    protected async Task<IUserMessage> FollowupWithEmbedAsync(
+        Color color,
+        string title,
+        string? description = null,
+        string? url = null,
+        string? imageUrl = null,
+        bool ephemeral = false
+    )
     {
         var embed = new EmbedBuilder()
             .WithTitle(title)
@@ -21,6 +27,8 @@ public abstract class SlashModuleBase : InteractionModuleBase<SocketInteractionC
             .WithImageUrl(imageUrl)
             .WithColor(color)
             .Build();
-        return await Context.Interaction.FollowupAsync(embed: embed, ephemeral: ephemeral).ConfigureAwait(false);
+        return await Context.Interaction
+            .FollowupAsync(embed: embed, ephemeral: ephemeral)
+            .ConfigureAwait(false);
     }
 }

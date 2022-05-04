@@ -15,11 +15,11 @@ public class BlackJackCommands : SlashModuleBase
     {
         _blackJackService = blackJackService;
     }
-    
+
     [SlashCommand("blackjack", "Starts a new game of Blackjack")]
     public async Task StartBlackJackAsync([MinValue(1)] [MaxValue(10000000)] int bet)
     {
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         var result = dbUser.CanStartGame(bet, out var eb);
         if (!result)
         {
@@ -33,7 +33,7 @@ public class BlackJackCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: sEb).ConfigureAwait(false);
         var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
-        var game = _blackJackService.CreateGame((SocketGuildUser) Context.User, msg, bet);
+        var game = _blackJackService.CreateGame((SocketGuildUser)Context.User, msg, bet);
         await game.StartAsync().ConfigureAwait(false);
     }
 }

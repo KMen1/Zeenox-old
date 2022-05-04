@@ -17,7 +17,11 @@ public class LevelingService : IInjectable
     private readonly IConnectionMultiplexer _redis;
     private readonly ConcurrentQueue<(SocketGuildUser, int)> _xpQueue = new();
 
-    public LevelingService(DiscordSocketClient client, MongoService database, IConnectionMultiplexer redis)
+    public LevelingService(
+        DiscordSocketClient client,
+        MongoService database,
+        IConnectionMultiplexer redis
+    )
     {
         _mongo = database;
         _redis = redis;
@@ -34,7 +38,8 @@ public class LevelingService : IInjectable
             try
             {
                 var usersToUpdate = new List<(SocketGuildUser, int)>();
-                while (_xpQueue.TryDequeue(out var user)) usersToUpdate.Add(user);
+                while (_xpQueue.TryDequeue(out var user))
+                    usersToUpdate.Add(user);
 
                 if (usersToUpdate.Count == 0)
                     continue;
@@ -44,20 +49,29 @@ public class LevelingService : IInjectable
                 {
                     var config = await _mongo.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
                     var oldUserData = await _mongo.GetUserAsync(user).ConfigureAwait(false);
-                    var newUserData = await _mongo.UpdateUserAsync(user, x =>
-                    {
-                        x.Xp += xp;
-                        if (x.Xp < x.RequiredXp) return;
-                        x.Xp -= x.RequiredXp;
-                        x.Level++;
-                    }).ConfigureAwait(false);
+                    var newUserData = await _mongo
+                        .UpdateUserAsync(
+                            user,
+                            x =>
+                            {
+                                x.Xp += xp;
+                                if (x.Xp < x.RequiredXp)
+                                    return;
+                                x.Xp -= x.RequiredXp;
+                                x.Level++;
+                            }
+                        )
+                        .ConfigureAwait(false);
 
                     if (newUserData.Level == oldUserData.Level)
                         continue;
                     toNotify.Add((user, newUserData.Level, config.LevelUpChannelId));
 
-                    var lowerLevelRoles = config.LevelRoles.FindAll(x => x.Level <= newUserData.Level);
-                    if (lowerLevelRoles.Count == 0) continue;
+                    var lowerLevelRoles = config.LevelRoles.FindAll(
+                        x => x.Level <= newUserData.Level
+                    );
+                    if (lowerLevelRoles.Count == 0)
+                        continue;
 
                     var roles = lowerLevelRoles.OrderByDescending(x => x.Level).ToList();
                     var highestRole = roles[0];
@@ -68,8 +82,12 @@ public class LevelingService : IInjectable
                         await user.AddRoleAsync(role).ConfigureAwait(false);
                     }
 
-                    foreach (var roleToRemove in roles.Skip(1).Select(x => user.Guild.GetRole(x.Id))
-                                 .Where(x => user.Roles.Contains(x)))
+                    foreach (
+                        var roleToRemove in roles
+                            .Skip(1)
+                            .Select(x => user.Guild.GetRole(x.Id))
+                            .Where(x => user.Roles.Contains(x))
+                    )
                     {
                         await user.RemoveRoleAsync(roleToRemove).ConfigureAwait(false);
                     }
@@ -80,15 +98,17 @@ public class LevelingService : IInjectable
 
                 foreach (var (user, level, channelId) in toNotify)
                 {
-                    if (user.Guild.GetTextChannel(channelId) is not { } channel) continue;
+                    if (user.Guild.GetTextChannel(channelId) is not { } channel)
+                        continue;
                     var eb = new EmbedBuilder()
                         .WithAuthor($"{user.Username}#{user.Discriminator}", user.GetAvatarUrl())
                         .WithColor(Color.Gold)
-                        .WithDescription($"**🎉 Congrats {user.Mention}, you reached level {level}! 🎉**")
+                        .WithDescription(
+                            $"**🎉 Congrats {user.Mention}, you reached level {level}! 🎉**"
+                        )
                         .Build();
-                    
-                    await channel.SendMessageAsync(user.Mention, embed: eb)
-                        .ConfigureAwait(false);
+
+                    await channel.SendMessageAsync(user.Mention, embed: eb).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -104,35 +124,45 @@ public class LevelingService : IInjectable
             return;
 
         var config = await _mongo.GetGuildConfigAsync(user.Guild).ConfigureAwait(false);
-        if (config.LevelUpChannelId == 0) return;
+        if (config.LevelUpChannelId == 0)
+            return;
 
-        _ = Task.Run(() =>
-        {
-            if (message.Content.Length < 3)
-                return;
-            var rate = new Random().NextDouble();
-            var msgLength = message.Content.Length;
-            var pointsToGive = (int) Math.Floor(rate * msgLength);
-            if (pointsToGive > 1000)
-                pointsToGive = 1000;
-            _xpQueue.Enqueue((user, pointsToGive));
-        }).ConfigureAwait(false);
+        _ = Task.Run(
+                () =>
+                {
+                    if (message.Content.Length < 3)
+                        return;
+                    var rate = new Random().NextDouble();
+                    var msgLength = message.Content.Length;
+                    var pointsToGive = (int)Math.Floor(rate * msgLength);
+                    if (pointsToGive > 1000)
+                        pointsToGive = 1000;
+                    _xpQueue.Enqueue((user, pointsToGive));
+                }
+            )
+            .ConfigureAwait(false);
     }
 
-    private Task OnUserVoiceStateUpdatedAsync(SocketUser socketUser, SocketVoiceState before, SocketVoiceState after)
+    private Task OnUserVoiceStateUpdatedAsync(
+        SocketUser socketUser,
+        SocketVoiceState before,
+        SocketVoiceState after
+    )
     {
         if (socketUser is not SocketGuildUser user || user.IsBot)
             return Task.CompletedTask;
 
-        _ = Task.Run(() =>
-        {
-            if (before.VoiceChannel is not null)
-                ScanChannelForVoiceXp(before.VoiceChannel);
-            if (after.VoiceChannel is not null && after.VoiceChannel != before.VoiceChannel)
-                ScanChannelForVoiceXp(after.VoiceChannel);
-            else if (after.VoiceChannel is null)
-                UserLeftVoiceChannel(user);
-        });
+        _ = Task.Run(
+            () =>
+            {
+                if (before.VoiceChannel is not null)
+                    ScanChannelForVoiceXp(before.VoiceChannel);
+                if (after.VoiceChannel is not null && after.VoiceChannel != before.VoiceChannel)
+                    ScanChannelForVoiceXp(after.VoiceChannel);
+                else if (after.VoiceChannel is null)
+                    UserLeftVoiceChannel(user);
+            }
+        );
         return Task.CompletedTask;
     }
 
@@ -153,7 +183,7 @@ public class LevelingService : IInjectable
         else
             UserLeftVoiceChannel(user);
     }
-    
+
     private void UserJoinedVoiceChannel(SocketGuildUser user)
     {
         var key = $"{user.Id}_voice_channel_join";
@@ -168,7 +198,8 @@ public class LevelingService : IInjectable
         var value = _redis.GetDatabase().StringGet(key);
         _redis.GetDatabase().KeyDelete(key);
 
-        if (value.IsNull) return;
+        if (value.IsNull)
+            return;
 
         if (!value.TryParse(out long startUnixTime))
             return;
@@ -177,11 +208,12 @@ public class LevelingService : IInjectable
         var dateEnd = DateTimeOffset.UtcNow;
         var xp = (int)(dateEnd - dateStart).TotalSeconds;
 
-        if (xp <= 0) return;
+        if (xp <= 0)
+            return;
         _xpQueue.Enqueue((user, xp));
         Log.Logger.Information("Queued {xp} xp to {user}", xp, user.Username);
     }
-    
+
     private static bool IsActiveInVoiceChannel(SocketGuildUser user) =>
         !user.IsDeafened && !user.IsMuted && !user.IsSelfDeafened && !user.IsSelfMuted;
 }

@@ -17,7 +17,7 @@ public class Card
             Face.Jack => 10,
             Face.Queen => 10,
             Face.King => 10,
-            _ => (int) face + 1
+            _ => (int)face + 1
         };
     }
 
@@ -41,11 +41,17 @@ public class Card
         };
 
         var x = width * (Value - 1);
-        var source =
-            Image.FromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.cards.png")!);
+        var source = Image.FromStream(
+            Assembly.GetExecutingAssembly().GetManifestResourceStream("KBot.Resources.cards.png")!
+        );
         var img = new Bitmap(width, height);
         using var g = Graphics.FromImage(img);
-        g.DrawImage(source, new Rectangle(0, 0, width, height), new Rectangle(x, y, width, height), GraphicsUnit.Pixel);
+        g.DrawImage(
+            source,
+            new Rectangle(0, 0, width, height),
+            new Rectangle(x, y, width, height),
+            GraphicsUnit.Pixel
+        );
         return img;
     }
 }

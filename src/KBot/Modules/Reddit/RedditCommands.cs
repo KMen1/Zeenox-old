@@ -18,14 +18,23 @@ public class RedditCommands : SlashModuleBase
     public async Task SubAsync(string subreddit)
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await _redditService.GetRandomPostFromSubredditAsync(subreddit).ConfigureAwait(false);
+        var post = await _redditService
+            .GetRandomPostFromSubredditAsync(subreddit)
+            .ConfigureAwait(false);
         if (post is null)
         {
-            await FollowupWithEmbedAsync(Color.Red, "The subreddit doesn't exist.").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, "The subreddit doesn't exist.")
+                .ConfigureAwait(false);
             return;
         }
 
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+        await FollowupWithEmbedAsync(
+                Color.DarkOrange,
+                post.Title,
+                null,
+                post.PostUrl,
+                post.ImageUrl
+            )
             .ConfigureAwait(false);
     }
 
@@ -33,7 +42,9 @@ public class RedditCommands : SlashModuleBase
     public async Task FostAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await _redditService.GetRandomPostFromSubredditAsync("FostTalicska").ConfigureAwait(false);
+        var post = await _redditService
+            .GetRandomPostFromSubredditAsync("FostTalicska")
+            .ConfigureAwait(false);
         if (post is null)
         {
             await FollowupWithEmbedAsync(Color.Red, "Error while getting post", "Please try again")
@@ -41,7 +52,13 @@ public class RedditCommands : SlashModuleBase
             return;
         }
 
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+        await FollowupWithEmbedAsync(
+                Color.DarkOrange,
+                post.Title,
+                null,
+                post.PostUrl,
+                post.ImageUrl
+            )
             .ConfigureAwait(false);
     }
 
@@ -49,7 +66,9 @@ public class RedditCommands : SlashModuleBase
     public async Task MemeAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await _redditService.GetRandomPostFromSubredditAsync("memes").ConfigureAwait(false);
+        var post = await _redditService
+            .GetRandomPostFromSubredditAsync("memes")
+            .ConfigureAwait(false);
         if (post is null)
         {
             await FollowupWithEmbedAsync(Color.Red, "Error while getting post", "Please try again")
@@ -57,7 +76,13 @@ public class RedditCommands : SlashModuleBase
             return;
         }
 
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+        await FollowupWithEmbedAsync(
+                Color.DarkOrange,
+                post.Title,
+                null,
+                post.PostUrl,
+                post.ImageUrl
+            )
             .ConfigureAwait(false);
     }
 
@@ -65,7 +90,9 @@ public class RedditCommands : SlashModuleBase
     public async Task BlursedAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await _redditService.GetRandomPostFromSubredditAsync("blursedimages").ConfigureAwait(false);
+        var post = await _redditService
+            .GetRandomPostFromSubredditAsync("blursedimages")
+            .ConfigureAwait(false);
         if (post is null)
         {
             await FollowupWithEmbedAsync(Color.Red, "Error while getting post", "Please try again")
@@ -73,7 +100,13 @@ public class RedditCommands : SlashModuleBase
             return;
         }
 
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+        await FollowupWithEmbedAsync(
+                Color.DarkOrange,
+                post.Title,
+                null,
+                post.PostUrl,
+                post.ImageUrl
+            )
             .ConfigureAwait(false);
     }
 
@@ -82,7 +115,9 @@ public class RedditCommands : SlashModuleBase
     public async Task PussyAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await _redditService.GetRandomPostFromSubredditAsync("pussy").ConfigureAwait(false);
+        var post = await _redditService
+            .GetRandomPostFromSubredditAsync("pussy")
+            .ConfigureAwait(false);
         if (post is null)
         {
             await FollowupWithEmbedAsync(Color.Red, "Error while getting post", "Please try again")
@@ -90,7 +125,13 @@ public class RedditCommands : SlashModuleBase
             return;
         }
 
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+        await FollowupWithEmbedAsync(
+                Color.DarkOrange,
+                post.Title,
+                null,
+                post.PostUrl,
+                post.ImageUrl
+            )
             .ConfigureAwait(false);
     }
 
@@ -99,7 +140,9 @@ public class RedditCommands : SlashModuleBase
     public async Task BoobsAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await _redditService.GetRandomPostFromSubredditAsync("boobs").ConfigureAwait(false);
+        var post = await _redditService
+            .GetRandomPostFromSubredditAsync("boobs")
+            .ConfigureAwait(false);
         if (post is null)
         {
             await FollowupWithEmbedAsync(Color.Red, "Error while getting post", "Please try again")
@@ -107,7 +150,13 @@ public class RedditCommands : SlashModuleBase
             return;
         }
 
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+        await FollowupWithEmbedAsync(
+                Color.DarkOrange,
+                post.Title,
+                null,
+                post.PostUrl,
+                post.ImageUrl
+            )
             .ConfigureAwait(false);
     }
 
@@ -116,7 +165,9 @@ public class RedditCommands : SlashModuleBase
     public async Task AssAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var post = await _redditService.GetRandomPostFromSubredditAsync("ass").ConfigureAwait(false);
+        var post = await _redditService
+            .GetRandomPostFromSubredditAsync("ass")
+            .ConfigureAwait(false);
         if (post is null)
         {
             await FollowupWithEmbedAsync(Color.Red, "Error while getting post", "Please try again")
@@ -124,7 +175,13 @@ public class RedditCommands : SlashModuleBase
             return;
         }
 
-        await FollowupWithEmbedAsync(Color.DarkOrange, post.Title, null, post.PostUrl, post.ImageUrl)
+        await FollowupWithEmbedAsync(
+                Color.DarkOrange,
+                post.Title,
+                null,
+                post.PostUrl,
+                post.ImageUrl
+            )
             .ConfigureAwait(false);
     }
 }

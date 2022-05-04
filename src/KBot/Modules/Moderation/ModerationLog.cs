@@ -14,9 +14,11 @@ public class ModerationLog : IInjectable
     private readonly DiscordSocketClient _client;
     private readonly MongoService _database;
 
-    private readonly Regex _inviteRegex = new(
-        @"(https?://)?(www.)?(discord.(gg|io|me|li)|discordapp.com/invite)/[^\s/]+?(?=\b)"
-        , RegexOptions.Compiled);
+    private readonly Regex _inviteRegex =
+        new(
+            @"(https?://)?(www.)?(discord.(gg|io|me|li)|discordapp.com/invite)/[^\s/]+?(?=\b)",
+            RegexOptions.Compiled
+        );
 
     public ModerationLog(DiscordSocketClient client, MongoService database)
     {
@@ -39,20 +41,23 @@ public class ModerationLog : IInjectable
 
     private async Task OnMessageReceivedAsync(SocketMessage arg)
     {
-        if (arg.Author.IsBot) return;
-        var channel = (SocketTextChannel) arg.Channel;
+        if (arg.Author.IsBot)
+            return;
+        var channel = (SocketTextChannel)arg.Channel;
         var guild = channel.Guild;
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
         if (config.ModLogChannelId == 0)
             return;
-        if (!_inviteRegex.IsMatch(arg.Content)) return;
+        if (!_inviteRegex.IsMatch(arg.Content))
+            return;
         var invites = _inviteRegex.Matches(arg.Content);
 
         var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
         foreach (var invite in invites.Select(match => match.Value))
         {
-            if ((await _client.GetInviteAsync(invite).ConfigureAwait(false)).GuildId == guild.Id) continue;
+            if ((await _client.GetInviteAsync(invite).ConfigureAwait(false)).GuildId == guild.Id)
+                continue;
             var embed = new EmbedBuilder()
                 .WithAuthor("Invite Sent", arg.Author.GetAvatarUrl())
                 .AddField("User", arg.Author.Mention, true)
@@ -65,14 +70,19 @@ public class ModerationLog : IInjectable
         await arg.DeleteAsync().ConfigureAwait(false);
     }
 
-    private async Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> before, SocketMessage afterMessage,
-        ISocketMessageChannel iChannel)
+    private async Task OnMessageUpdatedAsync(
+        Cacheable<IMessage, ulong> before,
+        SocketMessage afterMessage,
+        ISocketMessageChannel iChannel
+    )
     {
         var beforeMessage = await before.GetOrDownloadAsync().ConfigureAwait(false);
-        if (beforeMessage is null) return;
+        if (beforeMessage is null)
+            return;
         if (beforeMessage.Author.IsBot || beforeMessage.Author.IsWebhook)
             return;
-        if (beforeMessage.Content.Equals(afterMessage.Content, StringComparison.OrdinalIgnoreCase)) return;
+        if (beforeMessage.Content.Equals(afterMessage.Content, StringComparison.OrdinalIgnoreCase))
+            return;
         var channel = (SocketTextChannel)iChannel;
         var guild = channel.Guild;
 
@@ -92,14 +102,18 @@ public class ModerationLog : IInjectable
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
     }
 
-    private async Task OnMessageDeletedAsync(Cacheable<IMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2)
+    private async Task OnMessageDeletedAsync(
+        Cacheable<IMessage, ulong> arg1,
+        Cacheable<IMessageChannel, ulong> arg2
+    )
     {
         var message = await arg1.GetOrDownloadAsync().ConfigureAwait(false);
         var channel = await arg2.GetOrDownloadAsync().ConfigureAwait(false);
-        if (message is null || channel is null) return;
+        if (message is null || channel is null)
+            return;
         if (message.Author.IsBot || message.Author.IsWebhook)
             return;
-        
+
         var guild = ((SocketTextChannel)channel).Guild;
 
         var config = await _database.GetGuildConfigAsync(guild).ConfigureAwait(false);
@@ -125,7 +139,9 @@ public class ModerationLog : IInjectable
 
         var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
-        var auditLog = await guild.GetAuditLogsAsync(1, actionType: ActionType.Ban).FlattenAsync()
+        var auditLog = await guild
+            .GetAuditLogsAsync(1, actionType: ActionType.Ban)
+            .FlattenAsync()
             .ConfigureAwait(false);
         var entry = auditLog.First();
 
@@ -148,10 +164,12 @@ public class ModerationLog : IInjectable
 
         var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
-        var auditLog = await guild.GetAuditLogsAsync(1, actionType: ActionType.Unban).FlattenAsync()
+        var auditLog = await guild
+            .GetAuditLogsAsync(1, actionType: ActionType.Unban)
+            .FlattenAsync()
             .ConfigureAwait(false);
         var entry = auditLog.First();
-        
+
         var embed = new EmbedBuilder()
             .WithAuthor("User Unbanned", user.GetAvatarUrl())
             .WithColor(Color.Green)
@@ -171,7 +189,9 @@ public class ModerationLog : IInjectable
 
         var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
-        var auditLog = await guild.GetAuditLogsAsync(1, actionType: ActionType.RoleCreated).FlattenAsync()
+        var auditLog = await guild
+            .GetAuditLogsAsync(1, actionType: ActionType.RoleCreated)
+            .FlattenAsync()
             .ConfigureAwait(false);
         var entry = auditLog.First();
         var user = entry.User;
@@ -197,7 +217,9 @@ public class ModerationLog : IInjectable
 
         var logChannel = guild.GetTextChannel(config.ModLogChannelId);
 
-        var auditLog = await guild.GetAuditLogsAsync(1, actionType: ActionType.RoleDeleted).FlattenAsync()
+        var auditLog = await guild
+            .GetAuditLogsAsync(1, actionType: ActionType.RoleDeleted)
+            .FlattenAsync()
             .ConfigureAwait(false);
         var entry = auditLog.First();
         var user = entry.User;
@@ -213,7 +235,6 @@ public class ModerationLog : IInjectable
 
         await logChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
     }
-
 
     private async Task OnInviteCreatedAsync(SocketInvite invite)
     {

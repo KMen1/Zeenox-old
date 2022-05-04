@@ -12,24 +12,35 @@ namespace KBot.Modules.Moderation;
 
 public class UserCommands : SlashModuleBase
 {
-    [SlashCommand("warns", "Check someone's warnings.")]
-    public async Task WarnsAsync(SocketUser user)
+    [UserCommand("Check Warns")]
+    public async Task CheckWarnsAsync(SocketGuildUser user)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var warns = (await Mongo.GetWarnsAsync((SocketGuildUser) Context.User).ConfigureAwait(false)).ToList();
+        var warns = (await Mongo.GetWarnsAsync(user).ConfigureAwait(false)).ToList();
         if (warns.Count == 0)
         {
-            await FollowupWithEmbedAsync(Color.Gold, "😎 Good job!",
-                $"{user.Mention} has no warns!").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(
+                    Color.Gold,
+                    "😎 Good job!",
+                    $"{user.Mention} has no warns!"
+                )
+                .ConfigureAwait(false);
             return;
         }
 
-        var warnString = warns.Aggregate("",
+        var warnString = warns.Aggregate(
+            "",
             (current, warn) =>
-                current +
-                $"`{warn.Id}`:`{warn.Date.ToString(CultureInfo.InvariantCulture)}` **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`\n");
-        await FollowupWithEmbedAsync(Color.Orange, $"{user.Username} has {warns.Count} warns", warnString,
-            ephemeral: true).ConfigureAwait(false);
+                current
+                + $"`{warn.Id}`:`{warn.Date.ToString(CultureInfo.InvariantCulture)}` **By:** {Context.Client.GetUser(warn.GivenById).Mention} - **Reason:** `{warn.Reason}`\n"
+        );
+        await FollowupWithEmbedAsync(
+                Color.Orange,
+                $"{user.Username} has {warns.Count} warns",
+                warnString,
+                ephemeral: true
+            )
+            .ConfigureAwait(false);
     }
 
     [SlashCommand("warninfo", "Get more information about a warn.")]
@@ -39,7 +50,8 @@ public class UserCommands : SlashModuleBase
         var warn = await Mongo.GetWarnAsync(warnId).ConfigureAwait(false);
         if (warn == null)
         {
-            await FollowupWithEmbedAsync(Color.Red, $"Warn with id({warnId}) does not exist", "").ConfigureAwait(false);
+            await FollowupWithEmbedAsync(Color.Red, $"Warn with id({warnId}) does not exist", "")
+                .ConfigureAwait(false);
             return;
         }
 
@@ -64,32 +76,48 @@ public class UserCommands : SlashModuleBase
         var warn = await Mongo.GetWarnAsync(warnId).ConfigureAwait(false);
         if (warn is null)
         {
-            await FollowupAsync(embed: new EmbedBuilder()
-                .WithDescription("**Warn with that id doesn't exist!**")
-                .WithColor(Color.Red)
-                .Build()).ConfigureAwait(false);
+            await FollowupAsync(
+                    embed: new EmbedBuilder()
+                        .WithDescription("**Warn with that id doesn't exist!**")
+                        .WithColor(Color.Red)
+                        .Build()
+                )
+                .ConfigureAwait(false);
             return;
         }
 
         if (warn.GivenToId != Context.User.Id)
         {
-            await FollowupAsync(embed: new EmbedBuilder()
-                .WithDescription("**You can't appeal another person's warn!**")
-                .WithColor(Color.Green)
-                .Build()).ConfigureAwait(false);
+            await FollowupAsync(
+                    embed: new EmbedBuilder()
+                        .WithDescription("**You can't appeal another person's warn!**")
+                        .WithColor(Color.Green)
+                        .Build()
+                )
+                .ConfigureAwait(false);
             return;
         }
-        
+
         var modal = new ModalBuilder()
             .WithTitle("Appeal a warn")
             .WithCustomId($"appeal:{warn.Id}")
-            .AddTextInput("Whats your reason for appealing?", "appeal-reason", TextInputStyle.Paragraph,
-                "False warn...", required: true)
-            .AddTextInput("Why do you think we should accept your appeal?", "appeal-acceptreason", TextInputStyle.Paragraph,
-                "Rule breaking", required: true);
+            .AddTextInput(
+                "Whats your reason for appealing?",
+                "appeal-reason",
+                TextInputStyle.Paragraph,
+                "False warn...",
+                required: true
+            )
+            .AddTextInput(
+                "Why do you think we should accept your appeal?",
+                "appeal-acceptreason",
+                TextInputStyle.Paragraph,
+                "Rule breaking",
+                required: true
+            );
         await RespondWithModalAsync(modal.Build()).ConfigureAwait(false);
     }
-    
+
     [ModalInteraction("appeal:*")]
     public async Task HandleAppealAsync(string warnId, AppealModal submission)
     {
@@ -97,10 +125,14 @@ public class UserCommands : SlashModuleBase
         var warn = await Mongo.GetWarnAsync(warnId).ConfigureAwait(false);
         if (warn is null)
         {
-            await FollowupAsync(embed: new EmbedBuilder()
-                .WithDescription("**Something went wrong... Please try again!**")
-                .WithColor(Color.Red)
-                .Build(), ephemeral: true).ConfigureAwait(false);
+            await FollowupAsync(
+                    embed: new EmbedBuilder()
+                        .WithDescription("**Something went wrong... Please try again!**")
+                        .WithColor(Color.Red)
+                        .Build(),
+                    ephemeral: true
+                )
+                .ConfigureAwait(false);
             return;
         }
         var admin = Context.Guild.GetUser(warn.GivenById);
@@ -117,12 +149,27 @@ public class UserCommands : SlashModuleBase
             .AddField("Why do you think we should accept your appeal?", submission.AcceptReason)
             .Build();
         var comp = new ComponentBuilder()
-            .WithButton("Accept", $"appeal-accept:{warnId}:{Context.User.Id}:{admin.Id}", ButtonStyle.Success, new Emoji("✅"))
-            .WithButton("Deny", $"appeal-decline:{warnId}:{Context.User.Id}:{admin.Id}", ButtonStyle.Danger, new Emoji("❌"))
+            .WithButton(
+                "Accept",
+                $"appeal-accept:{warnId}:{Context.User.Id}:{admin.Id}",
+                ButtonStyle.Success,
+                new Emoji("✅")
+            )
+            .WithButton(
+                "Deny",
+                $"appeal-decline:{warnId}:{Context.User.Id}:{admin.Id}",
+                ButtonStyle.Danger,
+                new Emoji("❌")
+            )
             .Build();
-        await Context.Guild.GetTextChannel(config.AppealChannelId).SendMessageAsync("@here", embed: eb, components: comp)
+        await Context.Guild
+            .GetTextChannel(config.AppealChannelId)
+            .SendMessageAsync("@here", embed: eb, components: comp)
             .ConfigureAwait(false);
-        await FollowupAsync("The admin team received your appeal, once the make a decision you will get a message",
-            ephemeral: true).ConfigureAwait(false);
+        await FollowupAsync(
+                "The admin team received your appeal, once the make a decision you will get a message",
+                ephemeral: true
+            )
+            .ConfigureAwait(false);
     }
 }

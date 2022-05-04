@@ -54,7 +54,7 @@ public class HighLowInteractions : SlashModuleBase
             await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
-        
+
         await DeferAsync().ConfigureAwait(false);
         await game!.FinishAsync().ConfigureAwait(false);
     }

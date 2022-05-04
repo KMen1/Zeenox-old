@@ -14,7 +14,14 @@ public interface IGame
 
 public class GameEndedEventArgs : EventArgs
 {
-    public GameEndedEventArgs(string gameId, SocketGuildUser user, int bet, int prize, string description, bool isWin)
+    public GameEndedEventArgs(
+        string gameId,
+        SocketGuildUser user,
+        int bet,
+        int prize,
+        string description,
+        bool isWin
+    )
     {
         Prize = prize;
         User = user;

@@ -15,11 +15,11 @@ public class CrashCommands : SlashModuleBase
     {
         _crashService = crashService;
     }
-    
+
     [SlashCommand("crash", "Starts a new game of crash.")]
     public async Task StartCrashGameAsync([MinValue(100)] [MaxValue(1000000)] int bet)
     {
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         var result = dbUser.CanStartGame(bet, out var eb);
         if (!result)
         {
@@ -33,7 +33,7 @@ public class CrashCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: sEb).ConfigureAwait(false);
         var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
-        var game = _crashService.CreateGame((SocketGuildUser) Context.User, msg, bet);
+        var game = _crashService.CreateGame((SocketGuildUser)Context.User, msg, bet);
         await game.StartAsync().ConfigureAwait(false);
     }
 }

@@ -19,7 +19,9 @@ public class DbDCommands : SlashModuleBase
     {
         await DeferAsync().ConfigureAwait(false);
         var embed = _dbDService.CachedPerks.ToEmbedBuilder();
-        embed.WithDescription($"🏁 <t:{((DateTimeOffset)DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).ToUnixTimeSeconds()}:R>");
+        embed.WithDescription(
+            $"🏁 <t:{((DateTimeOffset)DateTime.Today).GetNextWeekday(DayOfWeek.Thursday).ToUnixTimeSeconds()}:R>"
+        );
         await FollowupAsync(embed: embed.Build()).ConfigureAwait(false);
     }
 }

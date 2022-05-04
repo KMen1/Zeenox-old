@@ -13,7 +13,7 @@ public class CrashInteractions : SlashModuleBase
     {
         _crashService = crashService;
     }
-    
+
     [ComponentInteraction("crash:*")]
     public async Task StopCrashGameAsync(string id)
     {

@@ -34,39 +34,49 @@ public class CrashService : IInjectable
 
     private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
-        var game = (CrashGame) sender!;
+        var game = (CrashGame)sender!;
         game.GameEnded -= OnGameEndedAsync;
         _games.Remove(game);
         if (e.IsWin)
         {
-            await _mongo.AddTransactionAsync(new Transaction(
-                    e.GameId,
-                    TransactionType.Crash,
-                    e.Prize,
-                    e.Description),
-                e.User).ConfigureAwait(false);
+            await _mongo
+                .AddTransactionAsync(
+                    new Transaction(e.GameId, TransactionType.Crash, e.Prize, e.Description),
+                    e.User
+                )
+                .ConfigureAwait(false);
 
-            await _mongo.UpdateUserAsync(e.User, x =>
-            {
-                x.Balance += e.Prize;
-                x.Wins++;
-                x.MoneyWon += e.Prize;
-            }).ConfigureAwait(false);
+            await _mongo
+                .UpdateUserAsync(
+                    e.User,
+                    x =>
+                    {
+                        x.Balance += e.Prize;
+                        x.Wins++;
+                        x.MoneyWon += e.Prize;
+                    }
+                )
+                .ConfigureAwait(false);
             return;
         }
 
-        await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Crash,
-                -e.Bet,
-                e.Description),
-            e.User).ConfigureAwait(false);
-        await _mongo.UpdateUserAsync(e.User, x =>
-        {
-            x.Balance -= e.Bet;
-            x.Losses++;
-            x.MoneyLost += e.Bet;
-        }).ConfigureAwait(false);
+        await _mongo
+            .AddTransactionAsync(
+                new Transaction(e.GameId, TransactionType.Crash, -e.Bet, e.Description),
+                e.User
+            )
+            .ConfigureAwait(false);
+        await _mongo
+            .UpdateUserAsync(
+                e.User,
+                x =>
+                {
+                    x.Balance -= e.Bet;
+                    x.Losses++;
+                    x.MoneyLost += e.Bet;
+                }
+            )
+            .ConfigureAwait(false);
     }
 
     private double GenerateCrashPoint()

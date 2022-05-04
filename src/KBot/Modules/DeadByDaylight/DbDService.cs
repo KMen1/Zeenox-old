@@ -24,21 +24,28 @@ public class DbDService : IInjectable
     private const string ShrineUrl = "https://dbd.onteh.net.au/api/shrine/";
     public IEnumerable<Perk> CachedPerks { get; private set; }
 
-    public DbDService(HttpClient httpClient, IConnectionMultiplexer redis, MongoService mongoService,
-        DiscordSocketClient client)
+    public DbDService(
+        HttpClient httpClient,
+        IConnectionMultiplexer redis,
+        MongoService mongoService,
+        DiscordSocketClient client
+    )
     {
         _httpClient = httpClient;
         _redis = redis;
         _mongo = mongoService;
         _client = client;
-        
+
         Task.Run(CheckForNewShrinesAsync);
     }
 
     private async Task CheckForNewShrinesAsync()
     {
         const string key = "next_dbd_shrine";
-        var next = DateTimeOffset.Now.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
+        var next = DateTimeOffset.Now
+            .GetNextWeekday(DayOfWeek.Thursday)
+            .AddMinutes(10)
+            .ToUnixTimeSeconds();
         await _redis.GetDatabase().StringSetAsync(key, next).ConfigureAwait(false);
         CachedPerks = await GetShrinesAsync().ConfigureAwait(false);
 
@@ -48,20 +55,25 @@ public class DbDService : IInjectable
             try
             {
                 var value = await _redis.GetDatabase().StringGetAsync(key).ConfigureAwait(false);
-                if (value.IsNull || !value.TryParse(out long nextUnixTime)) continue;
-                
+                if (value.IsNull || !value.TryParse(out long nextUnixTime))
+                    continue;
+
                 var refreshDate = DateTimeOffset.FromUnixTimeSeconds(nextUnixTime);
-                if (DateTimeOffset.Now < refreshDate) continue;
+                if (DateTimeOffset.Now < refreshDate)
+                    continue;
 
                 var channelIds = await _mongo.GetDbdNotificationChannelIds().ConfigureAwait(false);
-                var channels = channelIds.Select(id => (ITextChannel) _client.GetChannel(id))
+                var channels = channelIds
+                    .Select(id => (ITextChannel)_client.GetChannel(id))
                     .Where(channel => channel is not null)
                     .ToList();
-                
-                if (channels.Count == 0) continue;
+
+                if (channels.Count == 0)
+                    continue;
 
                 CachedPerks = await GetShrinesAsync().ConfigureAwait(false);
-                var eb = CachedPerks.ToEmbedBuilder()
+                var eb = CachedPerks
+                    .ToEmbedBuilder()
                     .WithDescription($"🏁 <t:{refreshDate.AddDays(7).ToUnixTimeSeconds()}:R>")
                     .Build();
 
@@ -70,9 +82,11 @@ public class DbDService : IInjectable
                     await textChannel.SendMessageAsync("@here", embed: eb).ConfigureAwait(false);
                 }
 
-                next = DateTimeOffset.Now.GetNextWeekday(DayOfWeek.Thursday).AddMinutes(10).ToUnixTimeSeconds();
-                await _redis.GetDatabase().StringSetAsync(key, next)
-                    .ConfigureAwait(false);
+                next = DateTimeOffset.Now
+                    .GetNextWeekday(DayOfWeek.Thursday)
+                    .AddMinutes(10)
+                    .ToUnixTimeSeconds();
+                await _redis.GetDatabase().StringSetAsync(key, next).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -84,13 +98,15 @@ public class DbDService : IInjectable
     private async Task<IEnumerable<Perk>> GetShrinesAsync()
     {
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36");
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36"
+        );
         var response = await _httpClient.GetStringAsync(ShrineUrl).ConfigureAwait(false);
         var shrine = Shrines.FromJson(response);
         var perks = new List<Perk>();
         foreach (var perk in shrine.Perks)
         {
-            var perkresponse = await _httpClient.GetStringAsync($"https://dbd.onteh.net.au/api/perkinfo?perk={perk.Id}")
+            var perkresponse = await _httpClient
+                .GetStringAsync($"https://dbd.onteh.net.au/api/perkinfo?perk={perk.Id}")
                 .ConfigureAwait(false);
             perks.Add(Perk.FromJson(perkresponse));
         }

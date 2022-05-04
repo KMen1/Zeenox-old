@@ -32,41 +32,51 @@ public class HighLowService : IInjectable
 
     private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
-        var game = (HighLowGame) sender!;
+        var game = (HighLowGame)sender!;
         game.GameEnded -= OnGameEndedAsync;
         _games.Remove(game);
 
         if (e.IsWin)
         {
-            await _mongo.AddTransactionAsync(new Transaction(
-                    e.GameId,
-                    TransactionType.Highlow,
-                    e.Prize,
-                    e.Description),
-                e.User).ConfigureAwait(false);
+            await _mongo
+                .AddTransactionAsync(
+                    new Transaction(e.GameId, TransactionType.Highlow, e.Prize, e.Description),
+                    e.User
+                )
+                .ConfigureAwait(false);
 
-            await _mongo.UpdateUserAsync(e.User, x =>
-            {
-                x.Balance += e.Prize;
-                x.Wins++;
-                x.MoneyWon += e.Prize;
-            }).ConfigureAwait(false);
+            await _mongo
+                .UpdateUserAsync(
+                    e.User,
+                    x =>
+                    {
+                        x.Balance += e.Prize;
+                        x.Wins++;
+                        x.MoneyWon += e.Prize;
+                    }
+                )
+                .ConfigureAwait(false);
             return;
         }
 
-        await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Highlow,
-                -e.Bet,
-                e.Description),
-            e.User).ConfigureAwait(false);
+        await _mongo
+            .AddTransactionAsync(
+                new Transaction(e.GameId, TransactionType.Highlow, -e.Bet, e.Description),
+                e.User
+            )
+            .ConfigureAwait(false);
 
-        await _mongo.UpdateUserAsync(e.User, x =>
-        {
-            x.Balance -= e.Bet;
-            x.Losses++;
-            x.MoneyLost += e.Bet;
-        }).ConfigureAwait(false);
+        await _mongo
+            .UpdateUserAsync(
+                e.User,
+                x =>
+                {
+                    x.Balance -= e.Bet;
+                    x.Losses++;
+                    x.MoneyLost += e.Bet;
+                }
+            )
+            .ConfigureAwait(false);
     }
 
     public HighLowGame? GetGame(string id)

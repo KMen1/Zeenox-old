@@ -24,7 +24,7 @@ public class BlackJackInteractions : SlashModuleBase
             await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
             return;
         }
-        
+
         await DeferAsync().ConfigureAwait(false);
         await game!.HitAsync().ConfigureAwait(false);
     }

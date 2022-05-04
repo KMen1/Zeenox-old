@@ -13,6 +13,9 @@ public class LevelRole
         Id = id;
     }
 
-    [BsonElement("role_id")] public ulong Id { get; set; }
-    [BsonElement("level")] public int Level { get; set; }
+    [BsonElement("role_id")]
+    public ulong Id { get; set; }
+
+    [BsonElement("level")]
+    public int Level { get; set; }
 }

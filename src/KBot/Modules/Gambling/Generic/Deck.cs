@@ -35,11 +35,7 @@ public class Deck
 
     public List<Card> DealHand()
     {
-        var hand = new List<Card>
-        {
-            Cards[0],
-            Cards[1]
-        };
+        var hand = new List<Card> { Cards[0], Cards[1] };
         Cards.RemoveRange(0, 2);
         return hand;
     }

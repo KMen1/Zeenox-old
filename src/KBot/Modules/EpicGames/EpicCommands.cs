@@ -17,6 +17,7 @@ public class EpicCommands : SlashModuleBase
     public async Task GetEpicFreeGameAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await FollowupAsync(embeds: _epicGamesService.ChachedGames.ToEmbedArray()).ConfigureAwait(false);
+        await FollowupAsync(embeds: _epicGamesService.ChachedGames.ToEmbedArray())
+            .ConfigureAwait(false);
     }
 }

@@ -19,9 +19,12 @@ public class TowerCommands : SlashModuleBase
     }
 
     [SlashCommand("start", "Starts a new game of towers")]
-    public async Task CreateTowersGameAsync([MinValue(100)] [MaxValue(1000000)] int bet, Difficulty diff)
+    public async Task CreateTowersGameAsync(
+        [MinValue(100)] [MaxValue(1000000)] int bet,
+        Difficulty diff
+    )
     {
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser) Context.User).ConfigureAwait(false);
+        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)Context.User).ConfigureAwait(false);
         var result = dbUser.CanStartGame(bet, out var eb);
         if (!result)
         {
@@ -35,7 +38,7 @@ public class TowerCommands : SlashModuleBase
             .Build();
         await RespondAsync(embed: sEb).ConfigureAwait(false);
         var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
-        var game = _towersService.CreateGame((SocketGuildUser) Context.User, msg, bet, diff);
+        var game = _towersService.CreateGame((SocketGuildUser)Context.User, msg, bet, diff);
         await game.StartAsync().ConfigureAwait(false);
     }
 

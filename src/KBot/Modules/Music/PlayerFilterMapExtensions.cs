@@ -22,12 +22,7 @@ public static class PlayerFilterMapExtensions
     {
         map.Equalizer = new EqualizerFilterOptions
         {
-            Bands = new EqualizerBand[]
-            {
-                new(0, 0.2f),
-                new(1, 0.2f),
-                new(2, 0.2f)
-            }
+            Bands = new EqualizerBand[] { new(0, 0.2f), new(1, 0.2f), new(2, 0.2f) }
         };
     }
 
@@ -101,10 +96,7 @@ public static class PlayerFilterMapExtensions
 
     public static void EnableEightd(this PlayerFilterMap map)
     {
-        map.Rotation = new RotationFilterOptions
-        {
-            Frequency = 0.2f
-        };
+        map.Rotation = new RotationFilterOptions { Frequency = 0.2f };
     }
 
     public static void EnableVaporwave(this PlayerFilterMap map)
@@ -179,19 +171,11 @@ public static class PlayerFilterMapExtensions
 
     public static void EnableVibrato(this PlayerFilterMap map)
     {
-        map.Vibrato = new VibratoFilterOptions
-        {
-            Frequency = 4.0f,
-            Depth = 0.75f
-        };
+        map.Vibrato = new VibratoFilterOptions { Frequency = 4.0f, Depth = 0.75f };
     }
 
     public static void EnableTremolo(this PlayerFilterMap map)
     {
-        map.Tremolo = new TremoloFilterOptions
-        {
-            Frequency = 4.0f,
-            Depth = 0.75f
-        };
+        map.Tremolo = new TremoloFilterOptions { Frequency = 4.0f, Depth = 0.75f };
     }
 }

@@ -9,7 +9,13 @@ namespace KBot.Models;
 
 public class SelfRoleMessage
 {
-    public SelfRoleMessage(ulong guildId, ulong channelId, ulong messageId, string title, string description)
+    public SelfRoleMessage(
+        ulong guildId,
+        ulong channelId,
+        ulong messageId,
+        string title,
+        string description
+    )
     {
         GuildId = guildId;
         ChannelId = channelId;
@@ -19,12 +25,23 @@ public class SelfRoleMessage
         Roles = new List<SelfRole>();
     }
 
-    [BsonElement("guild_id")] public ulong GuildId { get; set; }
-    [BsonElement("channel_id")] public ulong ChannelId { get; set; }
-    [BsonId] public ulong MessageId { get; set; }
-    [BsonElement("title")] public string Title { get; set; }
-    [BsonElement("description")] public string Description { get; set; }
-    [BsonElement("roles")] public List<SelfRole> Roles { get; set; }
+    [BsonElement("guild_id")]
+    public ulong GuildId { get; set; }
+
+    [BsonElement("channel_id")]
+    public ulong ChannelId { get; set; }
+
+    [BsonId]
+    public ulong MessageId { get; set; }
+
+    [BsonElement("title")]
+    public string Title { get; set; }
+
+    [BsonElement("description")]
+    public string Description { get; set; }
+
+    [BsonElement("roles")]
+    public List<SelfRole> Roles { get; set; }
 
     public bool AddRole(SelfRole role)
     {
@@ -79,8 +96,15 @@ public class SelfRole
         Description = description;
     }
 
-    [BsonElement("role_id")] public ulong RoleId { get; set; }
-    [BsonElement("title")] public string Title { get; set; }
-    [BsonElement("description")] public string? Description { get; set; }
-    [BsonElement("emote")] public string Emote { get; set; }
+    [BsonElement("role_id")]
+    public ulong RoleId { get; set; }
+
+    [BsonElement("title")]
+    public string Title { get; set; }
+
+    [BsonElement("description")]
+    public string? Description { get; set; }
+
+    [BsonElement("emote")]
+    public string Emote { get; set; }
 }

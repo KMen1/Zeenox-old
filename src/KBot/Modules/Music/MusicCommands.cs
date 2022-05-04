@@ -20,7 +20,7 @@ public class MusicCommands : SlashModuleBase
     [SlashCommand("move", "Moves the bot to the channel you are in")]
     public async Task MovePlayerAsync()
     {
-        var channel = ((IVoiceState) Context.User).VoiceChannel;
+        var channel = ((IVoiceState)Context.User).VoiceChannel;
         if (channel is null)
         {
             var eb = new EmbedBuilder()
@@ -31,8 +31,10 @@ public class MusicCommands : SlashModuleBase
             return;
         }
 
-        await RespondAsync(embed: await _audioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false),
-                ephemeral: true)
+        await RespondAsync(
+                embed: await _audioService.MoveAsync(Context.Guild, channel).ConfigureAwait(false),
+                ephemeral: true
+            )
             .ConfigureAwait(false);
     }
 
@@ -40,15 +42,18 @@ public class MusicCommands : SlashModuleBase
     public async Task DisconnectPlayerAsync()
     {
         await RespondAsync(
-                embed: await _audioService.DisconnectAsync(Context.Guild, Context.User).ConfigureAwait(false),
-                ephemeral: true)
+                embed: await _audioService
+                    .DisconnectAsync(Context.Guild, Context.User)
+                    .ConfigureAwait(false),
+                ephemeral: true
+            )
             .ConfigureAwait(false);
     }
 
     [SlashCommand("play", "Plays a song")]
     public async Task PlayAsync(string query)
     {
-        if (((IVoiceState) Context.User).VoiceChannel is null)
+        if (((IVoiceState)Context.User).VoiceChannel is null)
         {
             var eb = new EmbedBuilder()
                 .WithColor(Color.Red)
@@ -62,15 +67,18 @@ public class MusicCommands : SlashModuleBase
         if (isPlaying)
         {
             await DeferAsync(true).ConfigureAwait(false);
-            var embed = await _audioService.PlayAsync(Context.Guild, (SocketGuildUser) Context.User, null!, query)
+            var embed = await _audioService
+                .PlayAsync(Context.Guild, (SocketGuildUser)Context.User, null!, query)
                 .ConfigureAwait(false);
             await FollowupAsync(embed: embed).ConfigureAwait(false);
         }
         else
         {
             await DeferAsync().ConfigureAwait(false);
-            var msg = await FollowupWithEmbedAsync(Color.Orange, "Starting player...", "").ConfigureAwait(false);
-            await _audioService.PlayAsync(Context.Guild, (SocketGuildUser) Context.User, msg, query)
+            var msg = await FollowupWithEmbedAsync(Color.Orange, "Starting player...", "")
+                .ConfigureAwait(false);
+            await _audioService
+                .PlayAsync(Context.Guild, (SocketGuildUser)Context.User, msg, query)
                 .ConfigureAwait(false);
         }
     }
@@ -81,7 +89,9 @@ public class MusicCommands : SlashModuleBase
         if (Uri.IsWellFormedUriString(query, UriKind.Absolute))
         {
             var eEb = new EmbedBuilder()
-                .WithDescription("**Please use /music play <url> if you want to play a song from a url**")
+                .WithDescription(
+                    "**Please use /music play <url> if you want to play a song from a url**"
+                )
                 .WithColor(Color.Red)
                 .Build();
             await RespondAsync(embed: eEb, ephemeral: true).ConfigureAwait(false);
@@ -101,10 +111,14 @@ public class MusicCommands : SlashModuleBase
         }
 
         var tracks = search.Tracks!.ToList();
-        var desc = tracks.Take(10).Aggregate("",
-            (current, track) =>
-                current +
-                $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Source}) | [`{track.Duration}`]\n");
+        var desc = tracks
+            .Take(10)
+            .Aggregate(
+                "",
+                (current, track) =>
+                    current
+                    + $"{tracks.TakeWhile(n => n != track).Count() + 1}. [`{track.Title}`]({track.Source}) | [`{track.Duration}`]\n"
+            );
 
         var comp = new ComponentBuilder();
         for (var i = 0; i < tracks.Take(10).Count(); i++)
@@ -137,7 +151,7 @@ public class MusicCommands : SlashModuleBase
     [ComponentInteraction("search:*", true)]
     public async Task PlaySearchAsync(string identifier)
     {
-        var channel = ((IVoiceState) Context.User).VoiceChannel;
+        var channel = ((IVoiceState)Context.User).VoiceChannel;
         if (channel is null)
         {
             var eb = new EmbedBuilder()
@@ -149,21 +163,27 @@ public class MusicCommands : SlashModuleBase
         }
 
         await DeferAsync().ConfigureAwait(false);
-        var msg = ((SocketMessageComponent) Context.Interaction).Message;
+        var msg = ((SocketMessageComponent)Context.Interaction).Message;
         var result = await _audioService
-            .PlayFromSearchAsync(Context.Guild, (SocketGuildUser) Context.User, msg, identifier)
+            .PlayFromSearchAsync(Context.Guild, (SocketGuildUser)Context.User, msg, identifier)
             .ConfigureAwait(false);
-        if (result is null) return;
+        if (result is null)
+            return;
         await FollowupAsync(embed: result, ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("volume", "Sets the volume")]
     public async Task ChangeVolumeAsync(
-        [Summary("volume")] [MinValue(1)] [MaxValue(100)]
-        ushort volume)
+        [Summary("volume")] [MinValue(1)] [MaxValue(100)] ushort volume
+    )
     {
-        await RespondAsync(embed: await _audioService.SetVolumeAsync(Context.Guild, volume).ConfigureAwait(false),
-            ephemeral: true).ConfigureAwait(false);
+        await RespondAsync(
+                embed: await _audioService
+                    .SetVolumeAsync(Context.Guild, volume)
+                    .ConfigureAwait(false),
+                ephemeral: true
+            )
+            .ConfigureAwait(false);
     }
 
     [SlashCommand("queue", "Shows the current queue")]
@@ -175,8 +195,10 @@ public class MusicCommands : SlashModuleBase
     [SlashCommand("clearqueue", "Clears the current queue")]
     public async Task ClearQueueAsync()
     {
-        await RespondAsync(embed: await _audioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false),
-                ephemeral: true)
+        await RespondAsync(
+                embed: await _audioService.ClearQueueAsync(Context.Guild).ConfigureAwait(false),
+                ephemeral: true
+            )
             .ConfigureAwait(false);
     }
 }

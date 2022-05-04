@@ -8,18 +8,21 @@ namespace KBot.Models;
 
 public class Subreddit
 {
-    [JsonProperty("data")] private SubredditData Data { get; set; }
+    [JsonProperty("data")]
+    private SubredditData Data { get; set; }
     public List<Post> Posts => Data.Posts;
 }
 
 public class SubredditData
 {
-    [JsonProperty("children")] public List<Post> Posts { get; set; }
+    [JsonProperty("children")]
+    public List<Post> Posts { get; set; }
 }
 
 public class Post
 {
-    [JsonProperty("data")] private PostData Data { get; set; }
+    [JsonProperty("data")]
+    private PostData Data { get; set; }
 
     public string Title => Data.Title;
     public string ImageUrl => Data.Url;
@@ -31,8 +34,15 @@ public class Post
 
 public class PostData
 {
-    [JsonProperty("url")] public string Url { get; set; }
-    [JsonProperty("title")] public string Title { get; set; }
-    [JsonProperty("name")] public string Name { get; set; }
-    [JsonProperty("permalink")] public string Permalink { get; set; }
+    [JsonProperty("url")]
+    public string Url { get; set; }
+
+    [JsonProperty("title")]
+    public string Title { get; set; }
+
+    [JsonProperty("name")]
+    public string Name { get; set; }
+
+    [JsonProperty("permalink")]
+    public string Permalink { get; set; }
 }

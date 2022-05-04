@@ -32,42 +32,53 @@ public class BlackJackService : IInjectable
 
     private async void OnGameEndedAsync(object? sender, GameEndedEventArgs e)
     {
-        var game = (BlackJackGame) sender!;
+        var game = (BlackJackGame)sender!;
         game.GameEnded -= OnGameEndedAsync;
         _games.Remove(game);
 
         if (e.IsWin)
         {
-            await _mongo.AddTransactionAsync(new Transaction(
-                    e.GameId,
-                    TransactionType.Blackjack,
-                    e.Prize,
-                    e.Description),
-                e.User).ConfigureAwait(false);
+            await _mongo
+                .AddTransactionAsync(
+                    new Transaction(e.GameId, TransactionType.Blackjack, e.Prize, e.Description),
+                    e.User
+                )
+                .ConfigureAwait(false);
 
-            await _mongo.UpdateUserAsync(e.User, x =>
-            {
-                x.Balance += e.Prize;
-                x.Wins++;
-                x.MoneyWon += e.Prize;
-            }).ConfigureAwait(false);
+            await _mongo
+                .UpdateUserAsync(
+                    e.User,
+                    x =>
+                    {
+                        x.Balance += e.Prize;
+                        x.Wins++;
+                        x.MoneyWon += e.Prize;
+                    }
+                )
+                .ConfigureAwait(false);
             return;
         }
 
-        if (e.Prize == -1) return;
-        await _mongo.AddTransactionAsync(new Transaction(
-                e.GameId,
-                TransactionType.Blackjack,
-                -e.Bet,
-                e.Description),
-            e.User).ConfigureAwait(false);
+        if (e.Prize == -1)
+            return;
+        await _mongo
+            .AddTransactionAsync(
+                new Transaction(e.GameId, TransactionType.Blackjack, -e.Bet, e.Description),
+                e.User
+            )
+            .ConfigureAwait(false);
 
-        await _mongo.UpdateUserAsync(e.User, x =>
-        {
-            x.Balance -= e.Bet;
-            x.Losses++;
-            x.MoneyLost += e.Bet;
-        }).ConfigureAwait(false);
+        await _mongo
+            .UpdateUserAsync(
+                e.User,
+                x =>
+                {
+                    x.Balance -= e.Bet;
+                    x.Losses++;
+                    x.MoneyLost += e.Bet;
+                }
+            )
+            .ConfigureAwait(false);
     }
 
     public BlackJackGame? GetGame(string id)
