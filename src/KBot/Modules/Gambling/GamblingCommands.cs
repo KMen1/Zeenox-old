@@ -13,20 +13,10 @@ using KBot.Models;
 
 namespace KBot.Modules.Gambling;
 
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
 [Group("gamble", "A place to win big or lose big")]
 public class GamblingCommands : SlashModuleBase
 {
-    [SlashCommand("profile", "Gets your gambling statistics")]
-    public async Task SendGamblingProfileAsync(SocketUser? vuser = null)
-    {
-        var user = vuser ?? Context.User;
-        if (user.IsBot)
-            await FollowupAsync("You can't get a bot's profile.").ConfigureAwait(false);
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)user).ConfigureAwait(false);
-        await RespondAsync(embed: dbUser.ToEmbedBuilder(user).Build(), ephemeral: true)
-            .ConfigureAwait(false);
-    }
-
     [SlashCommand("transactions", "Gets you transactions")]
     public async Task SendTransactionsAsync(SocketUser? user = null)
     {

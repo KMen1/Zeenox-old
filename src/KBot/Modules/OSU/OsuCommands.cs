@@ -17,7 +17,8 @@ using IUser = OsuSharp.Interfaces.IUser;
 
 namespace KBot.Modules.OSU;
 
-[Group("osu", "osu! parancsok")]
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
+[Group("osu", "osu! commands")]
 public class OsuCommands : SlashModuleBase
 {
     private readonly OsuClient _osuClient;
@@ -27,7 +28,7 @@ public class OsuCommands : SlashModuleBase
         _osuClient = osuClient;
     }
 
-    [SlashCommand("set", "Link your osu! profile")]
+    [SlashCommand("link", "Link your osu! profile")]
     public async Task SetOsuProfileAsync(string username)
     {
         await DeferAsync(true).ConfigureAwait(false);

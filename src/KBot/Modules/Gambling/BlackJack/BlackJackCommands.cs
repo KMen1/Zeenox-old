@@ -15,7 +15,8 @@ public class BlackJackCommands : SlashModuleBase
     {
         _blackJackService = blackJackService;
     }
-
+    
+    [DefaultMemberPermissions(GuildPermission.SendMessages)]
     [SlashCommand("blackjack", "Starts a new game of Blackjack")]
     public async Task StartBlackJackAsync([MinValue(1)] [MaxValue(10000000)] int bet)
     {

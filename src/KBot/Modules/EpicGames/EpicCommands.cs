@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 using KBot.Extensions;
 
@@ -13,6 +14,7 @@ public class EpicCommands : SlashModuleBase
         _epicGamesService = epicGamesService;
     }
 
+    [DefaultMemberPermissions(GuildPermission.SendMessages)]
     [SlashCommand("freegames", "Send the current free games on the Epic Games Store.")]
     public async Task GetEpicFreeGameAsync()
     {

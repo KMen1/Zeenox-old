@@ -77,6 +77,8 @@ public class User
 
     [BsonIgnore]
     public int GambleLevel => GamesPlayed / 10;
+    [BsonIgnore]
+    public int GambleLevelRequired => 10 - (GamesPlayed % 10);
 
     [BsonIgnore]
     public int MinimumBet
@@ -109,34 +111,4 @@ public class User
 
     [BsonIgnore]
     public int MoneyToBuyNextLevel => RequiredXp * 100;
-
-    public EmbedBuilder ToEmbedBuilder(IUser user)
-    {
-        return new EmbedBuilder()
-            .WithAuthor(user.Username, user.GetAvatarUrl())
-            .WithColor(Color.Gold)
-            .AddField("🆙 Level", $"`{GambleLevel.ToString(CultureInfo.InvariantCulture)}`")
-            .AddField(
-                "♦ Minimum Bet",
-                $"`{MinimumBet.ToString("N0", CultureInfo.InvariantCulture)}`"
-            )
-            .AddField(
-                "💳 Balance",
-                $"`{Balance.ToString("N0", CultureInfo.InvariantCulture)}`",
-                true
-            )
-            .AddField(
-                "💰 Money Won",
-                $"`{MoneyWon.ToString("N0", CultureInfo.InvariantCulture)}`",
-                true
-            )
-            .AddField(
-                "💸 Money Lost",
-                $"`{MoneyLost.ToString("N0", CultureInfo.InvariantCulture)}`",
-                true
-            )
-            .AddField("📈 Winrate", $"`{WinRate.ToString(CultureInfo.InvariantCulture)}%`", true)
-            .AddField("🏆 Wins", $"`{Wins.ToString(CultureInfo.InvariantCulture)}`", true)
-            .AddField("🚫 Loses", $"`{Losses.ToString(CultureInfo.InvariantCulture)}`", true);
-    }
 }

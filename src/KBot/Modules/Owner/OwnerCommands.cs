@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using Discord.WebSocket;
+using Humanizer;
 
 namespace KBot.Modules.Owner;
 
@@ -16,24 +20,7 @@ public class OwnerCommands : SlashModuleBase
     private const string UpdateUrl = "https://pastebin.com/raw/ru9hWYcj";
 
     [RequireOwner]
-    [SlashCommand("restart", "Restarts the bot")]
-    public async Task ResetAsync()
-    {
-        var pInfo = new ProcessStartInfo
-        {
-            UseShellExecute = true,
-            CreateNoWindow = false,
-            WindowStyle = ProcessWindowStyle.Normal,
-            FileName = "dotnet",
-            Arguments = $"{Assembly.GetExecutingAssembly().Location}"
-        };
-        await RespondAsync("Restarted", ephemeral: true).ConfigureAwait(false);
-        Process.Start(pInfo);
-        Environment.Exit(0);
-    }
-
-    [RequireOwner]
-    [SlashCommand("update", "Frissíti a botot")]
+    [SlashCommand("update", "Updates the bot.")]
     public async Task UpdateAsync()
     {
         await DeferAsync().ConfigureAwait(false);
@@ -44,17 +31,12 @@ public class OwnerCommands : SlashModuleBase
             .FileVersion;
         if (!newVersion.Equals(currentVersion, StringComparison.OrdinalIgnoreCase))
         {
-            var eb = new EmbedBuilder
-            {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = Context.Client.CurrentUser.Username,
-                    IconUrl = Context.Client.CurrentUser.GetAvatarUrl()
-                },
-                Title = "Update available",
-                Description =
-                    $"- Current version: `{currentVersion}` \n- New Version: `{newVersion}`\nAre you sure you want to update?"
-            }.Build();
+            var eb = new EmbedBuilder()
+                .WithTitle("Update available")
+                .WithDescription("Are you sure you want to update?")
+                .AddField("Current version", $"`{currentVersion}`")
+                .AddField("New version", $"`{newVersion}`")
+                .Build();
             var comp = new ComponentBuilder()
                 .WithButton("Confirm", "update-yes", ButtonStyle.Success, new Emoji("✅"))
                 .WithButton("Cancel", "update-no", ButtonStyle.Danger, new Emoji("❌"))

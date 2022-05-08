@@ -4,10 +4,13 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Suggestions;
 
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
 public class SuggestionCommands : SlashModuleBase
 {
-    public override async Task BeforeExecuteAsync(ICommandInfo command)
+    [SlashCommand("suggest", "Create a new suggestion")]
+    public async Task CreateSuggestionAsync(string title, string description)
     {
+        await DeferAsync().ConfigureAwait(false);
         var config = await Mongo.GetGuildConfigAsync(Context.Guild).ConfigureAwait(false);
         if (config.SuggestionChannelId == 0)
         {
@@ -17,16 +20,9 @@ public class SuggestionCommands : SlashModuleBase
                 )
                 .WithColor(Color.Red)
                 .Build();
-            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
+            await FollowupAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
+            return;
         }
-
-        await base.BeforeExecuteAsync(command).ConfigureAwait(false);
-    }
-
-    [SlashCommand("suggest", "Create a new suggestion")]
-    public async Task CreateSuggestionAsync(string title, string description)
-    {
-        await DeferAsync().ConfigureAwait(false);
 
         var embed = new EmbedBuilder()
             .WithAuthor(Context.User.Username, Context.User.GetAvatarUrl())
@@ -48,8 +44,6 @@ public class SuggestionCommands : SlashModuleBase
                 new Emoji("❌")
             )
             .Build();
-
-        var config = await Mongo.GetGuildConfigAsync(Context.Guild).ConfigureAwait(false);
 
         var suggestionChannel = Context.Guild.GetTextChannel(config.SuggestionChannelId);
         await suggestionChannel

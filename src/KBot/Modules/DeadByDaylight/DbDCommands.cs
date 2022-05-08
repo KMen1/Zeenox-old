@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 using KBot.Extensions;
 
@@ -13,7 +14,8 @@ public class DbDCommands : SlashModuleBase
     {
         _dbDService = dbDService;
     }
-
+    
+    [DefaultMemberPermissions(GuildPermission.SendMessages)]
     [SlashCommand("shrine", "Gets the current weekly shrines")]
     public async Task DbdShrineAsync()
     {

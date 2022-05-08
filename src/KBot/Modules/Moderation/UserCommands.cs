@@ -10,6 +10,7 @@ using KBot.Models;
 
 namespace KBot.Modules.Moderation;
 
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
 public class UserCommands : SlashModuleBase
 {
     [UserCommand("Check Warns")]

@@ -12,34 +12,10 @@ using KBot.Models;
 
 namespace KBot.Modules.Leveling;
 
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
 [Group("level", "Leveling system commands")]
 public class LevelingCommands : SlashModuleBase
 {
-    [SlashCommand("rank", "Gets a users level")]
-    public async Task GetLevelAsync(SocketUser? user = null)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var setUser = user ?? Context.User;
-        if (setUser.IsBot)
-        {
-            await FollowupAsync("You can't check the rank of a bot.").ConfigureAwait(false);
-            return;
-        }
-
-        var dbUser = await Mongo.GetUserAsync((SocketGuildUser)setUser).ConfigureAwait(false);
-        var embed = new EmbedBuilder()
-            .WithAuthor(setUser.Username, setUser.GetAvatarUrl())
-            .WithColor(Color.Gold)
-            .AddField("🆙 Level", $"`{dbUser.Level.ToString(CultureInfo.InvariantCulture)}`")
-            .AddField(
-                "➡ XP/Required",
-                $"`{dbUser.Xp.ToString("N0", CultureInfo.InvariantCulture)}/{dbUser.RequiredXp.ToString("N0", CultureInfo.InvariantCulture)}`"
-            )
-            .Build();
-
-        await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
-    }
-
     [SlashCommand("top", "Sends the top 10 users")]
     public async Task GetTopAsync()
     {

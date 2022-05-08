@@ -7,6 +7,7 @@ using KBot.Extensions;
 
 namespace KBot.Modules.Gambling.Mine;
 
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
 [Group("mine", "Roobet Mine")]
 public class MineCommands : SlashModuleBase
 {
@@ -16,7 +17,7 @@ public class MineCommands : SlashModuleBase
     {
         _minesService = minesService;
     }
-
+    
     [SlashCommand("start", "Starts a new game of mine")]
     public async Task StartMinesAsync(
         [MinValue(100)] [MaxValue(1000000)] int bet,

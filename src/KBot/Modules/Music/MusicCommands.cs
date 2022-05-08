@@ -7,6 +7,7 @@ using Discord.WebSocket;
 
 namespace KBot.Modules.Music;
 
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
 [Group("music", "Music")]
 public class MusicCommands : SlashModuleBase
 {

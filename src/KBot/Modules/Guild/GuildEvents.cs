@@ -9,7 +9,7 @@ using Humanizer;
 using KBot.Services;
 using Serilog;
 
-namespace KBot.Modules.Events;
+namespace KBot.Modules.Guild;
 
 public class GuildEvents : IInjectable
 {

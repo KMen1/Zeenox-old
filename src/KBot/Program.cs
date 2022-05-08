@@ -174,7 +174,8 @@ public static class Program
                             new ConfigurationOptions
                             {
                                 EndPoints = { config.Redis.Endpoint },
-                                Password = config.Redis.Password
+                                Password = config.Redis.Password,
+                                AsyncTimeout = 15000
                             }
                         )
                     );

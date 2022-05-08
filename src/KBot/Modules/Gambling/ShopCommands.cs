@@ -11,6 +11,7 @@ using KBot.Models;
 
 namespace KBot.Modules.Gambling;
 
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
 [Group("shop", "Stuff to buy with your money")]
 public class ShopCommands : SlashModuleBase
 {

@@ -4,6 +4,7 @@ using Discord.Interactions;
 
 namespace KBot.Modules.Reddit;
 
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
 [Group("reddit", "Reddit commands")]
 public class RedditCommands : SlashModuleBase
 {

@@ -16,6 +16,7 @@ public class HighLowCommands : SlashModuleBase
         _highLowService = highLowService;
     }
 
+    [DefaultMemberPermissions(GuildPermission.SendMessages)]
     [SlashCommand("highlow", "Starts a new game of higher/lower.")]
     public async Task StartHighLowAsync([MinValue(100)] [MaxValue(1000000)] int bet)
     {

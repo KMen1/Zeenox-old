@@ -15,7 +15,8 @@ public class CrashCommands : SlashModuleBase
     {
         _crashService = crashService;
     }
-
+    
+    [DefaultMemberPermissions(GuildPermission.SendMessages)]
     [SlashCommand("crash", "Starts a new game of crash.")]
     public async Task StartCrashGameAsync([MinValue(100)] [MaxValue(1000000)] int bet)
     {

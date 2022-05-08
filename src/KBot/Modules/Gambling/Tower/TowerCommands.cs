@@ -8,6 +8,7 @@ using KBot.Modules.Gambling.Tower.Game;
 
 namespace KBot.Modules.Gambling.Tower;
 
+[DefaultMemberPermissions(GuildPermission.SendMessages)]
 [Group("tower", "Roobet Towers")]
 public class TowerCommands : SlashModuleBase
 {
