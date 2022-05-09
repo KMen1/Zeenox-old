@@ -113,13 +113,13 @@ public class OsuCommands : SlashModuleBase
         {
             profile = await _osuClient.GetUserAsync(username, GameMode.Osu).ConfigureAwait(false);
         }
-        var playStyle = string.Equals(
+        /*var playStyle = string.Equals(
             profile.Playstyle[0],
             "mouse",
             StringComparison.OrdinalIgnoreCase
         )
           ? "Mouse + Keyboard"
-          : "Tablet + Keyboard";
+          : "Tablet + Keyboard";*/
         var eb = new EmbedBuilder()
             .WithAuthor(
                 profile.Username,
@@ -159,7 +159,7 @@ public class OsuCommands : SlashModuleBase
                 $"`{profile.Statistics.MaximumCombo.ToString(CultureInfo.InvariantCulture)} x`",
                 true
             )
-            .AddField("🎹 Plays with", $"`{playStyle}`", true);
+            .AddField("🎹 Plays with", $"`Unknown`", true);
         await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
     }
 
