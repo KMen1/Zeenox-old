@@ -51,7 +51,7 @@ public sealed class MinesGame : IGame
 
     private IUserMessage Message { get; }
     public ulong UserId { get; }
-    public int Bet { get; }
+    private int Bet { get; }
     public bool CanStop { get; private set; }
     private int Mines { get; }
     private int Clicked { get; set; }

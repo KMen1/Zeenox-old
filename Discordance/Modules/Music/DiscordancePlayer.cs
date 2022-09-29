@@ -7,46 +7,58 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Discordance.Extensions;
+using Discordance.Services;
 using Lavalink4NET.Events;
 using Lavalink4NET.Player;
 
 namespace Discordance.Modules.Music;
 
-public class DiscordancePlayer : QueuedLavalinkPlayer
+public class DiscordancePlayer : VoteLavalinkPlayer
 {
     public SocketVoiceChannel VoiceChannel { get; }
+    private readonly LocalizationService _localization;
 
-    public DiscordancePlayer(SocketVoiceChannel voiceChannel)
+    public DiscordancePlayer(
+        SocketVoiceChannel voiceChannel,
+        string lang,
+        bool isAnonymous,
+        LocalizationService localization
+    )
     {
         VoiceChannel = voiceChannel;
+        Lang = lang;
+        IsAnonymous = isAnonymous;
+        _localization = localization;
         IsAutoPlay = false;
         CurrentFilter = "None";
-        Message = null;
         History = new List<LavalinkTrack>();
-        SkipVotes = new List<ulong>();
-        SkipVotesNeeded = VoiceChannel.ConnectedUsers.Count(x => !x.IsBot) / 2;
         DisposeTokenSource = new CancellationTokenSource();
         Waiting = false;
         Playlist = new List<string>();
-        ShowRequester = true;
         ActionHistory = new List<string>();
     }
 
+    private string Lang { get; }
+    private bool IsAnonymous { get; }
     public bool IsAutoPlay { get; private set; }
     private string? CurrentFilter { get; set; }
     public IUser RequestedBy => (IUser)CurrentTrack!.Context!;
-    public IUserMessage? Message { get; set; }
+    public IUserMessage Message { get; private set; } = null!;
+    public ITextChannel TextChannel { get; private set; } = null!;
     public List<LavalinkTrack> History { get; }
-    private bool CanSkip => Queue.Count > 0;
-    private bool CanGoBack => History.Count > 0;
-    private List<ulong> SkipVotes { get; }
-    public int SkipVotesNeeded { get; set; }
     private CancellationTokenSource DisposeTokenSource { get; set; }
     private bool Waiting { get; set; }
     private List<string> Playlist { get; }
-    public bool ShowRequester { get; set; }
     public bool IsPlaying => State is PlayerState.Playing or PlayerState.Paused;
     private List<string> ActionHistory { get; }
+    private int VoteSkipCount { get; set; }
+    private int VoteSkipRequired { get; set; }
+
+    public void SetMessage(IUserMessage message)
+    {
+        Message = message;
+        TextChannel = (ITextChannel)message.Channel;
+    }
 
     private void AppendAction(string action)
     {
@@ -63,10 +75,12 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
             DisposeTokenSource = new CancellationTokenSource();
         }
 
-        Playlist.Add($"[{track.Title}]({track.Source})");
-        var t = await base.PlayAsync(track).ConfigureAwait(false);
+        Playlist.Add($"[{track.Title}]({track.Uri})");
+        await base.PlayAsync(track).ConfigureAwait(false);
         AppendAction(
-            $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} added [{track.Title}]({track.Source})*"
+            _localization
+                .GetMessage(Lang, "track_added")
+                .FormatWithTimestamp(user.Mention, track.ToHyperLink())
         );
         await UpdateMessageAsync().ConfigureAwait(false);
     }
@@ -75,7 +89,7 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
     {
         CurrentFilter = filter;
         AppendAction(
-            $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} set filter to {filter}*"
+            _localization.GetMessage(Lang, "set_filter").FormatWithTimestamp(user.Mention, filter)
         );
         return UpdateMessageAsync();
     }
@@ -85,7 +99,9 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
         IsLooping = !IsLooping;
         IsAutoPlay = false;
         AppendAction(
-            $"*<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: {user.Mention} toggled loop to {IsLooping}*"
+            _localization
+                .GetMessage(Lang, IsLooping ? "player_loop_enabled" : "player_loop_disabled")
+                .FormatWithTimestamp(user.Mention)
         );
         return UpdateMessageAsync();
     }
@@ -95,34 +111,54 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
         IsAutoPlay = !IsAutoPlay;
         IsLooping = false;
         AppendAction(
-            $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} toggled autoplay to {IsAutoPlay}*"
+            _localization
+                .GetMessage(
+                    Lang,
+                    IsAutoPlay ? "player_autoplay_enabled" : "player_autoplay_disabled"
+                )
+                .FormatWithTimestamp(user.Mention)
         );
         return UpdateMessageAsync();
     }
 
-    public Task VoteSkipAsync(IUser user)
+    public async Task VoteSkipAsync(IUser user)
     {
-        if (SkipVotes.Contains(user.Id))
-            return Task.CompletedTask;
-        SkipVotes.Add(user.Id);
-        if (SkipVotes.Count < SkipVotesNeeded)
+        var result = await VoteAsync(user.Id).ConfigureAwait(false);
+        if (!result.WasAdded)
+            return;
+
+        VoteSkipCount = result.Votes.Count;
+        VoteSkipRequired = (int)Math.Ceiling(VoiceChannel.Users.Count / 2.0);
+        if (!result.WasSkipped)
         {
             AppendAction(
-                $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} has voted to skip. {SkipVotesNeeded - SkipVotes.Count} more votes needed.*"
+                _localization
+                    .GetMessage(Lang, "player_voteskip")
+                    .FormatWithTimestamp(user.Mention, VoteSkipRequired)
             );
-            return UpdateMessageAsync();
+            await UpdateMessageAsync().ConfigureAwait(false);
+            return;
         }
-        SkipVotes.Clear();
-        return SkipAsync();
+
+        VoteSkipCount = 0;
+        VoteSkipRequired = (int)Math.Ceiling(VoiceChannel.Users.Count / 2.0);
+        AppendAction(
+            _localization
+                .GetMessage(Lang, "player_voteskipped")
+                .FormatWithTimestamp(CurrentTrack.ToHyperLink())
+        );
+        await UpdateMessageAsync().ConfigureAwait(false);
     }
 
     public async Task SkipAsync(IUser user)
     {
-        await base.SkipAsync(1).ConfigureAwait(false);
+        await base.SkipAsync().ConfigureAwait(false);
         if (CurrentTrack is null)
             return;
         AppendAction(
-            $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} skipped to [{CurrentTrack.Title}]({CurrentTrack.Source})*"
+            _localization
+                .GetMessage(Lang, "player_skip")
+                .FormatWithTimestamp(user.Mention, CurrentTrack.ToHyperLink())
         );
         await UpdateMessageAsync().ConfigureAwait(false);
     }
@@ -134,24 +170,20 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
         var track = History[^1];
         History.Remove(track);
         AppendAction(
-            $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} played [{track.Title}]({track.Source})*"
+            _localization.GetMessage(Lang, "player_previous").FormatWithTimestamp(user.Mention)
         );
         return PlayAsync(track);
     }
 
-    public async Task PlayOrEnqueueAsync(IUser user, LavalinkTrack[] tracks, bool isPlaylist)
+    public async Task PlayPlaylistAsync(IUser user, LavalinkTrack[] tracks)
     {
-        if (isPlaylist)
-        {
-            await base.PlayAsync(tracks[0]).ConfigureAwait(false);
-            Queue.AddRange(tracks[1..]);
-            AppendAction(
-                $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} added {tracks.Length - 1} tracks to the queue.*"
-            );
-            await UpdateMessageAsync().ConfigureAwait(false);
-            return;
-        }
         await base.PlayAsync(tracks[0]).ConfigureAwait(false);
+        Queue.AddRange(tracks[1..]);
+        AppendAction(
+            _localization
+                .GetMessage(Lang, "player_playlist_added")
+                .FormatWithTimestamp(user.Mention, tracks.Length)
+        );
         await UpdateMessageAsync().ConfigureAwait(false);
     }
 
@@ -159,7 +191,7 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
     {
         await base.PauseAsync().ConfigureAwait(false);
         AppendAction(
-            $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} paused the player*"
+            _localization.GetMessage(Lang, "player_pause").FormatWithTimestamp(user.Mention)
         );
         await UpdateMessageAsync().ConfigureAwait(false);
     }
@@ -168,7 +200,7 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
     {
         await base.ResumeAsync().ConfigureAwait(false);
         AppendAction(
-            $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} resumed the player*"
+            _localization.GetMessage(Lang, "player_resume").FormatWithTimestamp(user.Mention)
         );
         await UpdateMessageAsync().ConfigureAwait(false);
     }
@@ -177,7 +209,9 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
     {
         await base.SetVolumeAsync(volume).ConfigureAwait(false);
         AppendAction(
-            $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} set the volume to {volume * 100}%*"
+            _localization
+                .GetMessage(Lang, "player_volume")
+                .FormatWithTimestamp(user.Mention, (int)(volume * 100))
         );
         await UpdateMessageAsync().ConfigureAwait(false);
     }
@@ -187,7 +221,7 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
         var count = Queue.Count;
         Queue.Clear();
         AppendAction(
-            $"<t:{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}:R>: *{user.Mention} cleared the queue.*"
+            _localization.GetMessage(Lang, "player_queue_cleared").FormatWithTimestamp(user.Mention)
         );
         await UpdateMessageAsync().ConfigureAwait(false);
         return count;
@@ -202,115 +236,219 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
         }
 
         var eb = new EmbedBuilder()
-            .WithDescription("**Error occured during playback of current track.**")
+            .WithDescription(_localization.GetMessage(Lang, "error_playback"))
             .WithColor(Color.Red)
             .Build();
-        await Message.Channel.SendMessageAsync(embed: eb).ConfigureAwait(false);
+        await TextChannel.SendMessageAsync(embed: eb).ConfigureAwait(false);
 
         await base.OnTrackExceptionAsync(eventArgs).ConfigureAwait(false);
     }
 
-    private Task UpdateMessageAsync()
+    private async Task UpdateMessageAsync()
     {
-        if (Message is null)
-            return Task.CompletedTask;
-        return Message.ModifyAsync(
-            x =>
-            {
-                x.Content = "";
-                x.Embed = Embed();
-                x.Components = Components();
-            }
-        );
+        if (await TextChannel.GetMessageAsync(Message.Id).ConfigureAwait(false) is null)
+            Message = await TextChannel
+                .SendMessageAsync(embed: GetNowPlayingEmbed(), components: GetMessageComponents())
+                .ConfigureAwait(false);
+        await Message
+            .ModifyAsync(
+                x =>
+                {
+                    x.Embed = GetNowPlayingEmbed();
+                    x.Components = GetMessageComponents();
+                }
+            )
+            .ConfigureAwait(false);
     }
 
-    public Embed Embed(LavalinkTrack? track = null)
+    public Embed GetNowPlayingEmbed(LavalinkTrack? track = null)
     {
         var sourceTrack = track ?? CurrentTrack;
         var requester = (IUser)sourceTrack.Context;
         return new EmbedBuilder()
             .WithAuthor(
-                "NOW PLAYING",
+                _localization.GetMessage(Lang, "now_playing"),
                 "https://bestanimations.com/media/discs/895872755cd-animated-gif-9.gif"
             )
             .WithTitle(sourceTrack.Title)
             .WithDescription(string.Join("\n", ActionHistory))
-            .WithUrl(sourceTrack.Source)
+            .WithUrl(sourceTrack.Uri?.ToString() ?? "")
             .WithImageUrl(
                 $"https://img.youtube.com/vi/{sourceTrack.TrackIdentifier}/maxresdefault.jpg"
             )
             .WithColor(new Color(31, 31, 31))
-            .AddField("👤 Added by", ShowRequester ? requester!.Mention : "`Anonymous`", true)
-            .AddField("🎙️ Channel", VoiceChannel.Mention, true)
-            .AddField("🕐 Length", $"`{sourceTrack.Duration.ToTimeString()}`", true)
             .AddField(
-                "🔊 Volume",
+                _localization.GetMessage(Lang, "added_by"),
+                IsAnonymous ? requester!.Mention : "`Anonymous`",
+                true
+            )
+            .AddField(_localization.GetMessage(Lang, "channel"), VoiceChannel.Mention, true)
+            .AddField(
+                _localization.GetMessage(Lang, "length"),
+                $"`{sourceTrack.Duration.ToTimeString()}`",
+                true
+            )
+            .AddField(
+                _localization.GetMessage(Lang, "volume"),
                 $"`{Math.Round(Volume * 100).ToString(CultureInfo.InvariantCulture)}%`",
                 true
             )
-            .AddField("📝 Filter", $"`{CurrentFilter}`", true)
+            .AddField(_localization.GetMessage(Lang, "filter"), $"`{CurrentFilter}`", true)
             .AddField(
-                "🎶 In Queue",
+                _localization.GetMessage(Lang, "in_queue"),
                 $"`{Queue.Count.ToString(CultureInfo.InvariantCulture)}`",
                 true
             )
             .Build();
     }
 
-    public MessageComponent Components()
+    public MessageComponent GetMessageComponents()
     {
         return new ComponentBuilder()
-            .WithButton("Back", "previous", emote: new Emoji("⏮"), disabled: !CanGoBack, row: 0)
             .WithButton(
-                State == PlayerState.Paused ? "Resume" : "Pause",
+                _localization.GetMessage(Lang, "back"),
+                "previous",
+                emote: new Emoji("⏮"),
+                disabled: History.Count == 0,
+                row: 0
+            )
+            .WithButton(
+                State == PlayerState.Paused
+                  ? _localization.GetMessage(Lang, "resume")
+                  : _localization.GetMessage(Lang, "pause"),
                 "pause",
                 emote: State == PlayerState.Paused ? new Emoji("▶") : new Emoji("⏸"),
                 row: 0
             )
-            .WithButton("Stop", "stop", emote: new Emoji("⏹"), row: 0)
             .WithButton(
-                $"Skip [{SkipVotes.Count}/{SkipVotesNeeded}]",
-                "next",
-                emote: new Emoji("⏭"),
-                disabled: !CanSkip,
+                _localization.GetMessage(Lang, "stop"),
+                "stop",
+                emote: new Emoji("⏹"),
                 row: 0
             )
-            .WithButton("Down", "volumedown", emote: new Emoji("🔉"), row: 1, disabled: Volume == 0)
             .WithButton(
-                IsAutoPlay ? "Autoplay [On]" : "Autoplay [Off]",
+                $"Skip [{VoteSkipCount}/{VoteSkipRequired}]",
+                "next",
+                emote: new Emoji("⏭"),
+                disabled: Queue.Count == 0,
+                row: 0
+            )
+            .WithButton(
+                _localization.GetMessage(Lang, "volume_down"),
+                "volumedown",
+                emote: new Emoji("🔉"),
+                row: 1,
+                disabled: Volume == 0
+            )
+            .WithButton(
+                IsAutoPlay
+                  ? _localization.GetMessage(Lang, "autoplay_on")
+                  : _localization.GetMessage(Lang, "autoplay_off"),
                 "autoplay",
                 emote: new Emoji("🔎"),
                 row: 1
             )
             .WithButton(
-                IsLooping ? "Loop [On]" : "Loop [Off]",
+                IsLooping
+                  ? _localization.GetMessage(Lang, "loop_on")
+                  : _localization.GetMessage(Lang, "loop_off"),
                 "repeat",
                 emote: new Emoji("🔁"),
                 row: 1
             )
-            .WithButton("Up", "volumeup", emote: new Emoji("🔊"), row: 1, disabled: Volume == 1.0f)
+            .WithButton(
+                _localization.GetMessage(Lang, "volume_up"),
+                "volumeup",
+                emote: new Emoji("🔊"),
+                row: 1,
+                disabled: Volume == 1.0f
+            )
             .WithSelectMenu(
                 new SelectMenuBuilder()
-                    .WithPlaceholder("Select Filter")
+                    .WithPlaceholder(_localization.GetMessage(Lang, "filter_select"))
                     .WithCustomId("filterselectmenu")
                     .WithMinValues(1)
                     .WithMaxValues(1)
-                    .AddOption("None", "None", emote: new Emoji("🗑️"))
-                    .AddOption("Bass Boost", "Bassboost", emote: new Emoji("🤔"))
-                    .AddOption("Pop", "Pop", emote: new Emoji("🎸"))
-                    .AddOption("Soft", "Soft", emote: new Emoji("✨"))
-                    .AddOption("Loud", "Treblebass", emote: new Emoji("🔊"))
-                    .AddOption("Nightcore", "Nightcore", emote: new Emoji("🌃"))
-                    .AddOption("8D", "Eightd", emote: new Emoji("🎧"))
-                    .AddOption("Chinese", "China", emote: new Emoji("🍊"))
-                    .AddOption("Vaporwave", "Vaporwave", emote: new Emoji("💦"))
-                    .AddOption("Speed Up", "Doubletime", emote: new Emoji("⏫"))
-                    .AddOption("Speed Down", "Slowmotion", emote: new Emoji("⏬"))
-                    .AddOption("Chipmunk", "Chipmunk", emote: new Emoji("🐿"))
-                    .AddOption("Darthvader", "Darthvader", emote: new Emoji("🤖"))
-                    .AddOption("Dance", "Dance", emote: new Emoji("🕺"))
-                    .AddOption("Vibrato", "Vibrato", emote: new Emoji("🕸"))
-                    .AddOption("Tremolo", "Tremolo", emote: new Emoji("📳")),
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_none"),
+                        "None",
+                        emote: new Emoji("🗑️")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_bassboost"),
+                        "Bassboost",
+                        emote: new Emoji("🤔")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_pop"),
+                        "Pop",
+                        emote: new Emoji("🎸")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_soft"),
+                        "Soft",
+                        emote: new Emoji("✨")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_treblebass"),
+                        "Treblebass",
+                        emote: new Emoji("🔊")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_nightcore"),
+                        "Nightcore",
+                        emote: new Emoji("🌃")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_8d"),
+                        "Eightd",
+                        emote: new Emoji("🎧")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_chinese"),
+                        "China",
+                        emote: new Emoji("🍊")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_vaporwave"),
+                        "Vaporwave",
+                        emote: new Emoji("💦")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_speed_up"),
+                        "Doubletime",
+                        emote: new Emoji("⏫")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_speed_down"),
+                        "Slowmotion",
+                        emote: new Emoji("⏬")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_chipmunk"),
+                        "Chipmunk",
+                        emote: new Emoji("🐿")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_darthvader"),
+                        "Darthvader",
+                        emote: new Emoji("🤖")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_dance"),
+                        "Dance",
+                        emote: new Emoji("🕺")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_vibrato"),
+                        "Vibrato",
+                        emote: new Emoji("🕸")
+                    )
+                    .AddOption(
+                        _localization.GetMessage(Lang, "filter_tremolo"),
+                        "Tremolo",
+                        emote: new Emoji("📳")
+                    ),
                 2
             )
             .Build();
@@ -318,14 +456,12 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
 
     public async Task WaitForInputAsync()
     {
-        await Message!
+        await Message
             .ModifyAsync(
                 x =>
                 {
                     x.Embed = new EmbedBuilder()
-                        .WithDescription(
-                            "**Waiting 1 minute for a new song to be added before disconnecting!**"
-                        )
+                        .WithDescription(_localization.GetMessage(Lang, "player_waiting"))
                         .WithColor(Color.Orange)
                         .Build();
                     x.Components = new ComponentBuilder().Build();
@@ -333,7 +469,7 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
             )
             .ConfigureAwait(false);
         Waiting = true;
-        await Task.Delay(TimeSpan.FromMinutes(1), DisposeTokenSource.Token).ConfigureAwait(false);
+        await Task.Delay(TimeSpan.FromMinutes(3), DisposeTokenSource.Token).ConfigureAwait(false);
         if (!DisposeTokenSource.IsCancellationRequested)
             await DisposeAsync().ConfigureAwait(false);
     }
@@ -346,18 +482,19 @@ public class DiscordancePlayer : QueuedLavalinkPlayer
 
     protected override async ValueTask DisposeAsyncCore()
     {
-        if (Message is not null)
+        if (await TextChannel.GetMessageAsync(Message.Id).ConfigureAwait(false) is not null)
         {
             await Message
                 .ModifyAsync(
                     x =>
                     {
                         x.Embed = new EmbedBuilder()
-                            .WithTitle("Party Over")
+                            .WithTitle(_localization.GetMessage(Lang, "party_over"))
                             .WithDescription(
-                                $"Listing all songs that were played: \n{string.Join("\n", Playlist)}"
+                                $"{_localization.GetMessage(Lang, "songs_played_list")}\n{string.Join("\n", Playlist)}"
                             )
                             .WithColor(Color.Blue)
+                            .WithTimestamp(DateTimeOffset.Now)
                             .Build();
                         x.Components = new ComponentBuilder().Build();
                     }

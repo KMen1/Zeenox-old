@@ -8,7 +8,6 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Discordance.Services;
 using DotNetEnv;
-using Fergun.Interactive;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Hangfire;
@@ -75,6 +74,7 @@ await Host.CreateDefaultBuilder()
             config.DefaultRunMode = RunMode.Async;
             config.LogLevel = LogSeverity.Verbose;
             config.UseCompiledLambda = true;
+            config.LocalizationManager = new JsonLocalizationManager("Resources", "DCLocalization");
         }
     )
     .ConfigureOsuSharp(
@@ -147,7 +147,6 @@ await Host.CreateDefaultBuilder()
             );
             services.AddSingleton<AudioService>();
             services.AddSingleton<ArtworkService>();
-            services.AddSingleton<InteractiveService>();
             services.AddSingleton<MongoService>();
             services.AddSingleton<TemporaryChannelService>();
             services.AddSingleton<PersistentRoleService>();
@@ -176,6 +175,7 @@ await Host.CreateDefaultBuilder()
                     x.UseSerilogLogProvider();
                 }
             );
+            services.AddSingleton<LocalizationService>();
             services.AddHangfireServer();
             services.AddHttpClient();
             services.AddMemoryCache();

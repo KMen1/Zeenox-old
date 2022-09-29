@@ -2,30 +2,31 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using Discordance.Extensions;
 using Discordance.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
 
 public class RequireAllowedChannelAttribute : PreconditionAttribute
 {
-    public override async Task<PreconditionResult> CheckRequirementsAsync(
+    public override Task<PreconditionResult> CheckRequirementsAsync(
         IInteractionContext context,
         ICommandInfo commandInfo,
         IServiceProvider services
     )
     {
-        var mongo = services.GetRequiredService<MongoService>();
-        var config = await mongo.GetGuildConfigAsync(context.Guild.Id).ConfigureAwait(false);
-        var musicConfig = config.Music;
+        var cache = services.GetRequiredService<IMemoryCache>();
+        var config = cache.GetGuildConfig(context.Guild.Id).Music;
 
-        if (musicConfig.AllowedVoiceChannels.Count == 0)
-            return PreconditionResult.FromSuccess();
+        if (config.AllowedVoiceChannels.Count == 0)
+            return Task.FromResult(PreconditionResult.FromSuccess());
 
-        return musicConfig.AllowedVoiceChannels.Contains(
-            ((IVoiceState)context.User).VoiceChannel.Id
-        )
-          ? PreconditionResult.FromSuccess()
-          : PreconditionResult.FromError("Please use a channel that is on the allowlist.");
+        return config.AllowedVoiceChannels.Contains(((IVoiceState)context.User).VoiceChannel.Id)
+          ? Task.FromResult(PreconditionResult.FromSuccess())
+          : Task.FromResult(
+                PreconditionResult.FromError("Please use a channel that is on the allowlist.")
+            );
     }
 }

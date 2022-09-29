@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Discordance.Enums;
 using Discordance.Extensions;
-using Discordance.Models;
 using Discordance.Modules.Music;
 using Google.Apis.YouTube.v3;
 using Lavalink4NET;
@@ -15,57 +13,35 @@ using Lavalink4NET.Events;
 using Lavalink4NET.Integrations.SponsorBlock;
 using Lavalink4NET.Player;
 using Lavalink4NET.Rest;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Discordance.Services;
 
 public class AudioService
 {
-    private readonly Dictionary<FilterType, Action<PlayerFilterMap>> _filterActions =
-        new()
-        {
-            { FilterType.None, x => x.Clear() },
-            { FilterType.Bassboost, x => x.BassBoost() },
-            { FilterType.Pop, x => x.Pop() },
-            { FilterType.Soft, x => x.Soft() },
-            { FilterType.Treblebass, x => x.Treblebass() },
-            { FilterType.Nightcore, x => x.Nightcore() },
-            { FilterType.Eightd, x => x.Eightd() },
-            { FilterType.Vaporwave, x => x.Vaporwave() },
-            { FilterType.Doubletime, x => x.Doubletime() },
-            { FilterType.Slowmotion, x => x.Slowmotion() },
-            { FilterType.Chipmunk, x => x.Chipmunk() },
-            { FilterType.Darthvader, x => x.Darthvader() },
-            { FilterType.Dance, x => x.Dance() },
-            { FilterType.China, x => x.China() },
-            { FilterType.Vibrato, x => x.Vibrato() },
-            { FilterType.Tremolo, x => x.Tremolo() }
-        };
-
     private readonly IAudioService _audioService;
     private readonly YouTubeService _youtubeService;
-    private readonly MongoService _mongoService;
+    private readonly IMemoryCache _cache;
+    private readonly LocalizationService _localizationService;
 
     public AudioService(
         IAudioService lavaNode,
         YouTubeService youtubeService,
         DiscordShardedClient client,
-        MongoService mongoService
+        IMemoryCache cache,
+        LocalizationService localizationService
     )
     {
         _audioService = lavaNode;
         _audioService.TrackEnd += OnTrackEnd;
         _youtubeService = youtubeService;
-        _mongoService = mongoService;
+        _cache = cache;
+        _localizationService = localizationService;
         client.MessageReceived += ListenForSongRequests;
         foreach (var node in ((LavalinkCluster)_audioService).Nodes)
         {
             node.UseSponsorBlock();
         }
-    }
-
-    public async Task<MusicConfig> GetConfig(ulong guildId)
-    {
-        return (await _mongoService.GetGuildConfigAsync(guildId).ConfigureAwait(false)).Music;
     }
 
     private async Task ListenForSongRequests(SocketMessage arg)
@@ -75,16 +51,17 @@ public class AudioService
             || message.Author.IsBot
             || message.Author.IsWebhook
             || message.Author is not SocketGuildUser user
+            || message.Channel is not SocketTextChannel channel
         )
+        {
             return;
-
-        if (message.Channel is not SocketTextChannel channel)
-            return;
+        }
 
         var guild = channel.Guild;
-        var config = (
-            await _mongoService.GetGuildConfigAsync(guild.Id).ConfigureAwait(false)
-        ).Music;
+        var config = _cache.GetGuildConfig(guild.Id).Music;
+
+        if (user.VoiceChannel is null)
+            return;
 
         if (config.RequestChannelId is null)
             return;
@@ -92,30 +69,31 @@ public class AudioService
         if (message.Channel.Id != config.RequestChannelId)
             return;
 
-        if (user.VoiceChannel is null)
-            return;
-
         var player = await GetOrCreatePlayerAsync(user).ConfigureAwait(false);
 
         var (tracks, isPlaylist) = await SearchAsync(message.Content, user).ConfigureAwait(false);
+        if (tracks is null)
+            return;
+
         var track = tracks[0];
 
         await message.DeleteAsync().ConfigureAwait(false);
-        if (player.Message is not null && player.Message.Channel.Id != config.RequestChannelId)
+        if (player.TextChannel.Id != config.RequestChannelId)
         {
             await player.Message.DeleteAsync().ConfigureAwait(false);
-        }
-
-        if (!player.IsPlaying)
-        {
-            player.Message = await channel
-                .SendMessageAsync(embed: player.Embed(track), components: player.Components())
-                .ConfigureAwait(false);
+            player.SetMessage(
+                await channel
+                    .SendMessageAsync(
+                        embed: player.GetNowPlayingEmbed(track),
+                        components: player.GetMessageComponents()
+                    )
+                    .ConfigureAwait(false)
+            );
         }
 
         if (isPlaylist && config.PlaylistAllowed)
         {
-            await player.PlayOrEnqueueAsync(user, tracks, isPlaylist).ConfigureAwait(false);
+            await player.PlayPlaylistAsync(user, tracks).ConfigureAwait(false);
             return;
         }
 
@@ -124,8 +102,7 @@ public class AudioService
 
     private async Task OnTrackEnd(object _, TrackEndEventArgs eventArgs)
     {
-        if (eventArgs.Player is not DiscordancePlayer player)
-            return;
+        var player = (DiscordancePlayer)eventArgs.Player;
 
         if (!eventArgs.MayStartNext)
             return;
@@ -135,7 +112,6 @@ public class AudioService
 
         var previous = player.CurrentTrack!;
         player.History.Add(previous);
-        player.SkipVotesNeeded = player.VoiceChannel.ConnectedUsers.Count(x => !x.IsBot) / 2;
 
         if (player.Queue.Count > 0)
             return;
@@ -166,18 +142,26 @@ public class AudioService
     {
         var voiceChannel = user.VoiceChannel;
         var guild = user.Guild;
+        var config = _cache.GetGuildConfig(guild.Id);
         if (_audioService.GetPlayer<DiscordancePlayer>(guild.Id) is { } player)
             return player;
         player = await _audioService
-            .JoinAsync(() => new DiscordancePlayer(voiceChannel), guild.Id, voiceChannel.Id)
+            .JoinAsync(
+                () =>
+                    new DiscordancePlayer(
+                        voiceChannel,
+                        config.Language,
+                        config.Music.ShowRequester,
+                        _localizationService
+                    ),
+                guild.Id,
+                voiceChannel.Id
+            )
             .ConfigureAwait(false);
-        var config = await _mongoService.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
-        var musicConfig = config.Music;
-        if (musicConfig.UseSponsorBlock)
+        if (config.Music.UseSponsorBlock)
             player.GetCategories().Add(SegmentCategory.OfftopicMusic);
-        if (musicConfig.DefaultVolume != 100)
-            await player.SetVolumeAsync(musicConfig.DefaultVolume).ConfigureAwait(false);
-        player.ShowRequester = musicConfig.ShowRequester;
+        if (config.Music.DefaultVolume != 100)
+            await player.SetVolumeAsync(config.Music.DefaultVolume).ConfigureAwait(false);
         return player;
     }
 
@@ -190,7 +174,7 @@ public class AudioService
             await player.SkipAsync(user).ConfigureAwait(false);
     }
 
-    public async Task<Embed?> PauseOrResumeAsync(IGuild guild, IUser user)
+    public async Task PauseOrResumeAsync(IGuild guild, IUser user)
     {
         var player = GetPlayer(guild.Id);
         switch (player.State)
@@ -206,8 +190,6 @@ public class AudioService
                 break;
             }
         }
-
-        return null;
     }
 
     public async Task SetFiltersAsync(IGuild guild, SocketUser user, FilterType filterType)
@@ -215,7 +197,7 @@ public class AudioService
         var player = GetPlayer(guild.Id);
         if (filterType is not FilterType.None)
             player.Filters.Clear();
-        _filterActions[filterType](player.Filters);
+        player.Filters.ApplyFilter(filterType);
         await player.Filters.CommitAsync().ConfigureAwait(false);
         await player.SetFilterNameAsync(user, filterType.GetDescription()!).ConfigureAwait(false);
     }
@@ -243,18 +225,13 @@ public class AudioService
           : await _audioService.LoadTracksAsync(query, SearchMode.YouTube).ConfigureAwait(false);
 
         var tracks = results.Tracks;
-        if (tracks != null)
-        {
-            foreach (var track in tracks)
-                track.Context = user;
-        }
-        return results.Tracks is not null && results.Tracks.Length > 0
-          ? (tracks, results.PlaylistInfo?.Name is not null)
-          : (null, false);
+        if (tracks is null || tracks.Length == 0)
+            return (null, false);
+        foreach (var track in tracks)
+            track.Context = user;
+        return (tracks, results.PlaylistInfo?.Name is not null);
     }
 
-    public ValueTask<LavalinkTrack?> GetTrackAsync(string url)
-    {
-        return _audioService.GetTrackAsync(url, SearchMode.YouTube);
-    }
+    public ValueTask<LavalinkTrack?> GetTrackAsync(string url) =>
+        _audioService.GetTrackAsync(url, SearchMode.YouTube);
 }

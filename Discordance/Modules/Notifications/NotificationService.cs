@@ -10,6 +10,7 @@ using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Services;
 using Hangfire;
+using Microsoft.Extensions.Caching.Memory;
 using Game = Discordance.Models.Game;
 
 namespace Discordance.Modules.Notifications;
@@ -17,6 +18,7 @@ namespace Discordance.Modules.Notifications;
 public class NotificationService
 {
     private readonly DiscordShardedClient _client;
+    private readonly IMemoryCache _cache;
     private readonly MongoService _mongo;
     private readonly ImageService _imageService;
     private readonly HttpClient _httpClient;
@@ -28,21 +30,23 @@ public class NotificationService
 
     public NotificationService(
         DiscordShardedClient client,
-        MongoService mongoService,
+        IMemoryCache cache,
         ImageService imageService,
-        HttpClient httpClient
+        HttpClient httpClient,
+        MongoService mongo
     )
     {
         _client = client;
-        _mongo = mongoService;
+        _cache = cache;
         _imageService = imageService;
         _httpClient = httpClient;
+        _mongo = mongo;
         client.UserJoined += HandleUserJoinedAsync;
         client.UserLeft += HandleUserLeaveAsync;
         client.UserBanned += CallBanFunctions;
         client.UserUnbanned += CallUnbanFunctions;
 
-        /*RecurringJob.AddOrUpdate(
+        RecurringJob.AddOrUpdate(
             "epic",
             () => RefreshAndNotifyAsync(NotificationSource.Epic),
             "5 17 * * THU"
@@ -51,7 +55,7 @@ public class NotificationService
             "dbd",
             () => RefreshAndNotifyAsync(NotificationSource.Dbd),
             "0 0 * * WED"
-        );*/
+        );
     }
 
     private async Task HandleUserJoinedAsync(SocketGuildUser user)
@@ -60,7 +64,7 @@ public class NotificationService
             return;
 
         var guild = user.Guild;
-        var config = await _mongo.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        var config = _cache.GetGuildConfig(guild.Id);
 
         if (config.Notifications.WelcomeInChannel)
         {
@@ -116,7 +120,7 @@ public class NotificationService
         if (user.IsBot || user.IsWebhook)
             return;
 
-        var config = await _mongo.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        var config = _cache.GetGuildConfig(guild.Id);
         if (!config.Notifications.AnnounceLeave)
             return;
 
@@ -157,7 +161,7 @@ public class NotificationService
         if (user.IsBot || user.IsWebhook)
             return;
 
-        var config = await _mongo.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        var config = _cache.GetGuildConfig(guild.Id);
         if (!config.Notifications.AnnounceBan)
             return;
 
@@ -192,7 +196,7 @@ public class NotificationService
         if (user.IsBot || user.IsWebhook)
             return;
 
-        var config = await _mongo.GetGuildConfigAsync(guild.Id).ConfigureAwait(false);
+        var config = _cache.GetGuildConfig(guild.Id);
         if (!config.Notifications.AnnounceUnban)
             return;
 
@@ -401,10 +405,10 @@ public class NotificationService
     {
         var channelIds =
             source is NotificationSource.Epic
-                ? await _mongo.GetFreeGameNotificationChannelIds().ConfigureAwait(false)
-                : await _mongo.GetShrineNotificationChannelIds().ConfigureAwait(false);
+                ? _cache.GetGameNotificationChannels()
+                : _cache.GetShrineNotificationChannels();
         var channels = channelIds
-            .Select(id => _client.GetChannel(id) as ITextChannel)
+            .Select(id => _client.GetChannel(id.Item2) as ITextChannel)
             .Where(channel => channel is not null)
             .ToList();
 

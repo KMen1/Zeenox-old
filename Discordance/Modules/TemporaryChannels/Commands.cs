@@ -3,18 +3,22 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Services;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Discordance.Modules.TemporaryChannels;
 
 public class Commands : ModuleBase
 {
     private readonly TemporaryChannelService _service;
+    private readonly IMemoryCache _cache;
 
-    public Commands(TemporaryChannelService service)
+    public Commands(TemporaryChannelService service, IMemoryCache cache)
     {
         _service = service;
+        _cache = cache;
     }
 
     [SlashCommand("temp-setup", "Setup a new temporary channel hub")]
@@ -26,9 +30,7 @@ public class Commands : ModuleBase
         [MinValue(8), MaxValue(96)] int bitrate
     )
     {
-        var config = await DatabaseService
-            .GetGuildConfigAsync(Context.Guild.Id)
-            .ConfigureAwait(false);
+        var config = _cache.GetGuildConfig(Context.Guild.Id);
 
         if (config.TcHubs.Any(x => x.CategoryId == category.Id || x.ChannelId == createChannel.Id))
         {
@@ -45,7 +47,13 @@ public class Commands : ModuleBase
                 Context.Guild.Id,
                 x =>
                     x.TcHubs.Add(
-                        new Hub(category.Id, createChannel.Id, nameFormat, userLimit, bitrate * 1000)
+                        new Hub(
+                            category.Id,
+                            createChannel.Id,
+                            nameFormat,
+                            userLimit,
+                            bitrate * 1000
+                        )
                     )
             )
             .ConfigureAwait(false);

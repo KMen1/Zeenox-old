@@ -3,15 +3,22 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Discordance.Extensions;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Discordance.Services;
 
 public class PersistentRoleService
 {
+    private readonly IMemoryCache _cache;
     private readonly MongoService _mongo;
 
-    public PersistentRoleService(DiscordShardedClient client, MongoService mongo)
+    public PersistentRoleService(
+        DiscordShardedClient client,
+        IMemoryCache cache,
+        MongoService mongo
+    )
     {
+        _cache = cache;
         _mongo = mongo;
         client.UserJoined += UserJoinedAsync;
         client.GuildMemberUpdated += GuildMemberUpdatedAsync;
@@ -26,7 +33,7 @@ public class PersistentRoleService
         if (beforeUser is null)
             return;
 
-        var config = await _mongo.GetGuildConfigAsync(after.Guild.Id).ConfigureAwait(false);
+        var config = _cache.GetGuildConfig(after.Guild.Id);
         if (!config.PersistentRoles)
             return;
 
@@ -46,7 +53,7 @@ public class PersistentRoleService
 
     private async Task UserJoinedAsync(SocketGuildUser user)
     {
-        var config = await _mongo.GetGuildConfigAsync(user.Guild.Id).ConfigureAwait(false);
+        var config = _cache.GetGuildConfig(user.Guild.Id);
         if (!config.PersistentRoles)
             return;
 

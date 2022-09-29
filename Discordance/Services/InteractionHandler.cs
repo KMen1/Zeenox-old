@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Hosting;
-using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Lavalink4NET;

@@ -1,0 +1,314 @@
+﻿{
+  "no_matches": {
+    "en": "No matches found! Please try again!",
+    "hu": "Nincs találat! Kérlek próbáld újra!"
+  },
+  "player_started": {
+    "en": "Player started!",
+    "hu": "Lejátszó elindítva!"
+  },
+  "added_to_queue": {
+    "en": "Added to queue!",
+    "hu": "Hozzáadva a várólistához!"
+  },
+  "left_channel":{
+    "en": "Succesfully left {0}",
+    "hu": "Csatorna elhagyva!"
+  },
+  "select_song":{
+    "en": "Please select a song!",
+    "hu": "Kérlek válassz egy számot!"
+  },
+  "set_volume": {
+    "en": "Volume set to {0}%",
+    "hu": "Hangerő {0}%-ra állítva"
+  },
+  "queue_cleared":{
+    "en": "Queue cleared!",
+    "hu": "A várólista törölve!"
+  },
+  "exclusive_enabled": {
+    "en": "Only the person who added the music can control the player from now on!",
+    "hu": "Mostantól csak a zene hozzáadója irányíthatja a lejátszót!"
+  },
+  "exclusive_disabled": {
+    "en": "Everyone can control the player from now on!",
+    "hu": "Mostantól bárki irányíthatja a lejátszót!"
+  },
+  "dj_enabled": {
+    "en": "Only users with a DJ role can control the player from now on!",
+    "hu": "Mostantól csak a DJ ranggal rendelkezők irányíthatják a lejátszót!"
+  },
+  "dj_disabled": {
+    "en": "Everyone can control the player from now on!",
+    "hu": "Mostantól bárki irányíthatja a lejátszót!"
+  },
+  "dj_limit": {
+    "en": "You can only have 5 DJ roles!",
+    "hu": "Csak 5 DJ rangot állíthatsz be!"
+  },
+  "role_already_dj": {
+    "en": "This role is already a DJ role!",
+    "hu": "Ez a rang már a DJ-ok közt van!"
+  },
+  "dj_role_added": {
+    "en": "{0} is now configured to be a DJ role!",
+    "hu": "{0} mostantól DJ rang!"
+  },
+  "dj_role_removed": {
+    "en": "{0} is no longer a DJ role!",
+    "hu": "{0} mostantól nem DJ rang!"
+  },
+  "request_channel_set": {
+    "en": "Request channel set to {0}!",
+    "hu": "A zene kérések csatornája mostantól {0}!"
+  },
+  "sponsorblock_enabled": {
+    "en": "SponsorBlock enabled!",
+    "hu": "SponsorBlock bekapcsolva!"
+  },
+  "sponsorblock_disabled": {
+    "en": "SponsorBlock disabled!",
+    "hu": "SponsorBlock kikapcsolva!"
+  },
+  "allowed_channel_limit": {
+    "en": "You can only have 5 allowed channels!",
+    "hu": "Csak 5 engedélyezett csatornát állíthatsz be!"
+  },
+  "allowed_already_set": {
+    "en": "This channel is already an allowed channel!",
+    "hu": "Ez a csatorna már az engedélyezettek között van!"
+  },
+  "allowed_channel_added": {
+    "en": "{0} is now an allowed channel!",
+    "hu": "{0} mostantól engedélyezett csatorna!"
+  },
+  "allowed_channel_removed": {
+    "en": "{0} is no longer an allowed channel!",
+    "hu": "{0} már nem engedélyezett csatorna!"
+  },
+  "nowplaying_sent": {
+    "en": "Now playing message sent to {0}!",
+    "hu": "Most játszott üzenet elküldve a {0} csatornába!"
+  },
+  "track_added": {
+    "en": "{0}: *{1} added {2}*",
+    "hu": "{0}: *{1} hozzáadta a(z) {2}*"
+  },
+  "set_filter": {
+    "en": "{0}: *{1} set filter to {2}*",
+    "hu": "{0}: *{1} {2} szűrőt állított be*"
+  },
+  "toggle_autoplay": {
+    "en": "{0}: *{1} toggled autoplay*",
+    "hu": "{0}: *{1} automatikus lejátszást állított be*"
+  },
+  "player_playlist_added": {
+    "en": "{0}: *{1} added a playlist ({2} tracks)*",
+    "hu": "{0}: *{1} lejátszási listát adott hozzá ({2} szám)*"
+  },
+  "player_voteskip": {
+    "en": "{0}: *{1} voted to skip, {2} more votes needed*",
+    "hu": "{0}: *{1} szavazott az átugrása, még {2} szavazat kell*"
+  },
+  "player_voteskipped": {
+    "en": "{0}: *Voteskipped to {1}*",
+    "hu": "{0}: *Szavazat által átugorva erre: {1}*"
+  },
+  "player_skip": {
+    "en": "{0}: *{1} skipped to {2}*",
+    "hu": "{0}: *{1} átugorva erre: {2}*"
+  },
+  "play_previous": {
+    "en": "{0}: *{1} played the previous track*",
+    "hu": "{0}: *{1} visszaugrott az előző számra*"
+  },
+  "player_queued": {
+    "en": "{0}: *{1} added {2} tracks to the queue.*",
+    "hu": "{0}: *{1} hozzáadta a(z) {2} számot a várólistához.*"
+  },
+  "player_pause": {
+    "en": "{0}: *{1} paused the player.*",
+    "hu": "{0}: *{1} szüneteltette a lejátszást.*"
+  },
+  "player_resume": {
+    "en": "{0}: *{1} resumed the player.*",
+    "hu": "{0}: *{1} folytatotta a lejátszást.*"
+  },
+  "player_volume": {
+    "en": "{0}: *{1} set the volume to {2}%.*",
+    "hu": "{0}: *{1} hangerőt állított erre: {2}%.*"
+  },
+  "player_queue_cleared": {
+    "en": "{0}: *{1} cleared the queue.*",
+    "hu": "{0}: *{1} törölte a várólistát.*"
+  },
+  "player_loop_enabled": {
+    "en": "{0}: *{1} enabled loop.*",
+    "hu": "{0}: *{1} újrajátszást engedélyezett.*"
+  },
+  "player_loop_disabled": {
+    "en": "{0}: *{1} disabled loop.*",
+    "hu": "{0}: *{1} újrajátszást letiltott.*"
+  },
+  "player_autoplay_enabled": {
+    "en": "{0}: *{1} enabled autoplay.*",
+    "hu": "{0}: *{1} automatikus lejátszást engedélyezett.*"
+  },
+  "player_autoplay_disabled": {
+    "en": "{0}: *{1} disabled autoplay.*",
+    "hu": "{0}: *{1} automatikus lejátszást letiltott.*"
+  },
+  "player_waiting": {
+    "en": "Waiting 3 minutes for a new song to be added before disconnecting!",
+    "hu": "3 percig várakozás új szám hozzáadására a lejátszás folytatásához!"
+  },
+  "error_playback": {
+    "en": "An error occurred while playing the track!",
+    "hu": "Hiba történt a szám lejátszása közben!"
+  },
+  "now_playing": {
+    "en": "NOW PLAYING",
+    "hu": "MOST JÁTSZOTT"
+  },
+  "added_by": {
+    "en": "\uD83D\uDC64 Added by",
+    "hu": "\uD83D\uDC64 Hozzáadta"
+  },
+  "channel": {
+    "en": "\uD83C\uDF99 Channel",
+    "hu": "\uD83C\uDF99 Csatorna"
+  },
+  "length": {
+    "en": "\uD83D\uDD50 Length",
+    "hu": "\uD83D\uDD50 Hossz"
+  },
+  "volume": {
+    "en": "\uD83D\uDD0A Volume",
+    "hu": "\uD83D\uDD0A Hangerő"
+  },
+  "filter": {
+    "en": "\uD83D\uDCDD Filter",
+    "hu": "\uD83D\uDCDD Szűrő"
+  },
+  "in_queue": {
+    "en": "\uD83C\uDFB6 In Queue",
+    "hu": "\uD83C\uDFB6 Várólistán"
+  },
+  "back": {
+    "en": "Back",
+    "hu": "Vissza"
+  },
+  "resume": {
+    "en": "Resume",
+    "hu": "Folytatás"
+  },
+  "pause": {
+    "en": "Pause",
+    "hu": "Szüneteltetés"
+  },
+  "stop": {
+    "en": "Stop",
+    "hu": "Leállítás"
+  },
+  "volume_down": {
+    "en": "Volume Down",
+    "hu": "Hangerő le"
+  },
+  "volume_up": {
+    "en": "Volume Up",
+    "hu": "Hangerő fel"
+  },
+  "autoplay_on": {
+    "en": "Autoplay [On]",
+    "hu": "Autoplay [Be]"
+  },
+  "autoplay_off": {
+    "en": "Autoplay [Off]",
+    "hu": "Autoplay [Ki]"
+  },
+  "loop_on": {
+    "en": "Loop [On]",
+    "hu": "Ismétlés [Be]"
+  },
+  "loop_off": {
+    "en": "Loop [Off]",
+    "hu": "Ismétlés [Ki]"
+  },
+  "filter_select": {
+    "en": "Select Filter",
+    "hu": "Szűrő kiválasztása"
+  },
+  "filter_none": {
+    "en": "None",
+    "hu": "Nincs"
+  },
+  "filter_bassboost": {
+    "en": "Bass Boost",
+    "hu": "Basszus Növelése"
+  },
+  "filter_pop": {
+    "en": "Pop",
+    "hu": "Pop"
+  },
+  "filter_soft": {
+    "en": "Soft",
+    "hu": "Lágy"
+  },
+  "filter_loud": {
+    "en": "Loud",
+    "hu": "Hangos"
+  },
+  "filter_nightcore": {
+    "en": "Nightcore",
+    "hu": "Nightcore"
+  },
+  "filter_8d": {
+    "en": "8D",
+    "hu": "8D"
+  },
+  "filter_chinese": {
+    "en": "Chinese",
+    "hu": "Kínai"
+  },
+  "filter_vaporwave": {
+    "en": "Vaporwave",
+    "hu": "Vaporwave"
+  },
+  "filter_speed_up": {
+    "en": "Speed Up",
+    "hu": "Sebesség Növelése"
+  },
+  "filter_speed_down": {
+    "en": "Speed Down",
+    "hu": "Sebesség Csökkentése"
+  },
+  "filter_chipmunk": {
+    "en": "Chipmunk",
+    "hu": "Chipmunk"
+  },
+  "filter_darthvader": {
+    "en": "Darth Vader",
+    "hu": "Darth Vader"
+  },
+  "filter_dance": {
+    "en": "Dance",
+    "hu": "Tánc"
+  },
+  "filter_vibrato": {
+    "en": "Vibrato",
+    "hu": "Vibrato"
+  },
+  "filter_tremolo": {
+    "en": "Tremolo",
+    "hu": "Tremolo"
+  },
+  "party_over": {
+    "en": "Party is over!",
+    "hu": "A buli véget ért!"
+  },
+  "songs_played_list": {
+    "en": "Songs played in this party:",
+    "hu": "Ebben a buliban játszott számok:"
+  }
+}

@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
 using Discord.WebSocket;
+using Discordance.Extensions;
 using Discordance.Models;
+using Hangfire;
 using Microsoft.Extensions.Caching.Memory;
 using MongoDB.Driver;
 
@@ -24,42 +25,62 @@ public class MongoService
             Environment.GetEnvironmentVariable("MONGO_DATABASE")
         );
         _configs = database.GetCollection<GuildConfig>("configs");
-        _users = database.GetCollection<User>("global_users");
+        _users = database.GetCollection<User>("users");
         _warns = database.GetCollection<Warn>("warns");
+
+        Task.Run(CacheConfigsAsync);
+        RecurringJob.AddOrUpdate("cache_guild_configs", () => CacheConfigsAsync(), "*/10 * * * *");
+        RecurringJob.AddOrUpdate(
+            "cache_notification_channels",
+            () => CacheNotificationChannelsAsync(),
+            "0 */12 * * *"
+        );
+    }
+
+    public async Task CacheNotificationChannelsAsync()
+    {
+        var shrineCursor = await _configs
+            .FindAsync(x => x.Notifications.WeeklyShrine)
+            .ConfigureAwait(false);
+
+        var epicCursor = await _configs
+            .FindAsync(x => x.Notifications.WeeklyFreeGames)
+            .ConfigureAwait(false);
+
+        var shrine = shrineCursor
+            .ToList()
+            .Select(x => (x.GuildId, x.Notifications.ShrineChannelId));
+        var epic = epicCursor.ToList().Select(x => (x.GuildId, x.Notifications.FreeGameChannelId));
+
+        _cache.SetNotificationChannels(shrine, epic);
+    }
+
+    public async Task CacheConfigsAsync()
+    {
+        var cursor = await _configs
+            .FindAsync(FilterDefinition<GuildConfig>.Empty)
+            .ConfigureAwait(false);
+        var configs = await cursor.ToListAsync().ConfigureAwait(false);
+
+        foreach (var config in configs)
+        {
+            _cache.SetGuildConfig(config);
+        }
     }
 
     public async Task<GuildConfig> AddGuildConfigAsync(ulong guildId)
     {
         var config = new GuildConfig(guildId);
         await _configs.InsertOneAsync(config).ConfigureAwait(false);
+        _cache.SetGuildConfig(config);
         return config;
-    }
-
-    public Task<GuildConfig> GetGuildConfigAsync(ulong guildId)
-    {
-        return _cache.GetOrCreateAsync(
-            guildId,
-            async entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
-                return await GetGuildConfigInternal(guildId).ConfigureAwait(false);
-            }
-        );
-    }
-
-    private async Task<GuildConfig> GetGuildConfigInternal(ulong guildId)
-    {
-        var cursor = await _configs.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false);
-        return await cursor.SingleOrDefaultAsync().ConfigureAwait(false)
-            ?? await AddGuildConfigAsync(guildId).ConfigureAwait(false);
     }
 
     public async Task<GuildConfig> UpdateGuildConfig(ulong guildId, Action<GuildConfig> action)
     {
-        var config = await GetGuildConfigInternal(guildId).ConfigureAwait(false);
+        var config = _cache.GetGuildConfig(guildId);
         action(config);
         await _configs.ReplaceOneAsync(x => x.GuildId == guildId, config).ConfigureAwait(false);
-        _cache.Remove(guildId);
         return config;
     }
 
@@ -215,20 +236,4 @@ public class MongoService
     }
 
     #endregion
-
-    public async Task<IEnumerable<ulong>> GetShrineNotificationChannelIds()
-    {
-        var cursor = await _configs
-            .FindAsync(x => x.Notifications.WeeklyShrine)
-            .ConfigureAwait(false);
-        return cursor.ToList().Select(x => x.Notifications.ShrineChannelId);
-    }
-
-    public async Task<IEnumerable<ulong>> GetFreeGameNotificationChannelIds()
-    {
-        var cursor = await _configs
-            .FindAsync(x => x.Notifications.WeeklyFreeGames)
-            .ConfigureAwait(false);
-        return cursor.ToList().Select(x => x.Notifications.FreeGameChannelId);
-    }
 }

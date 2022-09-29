@@ -4,28 +4,30 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Discordance.Extensions;
 using Discordance.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Autocompletes;
 
 public class SelfRoleMessageAutocompleteHandler : AutocompleteHandler
 {
-    public override async Task<AutocompletionResult> GenerateSuggestionsAsync(
+    public override Task<AutocompletionResult> GenerateSuggestionsAsync(
         IInteractionContext context,
         IAutocompleteInteraction autocompleteInteraction,
         IParameterInfo parameter,
         IServiceProvider services
     )
     {
-        var mongo = services.GetRequiredService<MongoService>();
-        var config = await mongo.GetGuildConfigAsync(context.Guild.Id).ConfigureAwait(false);
+        var cache = services.GetRequiredService<IMemoryCache>();
+        var config = cache.GetGuildConfig(context.Guild.Id);
 
         var results = config.SelfRoleMessages.Select(
             message =>
                 new AutocompleteResult(message.Title, $"{message.ChannelId}:{message.MessageId}")
         );
 
-        return AutocompletionResult.FromSuccess(results);
+        return Task.FromResult(AutocompletionResult.FromSuccess(results));
     }
 }

@@ -22,7 +22,7 @@ public class Interactions : GambleBase
             return;
         }
 
-        var game = (BlackJackGame)generic;
+        var game = (BlackJackGame)generic!;
         var result = game.CanAffectGame(Context.User.Id, out var eb);
         if (!result)
         {
@@ -49,7 +49,7 @@ public class Interactions : GambleBase
             return;
         }
 
-        var game = (BlackJackGame)generic;
+        var game = (BlackJackGame)generic!;
         var result = game.CanAffectGame(Context.User.Id, out var eb);
         if (!result)
         {

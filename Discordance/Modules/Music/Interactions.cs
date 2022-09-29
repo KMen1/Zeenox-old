@@ -76,11 +76,7 @@ public class Interactions : MusicBase
     public async Task PausePlayerAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var embed = await AudioService
-            .PauseOrResumeAsync(Context.Guild, Context.User)
-            .ConfigureAwait(false);
-        if (embed is not null)
-            await FollowupAsync(embed: embed, ephemeral: true).ConfigureAwait(false);
+        await AudioService.PauseOrResumeAsync(Context.Guild, Context.User).ConfigureAwait(false);
     }
 
     [ComponentInteraction("next")]

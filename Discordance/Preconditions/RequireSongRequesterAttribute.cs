@@ -2,32 +2,33 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using Discordance.Extensions;
 using Discordance.Modules.Music;
 using Discordance.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
 
 public class RequireSongRequesterAttribute : PreconditionAttribute
 {
-    public override async Task<PreconditionResult> CheckRequirementsAsync(
+    public override Task<PreconditionResult> CheckRequirementsAsync(
         IInteractionContext context,
         ICommandInfo commandInfo,
         IServiceProvider services
     )
     {
-        var mongo = services.GetRequiredService<MongoService>();
-        var config = await mongo.GetGuildConfigAsync(context.Guild.Id).ConfigureAwait(false);
-        var musicConfig = config.Music;
+        var cache = services.GetRequiredService<IMemoryCache>();
+        var config = cache.GetGuildConfig(context.Guild.Id).Music;
 
-        if (!musicConfig.ExclusiveControl)
-            return PreconditionResult.FromSuccess();
+        if (!config.ExclusiveControl)
+            return Task.FromResult(PreconditionResult.FromSuccess());
 
         var service = services.GetRequiredService<AudioService>();
         var player = service.GetPlayer(context.Guild.Id);
 
         return context.User.Id == player.RequestedBy.Id
-          ? PreconditionResult.FromSuccess()
-          : PreconditionResult.FromError("You must be the song requester to perform this action.");
+          ? Task.FromResult(PreconditionResult.FromSuccess())
+          : Task.FromResult(PreconditionResult.FromError("You must be the song requester to perform this action."));
     }
 }

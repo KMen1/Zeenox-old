@@ -1,10 +1,34 @@
-﻿using Lavalink4NET.Filters;
+﻿using System;
+using System.Collections.Generic;
+using Discordance.Enums;
+using Lavalink4NET.Filters;
 using Lavalink4NET.Player;
 
 namespace Discordance.Extensions;
 
 public static class PlayerFilterMapExtensions
 {
+    private static readonly Dictionary<FilterType, Action<PlayerFilterMap>> FilterActions =
+        new()
+        {
+            { FilterType.None, x => x.Clear() },
+            { FilterType.Bassboost, x => x.BassBoost() },
+            { FilterType.Pop, x => x.Pop() },
+            { FilterType.Soft, x => x.Soft() },
+            { FilterType.Treblebass, x => x.Treblebass() },
+            { FilterType.Nightcore, x => x.Nightcore() },
+            { FilterType.Eightd, x => x.Eightd() },
+            { FilterType.Vaporwave, x => x.Vaporwave() },
+            { FilterType.Doubletime, x => x.Doubletime() },
+            { FilterType.Slowmotion, x => x.Slowmotion() },
+            { FilterType.Chipmunk, x => x.Chipmunk() },
+            { FilterType.Darthvader, x => x.Darthvader() },
+            { FilterType.Dance, x => x.Dance() },
+            { FilterType.China, x => x.China() },
+            { FilterType.Vibrato, x => x.Vibrato() },
+            { FilterType.Tremolo, x => x.Tremolo() }
+        };
+
     public static void Clear(this PlayerFilterMap map)
     {
         map.Distortion = null;
@@ -17,6 +41,9 @@ public static class PlayerFilterMapExtensions
         map.ChannelMix = null;
         map.LowPass = null;
     }
+
+    public static void ApplyFilter(this PlayerFilterMap map, FilterType filterType) =>
+        FilterActions[filterType](map);
 
     public static void BassBoost(this PlayerFilterMap map)
     {

@@ -1,0 +1,138 @@
+﻿{
+  "play": {
+    "name": "lejátszás",
+    "description": "Lejátsza a kívánt számot",
+    "query": {
+      "name": "zene",
+      "description": "Zene linkje vagy címe (elfogadja a YouTube, SoundCloud és Spotify linkeket)"
+    }
+  },
+  "leave": {
+    "name": "kilépés",
+    "description": "Kilép a hangcsatornából"
+  },
+  "search": {
+    "name": "keresés",
+    "description": "Keresés a YouTube-on",
+    "query": {
+      "name": "zene",
+      "description": "Keresési kifejezés"
+    }
+  },
+  "volume": {
+    "name": "hangerő",
+    "description": "Hangerő beállítása",
+    "volume": {
+      "name": "hangerő",
+      "description": "A kívánt hangerő (1-100)"
+    }
+  },
+  "queue": {
+    "name": "várólista",
+    "description": "Megmutatja a jelenlegi várólistát"
+  },
+  "clearqueue": {
+    "name": "várólista-törlés",
+    "description": "Törli a jelenlegi várólistát"
+  },
+  "exclusive": {
+    "name": "kizárólagos",
+    "description": "Bekapcsolása esetén csak az éppen lejátszott zene berakója írányíthatja a lejátszót"
+  },
+  "djonly": {
+    "name": "dj-mód",
+    "description": "Bekapcsolása esetén csak a DJ ranggal rendelkezők tudják írányítani a lejátszót"
+  },
+  "play": {
+    "name": "lejátszás",
+    "description": "Lejátsza a kívánt számot",
+    "query": {
+      "name": "zene",
+      "description": "Zene linkje vagy címe (elfogadja a YouTube, SoundCloud és Spotify linkeket)"
+    }
+  },
+  "leave": {
+    "name": "kilépés",
+    "description": "Kilép a hangcsatornából"
+  },
+  "search": {
+    "name": "keresés",
+    "description": "Keresés a YouTube-on",
+    "query": {
+      "name": "zene",
+      "description": "Keresési kifejezés"
+    }
+  },
+  "volume": {
+    "name": "hangerő",
+    "description": "Hangerő beállítása",
+    "volume": {
+      "name": "hangerő",
+      "description": "A kívánt hangerő (1-100)"
+    }
+  },
+  "queue": {
+    "name": "várólista",
+    "description": "Megmutatja a jelenlegi várólistát"
+  },
+  "clearqueue": {
+    "name": "várólista-törlés",
+    "description": "Törli a jelenlegi várólistát"
+  },
+  "exclusive": {
+    "name": "kizárólagos",
+    "description": "Bekapcsolása esetén csak az éppen lejátszott zene berakója írányíthatja a lejátszót"
+  },
+  "djonly": {
+    "name": "dj-mód",
+    "description": "Bekapcsolása esetén csak a DJ ranggal rendelkezők tudják írányítani a lejátszót"
+  },
+  "add-dj-role": {
+    "name": "dj-rang-hozzáadás",
+    "description": "Hozzáadja a kívánt rangot a DJ rangok listájához",
+    "role": {
+      "name": "rang",
+      "description": "A hozzáadandó DJ rang"
+    }
+  },
+  "remove-dj-role": {
+    "name": "dj-rang-törlés",
+    "description": "Törli a kívánt rangot a DJ rangok listájából",
+    "role": {
+      "name": "rang",
+      "description": "A törlendő DJ rang"
+    }
+  },
+  "set-request-channel": {
+    "name": "kérési-csatorna-beállítása",
+    "description": "Beállítja a zenekérő csatornát",
+    "channel": {
+      "name": "csatorna",
+      "description": "Ez a csatorna fogja a zenekéréseket fogadni"
+    }
+  },
+  "toggle-sponsorblock": {
+    "name": "sponsorblock-beállítása",
+    "description": "Bekapcsolja/kikapcsolja a SponsorBlock-ot"
+  },
+  "add-allowed-channel": {
+    "name": "engedélyezett-csatorna-hozzáadása",
+    "description": "Hozzáadja a kívánt csatornát az engedélyezett csatornák listájához",
+    "channel": {
+      "name": "csatorna",
+      "description": "A hozzáadandó csatorna"
+    }
+  },
+  "remove-allowed-channel": {
+    "name": "engedélyezett-csatorna-törlése",
+    "description": "Törli a kívánt csatornát az engedélyezett csatornák listájából",
+    "channel": {
+      "name": "csatorna",
+      "description": "A törlendő csatorna"
+    }
+  },
+  "nowplaying": {
+    "name": "mostjátszott",
+    "description": "Elküldi a MOST JÁTSZOTT üzenetet"
+  }
+}

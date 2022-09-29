@@ -19,9 +19,15 @@ public class Commands : MusicBase
     [RequireAllowedChannel]
     [RequireDjRole]
     [SlashCommand("play", "Plays a song")]
-    public async Task PlayAsync(string query)
+    public async Task PlayAsync(
+        [Summary(
+            "query",
+            "Name or the url of the song (accepts Youtube, SoundCloud, Spotify links)"
+        )]
+            string query
+    )
     {
-        await DeferAsync().ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
 
         var (tracks, isPlaylist) = await AudioService
             .SearchAsync(query, Context.User)
@@ -29,11 +35,15 @@ public class Commands : MusicBase
 
         if (tracks is null)
         {
-            await FollowupAsync("No matches", ephemeral: true).ConfigureAwait(false);
+            await FollowupAsync(
+                    Localization.GetMessage(Context.Guild.Id, "no_matches"),
+                    ephemeral: true
+                )
+                .ConfigureAwait(false);
             return;
         }
 
-        var config = await AudioService.GetConfig(Context.Guild.Id).ConfigureAwait(false);
+        var config = GetConfig();
         var firstTrack = tracks[0];
 
         var player = await AudioService
@@ -44,29 +54,35 @@ public class Commands : MusicBase
         {
             if (isPlaylist && config.PlaylistAllowed)
             {
-                await player
-                    .PlayOrEnqueueAsync(Context.User, tracks, isPlaylist)
+                await player.PlayPlaylistAsync(Context.User, tracks).ConfigureAwait(false);
+                await FollowupAsync(Localization.GetMessage(Context.Guild.Id, "added_to_queue"))
                     .ConfigureAwait(false);
-                await FollowupAsync("added to queue").ConfigureAwait(false);
                 return;
             }
             await player.PlayAsync(Context.User, firstTrack).ConfigureAwait(false);
-            await FollowupAsync("added to queue", ephemeral: true).ConfigureAwait(false);
+            await FollowupAsync(
+                    Localization.GetMessage(Context.Guild.Id, "added_to_queue"),
+                    ephemeral: true
+                )
+                .ConfigureAwait(false);
             return;
         }
 
-        var msg = await FollowupAsync(
-                embed: player.Embed(firstTrack),
-                components: player.Components()
+        var msg = await Context.Channel
+            .SendMessageAsync(
+                embed: player.GetNowPlayingEmbed(firstTrack),
+                components: player.GetMessageComponents()
             )
             .ConfigureAwait(false);
-        player.Message = msg;
-        if (isPlaylist)
+        player.SetMessage(msg);
+        if (isPlaylist && config.PlaylistAllowed)
         {
-            await player.PlayOrEnqueueAsync(Context.User, tracks, isPlaylist).ConfigureAwait(false);
+            await player.PlayPlaylistAsync(Context.User, tracks).ConfigureAwait(false);
             return;
         }
         await player.PlayAsync(firstTrack).ConfigureAwait(false);
+
+        await FollowupAsync(Localization.GetMessage(Context.Guild.Id, "player_started"));
     }
 
     [RequirePlayer]
@@ -91,8 +107,8 @@ public class Commands : MusicBase
     [RequireVoice]
     [RequireAllowedChannel]
     [RequireDjRole]
-    [SlashCommand("search", "Searches for a song")]
-    public async Task SearchAsync(string query)
+    [SlashCommand("search", "Searches for a song on Youtube")]
+    public async Task SearchAsync([Summary("query", "Title of the song")] string query)
     {
         if (Uri.IsWellFormedUriString(query, UriKind.Absolute))
         {
@@ -154,17 +170,29 @@ public class Commands : MusicBase
             .GetTrackAsync($"https://www.youtube.com/watch?v={identifier}")
             .ConfigureAwait(false);
 
+        track.Context = user;
+        await msg.DeleteAsync().ConfigureAwait(false);
         var player = await AudioService.GetOrCreatePlayerAsync(user).ConfigureAwait(false);
-
-        player.Message ??= msg;
-
         if (player.IsPlaying)
         {
-            await msg.DeleteAsync().ConfigureAwait(false);
-            await FollowupAsync("added to queue").ConfigureAwait(false);
+            await FollowupAsync(
+                    embed: new EmbedBuilder()
+                        .WithTitle("Added To Queue")
+                        .WithColor(Color.Green)
+                        .Build()
+                )
+                .ConfigureAwait(false);
+            await player.PlayAsync(Context.User, track).ConfigureAwait(false);
         }
-        track.Context = user;
-        await player.PlayAsync(Context.User, track).ConfigureAwait(false);
+
+        player.SetMessage(
+            await Context.Channel
+                .SendMessageAsync(
+                    embed: player.GetNowPlayingEmbed(),
+                    components: player.GetMessageComponents()
+                )
+                .ConfigureAwait(false)
+        );
     }
 
     [RequirePlayer]
@@ -172,7 +200,7 @@ public class Commands : MusicBase
     [RequireDjRole]
     [SlashCommand("volume", "Sets the volume")]
     public async Task ChangeVolumeAsync(
-        [Summary("volume")] [MinValue(1)] [MaxValue(100)] ushort volume
+        [Summary("volume", "Volume setting (1-100)")] [MinValue(1)] [MaxValue(100)] ushort volume
     )
     {
         var player = GetPlayer();
@@ -205,7 +233,7 @@ public class Commands : MusicBase
         foreach (var track in queue)
         {
             desc.AppendLine(
-                $":{index++}. [`{track.Title}`]({track.Source}) | ({((IUser)track.Context!).Mention})"
+                $":{index++}. [`{track.Title}`]({track.Uri}) | ({((IUser)track.Context!).Mention})"
             );
         }
         var eb = new EmbedBuilder()
@@ -234,7 +262,10 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("exclusive", "Toggles exclusive control mode")]
+    [SlashCommand(
+        "exclusive",
+        "If enabled, only the person who added the current song can control the player"
+    )]
     public async Task ToggleExclusiveControlAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -259,7 +290,7 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("djonly", "Toggles DJ only mode")]
+    [SlashCommand("djonly", "If enabled, only users with a DJ role can control the player")]
     public async Task ToggleDjOnlyAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -279,11 +310,11 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("add-dj-role", "Adds a DJ role")]
-    public async Task AddDjRoleAsync(IRole role)
+    [SlashCommand("add-dj-role", "Adds role to the list of DJ roles")]
+    public async Task AddDjRoleAsync([Summary("role", "The role you want to add")] IRole role)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var config = await GetConfig().ConfigureAwait(false);
+        var config = GetConfig();
 
         if (config.DjRoleIds.Count >= 5)
         {
@@ -323,9 +354,13 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("remove-dj-role", "Removes a DJ role")]
+    [SlashCommand("remove-dj-role", "Removes a role from the list of DJ roles")]
     public async Task RemoveDjRoleAsync(
-        [Summary("role"), Autocomplete(typeof(DjRoleAutocompleteHandler))] string roleIdstr
+        [
+            Summary("role", "The role you want to remove"),
+            Autocomplete(typeof(DjRoleAutocompleteHandler))
+        ]
+            string roleIdstr
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -346,8 +381,11 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("setrequestchannel", "Sets the channel to receive song requests")]
-    public async Task SetRequestChannelAsync(SocketTextChannel channel)
+    [SlashCommand("set-request-channel", "Sets the channel to receive song requests")]
+    public async Task SetRequestChannelAsync(
+        [Summary("channel", "This is the channel that will accept song requests")]
+            SocketTextChannel channel
+    )
     {
         await DeferAsync(true).ConfigureAwait(false);
 
@@ -365,7 +403,7 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("toggle-sponsorblock", "Toggles the sponsor block")]
+    [SlashCommand("toggle-sponsorblock", "Toggles the sponsorblock")]
     public async Task ToggleSponsorBlockAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -380,11 +418,11 @@ public class Commands : MusicBase
         {
             if (config.Music.UseSponsorBlock)
             {
-                player.GetCategories().Add(SegmentCategory.OfftopicMusic);
+                player!.GetCategories().Add(SegmentCategory.OfftopicMusic);
             }
             else
             {
-                player.GetCategories().Clear();
+                player!.GetCategories().Clear();
             }
         }
 
@@ -403,10 +441,13 @@ public class Commands : MusicBase
     }
 
     [SlashCommand("add-allowed-channel", "Adds a channel to the list of allowed channels")]
-    public async Task AddAllowedChannelAsync(IVoiceChannel channel)
+    public async Task AddAllowedChannelAsync(
+        [Summary("channel", "The channel you want to add to the list af allowed channels")]
+            IVoiceChannel channel
+    )
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var config = await GetConfig().ConfigureAwait(false);
+        var config = GetConfig();
 
         if (config.AllowedVoiceChannels.Count >= 25)
         {
@@ -452,7 +493,10 @@ public class Commands : MusicBase
 
     [SlashCommand("remove-allowed-channel", "Removes a DJ role")]
     public async Task RemoveChannelAsync(
-        [Summary("channel"), Autocomplete(typeof(AllowedChannelAutocompleteHandler))]
+        [
+            Summary("channel", "The channel you want to remove from the list of allowed channels"),
+            Autocomplete(typeof(AllowedChannelAutocompleteHandler))
+        ]
             string channelIdstr
     )
     {
@@ -482,18 +526,21 @@ public class Commands : MusicBase
     public async Task SendNowPlayingMessageAsync()
     {
         var player = GetPlayer();
-        if (player.Message is not null)
-        {
-            var preMsg = await player.Message.Channel
-                .GetMessageAsync(player.Message.Id)
-                .ConfigureAwait(false);
-            if (preMsg is not null)
-                await preMsg.DeleteAsync().ConfigureAwait(false);
-        }
-        var msg = await Context.Channel
-            .SendMessageAsync(embed: player.Embed(), components: player.Components())
+
+        var playerMsg = await player.TextChannel
+            .GetMessageAsync(player.Message.Id)
             .ConfigureAwait(false);
-        player.Message = msg;
+        if (playerMsg is not null)
+            await playerMsg.DeleteAsync().ConfigureAwait(false);
+
+        player.SetMessage(
+            await Context.Channel
+                .SendMessageAsync(
+                    embed: player.GetNowPlayingEmbed(),
+                    components: player.GetMessageComponents()
+                )
+                .ConfigureAwait(false)
+        );
 
         await RespondAsync("Sent now playing message!", ephemeral: true).ConfigureAwait(false);
     }

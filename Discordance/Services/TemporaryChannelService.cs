@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using Discordance.Extensions;
+using Microsoft.Extensions.Caching.Memory;
 using StackExchange.Redis;
 
 namespace Discordance.Services;
@@ -12,17 +15,20 @@ public class TemporaryChannelService
     private readonly DiscordShardedClient _client;
     private readonly IConnectionMultiplexer _redis;
     private readonly MongoService _mongo;
+    private readonly IMemoryCache _cache;
     private readonly Dictionary<ulong, int> _channelCounts = new();
 
     public TemporaryChannelService(
         DiscordShardedClient client,
         MongoService mongo,
-        IConnectionMultiplexer redis
+        IConnectionMultiplexer redis,
+        IMemoryCache cache
     )
     {
         _client = client;
         _mongo = mongo;
         _redis = redis;
+        _cache = cache;
         client.UserVoiceStateUpdated += CheckForCreationOrDeletionAsync;
     }
 
@@ -40,7 +46,7 @@ public class TemporaryChannelService
 
         var guild = user.Guild;
 
-        var hubs = (await _mongo.GetGuildConfigAsync(guild.Id).ConfigureAwait(false)).TcHubs;
+        var hubs = _cache.GetGuildConfig(guild.Id).TcHubs;
 
         if (
             after.VoiceChannel is not null && hubs.Exists(x => x.ChannelId == after.VoiceChannel.Id)
@@ -127,12 +133,12 @@ public class TemporaryChannelService
         channelName = channelName.Replace(
             "{user.name}",
             $"{user.Username}",
-            System.StringComparison.OrdinalIgnoreCase
+            StringComparison.OrdinalIgnoreCase
         );
         channelName = channelName.Replace(
             "{index}",
             $"{index}",
-            System.StringComparison.OrdinalIgnoreCase
+            StringComparison.OrdinalIgnoreCase
         );
         return channelName;
     }

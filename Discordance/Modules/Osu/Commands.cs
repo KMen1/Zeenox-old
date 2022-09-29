@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
@@ -25,7 +24,7 @@ public class Commands : ModuleBase
         _imageService = imageService;
     }
 
-    [SlashCommand("osu-link", "Link your osu! profile")]
+    /*[SlashCommand("osu-link", "Link your osu! profile")]
     public async Task SetOsuProfileAsync(string username)
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -197,4 +196,5 @@ public class Commands : ModuleBase
             .AddField("🎹 Plays with", $"`{playStyle}`", true);
         await FollowupAsync(embed: eb.Build()).ConfigureAwait(false);
     }
+    */
 }

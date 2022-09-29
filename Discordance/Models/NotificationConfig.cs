@@ -2,6 +2,27 @@
 
 public class NotificationConfig
 {
+    public NotificationConfig()
+    {
+        WelcomeInChannel = false;
+        WelcomeChannelId = 0;
+        WelcomeMessage = "";
+        AnnounceBan = false;
+        BanChannelId = 0;
+        BanMessage = "";
+        AnnounceUnban = false;
+        UnbanChannelId = 0;
+        UnbanMessage = "";
+        AnnounceLeave = false;
+        GoodbyeChannelId = 0;
+        GoodbyeMessage = "";
+        SendWelcomeImage = true;
+        WeeklyFreeGames = false;
+        FreeGameChannelId = 0;
+        WeeklyShrine = false;
+        ShrineChannelId = 0;
+    }
+
     public bool WelcomeInChannel { get; set; }
     public ulong WelcomeChannelId { get; set; }
     public string WelcomeMessage { get; set; }

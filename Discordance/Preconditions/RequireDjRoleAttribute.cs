@@ -4,30 +4,31 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Discordance.Extensions;
 using Discordance.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
 
 public class RequireDjRoleAttribute : PreconditionAttribute
 {
-    public override async Task<PreconditionResult> CheckRequirementsAsync(
+    public override Task<PreconditionResult> CheckRequirementsAsync(
         IInteractionContext context,
         ICommandInfo commandInfo,
         IServiceProvider services
     )
     {
-        var mongo = services.GetRequiredService<MongoService>();
-        var config = await mongo.GetGuildConfigAsync(context.Guild.Id).ConfigureAwait(false);
-        var musicConfig = config.Music;
+        var cache = services.GetRequiredService<IMemoryCache>();
+        var config = cache.GetGuildConfig(context.Guild.Id).Music;
 
-        if (!musicConfig.DjOnly)
-            return PreconditionResult.FromSuccess();
+        if (!config.DjOnly)
+            return Task.FromResult(PreconditionResult.FromSuccess());
 
-        return musicConfig.DjRoleIds
+        return config.DjRoleIds
             .Intersect(((SocketGuildUser)context.User).Roles.Select(r => r.Id))
             .Any()
-          ? PreconditionResult.FromSuccess()
-          : PreconditionResult.FromError("This action requires a DJ role.");
+          ? Task.FromResult(PreconditionResult.FromSuccess())
+          : Task.FromResult(PreconditionResult.FromError("This action requires a DJ role."));
     }
 }

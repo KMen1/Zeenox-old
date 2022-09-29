@@ -8,6 +8,7 @@ using Discord;
 using Discord.WebSocket;
 using Discordance.Models;
 using Discordance.Modules.Gambling;
+using Lavalink4NET.Player;
 using SkiaSharp;
 using Color = Discord.Color;
 using Game = Discordance.Models.Game;
@@ -194,7 +195,7 @@ public static class GenericExtensions
         return message;
     }
 
-    public static string ParseMessage(string message, IUser user, IGuild guild)
+    public static string ParseMessage(string message, IUser user, IGuild? guild)
     {
         message = message.Replace("{user.name}", user.Username, StringComparison.OrdinalIgnoreCase);
         message = message.Replace(
@@ -202,7 +203,7 @@ public static class GenericExtensions
             user.Discriminator,
             StringComparison.OrdinalIgnoreCase
         );
-        message = message.Replace("{guild.name}", guild.Name, StringComparison.OrdinalIgnoreCase);
+        message = message.Replace("{guild.name}", guild?.Name, StringComparison.OrdinalIgnoreCase);
         return message;
     }
 
@@ -210,7 +211,7 @@ public static class GenericExtensions
     {
         var sb = new StringBuilder();
         if (timeSpan.TotalSeconds < 60)
-            return $"00:{timeSpan.Seconds.ToString("00")}";
+            return $"00:{timeSpan.Seconds:00}";
         if (timeSpan.Days > 0)
             sb.Append($"{timeSpan.Days}:");
         if (timeSpan.Hours > 0)
@@ -220,4 +221,22 @@ public static class GenericExtensions
         sb.Append(timeSpan.Seconds.ToString("00"));
         return sb.ToString();
     }
+
+    public static string ToRelativeDiscordTimeStamp(this DateTimeOffset dateTimeOffset) =>
+        $"<t:{dateTimeOffset.ToUnixTimeSeconds()}:R>";
+
+    public static string ToHyperLink(this LavalinkTrack track) => $"[{track.Title}]({track.Uri})";
+
+    public static string FormatWithTimestamp(this string format, object? object1) =>
+        string.Format(format, DateTimeOffset.UtcNow.ToRelativeDiscordTimeStamp(), object1);
+
+    public static string FormatWithTimestamp(
+        this string format,
+        object? object1,
+        object? object2
+    ) =>
+        string.Format(format, DateTimeOffset.UtcNow.ToRelativeDiscordTimeStamp(), object1, object2);
+
+    public static string Format(this string format, params object[] args) =>
+        string.Format(format, args);
 }

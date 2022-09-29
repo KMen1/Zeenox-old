@@ -22,7 +22,7 @@ public class Interactions : GambleBase
             return;
         }
 
-        var game = (TowerGame)generic;
+        var game = (TowerGame)generic!;
         var result = game.CanAffectGame(Context.User.Id, out var eb);
         if (!result)
         {
