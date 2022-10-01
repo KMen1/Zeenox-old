@@ -31,7 +31,7 @@ public class Interactions : GambleBase
         }
 
         await DeferAsync().ConfigureAwait(false);
-        await game!.GuessHigherAsync().ConfigureAwait(false);
+        await game!.HigherAsync().ConfigureAwait(false);
     }
 
     [ComponentInteraction("highlow-low")]
@@ -58,7 +58,7 @@ public class Interactions : GambleBase
         }
 
         await DeferAsync().ConfigureAwait(false);
-        await game!.GuessLowerAsync().ConfigureAwait(false);
+        await game!.LowerAsync().ConfigureAwait(false);
     }
 
     [ComponentInteraction("highlow-finish")]

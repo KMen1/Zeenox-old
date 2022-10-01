@@ -60,7 +60,7 @@ public sealed class CrashGame : IGame
                         {
                             x.Embed = new CrashEmbedBuilder(
                                 this,
-                                $"**Crashed at:** {CrashPoint:0.00}x\n**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits"
+                                $"**Crashed at:** {CrashPoint:0.00}x\n**Result:** You lost **{Bet:N0)}** credits"
                             )
                                 .WithColor(Color.Red)
                                 .Build();

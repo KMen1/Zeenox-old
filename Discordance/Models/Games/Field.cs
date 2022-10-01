@@ -8,8 +8,5 @@ public struct Field
     public bool IsClicked { get; init; }
     public bool IsMine { get; init; }
     public string Label { get; init; }
-    public int X { get; init; }
-    public int Y { get; init; }
     public bool Disabled { get; init; }
-    public int Prize { get; init; }
 }

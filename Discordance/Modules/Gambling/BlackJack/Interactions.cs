@@ -31,7 +31,7 @@ public class Interactions : GambleBase
         }
 
         await DeferAsync().ConfigureAwait(false);
-        await game!.HitAsync().ConfigureAwait(false);
+        await game.HitAsync().ConfigureAwait(false);
     }
 
     [ComponentInteraction("blackjack-stand")]
@@ -58,6 +58,6 @@ public class Interactions : GambleBase
         }
 
         await DeferAsync().ConfigureAwait(false);
-        await game!.StandAsync().ConfigureAwait(false);
+        await game.StandAsync().ConfigureAwait(false);
     }
 }

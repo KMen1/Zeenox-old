@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
@@ -12,18 +10,17 @@ using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Models.Games;
 using SkiaSharp;
-using Color = Discord.Color;
 
 namespace Discordance.Modules.Gambling.HighLow;
 
 public sealed class HighLowGame : IGame
 {
-    public HighLowGame(ulong userId, IUserMessage message, int stake, Cloudinary cloudinary)
+    public HighLowGame(ulong userId, IUserMessage message, int bet, Cloudinary cloudinary)
     {
         UserId = userId;
         Message = message;
-        Stake = stake;
-        Bet = stake;
+        Stake = bet;
+        Bet = bet;
         CloudinaryClient = cloudinary;
         Hidden = true;
         Deck = new Deck();
@@ -32,15 +29,14 @@ public sealed class HighLowGame : IGame
     public ulong UserId { get; }
     private IUserMessage Message { get; }
     private Deck Deck { get; set; }
-    public int RemainCards => Deck.Cards.Count;
     private Card PlayerHand { get; set; } = null!;
     private Card DealerHand { get; set; } = null!;
-    public int Stake { get; private set; }
-    public int Bet { get; }
-    public int HighStake { get; private set; }
-    public decimal HighMultiplier { get; private set; }
-    public int LowStake { get; private set; }
-    public decimal LowMultiplier { get; private set; }
+    private int Stake { get; set; }
+    private int Bet { get; }
+    private decimal HighMultiplier { get; set; }
+    private decimal LowMultiplier { get; set; }
+    private int HighStake => (int)(Stake * HighMultiplier);
+    private int LowStake => (int)(Stake * LowMultiplier);
     private bool Hidden { get; set; }
     private Cloudinary CloudinaryClient { get; }
     public event EventHandler<GameEndEventArgs>? GameEnded;
@@ -48,18 +44,7 @@ public sealed class HighLowGame : IGame
     public Task StartAsync()
     {
         Draw();
-        return Message.ModifyAsync(
-            x =>
-            {
-                x.Content = string.Empty;
-                x.Embed = new HighLowEmbedBuilder(this).Build();
-                x.Components = new ComponentBuilder()
-                    .WithButton(" ", "highlow-high", emote: new Emoji("⬆"))
-                    .WithButton(" ", "highlow-low", emote: new Emoji("⬇"))
-                    .WithButton(" ", "highlow-finish", emote: new Emoji("❌"))
-                    .Build();
-            }
-        );
+        return UpdateMessageAsync();
     }
 
     private void Draw()
@@ -74,74 +59,46 @@ public sealed class HighLowGame : IGame
                 Deck = new Deck();
             PlayerHand = Deck.Draw();
         }
-
-        var cards = Deck.Cards.Count;
-        var lowerCards = Deck.Cards.Count(x => x.Value < PlayerHand.Value);
-        var higherCards = Deck.Cards.Count(x => x.Value > PlayerHand.Value);
-        HighMultiplier = Math.Round((decimal)cards / higherCards, 2);
-        HighStake = (int)(Stake * HighMultiplier);
-        LowMultiplier = Math.Round((decimal)cards / lowerCards, 2);
-        LowStake = (int)(Stake * LowMultiplier);
+        CalculateMultiplier();
     }
 
-    public async Task GuessHigherAsync()
+    private void CalculateMultiplier()
     {
-        var result = PlayerHand.Value < DealerHand.Value;
-        if (result)
+        var cardsCount = Deck.Cards.Count;
+        var lowerCardsCount = Deck.Cards.Count(x => x.Value < PlayerHand.Value);
+        var higherCardsCount = Deck.Cards.Count(x => x.Value > PlayerHand.Value);
+        HighMultiplier = Math.Round((decimal)cardsCount / higherCardsCount, 2);
+        LowMultiplier = Math.Round((decimal)cardsCount / lowerCardsCount, 2);
+    }
+
+    public async Task HigherAsync()
+    {
+        if (PlayerHand.Value < DealerHand.Value)
         {
             Stake = HighStake;
             Draw();
-            await Message
-                .ModifyAsync(x => x.Embed = new HighLowEmbedBuilder(this).Build())
-                .ConfigureAwait(false);
+            await UpdateMessageAsync().ConfigureAwait(false);
             return;
         }
 
         Hidden = false;
-        await Message
-            .ModifyAsync(
-                x =>
-                {
-                    x.Embed = new HighLowEmbedBuilder(
-                        this,
-                        $"**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
-                    )
-                        .WithColor(Color.Red)
-                        .Build();
-                    x.Components = new ComponentBuilder().Build();
-                }
-            )
+        await UpdateMessageAsync($"**Result:** You lost **{Bet:N0}** credits!")
             .ConfigureAwait(false);
         OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose));
     }
 
-    public async Task GuessLowerAsync()
+    public async Task LowerAsync()
     {
-        var result = PlayerHand.Value > DealerHand.Value;
-        if (result)
+        if (PlayerHand.Value > DealerHand.Value)
         {
             Stake = LowStake;
             Draw();
-            await Message
-                .ModifyAsync(x => x.Embed = new HighLowEmbedBuilder(this).Build())
-                .ConfigureAwait(false);
+            await UpdateMessageAsync().ConfigureAwait(false);
             return;
         }
 
         Hidden = false;
-        await Message
-            .ModifyAsync(
-                x =>
-                {
-                    x.Embed = new HighLowEmbedBuilder(
-                        this,
-                        $"**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
-                    )
-                        .WithColor(Color.Red)
-                        .Build();
-                    x.Components = new ComponentBuilder().Build();
-                }
-            )
+        await UpdateMessageAsync($"**Result:** You lost **{Bet:N0}** credits!")
             .ConfigureAwait(false);
         OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose));
     }
@@ -149,31 +106,59 @@ public sealed class HighLowGame : IGame
     public async Task FinishAsync()
     {
         Hidden = false;
-        await Message
-            .ModifyAsync(
-                x =>
-                {
-                    x.Embed = new HighLowEmbedBuilder(
-                        this,
-                        $"**Result:** You win **{Stake.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
-                    )
-                        .WithColor(Color.Green)
-                        .Build();
-                    x.Components = new ComponentBuilder().Build();
-                }
-            )
-            .ConfigureAwait(false);
+        await UpdateMessageAsync($"**Result:** You win **{Stake:N0}** credits!");
         OnGameEnded(new GameEndEventArgs(UserId, Bet, Stake, GameResult.Win));
     }
 
-    public string GetTablePicUrl()
+    private Task UpdateMessageAsync(string? desc = null)
+    {
+        var embedBuilder = new EmbedBuilder()
+            .WithTitle("Higher/Lower")
+            .WithDescription(
+                $"**Original Bet:** {Bet:N0} credits\n**Current Bet:** {Stake:N0} credits"
+                    + (desc is null ? "" : $"\n{desc}")
+            )
+            .WithColor(Color.Gold)
+            .WithImageUrl(GetImageUrl())
+            .AddField(
+                $"Higher - {HighMultiplier:0.00}x",
+                $"Prize: **{HighStake:N0} credits**",
+                true
+            )
+            .AddField($"Lower - {LowMultiplier:0.00}x", $"Prize: **{LowStake:N0} credits**", true);
+
+        if (desc is null)
+        {
+            return Message.ModifyAsync(
+                x =>
+                {
+                    x.Embed = embedBuilder.Build();
+                    x.Components = new ComponentBuilder()
+                        .WithButton(" ", "highlow-high", emote: new Emoji("⬆"))
+                        .WithButton(" ", "highlow-low", emote: new Emoji("⬇"))
+                        .WithButton(" ", "highlow-finish", emote: new Emoji("❌"))
+                        .Build();
+                }
+            );
+        }
+
+        return Message.ModifyAsync(
+            x =>
+            {
+                x.Embed = embedBuilder.Build();
+                x.Components = new ComponentBuilder().Build();
+            }
+        );
+    }
+
+    private string GetImageUrl()
     {
         var stream = MergePlayerAndDealer(
             PlayerHand.GetImage(),
             Hidden
-              ? Assembly
-                .GetExecutingAssembly()
-                .GetManifestResourceStream("KBot.Resources.gambling.empty.png")!
+              ? SKBitmap.Decode(
+                    File.Open("Resources/gambling/empty.png", FileMode.Open, FileAccess.Read)
+                )
               : DealerHand.GetImage()
         );
         var id = Guid.NewGuid().ToShortId();
@@ -186,17 +171,14 @@ public sealed class HighLowGame : IGame
         return result.Url.ToString();
     }
 
-    private static Stream MergePlayerAndDealer(Stream player, Stream dealer)
+    private static Stream MergePlayerAndDealer(SKBitmap player, SKBitmap dealer)
     {
-        var playerBitmap = SKBitmap.Decode(player);
-        var dealerBitmap = SKBitmap.Decode(dealer);
-        var height =
-            playerBitmap.Height > dealerBitmap.Height ? playerBitmap.Height : dealerBitmap.Height;
+        var height = player.Height > dealer.Height ? player.Height : dealer.Height;
 
         using var surface = SKSurface.Create(new SKImageInfo(200, height));
         using var canvas = surface.Canvas;
-        canvas.DrawBitmap(playerBitmap, 0, 0);
-        canvas.DrawBitmap(dealerBitmap, 120, 0);
+        canvas.DrawBitmap(player, 0, 0);
+        canvas.DrawBitmap(dealer, 120, 0);
         return surface.Snapshot().Encode(SKEncodedImageFormat.Png, 100).AsStream();
     }
 

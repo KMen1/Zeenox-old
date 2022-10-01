@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -35,7 +34,7 @@ public class DiscordancePlayer : VoteLavalinkPlayer
         DisposeTokenSource = new CancellationTokenSource();
         Waiting = false;
         Playlist = new List<string>();
-        ActionHistory = new List<string>();
+        Actions = new List<string>();
     }
 
     private string Lang { get; }
@@ -50,7 +49,7 @@ public class DiscordancePlayer : VoteLavalinkPlayer
     private bool Waiting { get; set; }
     private List<string> Playlist { get; }
     public bool IsPlaying => State is PlayerState.Playing or PlayerState.Paused;
-    private List<string> ActionHistory { get; }
+    private List<string> Actions { get; }
     private int VoteSkipCount { get; set; }
     private int VoteSkipRequired { get; set; }
 
@@ -60,11 +59,11 @@ public class DiscordancePlayer : VoteLavalinkPlayer
         TextChannel = (ITextChannel)message.Channel;
     }
 
-    private void AppendAction(string action)
+    public void AppendAction(string action)
     {
-        ActionHistory.Insert(0, action);
-        if (ActionHistory.Count > 5)
-            ActionHistory.RemoveAt(5);
+        Actions.Insert(0, action);
+        if (Actions.Count > 5)
+            Actions.RemoveAt(5);
     }
 
     public async Task PlayAsync(IUser user, LavalinkTrack track)
@@ -271,7 +270,7 @@ public class DiscordancePlayer : VoteLavalinkPlayer
                 "https://bestanimations.com/media/discs/895872755cd-animated-gif-9.gif"
             )
             .WithTitle(sourceTrack.Title)
-            .WithDescription(string.Join("\n", ActionHistory))
+            .WithDescription(string.Join("\n", Actions))
             .WithUrl(sourceTrack.Uri?.ToString() ?? "")
             .WithImageUrl(
                 $"https://img.youtube.com/vi/{sourceTrack.TrackIdentifier}/maxresdefault.jpg"

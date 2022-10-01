@@ -14,7 +14,7 @@ using Humanizer;
 
 namespace Discordance.Modules.Gambling;
 
-public class GamblingCommands : GambleBase
+public class Commands : GambleBase
 {
     [SlashCommand("gamble-start", "Starts a new game")]
     public async Task StartGameAsync(

@@ -7,6 +7,7 @@ using System.Text;
 using Discord;
 using Discord.WebSocket;
 using Discordance.Models;
+using Discordance.Models.Games;
 using Discordance.Modules.Gambling;
 using Lavalink4NET.Player;
 using SkiaSharp;
@@ -239,4 +240,20 @@ public static class GenericExtensions
 
     public static string Format(this string format, params object[] args) =>
         string.Format(format, args);
+
+    public static int GetValue(this IReadOnlyCollection<Card> cards)
+    {
+        var aces = cards.Count(x => x.Face is Face.Ace);
+        var value = cards.Sum(card => card.Value);
+
+        for (var i = 0; i < aces; i++)
+        {
+            if (value + 11 <= 21)
+                value += 11;
+            else
+                value++;
+        }
+
+        return value;
+    }
 }

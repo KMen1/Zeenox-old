@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discordance.Enums;
@@ -14,77 +12,90 @@ namespace Discordance.Modules.Gambling.Towers;
 
 public sealed class TowerGame : IGame
 {
+    private readonly Field[,] _fields;
+
     public TowerGame(ulong userId, IUserMessage message, int bet, Difficulty difficulty)
     {
         UserId = userId;
         Message = message;
         Bet = bet;
         Difficulty = difficulty;
-        Fields = new List<Field>();
-        for (var x = 5; x > 0; x--)
+        Mines = difficulty is Difficulty.Hard ? 2 : 1;
+        Columns = difficulty is Difficulty.Medium ? 2 : 3;
+        Multiplier = difficulty switch
         {
-            var row = new List<Field>();
-            for (var y = Columns; y > 0; y--)
-                row.Add(
-                    new Field
-                    {
-                        X = x,
-                        Y = y,
-                        IsMine = false,
-                        Label =
-                            $"{Math.Round(Bet * x * Multiplier).ToString("N0", CultureInfo.InvariantCulture)}",
-                        Prize = (int)Math.Round(Bet * x * Multiplier),
-                        Emoji = new Emoji("🪙")
-                    }
-                );
+            Difficulty.Easy => 1.455,
+            Difficulty.Medium => 1.94,
+            _ => 2.91
+        };
+        _fields = new Field[5, Columns];
 
-            for (var i = 0; i < Mines; i++)
-            {
-                var index = RandomNumberGenerator.GetInt32(0, row.Count);
-                while (row[index].IsMine)
-                    index = RandomNumberGenerator.GetInt32(0, row.Count);
-                var orig = row[index];
-                row[index] = orig with { Emoji = new Emoji("💣"), IsMine = true };
-            }
-            Fields.AddRange(row);
-        }
+        SetupGameField();
+        SetupMines();
     }
 
     public ulong UserId { get; }
     private IUserMessage Message { get; }
     public int Bet { get; }
     public Difficulty Difficulty { get; }
-    private int Columns => Difficulty is Difficulty.Medium ? 2 : 3;
-    private int Mines => Difficulty is Difficulty.Hard ? 2 : 1;
-
-    private double Multiplier =>
-        Difficulty switch
-        {
-            Difficulty.Easy => 1.455,
-            Difficulty.Medium => 1.94,
-            _ => 2.91
-        };
-
-    private List<Field> Fields { get; }
+    private int Columns { get; }
+    private int Mines { get; }
+    private double Multiplier { get; }
     private bool Lost { get; set; }
     private int Prize { get; set; }
     public event EventHandler<GameEndEventArgs>? GameEnded;
 
+    private void SetupGameField()
+    {
+        for (var x = 4; x >= 0; x--)
+        {
+            for (var y = Columns - 1; y >= 0; y--)
+            {
+                _fields[x, y] = new Field
+                {
+                    IsMine = false,
+                    Label = $"{Math.Round(Bet * (x + 1) * Multiplier)}",
+                    Emoji = new Emoji("🪙")
+                };
+            }
+        }
+    }
+
+    private void SetupMines()
+    {
+        var random = new Random();
+        for (var x = 4; x >= 0; x--)
+        {
+            for (var i = 0; i < Mines; i++)
+            {
+                var col = random.Next(0, Columns);
+                var field = _fields[x, col];
+                if (field.IsMine)
+                {
+                    i--;
+                    continue;
+                }
+
+                _fields[x, col] = field with { Emoji = new Emoji("💣"), IsMine = true };
+            }
+        }
+    }
+
     public Task StartAsync()
     {
         var comp = new ComponentBuilder();
-        for (var i = 5; i > 0; i--)
+        for (var x = 4; x >= 0; x--)
         {
             var row = new ActionRowBuilder();
-            for (var j = Columns; j > 0; j--)
+            for (var y = Columns - 1; y >= 0; y--)
             {
-                var tPonint = Fields.Find(x => x.X == i && x.Y == j);
+                var tPonint = _fields[x, y];
                 row.AddComponent(
                     new ButtonBuilder(
                         $"{tPonint.Label}$",
-                        $"towers:{i}:{j}",
+                        $"towers:{x}:{y}",
                         emote: new Emoji("🪙"),
-                        isDisabled: i != 1
+                        isDisabled: x != 0
                     ).Build()
                 );
             }
@@ -103,17 +114,16 @@ public sealed class TowerGame : IGame
 
     public async Task ClickFieldAsync(int x, int y)
     {
-        var point = Fields.Find(z => z.X == x && z.Y == y);
-        if (point!.IsMine)
+        var field = _fields[x, y];
+        if (field.IsMine)
         {
             Lost = true;
             await StopAsync().ConfigureAwait(false);
             return;
         }
+        Prize = int.Parse(field.Label);
 
-        Prize = point.Prize;
-
-        if (x == 5)
+        if (x == 4)
         {
             await Message
                 .ModifyAsync(
@@ -121,8 +131,8 @@ public sealed class TowerGame : IGame
                         u.Embed = new TowerEmbedBuilder(
                             this,
                             Lost
-                              ? $"**Result:** You lost **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
-                              : $"**Result:** You won **{Prize.ToString("N0", CultureInfo.InvariantCulture)}** credits!"
+                              ? $"**Result:** You lost **{Bet:N0}** credits!"
+                              : $"**Result:** You won **{Prize:N0}** credits!"
                         )
                             .WithColor(Lost ? Color.Red : Color.Green)
                             .Build()
@@ -132,25 +142,19 @@ public sealed class TowerGame : IGame
         }
 
         var comp = new ComponentBuilder();
-        var index = Fields.FindIndex(f => f.X == x);
-        var orig = Fields[index];
-        for (var i = 0; i < Columns; i++)
+        var orig = _fields[x, 0];
+        for (var i = Columns - 1; i >= 0; i--)
         {
-            Fields[index + i] = orig with
-            {
-                Disabled = true,
-                Y = orig.Y - i,
-                Emoji = Fields[index + i].Emoji
-            };
+            _fields[x, i] = orig with { Disabled = true, Emoji = _fields[x, i].Emoji };
         }
-        for (var i = 5; i > 0; i--)
+        for (var i = 4; i >= 0; i--)
         {
             var row = new ActionRowBuilder();
-            for (var j = Columns; j > 0; j--)
+            for (var j = Columns - 1; j >= 0; j--)
             {
-                var tPonint = Fields.Find(t => t.X == i && t.Y == j);
+                var tPonint = _fields[i, j];
                 row.AddComponent(
-                    tPonint!.Disabled
+                    tPonint.Disabled
                       ? new ButtonBuilder(
                             $"{tPonint.Label}$",
                             $"towers:{i}:{j}",
@@ -176,15 +180,15 @@ public sealed class TowerGame : IGame
     {
         var prize = Lost ? 0 : Prize;
         var revealComponents = new ComponentBuilder();
-        for (var i = 5; i > 0; i--)
+        for (var i = 4; i >= 0; i--)
         {
             var row = new ActionRowBuilder();
-            for (var j = Columns; j > 0; j--)
+            for (var j = Columns - 1; j >= 0; j--)
             {
-                var tPonint = Fields.Find(z => z.X == i && z.Y == j);
+                var tPonint = _fields[i, j];
                 row.AddComponent(
                     new ButtonBuilder(
-                        $"{tPonint!.Label}$",
+                        $"{tPonint.Label}$",
                         $"mine:{i}:{j}",
                         emote: tPonint.Emoji,
                         isDisabled: true

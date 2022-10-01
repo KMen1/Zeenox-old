@@ -105,7 +105,7 @@
         <None Update="Resources\Localization.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Resources\DCLocalization.hu.json">
+        <None Update="Resources\DCLocalization.hu.json.bak">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

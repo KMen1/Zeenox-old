@@ -24,7 +24,7 @@ public class Card
     public Face Face { get; }
     public int Value { get; }
 
-    public Stream GetImage()
+    public SKBitmap GetImage()
     {
         var y = 0;
         const int height = 97;
@@ -48,12 +48,9 @@ public class Card
         };
 
         using var source = SKBitmap.Decode(
-            Assembly
-                .GetExecutingAssembly()
-                .GetManifestResourceStream("KBot.Resources.gambling.cards.png")!
+            File.Open("Resources/gambling/cards.png", FileMode.Open, FileAccess.Read)
         );
         using var image = SKImage.FromBitmap(source);
-        using var subset = image.Subset(SKRectI.Create(x, y, width, height));
-        return subset.Encode(SKEncodedImageFormat.Png, 100).AsStream();
+        return SKBitmap.FromImage(image.Subset(SKRectI.Create(x, y, width, height)));
     }
 }

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Hosting;
+using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Lavalink4NET;
@@ -33,22 +34,24 @@ public class InteractionHandler : DiscordShardedClientService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Client.InteractionCreated += HandleInteractionAsync;
-        Client.GuildAvailable += ClientOnGuildAvailableAsync;
         Client.ShardReady += ClientOnShardReadyAsync;
         _interactionService.SlashCommandExecuted += HandleSlashCommandResultAsync;
         _interactionService.ComponentCommandExecuted += HandleComponentCommandResultAsync;
+
+        await Client.WaitForReadyAsync(stoppingToken).ConfigureAwait(false);
         try
         {
             await _interactionService
                 .AddModulesAsync(Assembly.GetEntryAssembly(), _provider)
                 .ConfigureAwait(false);
+            //await _interactionService.AddModulesGloballyAsync(true, _interactionService.Modules.ToArray()).ConfigureAwait(false);
         }
         catch (Exception e)
         {
             Log.Logger.Error(e, "Failed to add modules");
         }
 
-        await _provider.GetRequiredService<IAudioService>().InitializeAsync().ConfigureAwait(false);
+        //await _provider.GetRequiredService<IAudioService>().InitializeAsync().ConfigureAwait(false);
         _provider.GetRequiredService<PersistentRoleService>();
     }
 
@@ -61,21 +64,6 @@ public class InteractionHandler : DiscordShardedClientService
             .ConfigureAwait(false);
 
         await client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
-    }
-
-    private async Task ClientOnGuildAvailableAsync(SocketGuild arg)
-    {
-        try
-        {
-            await _interactionService
-                .AddModulesToGuildAsync(arg, true, _interactionService.Modules.ToArray())
-                .ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            Log.Logger.Error(e, "Failed to add modules to {0}", arg.Name);
-            throw;
-        }
     }
 
     private static async Task HandleComponentCommandResultAsync(
