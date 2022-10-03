@@ -2,7 +2,12 @@
 
 # User specific
 **/.idea/**/workspace.xml
+**/.idea/**/discord.xml
+**/.idea/**/encodings.xml
+**/.idea/**/indexLayout.xml
+**/.idea/**/vcs.xml
 **/.idea/**/tasks.xml
+**/.idea/**/CSharpierPlugin.xml
 **/.idea/shelf/*
 **/.idea/dictionaries
 **/.idea/httpRequests/
