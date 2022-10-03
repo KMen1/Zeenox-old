@@ -6,7 +6,7 @@ namespace Discordance.Modules.Gambling.Games;
 
 public interface IGame
 {
-    Task StartAsync();
     ulong UserId { get; }
+    Task StartAsync();
     event EventHandler<GameEndEventArgs> GameEnded;
 }

@@ -1,22 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Threading.Tasks;
-using Discord;
-using Discord.Interactions;
-using Discordance.Enums;
-using Discordance.Extensions;
-using Discordance.Services;
-using Humanizer;
-using OsuSharp.Domain;
+﻿using Discordance.Services;
 using OsuSharp.Interfaces;
 
 namespace Discordance.Modules.Osu;
 
 public class Commands : ModuleBase
 {
-    private readonly IOsuClient _osuClient;
     private readonly ImageService _imageService;
+    private readonly IOsuClient _osuClient;
 
     public Commands(IOsuClient osuClient, ImageService imageService)
     {

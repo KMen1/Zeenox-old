@@ -19,8 +19,8 @@ public class RequirePlayerAttribute : PreconditionAttribute
 
         return Task.FromResult(
             !service.HasPlayer(context.Guild.Id)
-              ? PreconditionResult.FromError("I'm not connected!")
-              : PreconditionResult.FromSuccess()
+                ? PreconditionResult.FromError("I'm not connected!")
+                : PreconditionResult.FromSuccess()
         );
     }
 }

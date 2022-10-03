@@ -20,14 +20,15 @@ public sealed class Crash : IGame
         StoppingToken = TokenSource.Token;
     }
 
-    public ulong UserId { get; }
     private IUserMessage Message { get; }
     public int Bet { get; }
     private double CrashPoint { get; }
     public double Multiplier { get; private set; }
-    public int Profit => (int)(Bet * Multiplier - Bet);
+    public int Profit => (int) (Bet * Multiplier - Bet);
     private CancellationTokenSource TokenSource { get; }
     private CancellationToken StoppingToken { get; }
+
+    public ulong UserId { get; }
     public event EventHandler<GameEndEventArgs>? GameEnded;
 
     public async Task StartAsync()
@@ -39,7 +40,7 @@ public sealed class Crash : IGame
                     x.Content = string.Empty;
                     x.Embed = new CrashEmbedBuilder(this).Build();
                     x.Components = new ComponentBuilder()
-                        .WithButton(" ", $"crash", ButtonStyle.Danger, new Emoji("🛑"))
+                        .WithButton(" ", "crash", ButtonStyle.Danger, new Emoji("🛑"))
                         .Build();
                 }
             )
@@ -59,9 +60,9 @@ public sealed class Crash : IGame
                         x =>
                         {
                             x.Embed = new CrashEmbedBuilder(
-                                this,
-                                $"**Crashed at:** {CrashPoint:0.00}x\n**Result:** You lost **{Bet:N0)}** credits"
-                            )
+                                    this,
+                                    $"**Crashed at:** {CrashPoint:0.00}x\n**Result:** You lost **{Bet:N0)}** credits"
+                                )
                                 .WithColor(Color.Red)
                                 .Build();
                             x.Components = new ComponentBuilder().Build();
@@ -84,10 +85,10 @@ public sealed class Crash : IGame
                 x =>
                 {
                     x.Embed = new CrashEmbedBuilder(
-                        this,
-                        $"**Stopped at:** {Multiplier:0.00}x\n"
+                            this,
+                            $"**Stopped at:** {Multiplier:0.00}x\n"
                             + $"**Result:** You win **{Profit.ToString("N0", CultureInfo.InvariantCulture)}** credits"
-                    )
+                        )
                         .WithColor(Color.Green)
                         .Build();
                     x.Components = new ComponentBuilder().Build();

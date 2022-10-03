@@ -12,8 +12,7 @@ namespace Discordance.Models;
 
 public partial class EpicStore
 {
-    [JsonProperty("data")]
-    private Data Data { get; set; }
+    [JsonProperty("data")] private Data Data { get; set; }
 
     private IEnumerable<Game> Games => Data.Catalog.SearchStore.Games;
 
@@ -25,73 +24,54 @@ public partial class EpicStore
 
 public class Data
 {
-    [JsonProperty("Catalog")]
-    public Catalog Catalog { get; set; }
+    [JsonProperty("Catalog")] public Catalog Catalog { get; set; }
 }
 
 public class Catalog
 {
-    [JsonProperty("searchStore")]
-    public SearchStore SearchStore { get; set; }
+    [JsonProperty("searchStore")] public SearchStore SearchStore { get; set; }
 }
 
 public class SearchStore
 {
-    [JsonProperty("elements")]
-    public Game[] Games { get; set; }
+    [JsonProperty("elements")] public Game[] Games { get; set; }
 }
 
 public class Game
 {
-    [JsonProperty("title")]
-    public string Title { get; set; }
+    [JsonProperty("title")] public string Title { get; set; }
 
-    [JsonProperty("id")]
-    public string Id { get; set; }
+    [JsonProperty("id")] public string Id { get; set; }
 
-    [JsonProperty("namespace")]
-    public string Namespace { get; set; }
+    [JsonProperty("namespace")] public string Namespace { get; set; }
 
-    [JsonProperty("description")]
-    public string Description { get; set; }
+    [JsonProperty("description")] public string Description { get; set; }
 
-    [JsonProperty("effectiveDate")]
-    public DateTimeOffset EffectiveDate { get; set; }
+    [JsonProperty("effectiveDate")] public DateTimeOffset EffectiveDate { get; set; }
 
-    [JsonProperty("offerType")]
-    public string OfferType { get; set; }
+    [JsonProperty("offerType")] public string OfferType { get; set; }
 
-    [JsonProperty("expiryDate")]
-    public object ExpiryDate { get; set; }
+    [JsonProperty("expiryDate")] public object ExpiryDate { get; set; }
 
-    [JsonProperty("status")]
-    public string Status { get; set; }
+    [JsonProperty("status")] public string Status { get; set; }
 
-    [JsonProperty("isCodeRedemptionOnly")]
-    public bool IsCodeRedemptionOnly { get; set; }
+    [JsonProperty("isCodeRedemptionOnly")] public bool IsCodeRedemptionOnly { get; set; }
 
-    [JsonProperty("keyImages")]
-    public KeyImage[] KeyImages { get; set; }
+    [JsonProperty("keyImages")] public KeyImage[] KeyImages { get; set; }
 
-    [JsonProperty("productSlug")]
-    public string ProductSlug { get; set; }
+    [JsonProperty("productSlug")] public string ProductSlug { get; set; }
 
-    [JsonProperty("urlSlug")]
-    public string UrlSlug { get; set; }
+    [JsonProperty("urlSlug")] public string UrlSlug { get; set; }
 
     public string EpicUrl => "https://www.epicgames.com/store/en-US/p/" + UrlSlug;
 
-    [JsonProperty("url")]
-    public object Url { get; set; }
+    [JsonProperty("url")] public object Url { get; set; }
 
-    [JsonProperty("offerMappings")]
-    public object[] OfferMappings { get; set; }
+    [JsonProperty("offerMappings")] public object[] OfferMappings { get; set; }
 
-    [JsonProperty("price")]
-    public Price Price { get; set; }
+    [JsonProperty("price")] public Price Price { get; set; }
 
-    [JsonProperty("promotions")]
-    public Promotions? Promotions { get; set; }
+    [JsonProperty("promotions")] public Promotions? Promotions { get; set; }
 
     public PromotionalOfferPromotionalOffer[]? Discounts =>
         Promotions?.PromotionalOffers[0].PromotionalOffers;
@@ -99,92 +79,71 @@ public class Game
 
 public class Mapping
 {
-    [JsonProperty("pageSlug")]
-    public string PageSlug { get; set; }
+    [JsonProperty("pageSlug")] public string PageSlug { get; set; }
 
-    [JsonProperty("pageType")]
-    public string PageType { get; set; }
+    [JsonProperty("pageType")] public string PageType { get; set; }
 }
 
 public class KeyImage
 {
-    [JsonProperty("type")]
-    public string Type { get; set; }
+    [JsonProperty("type")] public string Type { get; set; }
 
-    [JsonProperty("url")]
-    public Uri Url { get; set; }
+    [JsonProperty("url")] public Uri Url { get; set; }
 }
 
 public class Price
 {
-    [JsonProperty("totalPrice")]
-    public TotalPrice TotalPrice { get; set; }
+    [JsonProperty("totalPrice")] public TotalPrice TotalPrice { get; set; }
 
-    [JsonProperty("lineOffers")]
-    public LineOffer[] LineOffers { get; set; }
+    [JsonProperty("lineOffers")] public LineOffer[] LineOffers { get; set; }
 }
 
 public class LineOffer
 {
-    [JsonProperty("appliedRules")]
-    public AppliedRule[] AppliedRules { get; set; }
+    [JsonProperty("appliedRules")] public AppliedRule[] AppliedRules { get; set; }
 }
 
 public class AppliedRule
 {
-    [JsonProperty("id")]
-    public string Id { get; set; }
+    [JsonProperty("id")] public string Id { get; set; }
 
-    [JsonProperty("endDate")]
-    public DateTimeOffset EndDate { get; set; }
+    [JsonProperty("endDate")] public DateTimeOffset EndDate { get; set; }
 
-    [JsonProperty("discountSetting")]
-    public AppliedRuleDiscountSetting DiscountSetting { get; set; }
+    [JsonProperty("discountSetting")] public AppliedRuleDiscountSetting DiscountSetting { get; set; }
 }
 
 public class AppliedRuleDiscountSetting
 {
-    [JsonProperty("discountType")]
-    public string DiscountType { get; set; }
+    [JsonProperty("discountType")] public string DiscountType { get; set; }
 }
 
 public class TotalPrice
 {
-    [JsonProperty("discountPrice")]
-    public long DiscountPrice { get; set; }
+    [JsonProperty("discountPrice")] public long DiscountPrice { get; set; }
 
-    [JsonProperty("originalPrice")]
-    public long OriginalPrice { get; set; }
+    [JsonProperty("originalPrice")] public long OriginalPrice { get; set; }
 
-    [JsonProperty("voucherDiscount")]
-    public long VoucherDiscount { get; set; }
+    [JsonProperty("voucherDiscount")] public long VoucherDiscount { get; set; }
 
-    [JsonProperty("discount")]
-    public long Discount { get; set; }
+    [JsonProperty("discount")] public long Discount { get; set; }
 
-    [JsonProperty("currencyCode")]
-    public string CurrencyCode { get; set; }
+    [JsonProperty("currencyCode")] public string CurrencyCode { get; set; }
 
-    [JsonProperty("fmtPrice")]
-    public FmtPrice FmtPrice { get; set; }
+    [JsonProperty("fmtPrice")] public FmtPrice FmtPrice { get; set; }
 }
 
 public class FmtPrice
 {
-    [JsonProperty("originalPrice")]
-    public string OriginalPrice { get; set; }
+    [JsonProperty("originalPrice")] public string OriginalPrice { get; set; }
 
-    [JsonProperty("discountPrice")]
-    public string DiscountPrice { get; set; }
+    [JsonProperty("discountPrice")] public string DiscountPrice { get; set; }
 
-    [JsonProperty("intermediatePrice")]
-    public string IntermediatePrice { get; set; }
+    [JsonProperty("intermediatePrice")] public string IntermediatePrice { get; set; }
 }
 
 public class Promotions
 {
-    [JsonProperty("promotionalOffers")]
-    public PromotionalOffer[] PromotionalOffers { get; set; }
+    [JsonProperty("promotionalOffers")] public PromotionalOffer[] PromotionalOffers { get; set; }
 
     [JsonProperty("upcomingPromotionalOffers")]
     public PromotionalOffer[] UpcomingPromotionalOffers { get; set; }
@@ -192,29 +151,23 @@ public class Promotions
 
 public class PromotionalOffer
 {
-    [JsonProperty("promotionalOffers")]
-    public PromotionalOfferPromotionalOffer[] PromotionalOffers { get; set; }
+    [JsonProperty("promotionalOffers")] public PromotionalOfferPromotionalOffer[] PromotionalOffers { get; set; }
 }
 
 public class PromotionalOfferPromotionalOffer
 {
-    [JsonProperty("startDate")]
-    public DateTimeOffset StartDate { get; set; }
+    [JsonProperty("startDate")] public DateTimeOffset StartDate { get; set; }
 
-    [JsonProperty("endDate")]
-    public DateTimeOffset EndDate { get; set; }
+    [JsonProperty("endDate")] public DateTimeOffset EndDate { get; set; }
 
-    [JsonProperty("discountSetting")]
-    public PromotionalOfferDiscountSetting DiscountSetting { get; set; }
+    [JsonProperty("discountSetting")] public PromotionalOfferDiscountSetting DiscountSetting { get; set; }
 }
 
 public class PromotionalOfferDiscountSetting
 {
-    [JsonProperty("discountType")]
-    public string DiscountType { get; set; }
+    [JsonProperty("discountType")] public string DiscountType { get; set; }
 
-    [JsonProperty("discountPercentage")]
-    public long DiscountPercentage { get; set; }
+    [JsonProperty("discountPercentage")] public long DiscountPercentage { get; set; }
 }
 
 public partial class EpicStore
@@ -234,7 +187,7 @@ internal static class ConverterEpic
             DateParseHandling = DateParseHandling.None,
             Converters =
             {
-                new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
+                new IsoDateTimeConverter {DateTimeStyles = DateTimeStyles.AssumeUniversal}
             }
         };
 }

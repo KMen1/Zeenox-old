@@ -62,10 +62,7 @@ public class MongoService
             .ConfigureAwait(false);
         var configs = await cursor.ToListAsync().ConfigureAwait(false);
 
-        foreach (var config in configs)
-        {
-            _cache.SetGuildConfig(config);
-        }
+        foreach (var config in configs) _cache.SetGuildConfig(config);
     }
 
     public async Task<GuildConfig> AddGuildConfigAsync(ulong guildId)
@@ -158,13 +155,14 @@ public class MongoService
         }
             #endregion
     */
+
     #region User
 
     public async Task<User> GetUserAsync(ulong id)
     {
         var cursor = await _users.FindAsync(x => x.Id == id).ConfigureAwait(false);
         return await cursor.SingleOrDefaultAsync().ConfigureAwait(false)
-            ?? await AddUserAsync(id).ConfigureAwait(false);
+               ?? await AddUserAsync(id).ConfigureAwait(false);
     }
 
     public async Task<User> AddUserAsync(ulong id)
@@ -220,10 +218,7 @@ public class MongoService
         var userIds = guild.Users.Select(x => x.Id).ToList();
         var users = new List<User>();
 
-        foreach (var userId in userIds)
-        {
-            users.Add(await GetUserAsync(userId).ConfigureAwait(false));
-        }
+        foreach (var userId in userIds) users.Add(await GetUserAsync(userId).ConfigureAwait(false));
 
         return users;
     }

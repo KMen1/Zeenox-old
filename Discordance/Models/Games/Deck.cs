@@ -6,8 +6,6 @@ namespace Discordance.Models.Games;
 
 public class Deck
 {
-    public List<Card> Cards { get; }
-
     public Deck()
     {
         Cards = new List<Card>();
@@ -15,15 +13,13 @@ public class Deck
         Shuffle();
     }
 
+    public List<Card> Cards { get; }
+
     private void AddCards()
     {
         foreach (Suit suit in Enum.GetValues(typeof(Suit)))
-        {
-            foreach (Face face in Enum.GetValues(typeof(Face)))
-            {
-                Cards.Add(new Card(suit, face));
-            }
-        }
+        foreach (Face face in Enum.GetValues(typeof(Face)))
+            Cards.Add(new Card(suit, face));
     }
 
     private void Shuffle()
@@ -44,7 +40,7 @@ public class Deck
 
     public List<Card> DealHand()
     {
-        var hand = new List<Card> { Cards[0], Cards[1] };
+        var hand = new List<Card> {Cards[0], Cards[1]};
         Cards.RemoveRange(0, 2);
         return hand;
     }

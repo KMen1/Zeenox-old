@@ -14,8 +14,6 @@ namespace Discordance.Services;
 
 public class ImageService
 {
-    private readonly HttpClient _httpClient;
-
     private static SKBitmap _welcomeBitmap = null!;
     private static readonly SKSurface WelcomeSurface = SKSurface.Create(new SKImageInfo(600, 300));
 
@@ -33,6 +31,7 @@ public class ImageService
     private static SKBitmap _xBitmap = null!;
     private static SKBitmap _xhBitmap = null!;
     private static SKFont _font = null!;
+
     private static readonly SKPaint Paint =
         new()
         {
@@ -42,6 +41,8 @@ public class ImageService
             TextAlign = SKTextAlign.Center,
             FilterQuality = SKFilterQuality.High
         };
+
+    private readonly HttpClient _httpClient;
 
     public ImageService(HttpClient httpClient)
     {
@@ -111,7 +112,7 @@ public class ImageService
                 fontWeight: 200
             );
 
-        var op = new TextPaintOptions { Edging = SKFontEdging.SubpixelAntialias, };
+        var op = new TextPaintOptions {Edging = SKFontEdging.SubpixelAntialias};
 
         rs.MaxWidth = 260;
         rs.MaxHeight = 300;
@@ -168,8 +169,8 @@ public class ImageService
         canvas.DrawBitmap(_levelBitmap, 0, 0);
         canvas.DrawBitmap(avatar.Resize(new SKImageInfo(145, 145), SKFilterQuality.High), 27, 25);
 
-        var progress = (float)xp / required;
-        var progressBar = new SKRoundRect(new SKRect(0, 0, (int)(progress * 375), 31), 15);
+        var progress = (float) xp / required;
+        var progressBar = new SKRoundRect(new SKRect(0, 0, (int) (progress * 375), 31), 15);
 
         var progressBarPaint = new SKPaint
         {
@@ -180,7 +181,7 @@ public class ImageService
         };
 
         using var clipSurface = SKSurface.Create(
-            new SKImageInfo((int)progressBar.Width, (int)progressBar.Height)
+            new SKImageInfo((int) progressBar.Width, (int) progressBar.Height)
         );
         using var clipCanvas = clipSurface.Canvas;
         clipCanvas.Clear(SKColors.Transparent);
@@ -198,7 +199,7 @@ public class ImageService
             .MarginBottom(26)
             .Paragraph()
             .Add($"{xp:N0}/{required:N0} XP", fontSize: 12, fontWeight: 200);
-        var op = new TextPaintOptions { Edging = SKFontEdging.SubpixelAntialias, };
+        var op = new TextPaintOptions {Edging = SKFontEdging.SubpixelAntialias};
         rankAndXp.MaxWidth = 364;
         rankAndXp.MaxHeight = 200;
         rankAndXp.Paint(canvas, new SKPoint(190, 13), op);

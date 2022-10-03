@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discordance.Extensions;
-using Discordance.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,9 +22,9 @@ public class RequireAllowedChannelAttribute : PreconditionAttribute
         if (config.AllowedVoiceChannels.Count == 0)
             return Task.FromResult(PreconditionResult.FromSuccess());
 
-        return config.AllowedVoiceChannels.Contains(((IVoiceState)context.User).VoiceChannel.Id)
-          ? Task.FromResult(PreconditionResult.FromSuccess())
-          : Task.FromResult(
+        return config.AllowedVoiceChannels.Contains(((IVoiceState) context.User).VoiceChannel.Id)
+            ? Task.FromResult(PreconditionResult.FromSuccess())
+            : Task.FromResult(
                 PreconditionResult.FromError("Please use a channel that is on the allowlist.")
             );
     }

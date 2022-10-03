@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Reflection;
 using SkiaSharp;
 
 namespace Discordance.Models.Games;
@@ -16,7 +15,7 @@ public class Card
             Face.Jack => 10,
             Face.Queen => 10,
             Face.King => 10,
-            _ => (int)face + 1
+            _ => (int) face + 1
         };
     }
 
@@ -41,9 +40,9 @@ public class Card
 
         var x = Face switch
         {
-            Face.Queen => width * (int)Face,
-            Face.King => width * (int)Face,
-            Face.Jack => width * (int)Face,
+            Face.Queen => width * (int) Face,
+            Face.King => width * (int) Face,
+            Face.Jack => width * (int) Face,
             _ => width * (Value - 1)
         };
 

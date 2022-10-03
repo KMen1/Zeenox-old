@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
 using Discordance.Enums;
@@ -33,7 +32,6 @@ public sealed class Towers : IGame
         SetupMines();
     }
 
-    public ulong UserId { get; }
     private IUserMessage Message { get; }
     public int Bet { get; }
     public Difficulty Difficulty { get; }
@@ -42,47 +40,43 @@ public sealed class Towers : IGame
     private double Multiplier { get; }
     private bool Lost { get; set; }
     private int Prize { get; set; }
+
+    public ulong UserId { get; }
     public event EventHandler<GameEndEventArgs>? GameEnded;
+
+    public Task StartAsync()
+    {
+        return UpdateMessageAsync(start: true);
+    }
 
     private void SetupGameField()
     {
         for (var x = 4; x >= 0; x--)
-        {
-            for (var y = Columns - 1; y >= 0; y--)
+        for (var y = Columns - 1; y >= 0; y--)
+            _fields[x, y] = new Field
             {
-                _fields[x, y] = new Field
-                {
-                    IsMine = false,
-                    Label = $"{Math.Round(Bet * (x + 1) * Multiplier)}",
-                    Emoji = new Emoji("🪙")
-                };
-            }
-        }
+                IsMine = false,
+                Label = $"{Math.Round(Bet * (x + 1) * Multiplier)}",
+                Emoji = new Emoji("🪙")
+            };
     }
 
     private void SetupMines()
     {
         var random = new Random();
         for (var x = 4; x >= 0; x--)
+        for (var i = 0; i < Mines; i++)
         {
-            for (var i = 0; i < Mines; i++)
+            var col = random.Next(0, Columns);
+            var field = _fields[x, col];
+            if (field.IsMine)
             {
-                var col = random.Next(0, Columns);
-                var field = _fields[x, col];
-                if (field.IsMine)
-                {
-                    i--;
-                    continue;
-                }
-
-                _fields[x, col] = field with { Emoji = new Emoji("💣"), IsMine = true };
+                i--;
+                continue;
             }
-        }
-    }
 
-    public Task StartAsync()
-    {
-        return UpdateMessageAsync(start: true);
+            _fields[x, col] = field with {Emoji = new Emoji("💣"), IsMine = true};
+        }
     }
 
     private MessageComponent CreateComponents(bool start, int clickedRow, bool reveal)
@@ -100,17 +94,19 @@ public sealed class Towers : IGame
                         $"{field.Label}$",
                         $"towers:{x}:{y}",
                         emote: field.Disabled
-                          ? field.Emoji
-                          : reveal
-                              ? field.Emoji
-                              : new Emoji("🪙"),
+                            ? field.Emoji
+                            : reveal
+                                ? field.Emoji
+                                : new Emoji("🪙"),
                         isDisabled: reveal
-                            || (start ? x != 0 : field.Disabled || x > clickedRow + 1)
+                                    || (start ? x != 0 : field.Disabled || x > clickedRow + 1)
                     ).Build()
                 );
             }
+
             comp.AddRow(row);
         }
+
         return comp.Build();
     }
 
@@ -123,6 +119,7 @@ public sealed class Towers : IGame
             await StopAsync().ConfigureAwait(false);
             return;
         }
+
         Prize = int.Parse(field.Label);
 
         if (x == 4)
@@ -134,9 +131,7 @@ public sealed class Towers : IGame
 
         var firstFieldInRow = _fields[x, 0];
         for (var i = Columns - 1; i >= 0; i--)
-        {
-            _fields[x, i] = firstFieldInRow with { Disabled = true, Emoji = _fields[x, i].Emoji };
-        }
+            _fields[x, i] = firstFieldInRow with {Disabled = true, Emoji = _fields[x, i].Emoji};
 
         await UpdateMessageAsync(clickedRow: x).ConfigureAwait(false);
     }
@@ -151,8 +146,8 @@ public sealed class Towers : IGame
             .ConfigureAwait(false);
         OnGameEnded(
             Lost
-              ? new GameEndEventArgs(UserId, Bet, prize, GameResult.Lose)
-              : new GameEndEventArgs(UserId, Bet, prize, GameResult.Win)
+                ? new GameEndEventArgs(UserId, Bet, prize, GameResult.Lose)
+                : new GameEndEventArgs(UserId, Bet, prize, GameResult.Win)
         );
     }
 
@@ -168,12 +163,11 @@ public sealed class Towers : IGame
             .WithColor(Color.Gold)
             .WithDescription(
                 $"**Bet:** {Bet:N0} credits\n"
-                    + $"**Difficulty:** {Difficulty.ToString()}"
-                    + (desc is null ? "" : $"\n{desc}")
+                + $"**Difficulty:** {Difficulty.ToString()}"
+                + (desc is null ? "" : $"\n{desc}")
             );
 
         if (desc is not null)
-        {
             return Message.ModifyAsync(
                 x =>
                 {
@@ -181,10 +175,8 @@ public sealed class Towers : IGame
                     x.Components = CreateComponents(false, clickedRow, true);
                 }
             );
-        }
 
         if (!reveal)
-        {
             return Message.ModifyAsync(
                 x =>
                 {
@@ -192,7 +184,6 @@ public sealed class Towers : IGame
                     x.Components = CreateComponents(start, clickedRow, false);
                 }
             );
-        }
 
         return Message.ModifyAsync(
             x =>

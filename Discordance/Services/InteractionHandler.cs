@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,8 +7,6 @@ using Discord.Addons.Hosting;
 using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
 using Discord.WebSocket;
-using Lavalink4NET;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
@@ -88,6 +85,7 @@ public class InteractionHandler : DiscordShardedClientService
                 .AddField("Exception", $"```{result.ErrorReason}```");
 #endif
         }
+
         var interaction = interactionContext.Interaction;
 
         if (!interaction.HasResponded)
@@ -95,6 +93,7 @@ public class InteractionHandler : DiscordShardedClientService
             await interaction.RespondAsync(embed: eb.Build(), ephemeral: true).ConfigureAwait(false);
             return;
         }
+
         await interaction.FollowupAsync(embed: eb.Build(), ephemeral: true).ConfigureAwait(false);
     }
 
@@ -124,6 +123,7 @@ public class InteractionHandler : DiscordShardedClientService
                 .AddField("Exception", $"```{result.ErrorReason}```");
 #endif
         }
+
         var interaction = interactionContext.Interaction;
 
         if (!interaction.HasResponded)
@@ -131,6 +131,7 @@ public class InteractionHandler : DiscordShardedClientService
             await interaction.RespondAsync(embed: eb.Build(), ephemeral: true).ConfigureAwait(false);
             return;
         }
+
         await interaction.FollowupAsync(embed: eb.Build(), ephemeral: true).ConfigureAwait(false);
     }
 

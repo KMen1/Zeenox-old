@@ -7,23 +7,18 @@ namespace Discordance.Models;
 
 public partial class Shrines
 {
-    [JsonProperty("perks")]
-    public ShrinePerk[] Perks { get; set; }
+    [JsonProperty("perks")] public ShrinePerk[] Perks { get; set; }
 
-    [JsonProperty("end")]
-    public long End { get; set; }
+    [JsonProperty("end")] public long End { get; set; }
 }
 
 public class ShrinePerk
 {
-    [JsonProperty("id")]
-    public string Id { get; set; }
+    [JsonProperty("id")] public string Id { get; set; }
 
-    [JsonProperty("bloodpoints")]
-    public long Bloodpoints { get; set; }
+    [JsonProperty("bloodpoints")] public long Bloodpoints { get; set; }
 
-    [JsonProperty("shards")]
-    public long Shards { get; set; }
+    [JsonProperty("shards")] public long Shards { get; set; }
 }
 
 public partial class Shrines
@@ -36,11 +31,9 @@ public partial class Shrines
 
 public partial class Perk
 {
-    [JsonProperty("name")]
-    public string Name { get; set; }
+    [JsonProperty("name")] public string Name { get; set; }
 
-    [JsonProperty("character")]
-    public long CharacterId { get; set; }
+    [JsonProperty("character")] public long CharacterId { get; set; }
 
     //public string CharacterName => DbDService.GetCharacterNameFromId(CharacterId);
 }

@@ -7,5 +7,8 @@ public class GambleBase : ModuleBase
 {
     public GameService GameService { get; set; } = null!;
 
-    public IGame GetGame() => GameService.GetGame(Context.User.Id);
+    public IGame GetGame()
+    {
+        return GameService.GetGame(Context.User.Id);
+    }
 }

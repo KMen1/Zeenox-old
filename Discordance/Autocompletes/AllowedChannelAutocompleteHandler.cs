@@ -5,7 +5,6 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Discordance.Extensions;
-using Discordance.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,10 +26,10 @@ public class AllowedChannelAutocompleteHandler : AutocompleteHandler
         var results = channelIds.Select(
             channelId =>
             {
-                var channel = ((SocketGuild)context.Guild).GetVoiceChannel(channelId);
+                var channel = ((SocketGuild) context.Guild).GetVoiceChannel(channelId);
                 return channel is null
-                  ? new AutocompleteResult($"Deleted Channel ({channelId})", channelId.ToString())
-                  : new AutocompleteResult(channel.Name, channel.Id.ToString());
+                    ? new AutocompleteResult($"Deleted Channel ({channelId})", channelId.ToString())
+                    : new AutocompleteResult(channel.Name, channel.Id.ToString());
             }
         );
 

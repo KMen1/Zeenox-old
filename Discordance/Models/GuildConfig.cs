@@ -19,8 +19,8 @@ public class GuildConfig
         LevelRoles = new List<LevelRole>();
     }
 
-    [BsonId]
-    public ulong GuildId { get; set; }
+    [BsonId] public ulong GuildId { get; set; }
+
     public string Language { get; set; }
     public MusicConfig Music { get; set; }
     public List<Hub> TcHubs { get; set; }

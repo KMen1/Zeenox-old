@@ -17,8 +17,8 @@ public class SelfRoleMessage
 
     public ulong ChannelId { get; set; }
 
-    [BsonId]
-    public ulong MessageId { get; set; }
+    [BsonId] public ulong MessageId { get; set; }
+
     public string Title { get; set; }
     public string Description { get; set; }
     public List<SelfRole> Roles { get; set; }

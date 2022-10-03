@@ -13,8 +13,8 @@ public class RequireVoiceAttribute : PreconditionAttribute
         IServiceProvider services
     )
     {
-        return ((IVoiceState)context.User).VoiceChannel is null
-          ? Task.FromResult(PreconditionResult.FromError("You must be in a voice channel."))
-          : Task.FromResult(PreconditionResult.FromSuccess());
+        return ((IVoiceState) context.User).VoiceChannel is null
+            ? Task.FromResult(PreconditionResult.FromError("You must be in a voice channel."))
+            : Task.FromResult(PreconditionResult.FromSuccess());
     }
 }

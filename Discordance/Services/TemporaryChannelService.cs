@@ -12,11 +12,11 @@ namespace Discordance.Services;
 
 public class TemporaryChannelService
 {
-    private readonly DiscordShardedClient _client;
-    private readonly IConnectionMultiplexer _redis;
-    private readonly MongoService _mongo;
     private readonly IMemoryCache _cache;
     private readonly Dictionary<ulong, int> _channelCounts = new();
+    private readonly DiscordShardedClient _client;
+    private readonly MongoService _mongo;
+    private readonly IConnectionMultiplexer _redis;
 
     public TemporaryChannelService(
         DiscordShardedClient client,
@@ -124,6 +124,7 @@ public class TemporaryChannelService
             channelId = ulong.Parse(result.ToString());
             return true;
         }
+
         channelId = 0;
         return false;
     }

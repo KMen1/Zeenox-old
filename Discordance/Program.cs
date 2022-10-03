@@ -106,7 +106,7 @@ await Host.CreateDefaultBuilder()
                                 $"ws://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
                             RestUri =
                                 $"http://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
-                            DisconnectOnStop = false,
+                            DisconnectOnStop = false
                         }
                     }
                 }
@@ -143,7 +143,7 @@ await Host.CreateDefaultBuilder()
                 ConnectionMultiplexer.Connect(
                     new ConfigurationOptions
                     {
-                        EndPoints = { Environment.GetEnvironmentVariable("REDIS_ENDPOINT")! },
+                        EndPoints = {Environment.GetEnvironmentVariable("REDIS_ENDPOINT")!},
                         Password = Environment.GetEnvironmentVariable("REDIS_PASSWORD"),
                         AsyncTimeout = 15000
                     }

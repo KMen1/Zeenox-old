@@ -17,16 +17,16 @@ namespace Discordance.Modules.Notifications;
 
 public class NotificationService
 {
-    private readonly DiscordShardedClient _client;
-    private readonly IMemoryCache _cache;
-    private readonly MongoService _mongo;
-    private readonly ImageService _imageService;
-    private readonly HttpClient _httpClient;
-    private IEnumerable<Game> CachedGames { get; set; } = null!;
-    private IEnumerable<Perk> CachedPerks { get; set; } = null!;
     private const string ShrineUrl = "https://dbd.onteh.net.au/api/shrine/";
+
     private const string Url =
         "https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=US&allowCountries=HU";
+
+    private readonly IMemoryCache _cache;
+    private readonly DiscordShardedClient _client;
+    private readonly HttpClient _httpClient;
+    private readonly ImageService _imageService;
+    private readonly MongoService _mongo;
 
     public NotificationService(
         DiscordShardedClient client,
@@ -58,6 +58,9 @@ public class NotificationService
         );
     }
 
+    private IEnumerable<Game> CachedGames { get; set; } = null!;
+    private IEnumerable<Perk> CachedPerks { get; set; } = null!;
+
     private async Task HandleUserJoinedAsync(SocketGuildUser user)
     {
         if (user.IsBot || user.IsWebhook)
@@ -78,7 +81,7 @@ public class NotificationService
                             .WithTitle("Unable to send welcome message")
                             .WithDescription(
                                 "The channel set to receive welcome messages could not be found!\n"
-                                    + "Welcome messages have been disabled until a new channel is set!"
+                                + "Welcome messages have been disabled until a new channel is set!"
                             )
                             .Build()
                     )
@@ -110,9 +113,7 @@ public class NotificationService
         }
 
         if (config.AutoRole && config.AutoRoleIds.Count > 0)
-        {
             await AddRolesToUser(user, config.AutoRoleIds).ConfigureAwait(false);
-        }
     }
 
     private async Task HandleUserLeaveAsync(SocketGuild guild, SocketUser user)
@@ -134,7 +135,7 @@ public class NotificationService
                         .WithTitle("Unable to send goodbye message")
                         .WithDescription(
                             "The channel set to receive goodbye messages could not be found!\n"
-                                + "Goodbye messages have been disabled until a new channel is set!"
+                            + "Goodbye messages have been disabled until a new channel is set!"
                         )
                         .Build()
                 )
@@ -175,7 +176,7 @@ public class NotificationService
                         .WithTitle("Unable to send ban announcement")
                         .WithDescription(
                             "The channel set to receive ban announcements could not be found!\n"
-                                + "Ban announcements have been disabled until a new channel is set!"
+                            + "Ban announcements have been disabled until a new channel is set!"
                         )
                         .Build()
                 )
@@ -210,7 +211,7 @@ public class NotificationService
                         .WithTitle("Unable to send unban announcement")
                         .WithDescription(
                             "The channel set to receive unban announcements could not be found!\n"
-                                + "Unban announcements have been disabled until a new channel is set!"
+                            + "Unban announcements have been disabled until a new channel is set!"
                         )
                         .Build()
                 )
@@ -266,8 +267,8 @@ public class NotificationService
         }
 
         var message = string.IsNullOrEmpty(rawMessage)
-          ? defaultMessage
-          : GenericExtensions.ParseMessage(rawMessage, user, guild);
+            ? defaultMessage
+            : GenericExtensions.ParseMessage(rawMessage, user, guild);
 
         await channel.SendMessageAsync(message).ConfigureAwait(false);
     }
@@ -374,6 +375,7 @@ public class NotificationService
                 await RefreshPerksAsync().ConfigureAwait(false);
                 break;
         }
+
         await NotifyChannelsAsync(source).ConfigureAwait(false);
     }
 
@@ -398,6 +400,7 @@ public class NotificationService
                 .ConfigureAwait(false);
             perks.Add(Perk.FromJson(perkresponse));
         }
+
         CachedPerks = perks;
     }
 
@@ -416,15 +419,13 @@ public class NotificationService
             return;
 
         foreach (var textChannel in channels)
-        {
             await textChannel!
                 .SendMessageAsync(
                     "test",
                     embeds: source is NotificationSource.Epic
-                      ? CachedGames.ToEmbedArray()
-                      : new[] { CachedPerks.ToEmbed() }
+                        ? CachedGames.ToEmbedArray()
+                        : new[] {CachedPerks.ToEmbed()}
                 )
                 .ConfigureAwait(false);
-        }
     }
 }

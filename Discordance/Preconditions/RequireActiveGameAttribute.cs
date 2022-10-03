@@ -19,11 +19,11 @@ public class RequireActiveGameAttribute : PreconditionAttribute
 
         var result = gameService.TryGetGame(context.User.Id, out var game);
         return result
-          ? game?.UserId == context.User.Id
-              ? Task.FromResult(PreconditionResult.FromSuccess())
-              : Task.FromResult(
+            ? game?.UserId == context.User.Id
+                ? Task.FromResult(PreconditionResult.FromSuccess())
+                : Task.FromResult(
                     PreconditionResult.FromError("You are not the player in this game.")
                 )
-          : Task.FromResult(PreconditionResult.FromError("You are currently not playing."));
+            : Task.FromResult(PreconditionResult.FromError("You are currently not playing."));
     }
 }

@@ -5,7 +5,7 @@ namespace Discordance.Modules.Gambling.Games;
 
 public class CrashEmbedBuilder : EmbedBuilder
 {
-    public CrashEmbedBuilder(Games.Crash game, string? description = null)
+    public CrashEmbedBuilder(Crash game, string? description = null)
     {
         Title = "Crash";
         Description =

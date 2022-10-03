@@ -6,7 +6,6 @@ using Discord;
 using Discordance.Enums;
 using Discordance.Extensions;
 using Discordance.Models;
-using Discordance.Modules.Gambling;
 using Discordance.Modules.Gambling.Games;
 using Discordance.Modules.Gambling.Tower.Game;
 
@@ -14,9 +13,9 @@ namespace Discordance.Services;
 
 public class GameService
 {
-    private readonly ConcurrentDictionary<ulong, IGame> _games;
-    private readonly MongoService _databaseService;
     private readonly Cloudinary _cloudinary;
+    private readonly MongoService _databaseService;
+    private readonly ConcurrentDictionary<ulong, IGame> _games;
     private readonly RandomNumberGenerator _generator = RandomNumberGenerator.Create();
 
     public GameService(MongoService databaseService, Cloudinary cloudinary)
@@ -76,6 +75,7 @@ public class GameService
             default:
                 return false;
         }
+
         game.GameEnded += OnGameEndedAsync;
         _games.TryAdd(userId, game);
         return true;
@@ -83,7 +83,7 @@ public class GameService
 
     private async void OnGameEndedAsync(object? sender, GameEndEventArgs e)
     {
-        var game = (IGame)sender!;
+        var game = (IGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
         _games.TryRemove(game.UserId, out _);
 

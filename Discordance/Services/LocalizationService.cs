@@ -21,10 +21,7 @@ public class LocalizationService
         if (localization is null)
             throw new FileNotFoundException("Localization file not found");
 
-        foreach (var message in localization)
-        {
-            _cache.Set(message.Key, message.Value);
-        }
+        foreach (var message in localization) _cache.Set(message.Key, message.Value);
     }
 
     public string GetMessage(string language, string key)

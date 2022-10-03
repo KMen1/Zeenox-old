@@ -21,9 +21,9 @@ namespace Discordance.Services;
 public class AudioService
 {
     private readonly IAudioService _audioService;
-    private readonly YouTubeService _youtubeService;
-    private readonly LocalizationService _localization;
     private readonly IMemoryCache _cache;
+    private readonly LocalizationService _localization;
+    private readonly YouTubeService _youtubeService;
 
     public AudioService(
         IAudioService audioService,
@@ -40,10 +40,7 @@ public class AudioService
         _cache = cache;
         _localization = localizationService;
         client.MessageReceived += ListenForSongRequests;
-        foreach (var node in ((LavalinkCluster)_audioService).Nodes)
-        {
-            node.UseSponsorBlock();
-        }
+        foreach (var node in ((LavalinkCluster) _audioService).Nodes) node.UseSponsorBlock();
 
         Task.Run(async () => await audioService.InitializeAsync());
         trackingService.BeginTracking();
@@ -118,6 +115,7 @@ public class AudioService
             await UpdateMessageAsync(player).ConfigureAwait(false);
             return;
         }
+
         await player.SkipAsync().ConfigureAwait(false);
         player.AppendAction(
             _localization
@@ -200,10 +198,10 @@ public class AudioService
         player.AppendAction(
             _localization
                 .GetMessage(lang, "player_volume")
-                .FormatWithTimestamp(user.Mention, (int)(volume * 100))
+                .FormatWithTimestamp(user.Mention, (int) (volume * 100))
         );
         await UpdateMessageAsync(player).ConfigureAwait(false);
-        return (int)(volume * 100);
+        return (int) (volume * 100);
     }
 
     public async Task<int> ClearQueueAsync(ulong guildId, IUser user)
@@ -256,11 +254,9 @@ public class AudioService
 
         var message = await channel.GetMessageAsync(messageId.Value).ConfigureAwait(false);
         if (message is not IUserMessage userMessage)
-        {
             userMessage = await channel
                 .SendMessageAsync(embed: GetEmbed(player), components: GetComponents(player))
                 .ConfigureAwait(false);
-        }
 
         await userMessage
             .ModifyAsync(
@@ -278,7 +274,7 @@ public class AudioService
         var lang = _cache.GetLangKey(player.GuildId);
         var isAnon = _cache.GetGuildConfig(player.GuildId).Music.ShowRequester;
         var track = player.CurrentTrack;
-        var requester = (IUser)track!.Context!;
+        var requester = (IUser) track!.Context!;
         return new EmbedBuilder()
             .WithAuthor(
                 _localization.GetMessage(lang, "now_playing"),
@@ -328,8 +324,8 @@ public class AudioService
             )
             .WithButton(
                 state == PlayerState.Paused
-                  ? _localization.GetMessage(lang, "resume")
-                  : _localization.GetMessage(lang, "pause"),
+                    ? _localization.GetMessage(lang, "resume")
+                    : _localization.GetMessage(lang, "pause"),
                 "pause",
                 emote: state == PlayerState.Paused ? new Emoji("▶") : new Emoji("⏸"),
                 row: 0
@@ -358,16 +354,16 @@ public class AudioService
             )
             .WithButton(
                 player.IsAutoPlay
-                  ? _localization.GetMessage(lang, "autoplay_on")
-                  : _localization.GetMessage(lang, "autoplay_off"),
+                    ? _localization.GetMessage(lang, "autoplay_on")
+                    : _localization.GetMessage(lang, "autoplay_off"),
                 "autoplay",
                 emote: new Emoji("🔎"),
                 row: 1
             )
             .WithButton(
                 player.IsLooping
-                  ? _localization.GetMessage(lang, "loop_on")
-                  : _localization.GetMessage(lang, "loop_off"),
+                    ? _localization.GetMessage(lang, "loop_on")
+                    : _localization.GetMessage(lang, "loop_off"),
                 "repeat",
                 emote: new Emoji("🔁"),
                 row: 1
@@ -479,9 +475,7 @@ public class AudioService
             || message.Author is not SocketGuildUser user
             || message.Channel is not SocketTextChannel channel
         )
-        {
             return;
-        }
 
         var guild = channel.Guild;
         var config = _cache.GetGuildConfig(guild.Id).Music;
@@ -529,7 +523,7 @@ public class AudioService
 
     private async Task OnTrackEnd(object _, TrackEndEventArgs eventArgs)
     {
-        var player = (DiscordancePlayer)eventArgs.Player;
+        var player = (DiscordancePlayer) eventArgs.Player;
         if (!eventArgs.MayStartNext && eventArgs.Reason != TrackEndReason.Stopped)
             return;
 
@@ -560,7 +554,7 @@ public class AudioService
             return;
         }
 
-        var message = (IUserMessage)await player.TextChannel!
+        var message = (IUserMessage) await player.TextChannel!
             .GetMessageAsync(player.MessageId!.Value)
             .ConfigureAwait(false);
 
@@ -612,8 +606,10 @@ public class AudioService
         return (player, true);
     }
 
-    public DiscordancePlayer GetPlayer(ulong guildId) =>
-        _audioService.GetPlayer<DiscordancePlayer>(guildId)!;
+    public DiscordancePlayer GetPlayer(ulong guildId)
+    {
+        return _audioService.GetPlayer<DiscordancePlayer>(guildId)!;
+    }
 
     private async Task<string> GetRelatedVideoId(string videoId)
     {
@@ -628,8 +624,8 @@ public class AudioService
     public async Task<LavalinkTrack[]?> SearchAsync(string query, IUser user)
     {
         var results = Uri.IsWellFormedUriString(query, UriKind.Absolute)
-          ? await _audioService.LoadTracksAsync(query).ConfigureAwait(false)
-          : await _audioService.LoadTracksAsync(query, SearchMode.YouTube).ConfigureAwait(false);
+            ? await _audioService.LoadTracksAsync(query).ConfigureAwait(false)
+            : await _audioService.LoadTracksAsync(query, SearchMode.YouTube).ConfigureAwait(false);
 
         var tracks = results.Tracks;
         if (tracks is null || tracks.Length == 0)
@@ -637,6 +633,6 @@ public class AudioService
         foreach (var track in tracks)
             track.Context = user;
 
-        return results.PlaylistInfo?.Name is not null ? tracks : new[] { tracks[0] };
+        return results.PlaylistInfo?.Name is not null ? tracks : new[] {tracks[0]};
     }
 }

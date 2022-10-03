@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discordance.Extensions;
-using Discordance.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -28,8 +27,8 @@ public class DjRoleAutocompleteHandler : AutocompleteHandler
             {
                 var role = context.Guild.GetRole(roleId);
                 return role is null
-                  ? new AutocompleteResult($"Deleted Role ({roleId})", roleId.ToString())
-                  : new AutocompleteResult(role.Name, role.Id.ToString());
+                    ? new AutocompleteResult($"Deleted Role ({roleId})", roleId.ToString())
+                    : new AutocompleteResult(role.Name, role.Id.ToString());
             }
         );
 

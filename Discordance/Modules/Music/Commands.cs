@@ -21,7 +21,7 @@ public class Commands : MusicBase
             "query",
             "Name or the url of the song (accepts Youtube, SoundCloud, Spotify links)"
         )]
-            string query
+        string query
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -137,6 +137,7 @@ public class Commands : MusicBase
             menu.AddOption($"{track.Title}", $"{track.TrackIdentifier}", emote: new Emoji(emoji));
             counter++;
         }
+
         comp.WithSelectMenu(menu);
 
         var eb = new EmbedBuilder()
@@ -191,7 +192,8 @@ public class Commands : MusicBase
     [RequireDjRole]
     [SlashCommand("volume", "Sets the volume")]
     public async Task ChangeVolumeAsync(
-        [Summary("volume", "Volume setting (1-100)")] [MinValue(1)] [MaxValue(100)] ushort volume
+        [Summary("volume", "Volume setting (1-100)")] [MinValue(1)] [MaxValue(100)]
+        ushort volume
     )
     {
         var newVolume = await SetVolumeAsync(volume).ConfigureAwait(false);
@@ -218,11 +220,9 @@ public class Commands : MusicBase
         var desc = new StringBuilder();
         var index = 0;
         foreach (var track in queue)
-        {
             desc.AppendLine(
-                $":{index++}. [`{track.Title}`]({track.Uri}) | ({((IUser)track.Context!).Mention})"
+                $":{index++}. [`{track.Title}`]({track.Uri}) | ({((IUser) track.Context!).Mention})"
             );
-        }
         var eb = new EmbedBuilder()
             .WithTitle(GetLocalized("queue"))
             .WithColor(Color.Blue)
@@ -264,8 +264,8 @@ public class Commands : MusicBase
                 embed: new EmbedBuilder()
                     .WithTitle(
                         config.Music.ExclusiveControl
-                          ? GetLocalized("exclusive_enabled")
-                          : GetLocalized("exclusive_disabled")
+                            ? GetLocalized("exclusive_enabled")
+                            : GetLocalized("exclusive_disabled")
                     )
                     .WithColor(config.Music.ExclusiveControl ? Color.Green : Color.Red)
                     .Build(),
@@ -285,8 +285,8 @@ public class Commands : MusicBase
                 embed: new EmbedBuilder()
                     .WithTitle(
                         config.Music.DjOnly
-                          ? GetLocalized("dj_enabled")
-                          : GetLocalized("dj_disabled")
+                            ? GetLocalized("dj_enabled")
+                            : GetLocalized("dj_disabled")
                     )
                     .WithColor(config.Music.DjOnly ? Color.Green : Color.Red)
                     .Build(),
@@ -339,11 +339,8 @@ public class Commands : MusicBase
 
     [SlashCommand("remove-dj-role", "Removes a role from the list of DJ roles")]
     public async Task RemoveDjRoleAsync(
-        [
-            Summary("role", "The role you want to remove"),
-            Autocomplete(typeof(DjRoleAutocompleteHandler))
-        ]
-            string roleIdstr
+        [Summary("role", "The role you want to remove")] [Autocomplete(typeof(DjRoleAutocompleteHandler))]
+        string roleIdstr
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -366,7 +363,7 @@ public class Commands : MusicBase
     [SlashCommand("set-request-channel", "Sets the channel to receive song requests")]
     public async Task SetRequestChannelAsync(
         [Summary("channel", "This is the channel that will accept song requests")]
-            SocketTextChannel channel
+        SocketTextChannel channel
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -397,8 +394,8 @@ public class Commands : MusicBase
                 embed: new EmbedBuilder()
                     .WithTitle(
                         config.Music.UseSponsorBlock
-                          ? GetLocalized("sponsorblock_enabled")
-                          : GetLocalized("sponsorblock_disabled")
+                            ? GetLocalized("sponsorblock_enabled")
+                            : GetLocalized("sponsorblock_disabled")
                     )
                     .WithColor(config.Music.UseSponsorBlock ? Color.Green : Color.Red)
                     .Build(),
@@ -410,7 +407,7 @@ public class Commands : MusicBase
     [SlashCommand("add-allowed-channel", "Adds a channel to the list of allowed channels")]
     public async Task AddAllowedChannelAsync(
         [Summary("channel", "The channel you want to add to the list af allowed channels")]
-            IVoiceChannel channel
+        IVoiceChannel channel
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
@@ -455,11 +452,9 @@ public class Commands : MusicBase
 
     [SlashCommand("remove-allowed-channel", "Removes a DJ role")]
     public async Task RemoveChannelAsync(
-        [
-            Summary("channel", "The channel you want to remove from the list of allowed channels"),
-            Autocomplete(typeof(AllowedChannelAutocompleteHandler))
-        ]
-            string channelIdstr
+        [Summary("channel", "The channel you want to remove from the list of allowed channels")]
+        [Autocomplete(typeof(AllowedChannelAutocompleteHandler))]
+        string channelIdstr
     )
     {
         await DeferAsync(true).ConfigureAwait(false);

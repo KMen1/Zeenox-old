@@ -25,7 +25,6 @@ public sealed class Mines : IGame
     }
 
     private IUserMessage Message { get; }
-    public ulong UserId { get; }
     private int Bet { get; }
     public bool CanStop { get; private set; }
     private int MineAmount { get; }
@@ -40,44 +39,13 @@ public sealed class Mines : IGame
             var one = Factorial(25) * Factorial(25 - MineAmount - Clicked);
             var two = Factorial(25 - MineAmount) * Factorial(25 - Clicked);
             var t = one / two * 0.97;
-            return Math.Round((decimal)t, 2);
+            return Math.Round((decimal) t, 2);
         }
     }
+
+    public ulong UserId { get; }
 
     public event EventHandler<GameEndEventArgs>? GameEnded;
-
-    private void SetupGameField()
-    {
-        for (var x = 0; x < Size; x++)
-        {
-            for (var y = 0; y < Size; y++)
-            {
-                _fields[x, y] = new Field
-                {
-                    Emoji = new Emoji("🪙"),
-                    IsClicked = false,
-                    IsMine = false,
-                    Label = " "
-                };
-            }
-        }
-    }
-
-    private void SetupMines()
-    {
-        for (var i = 0; i < MineAmount; i++)
-        {
-            var x = RandomNumberGenerator.GetInt32(0, Size);
-            var y = RandomNumberGenerator.GetInt32(0, Size);
-            var field = _fields[x, y];
-            if (field.IsMine)
-            {
-                i--;
-                continue;
-            }
-            _fields[x, y] = field with { Emoji = new Emoji("💣"), IsMine = true };
-        }
-    }
 
     public Task StartAsync()
     {
@@ -110,6 +78,36 @@ public sealed class Mines : IGame
         );
     }
 
+    private void SetupGameField()
+    {
+        for (var x = 0; x < Size; x++)
+        for (var y = 0; y < Size; y++)
+            _fields[x, y] = new Field
+            {
+                Emoji = new Emoji("🪙"),
+                IsClicked = false,
+                IsMine = false,
+                Label = " "
+            };
+    }
+
+    private void SetupMines()
+    {
+        for (var i = 0; i < MineAmount; i++)
+        {
+            var x = RandomNumberGenerator.GetInt32(0, Size);
+            var y = RandomNumberGenerator.GetInt32(0, Size);
+            var field = _fields[x, y];
+            if (field.IsMine)
+            {
+                i--;
+                continue;
+            }
+
+            _fields[x, y] = field with {Emoji = new Emoji("💣"), IsMine = true};
+        }
+    }
+
     public async Task ClickFieldAsync(int x, int y)
     {
         CanStop = true;
@@ -121,13 +119,13 @@ public sealed class Mines : IGame
             return;
         }
 
-        _fields[x, y] = field with { IsClicked = true, Label = $"{Multiplier}x" };
+        _fields[x, y] = field with {IsClicked = true, Label = $"{Multiplier}x"};
         Clicked++;
 
         if (Clicked == 25 - MineAmount)
         {
             await StopAsync(false).ConfigureAwait(false);
-            OnGameEnded(new GameEndEventArgs(UserId, Bet, (int)(Bet * Multiplier), GameResult.Win));
+            OnGameEnded(new GameEndEventArgs(UserId, Bet, (int) (Bet * Multiplier), GameResult.Win));
             return;
         }
 
@@ -165,7 +163,7 @@ public sealed class Mines : IGame
 
     public async Task StopAsync(bool lost)
     {
-        var prize = lost ? 0 : (int)Math.Round(Bet * Multiplier);
+        var prize = lost ? 0 : (int) Math.Round(Bet * Multiplier);
 
         var revealComponents = new ComponentBuilder();
         for (var i = 0; i < Size; i++)
@@ -196,11 +194,11 @@ public sealed class Mines : IGame
                         .WithColor(lost ? Color.Red : Color.Green)
                         .WithDescription(
                             $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {MineAmount}\n"
-                                + (
-                                    lost
-                                        ? $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits"
-                                        : $"**Result:** You win **{prize.ToString("N0", CultureInfo.InvariantCulture)}** credits"
-                                )
+                            + (
+                                lost
+                                    ? $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits"
+                                    : $"**Result:** You win **{prize.ToString("N0", CultureInfo.InvariantCulture)}** credits"
+                            )
                         )
                         .Build();
                     x.Components = revealComponents.Build();

@@ -19,9 +19,9 @@ public class RequireSameVoiceAttribute : PreconditionAttribute
         var player = service.GetPlayer(context.Guild.Id);
 
         return Task.FromResult(
-            ((IVoiceState)context.User).VoiceChannel?.Id != player?.VoiceChannelId
-              ? PreconditionResult.FromError("You must be in the same voice channel as the bot.")
-              : PreconditionResult.FromSuccess()
+            ((IVoiceState) context.User).VoiceChannel?.Id != player?.VoiceChannelId
+                ? PreconditionResult.FromError("You must be in the same voice channel as the bot.")
+                : PreconditionResult.FromSuccess()
         );
     }
 }

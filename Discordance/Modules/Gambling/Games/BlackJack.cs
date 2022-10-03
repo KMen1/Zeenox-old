@@ -29,7 +29,6 @@ public sealed class BlackJack : IGame
         PlayerCards = Deck.DealHand();
     }
 
-    public ulong UserId { get; }
     private string Id { get; }
     private IUserMessage Message { get; }
     private int Bet { get; }
@@ -40,6 +39,8 @@ public sealed class BlackJack : IGame
     private int PlayerScore => PlayerCards.GetValue();
     private bool Hidden { get; set; }
     private Cloudinary Cloudinary { get; }
+
+    public ulong UserId { get; }
     public event EventHandler<GameEndEventArgs>? GameEnded;
 
     public Task StartAsync()
@@ -63,7 +64,7 @@ public sealed class BlackJack : IGame
             case 21:
             {
                 Hidden = false;
-                var reward = (int)(Bet * 2.5) - Bet;
+                var reward = (int) (Bet * 2.5) - Bet;
                 await UpdateMessageAsync($"**Result:** You win **{reward:N0}** credits!")
                     .ConfigureAwait(false);
                 OnGameEnded(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win));
@@ -99,7 +100,7 @@ public sealed class BlackJack : IGame
 
         if (PlayerScore == 21)
         {
-            var reward = (int)(Bet * 2.5) - Bet;
+            var reward = (int) (Bet * 2.5) - Bet;
             await UpdateMessageAsync($"**Result:** You win **{reward:N0}** credits!")
                 .ConfigureAwait(false);
             OnGameEnded(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win));
@@ -138,7 +139,6 @@ public sealed class BlackJack : IGame
             .AddField($"Dealer - {(Hidden ? "?" : DealerScore.ToString())}", "\u200b", true);
 
         if (desc is null)
-        {
             return Message.ModifyAsync(
                 x =>
                 {
@@ -149,7 +149,6 @@ public sealed class BlackJack : IGame
                         .Build();
                 }
             );
-        }
 
         return Message.ModifyAsync(
             x =>
@@ -175,12 +174,12 @@ public sealed class BlackJack : IGame
         var playerImages = PlayerCards.ConvertAll(card => card.GetImage());
         var dealerImages = Hidden
             ? new List<SKBitmap>
-              {
-                  DealerCards[0].GetImage(),
-                  SKBitmap.Decode(
-                      File.Open("Resources/gambling/empty.png", FileMode.Open, FileAccess.Read)
-                  )
-              }
+            {
+                DealerCards[0].GetImage(),
+                SKBitmap.Decode(
+                    File.Open("Resources/gambling/empty.png", FileMode.Open, FileAccess.Read)
+                )
+            }
             : DealerCards.ConvertAll(card => card.GetImage());
         var height = playerImages.Max(x => x.Height);
 
@@ -199,6 +198,7 @@ public sealed class BlackJack : IGame
             canvas.DrawBitmap(image, localWidth, 0);
             localWidth += 15;
         }
+
         return surface.Snapshot().Encode(SKEncodedImageFormat.Png, 100).AsStream();
     }
 

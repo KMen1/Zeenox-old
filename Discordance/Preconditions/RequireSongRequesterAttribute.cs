@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discordance.Extensions;
-using Discordance.Modules.Music;
 using Discordance.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +27,7 @@ public class RequireSongRequesterAttribute : PreconditionAttribute
         var player = service.GetPlayer(context.Guild.Id);
 
         return context.User.Id == player.RequestedBy.Id
-          ? Task.FromResult(PreconditionResult.FromSuccess())
-          : Task.FromResult(PreconditionResult.FromError("You must be the song requester to perform this action."));
+            ? Task.FromResult(PreconditionResult.FromSuccess())
+            : Task.FromResult(PreconditionResult.FromError("You must be the song requester to perform this action."));
     }
 }

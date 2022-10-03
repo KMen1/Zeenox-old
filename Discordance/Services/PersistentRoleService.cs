@@ -67,8 +67,6 @@ public class PersistentRoleService
                 .Select(roleId => user.Guild.GetRole(roleId))
                 .Where(role => role is not null)
         )
-        {
             await user.AddRoleAsync(role).ConfigureAwait(false);
-        }
     }
 }

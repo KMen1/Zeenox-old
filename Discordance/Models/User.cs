@@ -19,8 +19,8 @@ public class User
         GuildDatas = new Dictionary<ulong, GuildData>();
     }
 
-    [BsonId]
-    public ulong Id { get; set; }
+    [BsonId] public ulong Id { get; set; }
+
     public ulong? OsuId { get; set; }
     public int Balance { get; set; }
     public DateTime? LastDailyCreditClaim { get; set; }
@@ -30,12 +30,9 @@ public class User
     public int MoneyLost { get; set; }
     public Dictionary<ulong, GuildData> GuildDatas { get; set; }
 
-    [BsonIgnore]
-    public int GamesPlayed => Wins + Losses;
+    [BsonIgnore] public int GamesPlayed => Wins + Losses;
 
-    [BsonIgnore]
-    public int GambleLevel => GamesPlayed / 10;
+    [BsonIgnore] public int GambleLevel => GamesPlayed / 10;
 
-    [BsonIgnore]
-    public int GambleLevelRequired => 10 - (GamesPlayed % 10);
+    [BsonIgnore] public int GambleLevelRequired => 10 - GamesPlayed % 10;
 }

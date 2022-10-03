@@ -15,11 +15,9 @@ public class RequireAdminPermissionsAttribute : PreconditionAttribute
         IServiceProvider services
     )
     {
-        var user = (SocketGuildUser)context.User;
+        var user = (SocketGuildUser) context.User;
         if (user.Roles.ToList().Exists(x => x.Permissions.Administrator))
-        {
             return Task.FromResult(PreconditionResult.FromSuccess());
-        }
 
         return Task.FromResult(
             PreconditionResult.FromError(

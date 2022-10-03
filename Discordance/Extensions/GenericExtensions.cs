@@ -8,10 +8,8 @@ using Discord;
 using Discord.WebSocket;
 using Discordance.Models;
 using Discordance.Models.Games;
-using Discordance.Modules.Gambling;
 using Lavalink4NET.Player;
 using SkiaSharp;
-using Color = Discord.Color;
 using Game = Discordance.Models.Game;
 
 namespace Discordance.Extensions;
@@ -48,7 +46,7 @@ public static class GenericExtensions
     public static IEnumerable<IEnumerable<T>> ChunkBy<T>(this IEnumerable<T> source, int chunkSize)
     {
         return source
-            .Select((x, i) => new { Index = i, Value = x })
+            .Select((x, i) => new {Index = i, Value = x})
             .GroupBy(x => x.Index / chunkSize)
             .Select(x => x.Select(v => v.Value).ToList())
             .ToList();
@@ -69,7 +67,7 @@ public static class GenericExtensions
 
     public static Embed[] ToEmbedArray(this IEnumerable<Game> games)
     {
-        var date = ((DateTimeOffset)DateTime.Today)
+        var date = ((DateTimeOffset) DateTime.Today)
             .GetNextWeekday(DayOfWeek.Thursday)
             .AddHours(17)
             .ToUnixTimeSeconds();
@@ -80,9 +78,9 @@ public static class GenericExtensions
                         .WithTitle(game.Title)
                         .WithDescription(
                             $"`{game.Description}`\n\n"
-                                + $"💰 **{game.Price.TotalPrice.FmtPrice.OriginalPrice} -> Free** \n\n"
-                                + $"🏁 <t:{date}:R>\n\n"
-                                + $"[Open in browser]({game.EpicUrl})"
+                            + $"💰 **{game.Price.TotalPrice.FmtPrice.OriginalPrice} -> Free** \n\n"
+                            + $"🏁 <t:{date}:R>\n\n"
+                            + $"[Open in browser]({game.EpicUrl})"
                         )
                         .WithImageUrl(game.KeyImages[0].Url.ToString())
                         .WithColor(Color.Gold)
@@ -199,29 +197,44 @@ public static class GenericExtensions
         return sb.ToString();
     }
 
-    public static string ToRelativeDiscordTimeStamp(this DateTimeOffset dateTimeOffset) =>
-        $"<t:{dateTimeOffset.ToUnixTimeSeconds()}:R>";
+    public static string ToRelativeDiscordTimeStamp(this DateTimeOffset dateTimeOffset)
+    {
+        return $"<t:{dateTimeOffset.ToUnixTimeSeconds()}:R>";
+    }
 
-    public static string ToHyperLink(this LavalinkTrack track) => $"[{track.Title}]({track.Uri})";
+    public static string ToHyperLink(this LavalinkTrack track)
+    {
+        return $"[{track.Title}]({track.Uri})";
+    }
 
-    public static string FormatWithTimestamp(this string format, object? object1) =>
-        string.Format(format, DateTimeOffset.UtcNow.ToRelativeDiscordTimeStamp(), object1);
+    public static string FormatWithTimestamp(this string format, object? object1)
+    {
+        return string.Format(format, DateTimeOffset.UtcNow.ToRelativeDiscordTimeStamp(), object1);
+    }
 
     public static string FormatWithTimestamp(
         this string format,
         object? object1,
         object? object2
-    ) =>
-        string.Format(format, DateTimeOffset.UtcNow.ToRelativeDiscordTimeStamp(), object1, object2);
+    )
+    {
+        return string.Format(format, DateTimeOffset.UtcNow.ToRelativeDiscordTimeStamp(), object1, object2);
+    }
 
-    public static string Format(this string format, params object[] args) =>
-        string.Format(format, args);
+    public static string Format(this string format, params object[] args)
+    {
+        return string.Format(format, args);
+    }
 
-    public static string Format(this string format, object? object1, object? object2) =>
-        string.Format(format, object1, object2);
+    public static string Format(this string format, object? object1, object? object2)
+    {
+        return string.Format(format, object1, object2);
+    }
 
-    public static string Format(this string format, object? object1) =>
-        string.Format(format, object1);
+    public static string Format(this string format, object? object1)
+    {
+        return string.Format(format, object1);
+    }
 
     public static int GetValue(this IReadOnlyCollection<Card> cards)
     {
@@ -229,12 +242,10 @@ public static class GenericExtensions
         var value = cards.Sum(card => card.Value);
 
         for (var i = 0; i < aces; i++)
-        {
             if (value + 11 <= 21)
                 value += 11;
             else
                 value++;
-        }
 
         return value;
     }

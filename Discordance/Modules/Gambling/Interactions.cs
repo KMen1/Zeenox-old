@@ -12,7 +12,7 @@ public class Interactions : GambleBase
     public async Task HitBlackJackAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = (BlackJack)GetGame();
+        var game = (BlackJack) GetGame();
         await game.HitAsync().ConfigureAwait(false);
     }
 
@@ -20,7 +20,7 @@ public class Interactions : GambleBase
     public async Task StandBlackJackAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = (BlackJack)GetGame();
+        var game = (BlackJack) GetGame();
         await game.StandAsync().ConfigureAwait(false);
     }
 
@@ -28,7 +28,7 @@ public class Interactions : GambleBase
     public async Task GuessHigherAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = (HighLow)GetGame();
+        var game = (HighLow) GetGame();
         await game.HigherAsync().ConfigureAwait(false);
     }
 
@@ -36,7 +36,7 @@ public class Interactions : GambleBase
     public async Task GuessLowerAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = (HighLow)GetGame();
+        var game = (HighLow) GetGame();
         await game.LowerAsync().ConfigureAwait(false);
     }
 
@@ -44,7 +44,7 @@ public class Interactions : GambleBase
     public async Task FinishAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = (HighLow)GetGame();
+        var game = (HighLow) GetGame();
         await game.FinishAsync().ConfigureAwait(false);
     }
 
@@ -52,7 +52,7 @@ public class Interactions : GambleBase
     public async Task HandleMineAsync(int x, int y)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = (Mines)GetGame();
+        var game = (Mines) GetGame();
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }
 
@@ -60,7 +60,7 @@ public class Interactions : GambleBase
     public async Task ClickFieldAsync(int x, int y)
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = (Towers)GetGame();
+        var game = (Towers) GetGame();
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }
 
@@ -68,7 +68,7 @@ public class Interactions : GambleBase
     public async Task StopCrashGameAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var game = (Crash)GetGame();
+        var game = (Crash) GetGame();
         await game.StopAsync().ConfigureAwait(false);
     }
 }

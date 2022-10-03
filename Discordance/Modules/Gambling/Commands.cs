@@ -19,9 +19,10 @@ public class Commands : GambleBase
     public async Task StartGameAsync(
         [Summary("Game")] GameType gameType,
         [MinValue(1)] [MaxValue(10000000)] int bet,
-        [Summary("MineAmount", "This setting only affects mines")] int mines = 5,
+        [Summary("MineAmount", "This setting only affects mines")]
+        int mines = 5,
         [Summary("Difficulty", "This setting only affects towers")]
-            Difficulty difficulty = Difficulty.Easy
+        Difficulty difficulty = Difficulty.Easy
     )
     {
         var dbUser = await GetUserAsync().ConfigureAwait(false);
@@ -61,6 +62,7 @@ public class Commands : GambleBase
             await msg.DeleteAsync().ConfigureAwait(false);
             return;
         }
+
         await game!.StartAsync().ConfigureAwait(false);
     }
 
@@ -71,7 +73,6 @@ public class Commands : GambleBase
         var game = GetGame();
 
         if (game is not Mines or Towers)
-        {
             await RespondAsync(
                     embed: new EmbedBuilder()
                         .WithColor(Color.Red)
@@ -80,11 +81,10 @@ public class Commands : GambleBase
                     ephemeral: true
                 )
                 .ConfigureAwait(false);
-        }
 
         switch (game)
         {
-            case Mines { CanStop: false }:
+            case Mines {CanStop: false}:
             {
                 var sEb = new EmbedBuilder()
                     .WithColor(Color.Red)

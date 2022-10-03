@@ -26,7 +26,6 @@ public sealed class HighLow : IGame
         Deck = new Deck();
     }
 
-    public ulong UserId { get; }
     private IUserMessage Message { get; }
     private Deck Deck { get; set; }
     private Card PlayerHand { get; set; } = null!;
@@ -35,10 +34,12 @@ public sealed class HighLow : IGame
     private int Bet { get; }
     private decimal HighMultiplier { get; set; }
     private decimal LowMultiplier { get; set; }
-    private int HighStake => (int)(Stake * HighMultiplier);
-    private int LowStake => (int)(Stake * LowMultiplier);
+    private int HighStake => (int) (Stake * HighMultiplier);
+    private int LowStake => (int) (Stake * LowMultiplier);
     private bool Hidden { get; set; }
     private Cloudinary CloudinaryClient { get; }
+
+    public ulong UserId { get; }
     public event EventHandler<GameEndEventArgs>? GameEnded;
 
     public Task StartAsync()
@@ -59,6 +60,7 @@ public sealed class HighLow : IGame
                 Deck = new Deck();
             PlayerHand = Deck.Draw();
         }
+
         CalculateMultiplier();
     }
 
@@ -67,8 +69,8 @@ public sealed class HighLow : IGame
         var cardsCount = Deck.Cards.Count;
         var lowerCardsCount = Deck.Cards.Count(x => x.Value < PlayerHand.Value);
         var higherCardsCount = Deck.Cards.Count(x => x.Value > PlayerHand.Value);
-        HighMultiplier = Math.Round((decimal)cardsCount / higherCardsCount, 2);
-        LowMultiplier = Math.Round((decimal)cardsCount / lowerCardsCount, 2);
+        HighMultiplier = Math.Round((decimal) cardsCount / higherCardsCount, 2);
+        LowMultiplier = Math.Round((decimal) cardsCount / lowerCardsCount, 2);
     }
 
     public async Task HigherAsync()
@@ -116,7 +118,7 @@ public sealed class HighLow : IGame
             .WithTitle("Higher/Lower")
             .WithDescription(
                 $"**Original Bet:** {Bet:N0} credits\n**Current Bet:** {Stake:N0} credits"
-                    + (desc is null ? "" : $"\n{desc}")
+                + (desc is null ? "" : $"\n{desc}")
             )
             .WithColor(Color.Gold)
             .WithImageUrl(GetImageUrl())
@@ -128,7 +130,6 @@ public sealed class HighLow : IGame
             .AddField($"Lower - {LowMultiplier:0.00}x", $"Prize: **{LowStake:N0} credits**", true);
 
         if (desc is null)
-        {
             return Message.ModifyAsync(
                 x =>
                 {
@@ -140,7 +141,6 @@ public sealed class HighLow : IGame
                         .Build();
                 }
             );
-        }
 
         return Message.ModifyAsync(
             x =>
@@ -156,10 +156,10 @@ public sealed class HighLow : IGame
         var stream = MergePlayerAndDealer(
             PlayerHand.GetImage(),
             Hidden
-              ? SKBitmap.Decode(
+                ? SKBitmap.Decode(
                     File.Open("Resources/gambling/empty.png", FileMode.Open, FileAccess.Read)
                 )
-              : DealerHand.GetImage()
+                : DealerHand.GetImage()
         );
         var id = Guid.NewGuid().ToShortId();
         var upParams = new ImageUploadParams

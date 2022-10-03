@@ -12,8 +12,8 @@ namespace Discordance.Modules.TemporaryChannels;
 
 public class Commands : ModuleBase
 {
-    private readonly TemporaryChannelService _service;
     private readonly IMemoryCache _cache;
+    private readonly TemporaryChannelService _service;
 
     public Commands(TemporaryChannelService service, IMemoryCache cache)
     {
@@ -26,8 +26,9 @@ public class Commands : ModuleBase
         ICategoryChannel category,
         IVoiceChannel createChannel,
         int userLimit,
-        [Summary("NameFormat", "Available: {user.name} {index}")] string nameFormat,
-        [MinValue(8), MaxValue(96)] int bitrate
+        [Summary("NameFormat", "Available: {user.name} {index}")]
+        string nameFormat,
+        [MinValue(8)] [MaxValue(96)] int bitrate
     )
     {
         var config = _cache.GetGuildConfig(Context.Guild.Id);
@@ -134,7 +135,7 @@ public class Commands : ModuleBase
     }
 
     [SlashCommand("temp-limit", "Sets the limit of users in a temporary voice channel")]
-    public async Task SetLimitAsync([MinValue(0), MaxValue(99)] int limit)
+    public async Task SetLimitAsync([MinValue(0)] [MaxValue(99)] int limit)
     {
         if (!_service.GetTempChannel(Context.User.Id, out var channelId))
         {
