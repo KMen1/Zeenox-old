@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Discord;
 using Discordance.Models;
 
-namespace Discordance.Modules.Gambling;
+namespace Discordance.Modules.Gambling.Games;
 
 public interface IGame
 {

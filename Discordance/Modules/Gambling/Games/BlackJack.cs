@@ -12,24 +12,25 @@ using Discordance.Models;
 using Discordance.Models.Games;
 using SkiaSharp;
 
-namespace Discordance.Modules.Gambling.BlackJack;
+namespace Discordance.Modules.Gambling.Games;
 
-public sealed class BlackJackGame : IGame
+public sealed class BlackJack : IGame
 {
-    public BlackJackGame(ulong userId, IUserMessage message, int bet, Cloudinary cloudinary)
+    public BlackJack(ulong userId, IUserMessage message, int bet, Cloudinary cloudinary)
     {
-        Message = message;
-        Deck = new Deck();
         UserId = userId;
+        Message = message;
         Bet = bet;
+        Cloudinary = cloudinary;
+        Id = Guid.NewGuid().ToString();
+        Deck = new Deck();
         Hidden = true;
-        CloudinaryClient = cloudinary;
         DealerCards = Deck.DealHand();
         PlayerCards = Deck.DealHand();
     }
 
     public ulong UserId { get; }
-    private string Id { get; } = Guid.NewGuid().ToString();
+    private string Id { get; }
     private IUserMessage Message { get; }
     private int Bet { get; }
     private Deck Deck { get; }
@@ -38,7 +39,7 @@ public sealed class BlackJackGame : IGame
     private List<Card> PlayerCards { get; }
     private int PlayerScore => PlayerCards.GetValue();
     private bool Hidden { get; set; }
-    private Cloudinary CloudinaryClient { get; }
+    private Cloudinary Cloudinary { get; }
     public event EventHandler<GameEndEventArgs>? GameEnded;
 
     public Task StartAsync()
@@ -166,7 +167,7 @@ public sealed class BlackJackGame : IGame
             File = new FileDescription($"blackjack-{Id}.png", CreateImage()),
             PublicId = $"blackjack-{Id}"
         };
-        return CloudinaryClient.Upload(upParams).Url.ToString();
+        return Cloudinary.Upload(upParams).Url.ToString();
     }
 
     private Stream CreateImage()

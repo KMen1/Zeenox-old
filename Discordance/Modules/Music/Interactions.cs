@@ -21,9 +21,7 @@ public class Interactions : MusicBase
         if (result)
         {
             await DeferAsync().ConfigureAwait(false);
-            await AudioService
-                .SetFiltersAsync(Context.Guild, Context.User, filterType)
-                .ConfigureAwait(false);
+            await SetFilterAsync(filterType).ConfigureAwait(false);
         }
     }
 
@@ -33,7 +31,6 @@ public class Interactions : MusicBase
         await DeferAsync().ConfigureAwait(false);
         var player = GetPlayer();
         await player.StopAsync().ConfigureAwait(false);
-        await player.WaitForInputAsync().ConfigureAwait(false);
     }
 
     [ComponentInteraction("volumeup")]
@@ -41,11 +38,11 @@ public class Interactions : MusicBase
     {
         await DeferAsync().ConfigureAwait(false);
         var player = GetPlayer();
-        await player.SetVolumeAsync(Context.User, player.Volume + 10 / 100f).ConfigureAwait(false);
+        var newVolume = await SetVolumeAsync(player.Volume + 10 / 100f).ConfigureAwait(false);
         await FollowupAsync(
                 embed: new EmbedBuilder()
                     .WithDescription(
-                        $"**Volume set to {player.Volume.ToString(CultureInfo.InvariantCulture)}**"
+                        $"**Volume set to {newVolume.ToString(CultureInfo.InvariantCulture)}**"
                     )
                     .WithColor(Color.Green)
                     .Build(),
@@ -59,11 +56,11 @@ public class Interactions : MusicBase
     {
         await DeferAsync().ConfigureAwait(false);
         var player = GetPlayer();
-        await player.SetVolumeAsync(Context.User, player.Volume - 10 / 100f).ConfigureAwait(false);
+        var newVolume = await SetVolumeAsync(player.Volume - 10 / 100f).ConfigureAwait(false);
         await FollowupAsync(
                 embed: new EmbedBuilder()
                     .WithDescription(
-                        $"**Volume set to {player.Volume.ToString(CultureInfo.InvariantCulture)}**"
+                        $"**Volume set to {newVolume.ToString(CultureInfo.InvariantCulture)}**"
                     )
                     .WithColor(Color.Green)
                     .Build(),
@@ -76,39 +73,34 @@ public class Interactions : MusicBase
     public async Task PausePlayerAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService.PauseOrResumeAsync(Context.Guild, Context.User).ConfigureAwait(false);
+        await PauseOrResumeAsync().ConfigureAwait(false);
     }
 
     [ComponentInteraction("next")]
-    public async Task SkipAsync()
+    public async Task PlayNextAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        await AudioService
-            .SkipOrVoteskipAsync(Context.User, Context.Guild, Context.User.Id)
-            .ConfigureAwait(false);
+        await SkipAsync().ConfigureAwait(false);
     }
 
     [ComponentInteraction("previous")]
-    public async Task GoBackAsync()
+    public async Task PlayPreviousAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var player = GetPlayer();
-        await player.PlayPreviousAsync(Context.User).ConfigureAwait(false);
+        await RewindAsync().ConfigureAwait(false);
     }
 
     [ComponentInteraction("repeat")]
-    public async Task ToggleLoopAsync()
+    public async Task ToggleRepeatAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var player = GetPlayer();
-        await player.ToggleLoopAsync(Context.User).ConfigureAwait(false);
+        await ToggleLoopAsync().ConfigureAwait(false);
     }
 
     [ComponentInteraction("autoplay")]
     public async Task ToggleAutoplayAsync()
     {
         await DeferAsync().ConfigureAwait(false);
-        var player = GetPlayer();
-        await player.ToggleAutoPlayAsync(Context.User).ConfigureAwait(false);
+        await ToggleAutoPlayAsync().ConfigureAwait(false);
     }
 }

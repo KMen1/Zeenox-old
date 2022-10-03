@@ -6,10 +6,9 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Discordance.Enums;
 using Discordance.Extensions;
-using Discordance.Modules.Gambling.Mines;
+using Discordance.Modules.Gambling.Games;
 using Discordance.Modules.Gambling.Tower.Game;
-using Discordance.Modules.Gambling.Towers;
-using Discordance.Services;
+using Discordance.Preconditions;
 using Humanizer;
 
 namespace Discordance.Modules.Gambling;
@@ -25,7 +24,7 @@ public class Commands : GambleBase
             Difficulty difficulty = Difficulty.Easy
     )
     {
-        var dbUser = await DatabaseService.GetUserAsync(Context.User.Id).ConfigureAwait(false);
+        var dbUser = await GetUserAsync().ConfigureAwait(false);
         var result = dbUser.CanStartGame(bet, out var eb);
         if (!result)
         {
@@ -65,28 +64,13 @@ public class Commands : GambleBase
         await game!.StartAsync().ConfigureAwait(false);
     }
 
+    [RequireActiveGame]
     [SlashCommand("gamble-stop", "Stops the game you're currently playing")]
     public async Task StopGameAsync()
     {
-        if (!GameService.TryGetGame(Context.User.Id, out var generic))
-        {
-            await RespondAsync(
-                    embed: new EmbedBuilder()
-                        .WithColor(Color.Red)
-                        .WithDescription("**You are currently not playing!**")
-                        .Build()
-                )
-                .ConfigureAwait(false);
-            return;
-        }
+        var game = GetGame();
 
-        if (!generic.CanAffectGame(Context.User.Id, out var feb))
-        {
-            await RespondAsync(embed: feb, ephemeral: true).ConfigureAwait(false);
-            return;
-        }
-
-        if (generic is not MinesGame or TowerGame)
+        if (game is not Mines or Towers)
         {
             await RespondAsync(
                     embed: new EmbedBuilder()
@@ -98,9 +82,9 @@ public class Commands : GambleBase
                 .ConfigureAwait(false);
         }
 
-        switch (generic)
+        switch (game)
         {
-            case MinesGame { CanStop: false }:
+            case Mines { CanStop: false }:
             {
                 var sEb = new EmbedBuilder()
                     .WithColor(Color.Red)
@@ -111,10 +95,10 @@ public class Commands : GambleBase
                 await RespondAsync(embed: sEb, ephemeral: true).ConfigureAwait(false);
                 return;
             }
-            case MinesGame minesGame:
+            case Mines minesGame:
                 await minesGame.StopAsync(false).ConfigureAwait(false);
                 break;
-            case TowerGame towerGame:
+            case Towers towerGame:
                 await towerGame.StopAsync().ConfigureAwait(false);
                 break;
         }
@@ -134,7 +118,7 @@ public class Commands : GambleBase
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var sourceUser = await DatabaseService.GetUserAsync(Context.User.Id).ConfigureAwait(false);
+        var sourceUser = await GetUserAsync().ConfigureAwait(false);
         if (sourceUser.Balance < amount)
         {
             var veb = new EmbedBuilder()
@@ -145,12 +129,8 @@ public class Commands : GambleBase
             return;
         }
 
-        await DatabaseService
-            .UpdateUserAsync(sourceUser.Id, x => x.Balance -= amount)
-            .ConfigureAwait(false);
-        await DatabaseService
-            .UpdateUserAsync(user.Id, x => x.Balance += amount)
-            .ConfigureAwait(false);
+        await UpdateUserAsync(x => x.Balance -= amount).ConfigureAwait(false);
+        await UpdateUserAsync(x => x.Balance += amount, user.Id).ConfigureAwait(false);
 
         var eb = new EmbedBuilder()
             .WithDescription("Transfer successful!")
@@ -163,14 +143,12 @@ public class Commands : GambleBase
     public async Task ClaimDailyCoinsAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var dbUser = await DatabaseService.GetUserAsync(Context.User.Id).ConfigureAwait(false);
+        var dbUser = await GetUserAsync().ConfigureAwait(false);
         var lastDaily = dbUser.LastDailyCreditClaim;
         if (!lastDaily.HasValue || lastDaily.Value.AddDays(1) < DateTime.UtcNow)
         {
             var reward = RandomNumberGenerator.GetInt32(1000, 10000);
-            await DatabaseService
-                .UpdateUserAsync(
-                    dbUser.Id,
+            await UpdateUserAsync(
                     x =>
                     {
                         x.LastDailyCreditClaim = DateTime.UtcNow;

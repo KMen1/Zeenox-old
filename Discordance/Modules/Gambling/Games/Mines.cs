@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Discord;
@@ -9,18 +7,18 @@ using Discordance.Enums;
 using Discordance.Models;
 using Discordance.Models.Games;
 
-namespace Discordance.Modules.Gambling.Mines;
+namespace Discordance.Modules.Gambling.Games;
 
-public sealed class MinesGame : IGame
+public sealed class Mines : IGame
 {
     private readonly Field[,] _fields = new Field[5, 5];
 
-    public MinesGame(IUserMessage message, ulong userId, int bet, int mines)
+    public Mines(IUserMessage message, ulong userId, int bet, int mines)
     {
         Message = message;
         UserId = userId;
         Bet = bet;
-        Mines = mines;
+        MineAmount = mines;
 
         SetupGameField();
         SetupMines();
@@ -30,7 +28,7 @@ public sealed class MinesGame : IGame
     public ulong UserId { get; }
     private int Bet { get; }
     public bool CanStop { get; private set; }
-    private int Mines { get; }
+    private int MineAmount { get; }
     private int Clicked { get; set; }
     private int Size { get; } = 5;
 
@@ -39,8 +37,8 @@ public sealed class MinesGame : IGame
         get
         {
             //(25! (25 - b - s)!) / ((25 - b)! (25 - s)!) * .97
-            var one = Factorial(25) * Factorial(25 - Mines - Clicked);
-            var two = Factorial(25 - Mines) * Factorial(25 - Clicked);
+            var one = Factorial(25) * Factorial(25 - MineAmount - Clicked);
+            var two = Factorial(25 - MineAmount) * Factorial(25 - Clicked);
             var t = one / two * 0.97;
             return Math.Round((decimal)t, 2);
         }
@@ -67,7 +65,7 @@ public sealed class MinesGame : IGame
 
     private void SetupMines()
     {
-        for (var i = 0; i < Mines; i++)
+        for (var i = 0; i < MineAmount; i++)
         {
             var x = RandomNumberGenerator.GetInt32(0, Size);
             var y = RandomNumberGenerator.GetInt32(0, Size);
@@ -87,7 +85,7 @@ public sealed class MinesGame : IGame
             .WithTitle("Mines")
             .WithColor(Color.Gold)
             .WithDescription(
-                $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {Mines}"
+                $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {MineAmount}"
             )
             .Build();
 
@@ -126,7 +124,7 @@ public sealed class MinesGame : IGame
         _fields[x, y] = field with { IsClicked = true, Label = $"{Multiplier}x" };
         Clicked++;
 
-        if (Clicked == 25 - Mines)
+        if (Clicked == 25 - MineAmount)
         {
             await StopAsync(false).ConfigureAwait(false);
             OnGameEnded(new GameEndEventArgs(UserId, Bet, (int)(Bet * Multiplier), GameResult.Win));
@@ -197,7 +195,7 @@ public sealed class MinesGame : IGame
                         .WithTitle("Mines")
                         .WithColor(lost ? Color.Red : Color.Green)
                         .WithDescription(
-                            $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {Mines}\n"
+                            $"**Bet:** {Bet.ToString("N0", CultureInfo.InvariantCulture)} credits\n**Mines:** {MineAmount}\n"
                                 + (
                                     lost
                                         ? $"**Result:** You lose **{Bet.ToString("N0", CultureInfo.InvariantCulture)}** credits"

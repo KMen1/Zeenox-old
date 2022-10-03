@@ -91,30 +91,6 @@ public static class GenericExtensions
             .ToArray();
     }
 
-    public static bool CanAffectGame(this IGame? game, ulong userId, out Embed? embed)
-    {
-        if (game is null)
-        {
-            embed = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**Game not found!**")
-                .Build();
-            return false;
-        }
-
-        if (game.UserId != userId)
-        {
-            embed = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**This is not your game!**")
-                .Build();
-            return false;
-        }
-
-        embed = null;
-        return true;
-    }
-
     public static bool CanStartGame(this User user, int bet, out Embed? embed)
     {
         if (user.Balance < bet)
@@ -240,6 +216,12 @@ public static class GenericExtensions
 
     public static string Format(this string format, params object[] args) =>
         string.Format(format, args);
+
+    public static string Format(this string format, object? object1, object? object2) =>
+        string.Format(format, object1, object2);
+
+    public static string Format(this string format, object? object1) =>
+        string.Format(format, object1);
 
     public static int GetValue(this IReadOnlyCollection<Card> cards)
     {

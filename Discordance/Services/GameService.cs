@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using CloudinaryDotNet;
 using Discord;
@@ -7,18 +7,14 @@ using Discordance.Enums;
 using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Modules.Gambling;
-using Discordance.Modules.Gambling.BlackJack;
-using Discordance.Modules.Gambling.Crash;
-using Discordance.Modules.Gambling.HighLow;
-using Discordance.Modules.Gambling.Mines;
+using Discordance.Modules.Gambling.Games;
 using Discordance.Modules.Gambling.Tower.Game;
-using Discordance.Modules.Gambling.Towers;
 
 namespace Discordance.Services;
 
 public class GameService
 {
-    private readonly List<IGame> _games = new();
+    private readonly ConcurrentDictionary<ulong, IGame> _games;
     private readonly MongoService _databaseService;
     private readonly Cloudinary _cloudinary;
     private readonly RandomNumberGenerator _generator = RandomNumberGenerator.Create();
@@ -27,12 +23,23 @@ public class GameService
     {
         _databaseService = databaseService;
         _cloudinary = cloudinary;
+        _games = new ConcurrentDictionary<ulong, IGame>();
     }
 
     public bool TryGetGame(ulong userId, out IGame? game)
     {
-        game = _games.Find(x => x.UserId == userId);
+        _games.TryGetValue(userId, out game);
         return game is not null;
+    }
+
+    public IGame GetGame(ulong userId)
+    {
+        return _games[userId];
+    }
+
+    public bool IsPlaying(ulong userId)
+    {
+        return _games.ContainsKey(userId);
     }
 
     public bool TryStartGame(
@@ -45,32 +52,32 @@ public class GameService
         Difficulty? difficulty = Difficulty.Easy
     )
     {
-        game = _games.Find(x => x.UserId == userId);
-        if (game is not null)
+        game = null;
+        if (IsPlaying(userId))
             return false;
 
         switch (gameType)
         {
             case GameType.Blackjack:
-                game = new BlackJackGame(userId, message, bet, _cloudinary);
+                game = new BlackJack(userId, message, bet, _cloudinary);
                 break;
             case GameType.Crash:
-                game = new CrashGame(userId, message, bet, GenerateCrashPoint());
+                game = new Crash(userId, message, bet, GenerateCrashPoint());
                 break;
             case GameType.Highlow:
-                game = new HighLowGame(userId, message, bet, _cloudinary);
+                game = new HighLow(userId, message, bet, _cloudinary);
                 break;
             case GameType.Mines:
-                game = new MinesGame(message, userId, bet, mines ?? 5);
+                game = new Mines(message, userId, bet, mines ?? 5);
                 break;
             case GameType.Towers:
-                game = new TowerGame(userId, message, bet, difficulty ?? Difficulty.Easy);
+                game = new Towers(userId, message, bet, difficulty ?? Difficulty.Easy);
                 break;
             default:
                 return false;
         }
         game.GameEnded += OnGameEndedAsync;
-        _games.Add(game);
+        _games.TryAdd(userId, game);
         return true;
     }
 
@@ -78,7 +85,7 @@ public class GameService
     {
         var game = (IGame)sender!;
         game.GameEnded -= OnGameEndedAsync;
-        _games.Remove(game);
+        _games.TryRemove(game.UserId, out _);
 
         switch (e.Result)
         {

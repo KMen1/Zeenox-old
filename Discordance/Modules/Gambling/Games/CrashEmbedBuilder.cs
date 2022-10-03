@@ -1,11 +1,11 @@
 ﻿using System.Globalization;
 using Discord;
 
-namespace Discordance.Modules.Gambling.Crash;
+namespace Discordance.Modules.Gambling.Games;
 
 public class CrashEmbedBuilder : EmbedBuilder
 {
-    public CrashEmbedBuilder(CrashGame game, string? description = null)
+    public CrashEmbedBuilder(Games.Crash game, string? description = null)
     {
         Title = "Crash";
         Description =

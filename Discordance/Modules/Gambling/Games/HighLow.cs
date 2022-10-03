@@ -11,11 +11,11 @@ using Discordance.Models;
 using Discordance.Models.Games;
 using SkiaSharp;
 
-namespace Discordance.Modules.Gambling.HighLow;
+namespace Discordance.Modules.Gambling.Games;
 
-public sealed class HighLowGame : IGame
+public sealed class HighLow : IGame
 {
-    public HighLowGame(ulong userId, IUserMessage message, int bet, Cloudinary cloudinary)
+    public HighLow(ulong userId, IUserMessage message, int bet, Cloudinary cloudinary)
     {
         UserId = userId;
         Message = message;

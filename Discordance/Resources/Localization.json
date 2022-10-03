@@ -1,4 +1,8 @@
 ﻿{
+  "queue": {
+    "en": "Queue",
+    "hu": "Várólista"
+  },
   "no_matches": {
     "en": "No matches found! Please try again!",
     "hu": "Nincs találat! Kérlek próbáld újra!"
@@ -13,7 +17,7 @@
   },
   "left_channel":{
     "en": "Succesfully left {0}",
-    "hu": "Csatorna elhagyva!"
+    "hu": "{0} elhagyva!"
   },
   "select_song":{
     "en": "Please select a song!",
@@ -43,7 +47,7 @@
     "en": "Everyone can control the player from now on!",
     "hu": "Mostantól bárki irányíthatja a lejátszót!"
   },
-  "dj_limit": {
+  "dj_limit_reached": {
     "en": "You can only have 5 DJ roles!",
     "hu": "Csak 5 DJ rangot állíthatsz be!"
   },
@@ -71,11 +75,11 @@
     "en": "SponsorBlock disabled!",
     "hu": "SponsorBlock kikapcsolva!"
   },
-  "allowed_channel_limit": {
+  "allowed_channel_limit_reached": {
     "en": "You can only have 5 allowed channels!",
     "hu": "Csak 5 engedélyezett csatornát állíthatsz be!"
   },
-  "allowed_already_set": {
+  "channel_already_allowed": {
     "en": "This channel is already an allowed channel!",
     "hu": "Ez a csatorna már az engedélyezettek között van!"
   },
@@ -93,7 +97,7 @@
   },
   "track_added": {
     "en": "{0}: *{1} added {2}*",
-    "hu": "{0}: *{1} hozzáadta a(z) {2}*"
+    "hu": "{0}: *{1} hozzáadta {2}*"
   },
   "set_filter": {
     "en": "{0}: *{1} set filter to {2}*",
@@ -194,6 +198,10 @@
   "in_queue": {
     "en": "\uD83C\uDFB6 In Queue",
     "hu": "\uD83C\uDFB6 Várólistán"
+  },
+  "skip": {
+    "en": "Skip [{0}/{1}]",
+    "hu": "Átugrás [{0}/{1}]"
   },
   "back": {
     "en": "Back",

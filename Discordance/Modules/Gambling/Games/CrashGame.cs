@@ -6,11 +6,11 @@ using Discord;
 using Discordance.Enums;
 using Discordance.Models;
 
-namespace Discordance.Modules.Gambling.Crash;
+namespace Discordance.Modules.Gambling.Games;
 
-public sealed class CrashGame : IGame
+public sealed class Crash : IGame
 {
-    public CrashGame(ulong userId, IUserMessage message, int bet, double crashPoint)
+    public Crash(ulong userId, IUserMessage message, int bet, double crashPoint)
     {
         UserId = userId;
         Message = message;

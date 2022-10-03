@@ -50,9 +50,6 @@ public class InteractionHandler : DiscordShardedClientService
         {
             Log.Logger.Error(e, "Failed to add modules");
         }
-
-        //await _provider.GetRequiredService<IAudioService>().InitializeAsync().ConfigureAwait(false);
-        _provider.GetRequiredService<PersistentRoleService>();
     }
 
     private static async Task ClientOnShardReadyAsync(DiscordSocketClient client)

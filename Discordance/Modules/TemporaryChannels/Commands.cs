@@ -42,9 +42,7 @@ public class Commands : ModuleBase
             return;
         }
 
-        await DatabaseService
-            .UpdateGuildConfig(
-                Context.Guild.Id,
+        await UpdateGuildConfigAsync(
                 x =>
                     x.TcHubs.Add(
                         new Hub(

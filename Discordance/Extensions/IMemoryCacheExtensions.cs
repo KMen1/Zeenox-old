@@ -17,6 +17,11 @@ public static class IMemoryCacheExtensions
         return cache.Get<GuildConfig>($"{guildId}:config");
     }
 
+    public static string GetLangKey(this IMemoryCache cache, ulong guildId)
+    {
+        return cache.GetGuildConfig(guildId).Language;
+    }
+
     public static void SetNotificationChannels(
         this IMemoryCache cache,
         IEnumerable<(ulong, ulong)> shrine,

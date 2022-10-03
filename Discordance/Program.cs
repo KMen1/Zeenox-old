@@ -112,7 +112,11 @@ await Host.CreateDefaultBuilder()
                 }
             );
             services.AddSingleton(
-                new InactivityTrackingOptions { DisconnectDelay = TimeSpan.FromSeconds(20) }
+                new InactivityTrackingOptions
+                {
+                    DisconnectDelay = TimeSpan.FromMinutes(3),
+                    PollInterval = TimeSpan.FromSeconds(5)
+                }
             );
             services.AddSingleton<InactivityTrackingService>();
             services.AddSingleton<IMongoClient>(
@@ -162,7 +166,7 @@ await Host.CreateDefaultBuilder()
                     x.UseMongoStorage(
                         Environment.GetEnvironmentVariable("MONGO_CONNECTION_STRING"),
                         Environment.GetEnvironmentVariable("MONGO_DATABASE"),
-                        new MongoStorageOptions()
+                        new MongoStorageOptions
                         {
                             MigrationOptions = new MongoMigrationOptions
                             {
