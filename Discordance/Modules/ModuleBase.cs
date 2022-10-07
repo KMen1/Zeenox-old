@@ -1,19 +1,37 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
+using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Services;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Discordance.Modules;
 
 public abstract class ModuleBase : InteractionModuleBase<ShardedInteractionContext>
 {
-    private MongoService DatabaseService { get; set; } = null!;
-    private LocalizationService Localization { get; set; } = null!;
+    public MongoService DatabaseService { get; set; } = null!;
+    public IMemoryCache Cache { get; set; } = null!;
 
     protected string GetLocalized(string key)
     {
-        return Localization.GetMessage(Context.Guild.Id, key);
+        return Cache.GetMessage(Context.Guild.Id, key);
+    }
+
+    protected Embed GetLocalizedEmbed(string key, Color color)
+    {
+        return GetLocalized(key).ToEmbed(color);
+    }    
+    
+    protected Embed GetLocalizedEmbed(string key, Color color, object? object1 = null)
+    {
+        return GetLocalized(key).Format(object1).ToEmbed(color);
+    }    
+    
+    protected Embed GetLocalizedEmbed(string key, Color color, object? object1 = null, object? object2 = null)
+    {
+        return GetLocalized(key).Format(object1, object2).ToEmbed(color);
     }
 
     protected Task<User> GetUserAsync(ulong? id = null)

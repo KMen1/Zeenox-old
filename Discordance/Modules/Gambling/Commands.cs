@@ -113,7 +113,9 @@ public class Commands : GambleBase
 
     [SlashCommand("gamble-transfer", "Sends money to another user")]
     public async Task TransferBalanceAsync(
+        [Summary("target", "The person you want to send the money to")]
         SocketGuildUser user,
+        [Summary("amount", "The amount of money you want to send")]
         [MinValue(1)] [MaxValue(10000000)] int amount
     )
     {

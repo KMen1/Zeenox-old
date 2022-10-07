@@ -41,4 +41,16 @@ public static class IMemoryCacheExtensions
     {
         return cache.Get<IEnumerable<(ulong, ulong)>>("game");
     }
+    
+    public static string GetMessage(this IMemoryCache cache, string language, string key)
+    {
+        var localization = cache.Get<Dictionary<string, string>>(key);
+        return localization?[language] ?? localization?["en"] ?? key;
+    }
+
+    public static string GetMessage(this IMemoryCache cache, ulong guildId, string key)
+    {
+        var language = cache.GetGuildConfig(guildId).Language;
+        return GetMessage(cache, language, key);
+    }
 }

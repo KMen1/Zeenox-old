@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using CloudinaryDotNet;
 using Discord;
@@ -19,9 +21,11 @@ using Lavalink4NET.Artwork;
 using Lavalink4NET.Cluster;
 using Lavalink4NET.DiscordNet;
 using Lavalink4NET.Tracking;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 using OsuSharp;
 using OsuSharp.Extensions;
 using Serilog;
@@ -51,7 +55,7 @@ Log.Logger = new LoggerConfiguration().Enrich
     )
     .CreateLogger();
 
-await Host.CreateDefaultBuilder()
+var host = Host.CreateDefaultBuilder()
     .UseSerilog()
     .ConfigureDiscordShardedHost(
         (_, config) =>
@@ -107,6 +111,14 @@ await Host.CreateDefaultBuilder()
                             RestUri =
                                 $"http://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
                             DisconnectOnStop = false
+                        },
+                        new LavalinkNodeOptions()
+                        {
+                            AllowResuming = true,
+                            Password = "www.freelavalink.ga",
+                            WebSocketUri = "ws://lavalink.oops.wtf:2000",
+                            RestUri = "http://lavalink.oops.wtf:2000",
+                            DisconnectOnStop = false
                         }
                     }
                 }
@@ -153,7 +165,6 @@ await Host.CreateDefaultBuilder()
             services.AddSingleton<ArtworkService>();
             services.AddSingleton<MongoService>();
             services.AddSingleton<TemporaryChannelService>();
-            services.AddSingleton<PersistentRoleService>();
             services.AddSingleton<GameService>();
             services.Configure<HostOptions>(
                 x =>
@@ -179,13 +190,38 @@ await Host.CreateDefaultBuilder()
                     x.UseSerilogLogProvider();
                 }
             );
-            services.AddSingleton<LocalizationService>();
             services.AddHangfireServer();
             services.AddHttpClient();
             services.AddMemoryCache();
         }
     )
     .UseConsoleLifetime()
-    .Build()
-    .RunAsync()
-    .ConfigureAwait(false);
+    .Build();
+
+var cache = host.Services.GetRequiredService<IMemoryCache>();
+
+var localizationData = File.ReadAllText("Resources/Localization.json");
+if (localizationData is null)
+    throw new FileNotFoundException("Localization.json not found");
+
+var localization = JsonConvert.DeserializeObject<
+    Dictionary<string, Dictionary<string, string>>>(File.ReadAllText("Resources/Localization.json"));
+if (localization is null)
+    throw new JsonException("Localization.json is not a valid JSON file");
+
+foreach (var message in localization) cache.Set(message.Key, message.Value);
+
+var client = host.Services.GetRequiredService<DiscordShardedClient>();
+
+var audioService = host.Services.GetRequiredService<IAudioService>();
+var needToConnect = true;
+client.ShardReady += async _ =>
+{
+    if (needToConnect)
+    {
+        await audioService.InitializeAsync();
+        needToConnect = false;
+    }
+};
+
+await host.RunAsync().ConfigureAwait(false);

@@ -12,7 +12,7 @@ namespace Discordance.Modules.Music;
 
 public class Commands : MusicBase
 {
-    [RequireVoice]
+    [RequireSameVoice]
     [RequireAllowedChannel]
     [RequireDjRole]
     [SlashCommand("play", "Plays a song")]
@@ -28,30 +28,30 @@ public class Commands : MusicBase
         var tracks = await SearchAsync(query).ConfigureAwait(false);
         if (tracks is null)
         {
-            await FollowupAsync(GetLocalized("no_matches"), ephemeral: true).ConfigureAwait(false);
+            await FollowupAsync(embed: GetLocalizedEmbed("no_matches", Color.Red), ephemeral: true).ConfigureAwait(false);
             return;
         }
 
         var config = GetConfig();
         var (player, isCreated) = await GetOrCreatePlayerAsync().ConfigureAwait(false);
 
-        var playlist = tracks.Length > 1 && config.PlaylistAllowed;
+        var isPlaylist = tracks.Length > 1 && config.PlaylistAllowed;
 
         switch (!isCreated)
         {
-            case true when playlist:
+            case true when isPlaylist:
             {
                 await PlayAsync(tracks).ConfigureAwait(false);
-                await FollowupAsync(GetLocalized("added_to_queue")).ConfigureAwait(false);
+                await FollowupAsync(embed: GetLocalizedEmbed("added_to_queue", Color.Orange)).ConfigureAwait(false);
                 return;
             }
             case true:
             {
                 await PlayAsync(tracks[0]).ConfigureAwait(false);
-                await FollowupAsync(GetLocalized("added_to_queue")).ConfigureAwait(false);
+                await FollowupAsync(embed: GetLocalizedEmbed("added_to_queue", Color.Orange)).ConfigureAwait(false);
                 return;
             }
-            case false when playlist:
+            case false when isPlaylist:
             {
                 var (embed, components) = await PlayAsync(tracks).ConfigureAwait(false);
 
@@ -59,7 +59,7 @@ public class Commands : MusicBase
                     .SendMessageAsync(embed: embed, components: components)
                     .ConfigureAwait(false);
                 player.SetMessage(msg);
-                await FollowupAsync(GetLocalized("player_started")).ConfigureAwait(false);
+                await FollowupAsync(embed: GetLocalizedEmbed("player_started", Color.Green)).ConfigureAwait(false);
                 return;
             }
             case false:
@@ -69,7 +69,7 @@ public class Commands : MusicBase
                     .SendMessageAsync(embed: embed, components: components)
                     .ConfigureAwait(false);
                 player.SetMessage(msg);
-                await FollowupAsync(GetLocalized("player_started")).ConfigureAwait(false);
+                await FollowupAsync(embed: GetLocalizedEmbed("player_started", Color.Green)).ConfigureAwait(false);
                 return;
             }
         }
@@ -85,12 +85,7 @@ public class Commands : MusicBase
         await player.DisconnectAsync().ConfigureAwait(false);
 
         await RespondAsync(
-                embed: new EmbedBuilder()
-                    .WithDescription(
-                        GetLocalized("left_channel").Format(player.VoiceChannel.Mention)
-                    )
-                    .WithColor(Color.Green)
-                    .Build(),
+            embed: GetLocalizedEmbed("left_channel", Color.Green, player.VoiceChannel.Mention),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -100,17 +95,14 @@ public class Commands : MusicBase
     [RequireAllowedChannel]
     [RequireDjRole]
     [SlashCommand("search", "Searches for a song on Youtube")]
-    public async Task SearchSongAsync([Summary("query", "Title of the song")] string query)
+    public async Task SearchSongAsync([Summary("query", "Title of the song (does not accept urls)")] string query)
     {
         await DeferAsync().ConfigureAwait(false);
         var tracks = await SearchAsync(query).ConfigureAwait(false);
         if (tracks is null)
         {
-            var eeb = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription(GetLocalized("no_matches"))
-                .Build();
-            await FollowupAsync(embed: eeb, ephemeral: true).ConfigureAwait(false);
+            await FollowupAsync(embed: GetLocalizedEmbed("no_matches", Color.Red), ephemeral: true)
+                .ConfigureAwait(false);
             return;
         }
 
@@ -140,52 +132,40 @@ public class Commands : MusicBase
 
         comp.WithSelectMenu(menu);
 
-        var eb = new EmbedBuilder()
-            .WithTitle(GetLocalized("select_song"))
-            .WithColor(Color.Blue)
-            .Build();
-        await FollowupAsync(embed: eb, components: comp.Build()).ConfigureAwait(false);
+        await FollowupAsync(embed: GetLocalizedEmbed("select_song", Color.Green), components: comp.Build()).ConfigureAwait(false);
     }
 
-    /*[RequireVoice]
+    [RequireSameVoice]
     [RequireDjRole]
     [ComponentInteraction("search")]
     public async Task PlaySearchAsync(params string[] trackIdentifiers)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var user = (SocketGuildUser)Context.User;
         var msg = ((SocketMessageComponent)Context.Interaction).Message;
         var identifier = trackIdentifiers[0];
         var track = await AudioService
-            .GetTrackAsync($"https://www.youtube.com/watch?v={identifier}")
+            .SearchAsync($"https://www.youtube.com/watch?v={identifier}", Context.User)
             .ConfigureAwait(false);
 
-        track.Context = user;
-        await msg.DeleteAsync().ConfigureAwait(false);
-        var player = await AudioService.GetOrCreatePlayerAsync(user).ConfigureAwait(false);
-        if (player.IsPlaying)
+        var (player, isNew) = await GetOrCreatePlayerAsync().ConfigureAwait(false);
+
+        if (isNew)
         {
-            await FollowupAsync(
-                    embed: new EmbedBuilder()
-                        .WithTitle("Added To Queue")
-                        .WithColor(Color.Green)
-                        .Build()
-                )
-                .ConfigureAwait(false);
-            await AudioService
-                .PlayAsync(Context.Guild.Id, Context.User, track)
-                .ConfigureAwait(false);
+            var (embed, components) = await PlayAsync(track![0]).ConfigureAwait(false);
+            await msg.ModifyAsync(x =>
+            {
+                x.Embed = embed;
+                x.Components = components;
+            }).ConfigureAwait(false);
+            player.SetMessage(msg);
+            await FollowupAsync(embed: GetLocalizedEmbed("player_started", Color.Green)).ConfigureAwait(false);
+            return;
         }
 
-        player.SetMessage(
-            await Context.Channel
-                .SendMessageAsync(
-                    embed: player.GetNowPlayingEmbed(),
-                    components: player.GetMessageComponents()
-                )
-                .ConfigureAwait(false)
-        );
-    }*/
+        await PlayAsync(track![0]).ConfigureAwait(false);
+        await FollowupAsync(embed: GetLocalizedEmbed("added_to_queue", Color.Orange)).ConfigureAwait(false);
+        //await msg.DeleteAsync().ConfigureAwait(false);
+    }
 
     [RequirePlayer]
     [RequireSameVoice]
@@ -198,10 +178,7 @@ public class Commands : MusicBase
     {
         var newVolume = await SetVolumeAsync(volume).ConfigureAwait(false);
         await RespondAsync(
-                embed: new EmbedBuilder()
-                    .WithDescription(GetLocalized("set_volume").Format(newVolume))
-                    .WithColor(Color.Green)
-                    .Build(),
+                embed: GetLocalizedEmbed("set_volume", Color.Green, newVolume.ToString()),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -239,10 +216,7 @@ public class Commands : MusicBase
     {
         await ClearQueueAsync();
         await RespondAsync(
-                embed: new EmbedBuilder()
-                    .WithColor(Color.Green)
-                    .WithDescription(GetLocalized("queue_cleared"))
-                    .Build(),
+                embed: GetLocalizedEmbed("queue_cleared", Color.Green),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -261,14 +235,7 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithTitle(
-                        config.Music.ExclusiveControl
-                            ? GetLocalized("exclusive_enabled")
-                            : GetLocalized("exclusive_disabled")
-                    )
-                    .WithColor(config.Music.ExclusiveControl ? Color.Green : Color.Red)
-                    .Build(),
+                embed: GetLocalizedEmbed(config.Music.ExclusiveControl ? "exclusive_enabled" : "exclusive_disabled", Color.Green),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -282,14 +249,7 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithTitle(
-                        config.Music.DjOnly
-                            ? GetLocalized("dj_enabled")
-                            : GetLocalized("dj_disabled")
-                    )
-                    .WithColor(config.Music.DjOnly ? Color.Green : Color.Red)
-                    .Build(),
+                embed: GetLocalizedEmbed(config.Music.DjOnly ? "dj_enabled" : "dj_disabled", Color.Green),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -303,24 +263,14 @@ public class Commands : MusicBase
 
         if (config.DjRoleIds.Count >= 5)
         {
-            await FollowupAsync(
-                    embed: new EmbedBuilder()
-                        .WithTitle(GetLocalized("dj_limit_reached"))
-                        .WithColor(Color.Red)
-                        .Build()
-                )
+            await FollowupAsync(embed: GetLocalizedEmbed("dj_limit_reached", Color.Red))
                 .ConfigureAwait(false);
             return;
         }
 
         if (config.DjRoleIds.Contains(role.Id))
         {
-            await FollowupAsync(
-                    embed: new EmbedBuilder()
-                        .WithDescription(GetLocalized("role_already_dj"))
-                        .WithColor(Color.Red)
-                        .Build()
-                )
+            await FollowupAsync(embed: GetLocalizedEmbed("role_already_dj", Color.Red))
                 .ConfigureAwait(false);
             return;
         }
@@ -328,10 +278,7 @@ public class Commands : MusicBase
         await UpdateGuildConfigAsync(x => x.Music.DjRoleIds.Add(role.Id)).ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithDescription(GetLocalized("dj_role_added").Format(role.Mention))
-                    .WithColor(Color.Green)
-                    .Build(),
+                embed: GetLocalizedEmbed("dj_role_added", Color.Green, role.Mention),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -348,13 +295,7 @@ public class Commands : MusicBase
         await UpdateGuildConfigAsync(x => x.Music.DjRoleIds.Remove(roleId)).ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithDescription(
-                        GetLocalized("dj_role_removed")
-                            .Format(Context.Guild.GetRole(roleId)?.Mention)
-                    )
-                    .WithColor(Color.Green)
-                    .Build(),
+                embed: GetLocalizedEmbed("dj_role_removed", Color.Green, Context.Guild.GetRole(roleId)?.Mention!),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -367,15 +308,11 @@ public class Commands : MusicBase
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
-
         await UpdateGuildConfigAsync(x => x.Music.RequestChannelId = channel.Id)
             .ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithDescription(GetLocalized("request_channel_set").Format(channel.Mention))
-                    .WithColor(Color.Green)
-                    .Build(),
+                embed: GetLocalizedEmbed("request_channel_set", Color.Green, channel.Mention),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -391,14 +328,7 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithTitle(
-                        config.Music.UseSponsorBlock
-                            ? GetLocalized("sponsorblock_enabled")
-                            : GetLocalized("sponsorblock_disabled")
-                    )
-                    .WithColor(config.Music.UseSponsorBlock ? Color.Green : Color.Red)
-                    .Build(),
+                embed: GetLocalizedEmbed(config.Music.UseSponsorBlock ? "sponsorblock_enabled" : "sponsorblock_disabled", Color.Green),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -415,24 +345,14 @@ public class Commands : MusicBase
 
         if (config.AllowedVoiceChannels.Count >= 25)
         {
-            await FollowupAsync(
-                    embed: new EmbedBuilder()
-                        .WithTitle(GetLocalized("allowed_channel_limit_reached"))
-                        .WithColor(Color.Red)
-                        .Build()
-                )
+            await FollowupAsync(embed: GetLocalizedEmbed("allowed_channel_limit_reached", Color.Red))
                 .ConfigureAwait(false);
             return;
         }
 
         if (config.AllowedVoiceChannels.Contains(channel.Id))
         {
-            await FollowupAsync(
-                    embed: new EmbedBuilder()
-                        .WithDescription(GetLocalized("channel_already_allowed"))
-                        .WithColor(Color.Red)
-                        .Build()
-                )
+            await FollowupAsync(embed: GetLocalizedEmbed("channel_already_allowed", Color.Red))
                 .ConfigureAwait(false);
             return;
         }
@@ -441,10 +361,7 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithDescription(GetLocalized("allowed_channel_added").Format(channel.Mention))
-                    .WithColor(Color.Green)
-                    .Build(),
+                embed: GetLocalizedEmbed("allowed_channel_added", Color.Green, channel.Mention),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -463,13 +380,7 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithDescription(
-                        GetLocalized("allowed_channel_removed")
-                            .Format(Context.Guild.GetVoiceChannel(channelId)?.Mention)
-                    )
-                    .WithColor(Color.Green)
-                    .Build(),
+                embed: GetLocalizedEmbed("allowed_channel_removed", Color.Green, Context.Guild.GetVoiceChannel(channelId)?.Mention!),
                 ephemeral: true
             )
             .ConfigureAwait(false);

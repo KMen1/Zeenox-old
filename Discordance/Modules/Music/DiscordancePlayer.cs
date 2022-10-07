@@ -43,6 +43,18 @@ public class DiscordancePlayer : VoteLavalinkPlayer
             Actions.RemoveAt(5);
     }
 
+    public void ToggleLoop()
+    {
+        IsLooping = !IsLooping;
+        IsAutoPlay = false;
+    }
+
+    public void ToggleAutoPlay()
+    {
+        IsAutoPlay = !IsAutoPlay;
+        IsLooping = false;
+    }
+
     public override async Task<UserVoteSkipInfo> VoteAsync(ulong userId, float percentage = 0.5f)
     {
         var result = await base.VoteAsync(userId, percentage);
@@ -77,11 +89,4 @@ public class DiscordancePlayer : VoteLavalinkPlayer
 
         await base.OnTrackExceptionAsync(eventArgs).ConfigureAwait(false);
     }*/
-
-    public override Task StopAsync(bool disconnect = false)
-    {
-        IsAutoPlay = false;
-        IsLooping = false;
-        return base.StopAsync(disconnect);
-    }
 }

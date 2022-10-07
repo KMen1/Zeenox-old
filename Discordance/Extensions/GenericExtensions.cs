@@ -249,4 +249,12 @@ public static class GenericExtensions
 
         return value;
     }
+
+    public static Embed ToEmbed(this string message, Color color = default)
+    {
+        return new EmbedBuilder()
+            .WithDescription(message)
+            .WithColor(color)
+            .Build();
+    }
 }

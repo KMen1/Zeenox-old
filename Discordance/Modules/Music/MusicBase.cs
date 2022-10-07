@@ -11,12 +11,11 @@ namespace Discordance.Modules.Music;
 
 public class MusicBase : ModuleBase
 {
-    private AudioService AudioService { get; set; } = null!;
-    private IMemoryCache Cache { get; set; } = null!;
+    public AudioService AudioService { get; set; } = null!;
 
     protected DiscordancePlayer GetPlayer()
     {
-        return AudioService.GetPlayer(Context.Guild.Id);
+        return AudioService.GetPlayer(Context.Guild.Id)!;
     }
 
     protected MusicConfig GetConfig()

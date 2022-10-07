@@ -164,8 +164,8 @@
     "hu": "{0}: *{1} automatikus lejátszást letiltott.*"
   },
   "player_waiting": {
-    "en": "Waiting 3 minutes for a new song to be added before disconnecting!",
-    "hu": "3 percig várakozás új szám hozzáadására a lejátszás folytatásához!"
+    "en": "Waiting for a song to be added!",
+    "hu": "Várakozás új szám hozzáadására!"
   },
   "error_playback": {
     "en": "An error occurred while playing the track!",
@@ -310,6 +310,10 @@
   "filter_tremolo": {
     "en": "Tremolo",
     "hu": "Tremolo"
+  },
+  "filter_treblebass": {
+    "en": "Treble & Bass",
+    "hu": "Magas & Basszus"
   },
   "party_over": {
     "en": "Party is over!",

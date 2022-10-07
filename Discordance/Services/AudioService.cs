@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -10,7 +11,6 @@ using Google.Apis.YouTube.v3;
 using Lavalink4NET;
 using Lavalink4NET.Cluster;
 using Lavalink4NET.Events;
-using Lavalink4NET.Integrations.SponsorBlock;
 using Lavalink4NET.Player;
 using Lavalink4NET.Rest;
 using Lavalink4NET.Tracking;
@@ -22,27 +22,25 @@ public class AudioService
 {
     private readonly IAudioService _audioService;
     private readonly IMemoryCache _cache;
-    private readonly LocalizationService _localization;
-    private readonly YouTubeService _youtubeService;
+    private readonly SearchResource.ListRequest? _searchRequest;
 
     public AudioService(
         IAudioService audioService,
         YouTubeService youtubeService,
         DiscordShardedClient client,
         IMemoryCache cache,
-        LocalizationService localizationService,
         InactivityTrackingService trackingService
     )
     {
         _audioService = audioService;
         _audioService.TrackEnd += OnTrackEnd;
-        _youtubeService = youtubeService;
         _cache = cache;
-        _localization = localizationService;
+        _searchRequest = youtubeService.Search.List("snippet");
+        _searchRequest.MaxResults = 1;
+        _searchRequest.Type = "video";
         client.MessageReceived += ListenForSongRequests;
         foreach (var node in ((LavalinkCluster) _audioService).Nodes) node.UseSponsorBlock();
 
-        Task.Run(async () => await audioService.InitializeAsync());
         trackingService.BeginTracking();
     }
 
@@ -52,10 +50,10 @@ public class AudioService
         LavalinkTrack track
     )
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
         await player.PlayAsync(track).ConfigureAwait(false);
         player.AppendAction(
-            _localization
+            _cache
                 .GetMessage(_cache.GetLangKey(guildId), "track_added")
                 .FormatWithTimestamp(user.Mention, track.ToHyperLink())
         );
@@ -71,12 +69,12 @@ public class AudioService
         LavalinkTrack[] tracks
     )
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
 
         await player.PlayAsync(tracks[0]).ConfigureAwait(false);
         player.Queue.AddRange(tracks[1..]);
         player.AppendAction(
-            _localization
+            _cache
                 .GetMessage(_cache.GetLangKey(guildId), "player_playlist_added")
                 .FormatWithTimestamp(user.Mention, tracks.Length)
         );
@@ -88,8 +86,18 @@ public class AudioService
 
     public async Task SkipAsync(ulong guildId, IUser user)
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
+
+        if (player.Queue.Count == 0 && player.IsAutoPlay)
+        {
+            var next = await GetRelatedTrack(player.CurrentTrack!.TrackIdentifier, user).ConfigureAwait(false);
+            next!.Context = user;
+            await player.PlayAsync(next, false).ConfigureAwait(false);
+            await UpdateMessageAsync(player).ConfigureAwait(false);
+            return;
+        }
+        
         if (player.RequestedBy.Id != user.Id)
         {
             var result = await player.VoteAsync(user.Id).ConfigureAwait(false);
@@ -99,7 +107,7 @@ public class AudioService
             if (!result.WasSkipped)
             {
                 player.AppendAction(
-                    _localization
+                    _cache
                         .GetMessage(lang, "player_voteskip")
                         .FormatWithTimestamp(user.Mention, player.VoteSkipRequired)
                 );
@@ -108,7 +116,7 @@ public class AudioService
             }
 
             player.AppendAction(
-                _localization
+                _cache
                     .GetMessage(lang, "player_voteskipped")
                     .FormatWithTimestamp(player.CurrentTrack!.ToHyperLink())
             );
@@ -118,7 +126,7 @@ public class AudioService
 
         await player.SkipAsync().ConfigureAwait(false);
         player.AppendAction(
-            _localization
+            _cache
                 .GetMessage(lang, "player_skip")
                 .FormatWithTimestamp(user.Mention, player.CurrentTrack!.ToHyperLink())
         );
@@ -127,14 +135,14 @@ public class AudioService
 
     public async Task RewindAsync(ulong guildId, IUser user)
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
         if (player.History.Count == 0)
             return;
         var track = player.History[^1];
         player.History.Remove(track);
         player.AppendAction(
-            _localization.GetMessage(lang, "player_previous").FormatWithTimestamp(user.Mention)
+            _cache.GetMessage(lang, "player_previous").FormatWithTimestamp(user.Mention)
         );
         await player.PlayAsync(track);
         await UpdateMessageAsync(player);
@@ -142,7 +150,7 @@ public class AudioService
 
     public async Task PauseOrResumeAsync(ulong guildId, IUser user)
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
         switch (player.State)
         {
@@ -150,7 +158,7 @@ public class AudioService
             {
                 await player.PauseAsync().ConfigureAwait(false);
                 player.AppendAction(
-                    _localization.GetMessage(lang, "player_pause").FormatWithTimestamp(user.Mention)
+                    _cache.GetMessage(lang, "player_pause").FormatWithTimestamp(user.Mention)
                 );
                 await UpdateMessageAsync(player).ConfigureAwait(false);
                 break;
@@ -159,7 +167,7 @@ public class AudioService
             {
                 await player.ResumeAsync().ConfigureAwait(false);
                 player.AppendAction(
-                    _localization
+                    _cache
                         .GetMessage(lang, "player_resume")
                         .FormatWithTimestamp(user.Mention)
                 );
@@ -171,19 +179,19 @@ public class AudioService
 
     public async Task SetFilterAsync(ulong guildId, IUser user, FilterType filterType)
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
         if (filterType is not FilterType.None)
             player.Filters.Clear();
         player.Filters.ApplyFilter(filterType);
         await player.Filters.CommitAsync().ConfigureAwait(false);
 
-        player.CurrentFilter = _localization.GetMessage(
+        player.CurrentFilter = _cache.GetMessage(
             lang,
             $"filter_{filterType.ToString().ToLower()}"
         );
         player.AppendAction(
-            _localization
+            _cache
                 .GetMessage(lang, "set_filter")
                 .FormatWithTimestamp(user.Mention, player.CurrentFilter)
         );
@@ -192,11 +200,11 @@ public class AudioService
 
     public async Task<int> SetVolumeAsync(ulong guildId, IUser user, float volume)
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
         await player.SetVolumeAsync(volume).ConfigureAwait(false);
         player.AppendAction(
-            _localization
+            _cache
                 .GetMessage(lang, "player_volume")
                 .FormatWithTimestamp(user.Mention, (int) (volume * 100))
         );
@@ -206,11 +214,11 @@ public class AudioService
 
     public async Task<int> ClearQueueAsync(ulong guildId, IUser user)
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
         var cleared = player.Queue.Clear();
         player.AppendAction(
-            _localization.GetMessage(lang, "player_queue_cleared").FormatWithTimestamp(user.Mention)
+            _cache.GetMessage(lang, "player_queue_cleared").FormatWithTimestamp(user.Mention)
         );
         await UpdateMessageAsync(player).ConfigureAwait(false);
         return cleared;
@@ -218,12 +226,11 @@ public class AudioService
 
     public Task ToggleLoopAsync(ulong guildId, IUser user)
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
-        player.IsLooping = !player.IsLooping;
-        player.IsAutoPlay = false;
+        player.ToggleLoop();
         player.AppendAction(
-            _localization
+            _cache
                 .GetMessage(lang, player.IsLooping ? "player_loop_enabled" : "player_loop_disabled")
                 .FormatWithTimestamp(user.Mention)
         );
@@ -232,12 +239,11 @@ public class AudioService
 
     public Task ToggleAutoPlayAsync(ulong guildId, IUser user)
     {
-        var player = GetPlayer(guildId);
+        var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
-        player.IsAutoPlay = !player.IsAutoPlay;
-        player.IsLooping = false;
+        player.ToggleAutoPlay();
         player.AppendAction(
-            _localization
+            _cache
                 .GetMessage(
                     lang,
                     player.IsAutoPlay ? "player_autoplay_enabled" : "player_autoplay_disabled"
@@ -252,7 +258,7 @@ public class AudioService
         var channel = player.TextChannel;
         var messageId = player.MessageId;
 
-        var message = await channel.GetMessageAsync(messageId.Value).ConfigureAwait(false);
+        var message = await channel.GetMessageAsync(messageId.GetValueOrDefault()).ConfigureAwait(false);
         if (message is not IUserMessage userMessage)
             userMessage = await channel
                 .SendMessageAsync(embed: GetEmbed(player), components: GetComponents(player))
@@ -271,13 +277,14 @@ public class AudioService
 
     private Embed GetEmbed(DiscordancePlayer player)
     {
-        var lang = _cache.GetLangKey(player.GuildId);
-        var isAnon = _cache.GetGuildConfig(player.GuildId).Music.ShowRequester;
+        var config = _cache.GetGuildConfig(player.GuildId);
+        var lang = config.Language;
+        var isAnon = config.Music.IsAnonymous;
         var track = player.CurrentTrack;
         var requester = (IUser) track!.Context!;
         return new EmbedBuilder()
             .WithAuthor(
-                _localization.GetMessage(lang, "now_playing"),
+                _cache.GetMessage(lang, "now_playing"),
                 "https://bestanimations.com/media/discs/895872755cd-animated-gif-9.gif"
             )
             .WithTitle(track.Title)
@@ -286,24 +293,24 @@ public class AudioService
             .WithImageUrl($"https://img.youtube.com/vi/{track.TrackIdentifier}/maxresdefault.jpg")
             .WithColor(new Color(31, 31, 31))
             .AddField(
-                _localization.GetMessage(lang, "added_by"),
+                _cache.GetMessage(lang, "added_by"),
                 isAnon ? requester.Mention : "`Anonymous`",
                 true
             )
-            .AddField(_localization.GetMessage(lang, "channel"), player.VoiceChannel.Mention, true)
+            .AddField(_cache.GetMessage(lang, "channel"), player.VoiceChannel.Mention, true)
             .AddField(
-                _localization.GetMessage(lang, "length"),
+                _cache.GetMessage(lang, "length"),
                 $"`{track.Duration.ToTimeString()}`",
                 true
             )
             .AddField(
-                _localization.GetMessage(lang, "volume"),
-                $"`{Math.Round(player.Volume * 100).ToString()}%`",
+                _cache.GetMessage(lang, "volume"),
+                $"`{Math.Round(player.Volume * 100).ToString(CultureInfo.InvariantCulture)}%`",
                 true
             )
-            .AddField(_localization.GetMessage(lang, "filter"), $"`{player.CurrentFilter}`", true)
+            .AddField(_cache.GetMessage(lang, "filter"), $"`{player.CurrentFilter}`", true)
             .AddField(
-                _localization.GetMessage(lang, "in_queue"),
+                _cache.GetMessage(lang, "in_queue"),
                 $"`{player.Queue.Count.ToString()}`",
                 true
             )
@@ -316,7 +323,7 @@ public class AudioService
         var state = player.State;
         return new ComponentBuilder()
             .WithButton(
-                _localization.GetMessage(lang, "back"),
+                _cache.GetMessage(lang, "back"),
                 "previous",
                 emote: new Emoji("⏮"),
                 disabled: player.History.Count == 0,
@@ -324,29 +331,29 @@ public class AudioService
             )
             .WithButton(
                 state == PlayerState.Paused
-                    ? _localization.GetMessage(lang, "resume")
-                    : _localization.GetMessage(lang, "pause"),
+                    ? _cache.GetMessage(lang, "resume")
+                    : _cache.GetMessage(lang, "pause"),
                 "pause",
                 emote: state == PlayerState.Paused ? new Emoji("▶") : new Emoji("⏸"),
                 row: 0
             )
             .WithButton(
-                _localization.GetMessage(lang, "stop"),
+                _cache.GetMessage(lang, "stop"),
                 "stop",
                 emote: new Emoji("⏹"),
                 row: 0
             )
             .WithButton(
-                _localization
+                _cache
                     .GetMessage(lang, "skip")
                     .Format(player.VoteSkipCount, player.VoteSkipRequired),
                 "next",
                 emote: new Emoji("⏭"),
-                disabled: player.Queue.Count == 0,
+                disabled: player.Queue.Count == 0 && !player.IsAutoPlay,
                 row: 0
             )
             .WithButton(
-                _localization.GetMessage(lang, "volume_down"),
+                _cache.GetMessage(lang, "volume_down"),
                 "volumedown",
                 emote: new Emoji("🔉"),
                 row: 1,
@@ -354,110 +361,110 @@ public class AudioService
             )
             .WithButton(
                 player.IsAutoPlay
-                    ? _localization.GetMessage(lang, "autoplay_on")
-                    : _localization.GetMessage(lang, "autoplay_off"),
+                    ? _cache.GetMessage(lang, "autoplay_on")
+                    : _cache.GetMessage(lang, "autoplay_off"),
                 "autoplay",
                 emote: new Emoji("🔎"),
                 row: 1
             )
             .WithButton(
                 player.IsLooping
-                    ? _localization.GetMessage(lang, "loop_on")
-                    : _localization.GetMessage(lang, "loop_off"),
+                    ? _cache.GetMessage(lang, "loop_on")
+                    : _cache.GetMessage(lang, "loop_off"),
                 "repeat",
                 emote: new Emoji("🔁"),
                 row: 1
             )
             .WithButton(
-                _localization.GetMessage(lang, "volume_up"),
+                _cache.GetMessage(lang, "volume_up"),
                 "volumeup",
                 emote: new Emoji("🔊"),
                 row: 1,
-                disabled: player.Volume == 1.0f
+                disabled: Math.Abs(player.Volume - 1.0f) < 0.01f
             )
             .WithSelectMenu(
                 new SelectMenuBuilder()
-                    .WithPlaceholder(_localization.GetMessage(lang, "filter_select"))
+                    .WithPlaceholder(_cache.GetMessage(lang, "filter_select"))
                     .WithCustomId("filterselectmenu")
                     .WithMinValues(1)
                     .WithMaxValues(1)
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_none"),
+                        _cache.GetMessage(lang, "filter_none"),
                         "None",
                         emote: new Emoji("🗑️")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_bassboost"),
+                        _cache.GetMessage(lang, "filter_bassboost"),
                         "Bassboost",
                         emote: new Emoji("🤔")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_pop"),
+                        _cache.GetMessage(lang, "filter_pop"),
                         "Pop",
                         emote: new Emoji("🎸")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_soft"),
+                        _cache.GetMessage(lang, "filter_soft"),
                         "Soft",
                         emote: new Emoji("✨")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_treblebass"),
+                        _cache.GetMessage(lang, "filter_treblebass"),
                         "Treblebass",
                         emote: new Emoji("🔊")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_nightcore"),
+                        _cache.GetMessage(lang, "filter_nightcore"),
                         "Nightcore",
                         emote: new Emoji("🌃")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_8d"),
+                        _cache.GetMessage(lang, "filter_8d"),
                         "Eightd",
                         emote: new Emoji("🎧")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_chinese"),
+                        _cache.GetMessage(lang, "filter_chinese"),
                         "China",
                         emote: new Emoji("🍊")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_vaporwave"),
+                        _cache.GetMessage(lang, "filter_vaporwave"),
                         "Vaporwave",
                         emote: new Emoji("💦")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_speed_up"),
+                        _cache.GetMessage(lang, "filter_speed_up"),
                         "Doubletime",
                         emote: new Emoji("⏫")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_speed_down"),
+                        _cache.GetMessage(lang, "filter_speed_down"),
                         "Slowmotion",
                         emote: new Emoji("⏬")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_chipmunk"),
+                        _cache.GetMessage(lang, "filter_chipmunk"),
                         "Chipmunk",
                         emote: new Emoji("🐿")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_darthvader"),
+                        _cache.GetMessage(lang, "filter_darthvader"),
                         "Darthvader",
                         emote: new Emoji("🤖")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_dance"),
+                        _cache.GetMessage(lang, "filter_dance"),
                         "Dance",
                         emote: new Emoji("🕺")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_vibrato"),
+                        _cache.GetMessage(lang, "filter_vibrato"),
                         "Vibrato",
                         emote: new Emoji("🕸")
                     )
                     .AddOption(
-                        _localization.GetMessage(lang, "filter_tremolo"),
+                        _cache.GetMessage(lang, "filter_tremolo"),
                         "Tremolo",
                         emote: new Emoji("📳")
                     ),
@@ -473,6 +480,7 @@ public class AudioService
             || message.Author.IsBot
             || message.Author.IsWebhook
             || message.Author is not SocketGuildUser user
+            || user.VoiceChannel is null
             || message.Channel is not SocketTextChannel channel
         )
             return;
@@ -480,13 +488,10 @@ public class AudioService
         var guild = channel.Guild;
         var config = _cache.GetGuildConfig(guild.Id).Music;
 
-        if (user.VoiceChannel is null)
-            return;
-
         if (config.RequestChannelId is null)
             return;
 
-        if (message.Channel.Id != config.RequestChannelId)
+        if (channel.Id != config.RequestChannelId)
             return;
 
         var (player, _) = await GetOrCreatePlayerAsync(guild.Id, user.VoiceChannel, channel)
@@ -501,15 +506,15 @@ public class AudioService
         await message.DeleteAsync().ConfigureAwait(false);
         if (player.TextChannel.Id != config.RequestChannelId)
         {
-            /*await player.Message.DeleteAsync().ConfigureAwait(false);
+            //await player.Message.DeleteAsync().ConfigureAwait(false);
             player.SetMessage(
                 await channel
                     .SendMessageAsync(
-                        embed: player.GetNowPlayingEmbed(track),
-                        components: player.GetMessageComponents()
+                        embed: GetEmbed(player),
+                        components: GetComponents(player)
                     )
                     .ConfigureAwait(false)
-            );*/
+            );
         }
 
         if (tracks.Length > 1 && config.PlaylistAllowed)
@@ -542,19 +547,16 @@ public class AudioService
 
         if (player.IsAutoPlay)
         {
-            var next = await GetRelatedVideoId(player.CurrentTrack!.TrackIdentifier)
-                .ConfigureAwait(false);
-
-            var track = await _audioService
-                .GetTrackAsync($"https://www.youtube.com/watch?v={next}")
-                .ConfigureAwait(false);
-            track!.Context = previous.Context;
-            await player.PlayAsync(track, false).ConfigureAwait(false);
-            await UpdateMessageAsync(player).ConfigureAwait(false);
-            return;
+            var track = await GetRelatedTrack(previous.TrackIdentifier, (IUser)previous.Context!).ConfigureAwait(false);
+            if (track is not null)
+            {
+                await player.PlayAsync(track, false).ConfigureAwait(false);
+                await UpdateMessageAsync(player).ConfigureAwait(false);
+                return;
+            }
         }
 
-        var message = (IUserMessage) await player.TextChannel!
+        var message = (IUserMessage) await player.TextChannel
             .GetMessageAsync(player.MessageId!.Value)
             .ConfigureAwait(false);
 
@@ -564,12 +566,9 @@ public class AudioService
                 {
                     x.Embed = new EmbedBuilder()
                         .WithDescription(
-                            _localization.GetMessage(
-                                _cache.GetLangKey(player.GuildId),
-                                "player_waiting"
-                            )
+                            _cache.GetMessage(player.GuildId, "player_waiting")
                         )
-                        .WithColor(Color.Orange)
+                        .WithColor(new Color(31, 31, 31))
                         .Build();
                     x.Components = new ComponentBuilder().Build();
                 }
@@ -583,15 +582,16 @@ public class AudioService
         return player is not null;
     }
 
-    public async Task<(DiscordancePlayer, bool)> GetOrCreatePlayerAsync(
+    public async Task<(DiscordancePlayer player, bool isNew)> GetOrCreatePlayerAsync(
         ulong guildId,
         IVoiceChannel voiceChannel,
         ITextChannel textChannel
     )
     {
         var config = _cache.GetGuildConfig(guildId);
-        if (_audioService.GetPlayer<DiscordancePlayer>(guildId) is { } player)
+        if (GetPlayer(guildId) is { } player)
             return (player, false);
+        
         player = await _audioService
             .JoinAsync(
                 () => new DiscordancePlayer(voiceChannel, textChannel),
@@ -599,25 +599,33 @@ public class AudioService
                 voiceChannel.Id
             )
             .ConfigureAwait(false);
-        if (config.Music.UseSponsorBlock)
-            player.GetCategories().Add(SegmentCategory.OfftopicMusic);
+        //if (config.Music.UseSponsorBlock)
+        //    player.GetCategories().Add(SegmentCategory.OfftopicMusic);
         if (config.Music.DefaultVolume != 100)
             await player.SetVolumeAsync(config.Music.DefaultVolume).ConfigureAwait(false);
         return (player, true);
     }
 
-    public DiscordancePlayer GetPlayer(ulong guildId)
+    public DiscordancePlayer? GetPlayer(ulong guildId)
     {
-        return _audioService.GetPlayer<DiscordancePlayer>(guildId)!;
+        return _audioService.GetPlayer<DiscordancePlayer>(guildId);
     }
 
+    private async Task<LavalinkTrack?> GetRelatedTrack(string videoId, IUser user)
+    {
+        var relatedVideoId = await GetRelatedVideoId(videoId).ConfigureAwait(false);
+        var track = await _audioService
+            .GetTrackAsync($"https://www.youtube.com/watch?v={relatedVideoId}")
+            .ConfigureAwait(false);
+        if (track is not null)
+            track.Context = user;
+        return track;
+    }
+    
     private async Task<string> GetRelatedVideoId(string videoId)
     {
-        var searchListRequest = _youtubeService.Search.List("snippet");
-        searchListRequest.RelatedToVideoId = videoId;
-        searchListRequest.Type = "video";
-        searchListRequest.MaxResults = 10;
-        var result = await searchListRequest.ExecuteAsync().ConfigureAwait(false);
+        _searchRequest!.RelatedToVideoId = videoId;
+        var result = await _searchRequest.ExecuteAsync().ConfigureAwait(false);
         return result.Items.First(x => x.Snippet is not null).Id.VideoId;
     }
 

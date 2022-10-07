@@ -1,36 +1,48 @@
-<img src="https://loathsome-condition.000webhostapp.com/logo-full.png" style="border-radius: 10px; margin-bottom: 25px;" width="50%">
+# Discordance
 
 [![Discord](https://discordapp.com/api/guilds/863751874922676234/widget.png)](https://discord.gg/hGxaMkfMBR)
 [![License](https://img.shields.io/github/license/kmen1/kbot)](https://github.com/KMen1/KBot/blob/master/LICENSE)
-[![CodeFactor](https://www.codefactor.io/repository/github/kmen1/kbot/badge)](https://www.codefactor.io/repository/github/kmen1/kbot)
+[![CodeFactor](https://www.codefactor.io/repository/github/kmen1/discordance/badge)](https://www.codefactor.io/repository/github/kmen1/discordance)
 ![Build](https://github.com/KMen1/KBot/actions/workflows/build.yml/badge.svg)
 
-A feature-rich discord bot that aims to integrate the funcionality of other popular bots into one.
+A discord music bot with every premium feature, all for completely free. (Plus extra)
 
-## Features
-   * Sends messages when user joins, leaves, gets banned or unbanned
-   * Leveling system that has text and voice support
-   * Music Player with fast loading times, autoplay, 15 filters and much more
-   * Moderation system with logging, warns, appeals and other stuff
-   * Commands for osu! and Dead By Daylight
-   * Gambling System with 5 games 
-        * BlackJack
-        * Crash
-        * Higher/Lower
-        * Mines (based on Roobet's Mines)
-        * Towers (based on Roobet's Towers)
-   * Weekly notification about the current free game in the Epic Games Store
-   * Suggestion system similar to the one found in Carl bot
-   * Self assignable roles using buttons
-   * Reddit commands
-   * Completely customizable
+## Interactive Player
+
+Discordance aims to let users have full control over the player without typing a single command. Everything important can be controlled right from the now playing message
+
+## User Restrictions
+
+Discordance offers two control modes: Exclusive and DJ
+
+- With exclusive mode toggled on the player can only be controlled by the user who added the currently playing song.
+- With DJ mode toggled on only users who have at least one of the five configurable DJ roles can control the player.
+
+## Channel restrictions
+
+You can set, up to 25 different voice channels as allowed channels. The bot will refuse to start playing in a channel that is not whitelisted.<br>
+No need for a seperate song request channel, just set it to a voice channel you want to use as a music channel.
+
+## Non-music related features
+
+- Join, leave, ban and unban announcements
+- Basic osu! and Dead By Daylight information
+- Weekly notification about the current free game on the Epic Store
+- Five available gambling games (BlackJack, Higher Lower, Crash, Mines, Towers)
+- Commands for osu! and Dead By Daylight
+
+## Multi language - Feel free to contribute
+
+<img src="https://images.emojiterra.com/twitter/512px/1f1fa-1f1f8.png" width="100px"> <img src="https://images.emojiterra.com/twitter/v13.1/512px/1f1ed-1f1fa.png" width="100px">
 
 ## Built with
-   * [Lavalink](https://github.com/freyacodes/Lavalink)
-   * [Discord.NET](https://github.com/discord-net/Discord.Net)
-   * [Lavalink4NET](https://github.com/angelobreuer/Lavalink4NET)
-   * [MongoDB](https://github.com/mongodb/mongo-csharp-driver)
-   * [OsuSharp](https://github.com/Kiritsu/OsuSharp)
+
+- [Lavalink](https://github.com/freyacodes/Lavalink)
+- [Discord.NET](https://github.com/discord-net/Discord.Net)
+- [Lavalink4NET](https://github.com/angelobreuer/Lavalink4NET)
+- [MongoDB](https://github.com/mongodb/mongo-csharp-driver)
+- [OsuSharp](https://github.com/Kiritsu/OsuSharp)
 
 ## License
-   * See [LICENSE](https://github.com/KMen1/KBot/blob/master/LICENSE)
+
+- See [LICENSE](https://github.com/KMen1/KBot/blob/master/LICENSE)

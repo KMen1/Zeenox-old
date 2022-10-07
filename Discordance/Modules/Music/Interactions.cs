@@ -31,6 +31,8 @@ public class Interactions : MusicBase
         await DeferAsync().ConfigureAwait(false);
         var player = GetPlayer();
         await player.StopAsync().ConfigureAwait(false);
+        player.IsAutoPlay = false;
+        player.IsLooping = false;
     }
 
     [ComponentInteraction("volumeup")]
@@ -38,17 +40,7 @@ public class Interactions : MusicBase
     {
         await DeferAsync().ConfigureAwait(false);
         var player = GetPlayer();
-        var newVolume = await SetVolumeAsync(player.Volume + 10 / 100f).ConfigureAwait(false);
-        await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithDescription(
-                        $"**Volume set to {newVolume.ToString(CultureInfo.InvariantCulture)}**"
-                    )
-                    .WithColor(Color.Green)
-                    .Build(),
-                ephemeral: true
-            )
-            .ConfigureAwait(false);
+        await SetVolumeAsync(player.Volume + 10 / 100f).ConfigureAwait(false);
     }
 
     [ComponentInteraction("volumedown")]
@@ -56,17 +48,7 @@ public class Interactions : MusicBase
     {
         await DeferAsync().ConfigureAwait(false);
         var player = GetPlayer();
-        var newVolume = await SetVolumeAsync(player.Volume - 10 / 100f).ConfigureAwait(false);
-        await FollowupAsync(
-                embed: new EmbedBuilder()
-                    .WithDescription(
-                        $"**Volume set to {newVolume.ToString(CultureInfo.InvariantCulture)}**"
-                    )
-                    .WithColor(Color.Green)
-                    .Build(),
-                ephemeral: true
-            )
-            .ConfigureAwait(false);
+        await SetVolumeAsync(player.Volume - 10 / 100f).ConfigureAwait(false);
     }
 
     [ComponentInteraction("pause")]

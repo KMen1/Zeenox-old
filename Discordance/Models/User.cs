@@ -16,7 +16,6 @@ public class User
         Losses = 0;
         MoneyWon = 0;
         MoneyLost = 0;
-        GuildDatas = new Dictionary<ulong, GuildData>();
     }
 
     [BsonId] public ulong Id { get; set; }
@@ -28,7 +27,7 @@ public class User
     public int Losses { get; set; }
     public int MoneyWon { get; set; }
     public int MoneyLost { get; set; }
-    public Dictionary<ulong, GuildData> GuildDatas { get; set; }
+    public List<string> FavoriteTracks { get; set; }
 
     [BsonIgnore] public int GamesPlayed => Wins + Losses;
 

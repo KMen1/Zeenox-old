@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace Discordance.Models;
 
@@ -15,7 +16,7 @@ public class MusicConfig
         AllowedVoiceChannels = new List<ulong>();
         DefaultVolume = 100;
         PlaylistAllowed = true;
-        ShowRequester = true;
+        IsAnonymous = true;
         LengthLimit = TimeSpan.Zero;
     }
 
@@ -27,6 +28,7 @@ public class MusicConfig
     public List<ulong> AllowedVoiceChannels { get; set; }
     public int DefaultVolume { get; set; }
     public bool PlaylistAllowed { get; set; }
-    public bool ShowRequester { get; set; }
+    [BsonElement("ShowRequester")]
+    public bool IsAnonymous { get; set; }
     public TimeSpan LengthLimit { get; set; }
 }
