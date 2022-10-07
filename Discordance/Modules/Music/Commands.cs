@@ -5,7 +5,6 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Discordance.Autocompletes;
-using Discordance.Extensions;
 using Discordance.Preconditions;
 
 namespace Discordance.Modules.Music;
@@ -55,8 +54,7 @@ public class Commands : MusicBase
             {
                 var (embed, components) = await PlayAsync(tracks).ConfigureAwait(false);
 
-                var msg = await Context.Channel
-                    .SendMessageAsync(embed: embed, components: components)
+                var msg = await ReplyAsync(embed: embed, components: components)
                     .ConfigureAwait(false);
                 player.SetMessage(msg);
                 await FollowupAsync(embed: GetLocalizedEmbed("player_started", Color.Green)).ConfigureAwait(false);
@@ -65,8 +63,7 @@ public class Commands : MusicBase
             case false:
             {
                 var (embed, components) = await PlayAsync(tracks[0]).ConfigureAwait(false);
-                var msg = await Context.Channel
-                    .SendMessageAsync(embed: embed, components: components)
+                var msg = await ReplyAsync(embed: embed, components: components)
                     .ConfigureAwait(false);
                 player.SetMessage(msg);
                 await FollowupAsync(embed: GetLocalizedEmbed("player_started", Color.Green)).ConfigureAwait(false);
@@ -97,8 +94,8 @@ public class Commands : MusicBase
     [SlashCommand("search", "Searches for a song on Youtube")]
     public async Task SearchSongAsync([Summary("query", "Title of the song (does not accept urls)")] string query)
     {
-        await DeferAsync().ConfigureAwait(false);
-        var tracks = await SearchAsync(query).ConfigureAwait(false);
+        await DeferAsync(true).ConfigureAwait(false);
+        var tracks = await SearchAsync(query, 10).ConfigureAwait(false);
         if (tracks is null)
         {
             await FollowupAsync(embed: GetLocalizedEmbed("no_matches", Color.Red), ephemeral: true)
@@ -106,27 +103,26 @@ public class Commands : MusicBase
             return;
         }
 
-        var availableTracks = tracks.Take(10).ToList();
-
         var comp = new ComponentBuilder();
         var menu = new SelectMenuBuilder().WithCustomId("search").WithMinValues(1).WithMaxValues(1);
         var counter = 0;
-        foreach (var track in availableTracks)
+        foreach (var track in tracks)
         {
             var emoji = counter switch
             {
-                0 => "1️⃣",
-                1 => "2️⃣",
-                2 => "3️⃣",
-                3 => "4️⃣",
-                4 => "5️⃣",
-                5 => "6️⃣",
-                6 => "7️⃣",
-                7 => "8️⃣",
-                8 => "9️⃣",
-                9 => "🔟"
+                0 => new Emoji("1️⃣"),
+                1 => new Emoji("2️⃣"),
+                2 => new Emoji("3️⃣"),
+                3 => new Emoji("4️⃣"),
+                4 => new Emoji("5️⃣"),
+                5 => new Emoji("6️⃣"),
+                6 => new Emoji("7️⃣"),
+                7 => new Emoji("8️⃣"),
+                8 => new Emoji("9️⃣"),
+                9 => new Emoji("🔟"),
+                _ => new Emoji("❓")
             };
-            menu.AddOption($"{track.Title}", $"{track.TrackIdentifier}", emote: new Emoji(emoji));
+            menu.AddOption($"{track.Title}", $"{track.TrackIdentifier}", emote: emoji);
             counter++;
         }
 
@@ -141,30 +137,21 @@ public class Commands : MusicBase
     public async Task PlaySearchAsync(params string[] trackIdentifiers)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var msg = ((SocketMessageComponent)Context.Interaction).Message;
         var identifier = trackIdentifiers[0];
         var track = await AudioService
             .SearchAsync($"https://www.youtube.com/watch?v={identifier}", Context.User)
             .ConfigureAwait(false);
 
         var (player, isNew) = await GetOrCreatePlayerAsync().ConfigureAwait(false);
-
         if (isNew)
         {
             var (embed, components) = await PlayAsync(track![0]).ConfigureAwait(false);
-            await msg.ModifyAsync(x =>
-            {
-                x.Embed = embed;
-                x.Components = components;
-            }).ConfigureAwait(false);
+            var msg = await ReplyAsync(embed: embed, components: components).ConfigureAwait(false);
             player.SetMessage(msg);
-            await FollowupAsync(embed: GetLocalizedEmbed("player_started", Color.Green)).ConfigureAwait(false);
             return;
         }
 
         await PlayAsync(track![0]).ConfigureAwait(false);
-        await FollowupAsync(embed: GetLocalizedEmbed("added_to_queue", Color.Orange)).ConfigureAwait(false);
-        //await msg.DeleteAsync().ConfigureAwait(false);
     }
 
     [RequirePlayer]

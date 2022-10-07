@@ -26,7 +26,7 @@ public class RequireSongRequesterAttribute : PreconditionAttribute
         var service = services.GetRequiredService<AudioService>();
         var player = service.GetPlayer(context.Guild.Id);
 
-        return context.User.Id == player.RequestedBy.Id
+        return context.User.Id == player!.RequestedBy.Id
             ? Task.FromResult(PreconditionResult.FromSuccess())
             : Task.FromResult(PreconditionResult.FromError("You must be the song requester to perform this action."));
     }

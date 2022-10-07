@@ -23,14 +23,14 @@ public class AudioService
     private readonly IAudioService _audioService;
     private readonly IMemoryCache _cache;
     private readonly SearchResource.ListRequest? _searchRequest;
+    private readonly Random _random;
 
     public AudioService(
         IAudioService audioService,
         YouTubeService youtubeService,
         DiscordShardedClient client,
         IMemoryCache cache,
-        InactivityTrackingService trackingService
-    )
+        InactivityTrackingService trackingService)
     {
         _audioService = audioService;
         _audioService.TrackEnd += OnTrackEnd;
@@ -38,6 +38,7 @@ public class AudioService
         _searchRequest = youtubeService.Search.List("snippet");
         _searchRequest.MaxResults = 1;
         _searchRequest.Type = "video";
+        _random = new Random();
         client.MessageReceived += ListenForSongRequests;
         foreach (var node in ((LavalinkCluster) _audioService).Nodes) node.UseSponsorBlock();
 
@@ -626,10 +627,11 @@ public class AudioService
     {
         _searchRequest!.RelatedToVideoId = videoId;
         var result = await _searchRequest.ExecuteAsync().ConfigureAwait(false);
-        return result.Items.First(x => x.Snippet is not null).Id.VideoId;
+        var availableVideos = result.Items.Where(x => x.Snippet is not null).ToList();
+        return availableVideos[_random.Next(availableVideos.Count)].Id.VideoId;
     }
 
-    public async Task<LavalinkTrack[]?> SearchAsync(string query, IUser user)
+    public async Task<LavalinkTrack[]?> SearchAsync(string query, IUser user, int limit = 1)
     {
         var results = Uri.IsWellFormedUriString(query, UriKind.Absolute)
             ? await _audioService.LoadTracksAsync(query).ConfigureAwait(false)
@@ -641,6 +643,6 @@ public class AudioService
         foreach (var track in tracks)
             track.Context = user;
 
-        return results.PlaylistInfo?.Name is not null ? tracks : new[] {tracks[0]};
+        return results.PlaylistInfo?.Name is not null ? tracks : tracks.Take(limit).ToArray();
     }
 }

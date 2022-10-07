@@ -16,6 +16,7 @@ public class User
         Losses = 0;
         MoneyWon = 0;
         MoneyLost = 0;
+        FavoriteTracks = new List<string>();
     }
 
     [BsonId] public ulong Id { get; set; }

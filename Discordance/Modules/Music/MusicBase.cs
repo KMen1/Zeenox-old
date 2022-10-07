@@ -23,9 +23,9 @@ public class MusicBase : ModuleBase
         return Cache.GetGuildConfig(Context.Guild.Id).Music;
     }
 
-    protected Task<LavalinkTrack[]?> SearchAsync(string query)
+    protected Task<LavalinkTrack[]?> SearchAsync(string query, int limit = 1)
     {
-        return AudioService.SearchAsync(query, Context.User);
+        return AudioService.SearchAsync(query, Context.User, limit);
     }
 
     protected Task<(DiscordancePlayer, bool)> GetOrCreatePlayerAsync()
