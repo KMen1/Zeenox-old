@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Globalization;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Interactions;
 using Discordance.Enums;
 using Discordance.Preconditions;
@@ -9,11 +7,12 @@ using Discordance.Preconditions;
 namespace Discordance.Modules.Music;
 
 [RequirePlayer]
-[RequireSameVoice]
+[RequireVoice]
 [RequireDjRole]
-[RequireSongRequester]
 public class Interactions : MusicBase
 {
+    
+    [RequireSongRequester]
     [ComponentInteraction("filterselectmenu")]
     public async Task ApplyFilterAsync(params string[] selections)
     {
@@ -25,6 +24,7 @@ public class Interactions : MusicBase
         }
     }
 
+    [RequireSongRequester]
     [ComponentInteraction("stop")]
     public async Task StopPlayerAsync()
     {
@@ -35,6 +35,7 @@ public class Interactions : MusicBase
         player.IsLooping = false;
     }
 
+    [RequireSongRequester]
     [ComponentInteraction("volumeup")]
     public async Task IncreaseVolumeAsync()
     {
@@ -43,6 +44,7 @@ public class Interactions : MusicBase
         await SetVolumeAsync(player.Volume + 10 / 100f).ConfigureAwait(false);
     }
 
+    [RequireSongRequester]
     [ComponentInteraction("volumedown")]
     public async Task DecreaseVolumeAsync()
     {
@@ -51,6 +53,7 @@ public class Interactions : MusicBase
         await SetVolumeAsync(player.Volume - 10 / 100f).ConfigureAwait(false);
     }
 
+    [RequireSongRequester]
     [ComponentInteraction("pause")]
     public async Task PausePlayerAsync()
     {
@@ -65,6 +68,7 @@ public class Interactions : MusicBase
         await SkipAsync().ConfigureAwait(false);
     }
 
+    [RequireSongRequester]
     [ComponentInteraction("previous")]
     public async Task PlayPreviousAsync()
     {
@@ -72,6 +76,7 @@ public class Interactions : MusicBase
         await RewindAsync().ConfigureAwait(false);
     }
 
+    [RequireSongRequester]
     [ComponentInteraction("repeat")]
     public async Task ToggleRepeatAsync()
     {
@@ -79,6 +84,7 @@ public class Interactions : MusicBase
         await ToggleLoopAsync().ConfigureAwait(false);
     }
 
+    [RequireSongRequester]
     [ComponentInteraction("autoplay")]
     public async Task ToggleAutoplayAsync()
     {

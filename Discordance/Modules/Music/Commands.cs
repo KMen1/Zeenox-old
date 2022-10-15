@@ -6,12 +6,52 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Discordance.Autocompletes;
 using Discordance.Preconditions;
+using Lavalink4NET.Decoding;
 
 namespace Discordance.Modules.Music;
 
 public class Commands : MusicBase
 {
-    [RequireSameVoice]
+    [RequirePlayer]
+    [RequireVoice]
+    [SlashCommand("favorite", "Add a song to your favorites")]
+    public async Task FavoriteAsync()
+    {
+        await DeferAsync(true).ConfigureAwait(false);
+        var player = GetPlayer();
+
+        var track = player.CurrentTrack;
+
+        if (track is null)
+        {
+            await FollowupAsync("There is no song playing right now").ConfigureAwait(false);
+            return;
+        }
+
+        await UpdateUserAsync(x => x.FavoriteTracks.Add(track.Identifier)).ConfigureAwait(false);
+        await FollowupAsync("Added to favorites").ConfigureAwait(false);
+    }
+    
+    [RequirePlayer]
+    [RequireVoice]
+    [SlashCommand("play-favorites", "Plays your favorite songs")]
+    public async Task PlayFavoritesAsync()
+    {
+        await DeferAsync(true).ConfigureAwait(false);
+        var user = await GetUserAsync().ConfigureAwait(false);
+        if (user.FavoriteTracks.Count == 0)
+        {
+            await FollowupAsync("You don't have any favorite songs").ConfigureAwait(false);
+            return;
+        }
+
+        var tracks = user.FavoriteTracks.Select(TrackDecoder.DecodeTrack).ToArray();
+        await PlayAsync(tracks).ConfigureAwait(false);
+        await FollowupAsync("Playing favorites").ConfigureAwait(false);
+    }
+    
+
+    [RequireVoice]
     [RequireAllowedChannel]
     [RequireDjRole]
     [SlashCommand("play", "Plays a song")]
@@ -73,7 +113,7 @@ public class Commands : MusicBase
     }
 
     [RequirePlayer]
-    [RequireSameVoice]
+    [RequireVoice]
     [RequireDjRole]
     [SlashCommand("leave", "Leaves the voice channel the bot is in")]
     public async Task DisconnectPlayerAsync()
@@ -131,16 +171,14 @@ public class Commands : MusicBase
         await FollowupAsync(embed: GetLocalizedEmbed("select_song", Color.Green), components: comp.Build()).ConfigureAwait(false);
     }
 
-    [RequireSameVoice]
+    [RequireVoice]
     [RequireDjRole]
     [ComponentInteraction("search")]
     public async Task PlaySearchAsync(params string[] trackIdentifiers)
     {
         await DeferAsync(true).ConfigureAwait(false);
         var identifier = trackIdentifiers[0];
-        var track = await AudioService
-            .SearchAsync($"https://www.youtube.com/watch?v={identifier}", Context.User)
-            .ConfigureAwait(false);
+        var track = await SearchAsync($"https://www.youtube.com/watch?v={identifier}").ConfigureAwait(false);
 
         var (player, isNew) = await GetOrCreatePlayerAsync().ConfigureAwait(false);
         if (isNew)
@@ -155,7 +193,7 @@ public class Commands : MusicBase
     }
 
     [RequirePlayer]
-    [RequireSameVoice]
+    [RequireVoice]
     [RequireDjRole]
     [SlashCommand("volume", "Sets the volume")]
     public async Task ChangeVolumeAsync(
@@ -172,7 +210,7 @@ public class Commands : MusicBase
     }
 
     [RequirePlayer]
-    [RequireSameVoice]
+    [RequireVoice]
     [SlashCommand("queue", "Shows the current queue")]
     public async Task SendQueueAsync()
     {
@@ -196,7 +234,7 @@ public class Commands : MusicBase
     }
 
     [RequirePlayer]
-    [RequireSameVoice]
+    [RequireVoice]
     [RequireDjRole]
     [SlashCommand("clearqueue", "Clears the current queue")]
     public async Task ClearAsync()
@@ -228,8 +266,8 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("djonly", "If enabled, only users with a DJ role can control the player")]
-    public async Task ToggleDjOnlyAsync()
+    [SlashCommand("toggle-dj", "If enabled, only users with a DJ role can control the player")]
+    public async Task ToggleDjAsync()
     {
         await DeferAsync(true).ConfigureAwait(false);
         var config = await UpdateGuildConfigAsync(x => x.Music.DjOnly = !x.Music.DjOnly)
@@ -354,7 +392,7 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
     }
 
-    [SlashCommand("remove-allowed-channel", "Removes a DJ role")]
+    [SlashCommand("remove-allowed-channel", "Removes a channel from the list of allowed channels")]
     public async Task RemoveChannelAsync(
         [Summary("channel", "The channel you want to remove from the list of allowed channels")]
         [Autocomplete(typeof(AllowedChannelAutocompleteHandler))]

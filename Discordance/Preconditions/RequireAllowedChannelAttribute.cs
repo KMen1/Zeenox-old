@@ -17,15 +17,15 @@ public class RequireAllowedChannelAttribute : PreconditionAttribute
     )
     {
         var cache = services.GetRequiredService<IMemoryCache>();
-        var config = cache.GetGuildConfig(context.Guild.Id).Music;
+        var config = cache.GetGuildConfig(context.Guild.Id);
 
-        if (config.AllowedVoiceChannels.Count == 0)
+        if (config.Music.AllowedVoiceChannels.Count == 0)
             return Task.FromResult(PreconditionResult.FromSuccess());
 
-        return config.AllowedVoiceChannels.Contains(((IVoiceState) context.User).VoiceChannel.Id)
+        return config.Music.AllowedVoiceChannels.Contains(((IVoiceState) context.User).VoiceChannel.Id)
             ? Task.FromResult(PreconditionResult.FromSuccess())
             : Task.FromResult(
-                PreconditionResult.FromError("Please use a channel that is on the allowlist.")
+                PreconditionResult.FromError(cache.GetMessage(config.Language, "channel_not_allowed"))
             );
     }
 }

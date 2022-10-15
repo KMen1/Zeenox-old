@@ -2,7 +2,9 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using Discordance.Extensions;
 using Lavalink4NET;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
@@ -16,10 +18,11 @@ public class RequirePlayerAttribute : PreconditionAttribute
     )
     {
         var service = services.GetRequiredService<IAudioService>();
-
+        var cache = services.GetRequiredService<IMemoryCache>();
+        
         return Task.FromResult(
             !service.HasPlayer(context.Guild.Id)
-                ? PreconditionResult.FromError("I'm not connected!")
+                ? PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "no_player"))
                 : PreconditionResult.FromSuccess()
         );
     }

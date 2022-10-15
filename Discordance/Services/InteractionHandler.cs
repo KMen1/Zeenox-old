@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Discord.Addons.Hosting;
 using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Discordance.Extensions;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
@@ -62,77 +64,56 @@ public class InteractionHandler : DiscordShardedClientService
 
     private static async Task HandleComponentCommandResultAsync(
         ComponentCommandInfo componentInfo,
-        IInteractionContext interactionContext,
+        IInteractionContext context,
         IResult result
     )
     {
         if (result.IsSuccess)
             return;
-        EmbedBuilder eb;
-        if (result.Error == InteractionCommandError.UnmetPrecondition)
-        {
-            eb = new EmbedBuilder()
-                .WithDescription($"**{result.ErrorReason}**")
-                .WithColor(Color.Red);
-        }
-        else
-        {
-            eb = new EmbedBuilder()
-                .WithAuthor("Something went wrong", "https://i.ibb.co/SrZZggy/x.png")
-                .WithTitle("Please try again!")
-                .WithColor(Color.Red)
-#if DEBUG
-                .AddField("Exception", $"```{result.ErrorReason}```");
-#endif
-        }
 
-        var interaction = interactionContext.Interaction;
+        var reason = result.Error switch
+        {
+            InteractionCommandError.UnmetPrecondition => result.ErrorReason,
+            InteractionCommandError.UnknownCommand => "Unknown command, please restart your discord client",
+            _ => "Something went wrong, please try again!"
+        };
+
+        var interaction = context.Interaction;
 
         if (!interaction.HasResponded)
         {
-            await interaction.RespondAsync(embed: eb.Build(), ephemeral: true).ConfigureAwait(false);
+            await interaction.RespondAsync(embed: reason.ToEmbed(Color.Red), ephemeral: true).ConfigureAwait(false);
             return;
         }
 
-        await interaction.FollowupAsync(embed: eb.Build(), ephemeral: true).ConfigureAwait(false);
+        await interaction.FollowupAsync(embed: reason.ToEmbed(Color.Red), ephemeral: true).ConfigureAwait(false);
     }
 
     private static async Task HandleSlashCommandResultAsync(
         SlashCommandInfo commandInfo,
-        IInteractionContext interactionContext,
+        IInteractionContext context,
         IResult result
     )
     {
         if (result.IsSuccess)
             return;
 
-        EmbedBuilder eb;
-        if (result.Error == InteractionCommandError.UnmetPrecondition)
+        var reason = result.Error switch
         {
-            eb = new EmbedBuilder()
-                .WithDescription($"**{result.ErrorReason}**")
-                .WithColor(Color.Red);
-        }
-        else
-        {
-            eb = new EmbedBuilder()
-                .WithAuthor("Something went wrong", "https://i.ibb.co/SrZZggy/x.png")
-                .WithTitle("Please try again!")
-                .WithColor(Color.Red)
-#if DEBUG
-                .AddField("Exception", $"```{result.ErrorReason}```");
-#endif
-        }
+            InteractionCommandError.UnmetPrecondition => result.ErrorReason,
+            InteractionCommandError.UnknownCommand => "Unknown command, please restart your discord client",
+            _ => "Something went wrong, please try again!"
+        };
 
-        var interaction = interactionContext.Interaction;
+        var interaction = context.Interaction;
 
         if (!interaction.HasResponded)
         {
-            await interaction.RespondAsync(embed: eb.Build(), ephemeral: true).ConfigureAwait(false);
+            await interaction.RespondAsync(embed: reason.ToEmbed(Color.Red), ephemeral: true).ConfigureAwait(false);
             return;
         }
 
-        await interaction.FollowupAsync(embed: eb.Build(), ephemeral: true).ConfigureAwait(false);
+        await interaction.FollowupAsync(embed: reason.ToEmbed(Color.Red), ephemeral: true).ConfigureAwait(false);
     }
 
     private async Task HandleInteractionAsync(SocketInteraction interaction)

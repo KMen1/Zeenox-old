@@ -19,15 +19,15 @@ public class RequireDjRoleAttribute : PreconditionAttribute
     )
     {
         var cache = services.GetRequiredService<IMemoryCache>();
-        var config = cache.GetGuildConfig(context.Guild.Id).Music;
+        var config = cache.GetGuildConfig(context.Guild.Id);
 
-        if (!config.DjOnly)
+        if (!config.Music.DjOnly)
             return Task.FromResult(PreconditionResult.FromSuccess());
 
-        return config.DjRoleIds
+        return config.Music.DjRoleIds
             .Intersect(((SocketGuildUser) context.User).Roles.Select(r => r.Id))
             .Any()
             ? Task.FromResult(PreconditionResult.FromSuccess())
-            : Task.FromResult(PreconditionResult.FromError("This action requires a DJ role."));
+            : Task.FromResult(PreconditionResult.FromError(cache.GetMessage(config.Language, "action_requires_dj_role")));
     }
 }

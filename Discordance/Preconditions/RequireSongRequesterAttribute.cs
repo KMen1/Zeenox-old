@@ -18,9 +18,9 @@ public class RequireSongRequesterAttribute : PreconditionAttribute
     )
     {
         var cache = services.GetRequiredService<IMemoryCache>();
-        var config = cache.GetGuildConfig(context.Guild.Id).Music;
+        var config = cache.GetGuildConfig(context.Guild.Id);
 
-        if (!config.ExclusiveControl)
+        if (!config.Music.ExclusiveControl)
             return Task.FromResult(PreconditionResult.FromSuccess());
 
         var service = services.GetRequiredService<AudioService>();
@@ -28,6 +28,6 @@ public class RequireSongRequesterAttribute : PreconditionAttribute
 
         return context.User.Id == player!.RequestedBy.Id
             ? Task.FromResult(PreconditionResult.FromSuccess())
-            : Task.FromResult(PreconditionResult.FromError("You must be the song requester to perform this action."));
+            : Task.FromResult(PreconditionResult.FromError(cache.GetMessage(config.Language, "require_song_requester")));
     }
 }

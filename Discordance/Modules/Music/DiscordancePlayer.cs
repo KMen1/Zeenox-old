@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
+using Discord.WebSocket;
 using Lavalink4NET.Player;
+using MongoDB.Driver.Core.Operations;
 
 namespace Discordance.Modules.Music;
 
@@ -16,6 +18,8 @@ public class DiscordancePlayer : VoteLavalinkPlayer
         CurrentFilter = "None";
         History = new List<LavalinkTrack>();
         Actions = new List<string>();
+        VoteSkipRequired = (int) Math.Ceiling(((SocketGuild) voiceChannel.Guild)
+                                              .GetVoiceChannel(voiceChannel.Id).ConnectedUsers.Count * 0.5f);
     }
 
     public IVoiceChannel VoiceChannel { get; }
@@ -29,6 +33,8 @@ public class DiscordancePlayer : VoteLavalinkPlayer
     public List<string> Actions { get; }
     public int VoteSkipCount { get; private set; }
     public int VoteSkipRequired { get; private set; }
+    public TimeSpan? SponsorBlockSkipTime { get; set; }
+    public TimeSpan? LengthWithSponsorBlock => SponsorBlockSkipTime is null ? null : CurrentTrack!.Duration - SponsorBlockSkipTime;
 
     public void SetMessage(IUserMessage message)
     {
@@ -89,4 +95,13 @@ public class DiscordancePlayer : VoteLavalinkPlayer
 
         await base.OnTrackExceptionAsync(eventArgs).ConfigureAwait(false);
     }*/
+
+    protected override async ValueTask DisposeAsyncCore()
+    {
+        var msg = await TextChannel.GetMessageAsync(MessageId ?? 0).ConfigureAwait(false);
+        if (msg is not null)
+            await msg.DeleteAsync().ConfigureAwait(false);
+        
+        await base.DisposeAsyncCore();
+    }
 }

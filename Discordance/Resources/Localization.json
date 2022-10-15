@@ -322,5 +322,37 @@
   "songs_played_list": {
     "en": "Songs played in this party:",
     "hu": "Ebben a buliban játszott számok:"
+  },
+  "game_not_yours": {
+    "en": "This is not your game!!",
+    "hu": "Ez nem a te játékod!"
+  },
+  "user_not_playing": {
+    "en": "You are currently not playing!",
+    "hu": "Jelenleg nem vagy játékban!"
+  },
+  "channel_not_allowed": {
+    "en": "The channel you are in isn't on the allowlist!",
+    "hu": "A csatornában amiben vagy nincs az engedélyezett csatornák listáján!"
+  },
+  "action_requires_dj_role": {
+    "en": "This action requires a DJ role!",
+    "hu": "Ehhez a művelethez a DJ szerep szükséges!"
+  },
+  "no_player": {
+    "en": "Please start playing first!",
+    "hu": "Előbb indíts el egy zenét!"
+  },
+  "require_same_voice_channel": {
+    "en": "You must be in the same voice channel as me to perform this action!",
+    "hu": "Ehhez a művelethez ugyanabban a hangcsatornában kell lenned, mint én!"
+  },
+  "require_song_requester": {
+    "en": "You must be the song requester to perform this action!",
+    "hu": "Ehhez a művelethez a szám kérőjének kell lenned!"
+  },
+  "require_voice_channel": {
+    "en": "You must be in a voice channel to perform this action!",
+    "hu": "Ehhez a művelethez hangcsatornában kell lenned!"
   }
 }

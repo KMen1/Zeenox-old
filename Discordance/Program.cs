@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using CloudinaryDotNet;
 using Discord;
@@ -20,6 +21,7 @@ using Lavalink4NET;
 using Lavalink4NET.Artwork;
 using Lavalink4NET.Cluster;
 using Lavalink4NET.DiscordNet;
+using Lavalink4NET.Logging;
 using Lavalink4NET.Tracking;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,12 +33,14 @@ using OsuSharp.Extensions;
 using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
+using ILogger = Lavalink4NET.Logging.ILogger;
 
 Env.Load();
 Log.Logger = new LoggerConfiguration().Enrich
     .FromLogContext()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
+    .MinimumLevel.Override("Hangfire", LogEventLevel.Information)
     .WriteTo.Console()
     .WriteTo.Sentry(
         x =>
@@ -62,7 +66,7 @@ var host = Host.CreateDefaultBuilder()
         {
             config.SocketConfig = new DiscordSocketConfig
             {
-                LogLevel = LogSeverity.Verbose,
+                LogLevel = LogSeverity.Info,
                 AlwaysDownloadUsers = true,
                 MessageCacheSize = 200,
                 GatewayIntents = GatewayIntents.All,
@@ -76,7 +80,7 @@ var host = Host.CreateDefaultBuilder()
         (_, config) =>
         {
             config.DefaultRunMode = RunMode.Async;
-            config.LogLevel = LogSeverity.Verbose;
+            config.LogLevel = LogSeverity.Info;
             config.UseCompiledLambda = true;
             config.LocalizationManager = new JsonLocalizationManager("Resources", "DCLocalization");
         }
@@ -96,31 +100,15 @@ var host = Host.CreateDefaultBuilder()
         {
             services.AddHostedService<InteractionHandler>();
             services.AddSingleton<IDiscordClientWrapper, DiscordClientWrapper>();
-            services.AddSingleton<IAudioService, LavalinkCluster>();
+            services.AddSingleton<IAudioService, LavalinkNode>();
             services.AddSingleton(
-                new LavalinkClusterOptions
+                new LavalinkNodeOptions
                 {
-                    Nodes = new[]
-                    {
-                        new LavalinkNodeOptions
-                        {
-                            AllowResuming = true,
-                            Password = Environment.GetEnvironmentVariable("LAVALINK_PASSWORD")!,
-                            WebSocketUri =
-                                $"ws://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
-                            RestUri =
-                                $"http://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
-                            DisconnectOnStop = false
-                        },
-                        new LavalinkNodeOptions()
-                        {
-                            AllowResuming = true,
-                            Password = "www.freelavalink.ga",
-                            WebSocketUri = "ws://lavalink.oops.wtf:2000",
-                            RestUri = "http://lavalink.oops.wtf:2000",
-                            DisconnectOnStop = false
-                        }
-                    }
+                    AllowResuming = true,
+                    DisconnectOnStop = false,
+                    WebSocketUri = $"ws://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
+                    RestUri = $"http://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
+                    Password = Environment.GetEnvironmentVariable("LAVALINK_PASSWORD")!,
                 }
             );
             services.AddSingleton(
@@ -190,6 +178,7 @@ var host = Host.CreateDefaultBuilder()
                     x.UseSerilogLogProvider();
                 }
             );
+            services.AddSingleton<ILogger, EventLogger>();
             services.AddHangfireServer();
             services.AddHttpClient();
             services.AddMemoryCache();
@@ -200,14 +189,10 @@ var host = Host.CreateDefaultBuilder()
 
 var cache = host.Services.GetRequiredService<IMemoryCache>();
 
-var localizationData = File.ReadAllText("Resources/Localization.json");
-if (localizationData is null)
-    throw new FileNotFoundException("Localization.json not found");
+var localizationData = File.ReadAllText("Resources/Localization.json") ?? throw new FileNotFoundException("Localization.json not found");
 
 var localization = JsonConvert.DeserializeObject<
-    Dictionary<string, Dictionary<string, string>>>(File.ReadAllText("Resources/Localization.json"));
-if (localization is null)
-    throw new JsonException("Localization.json is not a valid JSON file");
+    Dictionary<string, Dictionary<string, string>>>(localizationData) ?? throw new JsonException("Localization.json is not valid JSON");
 
 foreach (var message in localization) cache.Set(message.Key, message.Value);
 
