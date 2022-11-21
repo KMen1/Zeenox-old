@@ -43,7 +43,8 @@ public class InteractionHandler : DiscordShardedClientService
             await _interactionService
                 .AddModulesAsync(Assembly.GetEntryAssembly(), _provider)
                 .ConfigureAwait(false);
-            //await _interactionService.AddModulesGloballyAsync(true, _interactionService.Modules.ToArray()).ConfigureAwait(false);
+            await _interactionService.AddModulesGloballyAsync(true, _interactionService.Modules.ToArray())
+                .ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -58,7 +59,6 @@ public class InteractionHandler : DiscordShardedClientService
                 type: ActivityType.Listening
             )
             .ConfigureAwait(false);
-
         await client.SetStatusAsync(UserStatus.Online).ConfigureAwait(false);
     }
 

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using CloudinaryDotNet;
 using Discord;
@@ -19,7 +18,6 @@ using Hangfire.Mongo.Migration.Strategies;
 using Hangfire.Mongo.Migration.Strategies.Backup;
 using Lavalink4NET;
 using Lavalink4NET.Artwork;
-using Lavalink4NET.Cluster;
 using Lavalink4NET.DiscordNet;
 using Lavalink4NET.Logging;
 using Lavalink4NET.Tracking;
@@ -32,6 +30,7 @@ using OsuSharp;
 using OsuSharp.Extensions;
 using Serilog;
 using Serilog.Events;
+using SpotifyAPI.Web;
 using StackExchange.Redis;
 using ILogger = Lavalink4NET.Logging.ILogger;
 
@@ -66,7 +65,7 @@ var host = Host.CreateDefaultBuilder()
         {
             config.SocketConfig = new DiscordSocketConfig
             {
-                LogLevel = LogSeverity.Info,
+                LogLevel = LogSeverity.Verbose,
                 AlwaysDownloadUsers = true,
                 MessageCacheSize = 200,
                 GatewayIntents = GatewayIntents.All,
@@ -80,7 +79,7 @@ var host = Host.CreateDefaultBuilder()
         (_, config) =>
         {
             config.DefaultRunMode = RunMode.Async;
-            config.LogLevel = LogSeverity.Info;
+            config.LogLevel = LogSeverity.Verbose;
             config.UseCompiledLambda = true;
             config.LocalizationManager = new JsonLocalizationManager("Resources", "DCLocalization");
         }
@@ -106,9 +105,11 @@ var host = Host.CreateDefaultBuilder()
                 {
                     AllowResuming = true,
                     DisconnectOnStop = false,
-                    WebSocketUri = $"ws://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
-                    RestUri = $"http://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
-                    Password = Environment.GetEnvironmentVariable("LAVALINK_PASSWORD")!,
+                    WebSocketUri =
+                        $"ws://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
+                    RestUri =
+                        $"http://{Environment.GetEnvironmentVariable("LAVALINK_HOST")}:{Environment.GetEnvironmentVariable("LAVALINK_PORT")}",
+                    Password = Environment.GetEnvironmentVariable("LAVALINK_PASSWORD")!
                 }
             );
             services.AddSingleton(
@@ -179,6 +180,17 @@ var host = Host.CreateDefaultBuilder()
                 }
             );
             services.AddSingleton<ILogger, EventLogger>();
+            services.AddSingleton(
+                SpotifyClientConfig
+                    .CreateDefault()
+                    .WithAuthenticator(
+                        new ClientCredentialsAuthenticator(
+                            Environment.GetEnvironmentVariable("SPOTIFY_CLIENT_ID")!,
+                            Environment.GetEnvironmentVariable("SPOTIFY_CLIENT_SECRET")!
+                        )
+                    )
+            );
+            services.AddSingleton<SpotifyClient>();
             services.AddHangfireServer();
             services.AddHttpClient();
             services.AddMemoryCache();
@@ -189,10 +201,12 @@ var host = Host.CreateDefaultBuilder()
 
 var cache = host.Services.GetRequiredService<IMemoryCache>();
 
-var localizationData = File.ReadAllText("Resources/Localization.json") ?? throw new FileNotFoundException("Localization.json not found");
+var localizationData = File.ReadAllText("Resources/Localization.json") ??
+                       throw new FileNotFoundException("Localization.json not found");
 
 var localization = JsonConvert.DeserializeObject<
-    Dictionary<string, Dictionary<string, string>>>(localizationData) ?? throw new JsonException("Localization.json is not valid JSON");
+                       Dictionary<string, Dictionary<string, string>>>(localizationData) ??
+                   throw new JsonException("Localization.json is not valid JSON");
 
 foreach (var message in localization) cache.Set(message.Key, message.Value);
 
@@ -206,6 +220,36 @@ client.ShardReady += async _ =>
     {
         await audioService.InitializeAsync();
         needToConnect = false;
+    }
+};
+
+client.ShardReady += async shard =>
+{
+    var mongo = host.Services.GetRequiredService<MongoService>();
+    foreach (var guild in shard.Guilds) await mongo.AddGuildConfigAsync(guild.Id);
+};
+
+var audioLogger = (EventLogger) ((LavalinkNode) audioService).Logger!;
+
+audioLogger.LogMessage += (_, eventArgs) =>
+{
+    switch (eventArgs.Level)
+    {
+        case LogLevel.Information:
+            Log.Logger.Information(eventArgs.Message);
+            break;
+        case LogLevel.Error:
+            Log.Logger.Error(eventArgs.Exception, eventArgs.Message);
+            break;
+        case LogLevel.Warning:
+            Log.Logger.Warning(eventArgs.Message);
+            break;
+        case LogLevel.Debug:
+            Log.Logger.Debug(eventArgs.Message);
+            break;
+        case LogLevel.Trace:
+            Log.Logger.Debug(eventArgs.Message);
+            break;
     }
 };
 

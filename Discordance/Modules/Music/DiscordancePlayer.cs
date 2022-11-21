@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
-using Discord.WebSocket;
+using Discordance.Extensions;
+using Lavalink4NET.Events;
 using Lavalink4NET.Player;
-using MongoDB.Driver.Core.Operations;
 
 namespace Discordance.Modules.Music;
 
@@ -18,12 +18,10 @@ public class DiscordancePlayer : VoteLavalinkPlayer
         CurrentFilter = "None";
         History = new List<LavalinkTrack>();
         Actions = new List<string>();
-        VoteSkipRequired = (int) Math.Ceiling(((SocketGuild) voiceChannel.Guild)
-                                              .GetVoiceChannel(voiceChannel.Id).ConnectedUsers.Count * 0.5f);
+        VoteSkipRequired = (int) Math.Ceiling(voiceChannel.GetConnectedUserCount() * 0.5f);
     }
 
     public IVoiceChannel VoiceChannel { get; }
-
     public bool IsAutoPlay { get; set; }
     public string? CurrentFilter { get; set; }
     public IUser RequestedBy => (IUser) CurrentTrack!.Context!;
@@ -34,7 +32,9 @@ public class DiscordancePlayer : VoteLavalinkPlayer
     public int VoteSkipCount { get; private set; }
     public int VoteSkipRequired { get; private set; }
     public TimeSpan? SponsorBlockSkipTime { get; set; }
-    public TimeSpan? LengthWithSponsorBlock => SponsorBlockSkipTime is null ? null : CurrentTrack!.Duration - SponsorBlockSkipTime;
+
+    public TimeSpan? LengthWithSponsorBlock =>
+        SponsorBlockSkipTime is null ? null : CurrentTrack!.Duration - SponsorBlockSkipTime;
 
     public void SetMessage(IUserMessage message)
     {
@@ -65,43 +65,24 @@ public class DiscordancePlayer : VoteLavalinkPlayer
     {
         var result = await base.VoteAsync(userId, percentage);
 
-        if (!result.WasSkipped)
-        {
-            VoteSkipCount = result.Votes.Count;
-            VoteSkipRequired =
-                result.TotalUsers - (int) Math.Ceiling(result.TotalUsers * percentage);
-            return result;
-        }
-
-        VoteSkipCount = 0;
-        VoteSkipRequired = result.TotalUsers - (int) Math.Ceiling(result.TotalUsers * percentage);
-
+        if (result.WasSkipped) return result;
+        VoteSkipCount = result.Votes.Count;
+        VoteSkipRequired =
+            result.TotalUsers - (int) Math.Ceiling(result.TotalUsers * percentage);
         return result;
     }
 
-    /*public override async Task OnTrackExceptionAsync(TrackExceptionEventArgs eventArgs)
+    public override Task SkipAsync(int count = 1)
     {
-        if (Queue.Count > 0)
-        {
-            await SkipAsync().ConfigureAwait(false);
-            return;
-        }
+        var voiceChannelCount = VoiceChannel.GetConnectedUserCount();
+        VoteSkipCount = 0;
+        VoteSkipRequired = voiceChannelCount - (int) Math.Ceiling(voiceChannelCount * 0.5f);
+        return base.SkipAsync(count);
+    }
 
-        var eb = new EmbedBuilder()
-            .WithDescription(_localization.GetMessage(Lang, "error_playback"))
-            .WithColor(Color.Red)
-            .Build();
-        await TextChannel.SendMessageAsync(embed: eb).ConfigureAwait(false);
-
-        await base.OnTrackExceptionAsync(eventArgs).ConfigureAwait(false);
-    }*/
-
-    protected override async ValueTask DisposeAsyncCore()
+    public override Task OnTrackEndAsync(TrackEndEventArgs eventArgs)
     {
-        var msg = await TextChannel.GetMessageAsync(MessageId ?? 0).ConfigureAwait(false);
-        if (msg is not null)
-            await msg.DeleteAsync().ConfigureAwait(false);
-        
-        await base.DisposeAsyncCore();
+        VoteSkipCount = 0;
+        return base.OnTrackEndAsync(eventArgs);
     }
 }

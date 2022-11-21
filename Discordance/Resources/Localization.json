@@ -1,4 +1,36 @@
 ﻿{
+  "set_filter_interact": {
+    "en": "Set filter to {0}",
+    "hu": "{0} szűrő aktiválva"
+  },
+  "set_filter_none": {
+    "en": "Filter disabled",
+    "hu": "Szűrő kikapcsolva"
+  },
+  "pause_interact": {
+    "en": "Paused the player",
+    "hu": "Lejátszás szüneteltetve"
+  },
+  "resume_interact": {
+    "en": "Resumed the player",
+    "hu": "Lejátszás folytatva"
+  },
+  "loop_interact_enabled": {
+    "en": "Looping enabled",
+    "hu": "Ismétlés bekapcsolva"
+  },
+  "loop_interact_disabled": {
+    "en": "Looping disabled",
+    "hu": "Ismétlés kikapcsolva"
+  },
+  "autoplay_interact_enabled": {
+    "en": "Autoplay enabled",
+    "hu": "Autólejátszás bekapcsolva"
+  },
+  "autoplay_interact_disabled": {
+    "en": "Autoplay disabled",
+    "hu": "Autólejátszás kikapcsolva"
+  },
   "queue": {
     "en": "Queue",
     "hu": "Várólista"

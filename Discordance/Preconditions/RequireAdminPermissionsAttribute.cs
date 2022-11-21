@@ -7,7 +7,7 @@ using Discord.WebSocket;
 
 namespace Discordance.Preconditions;
 
-public class RequireAdminPermissionsAttribute : PreconditionAttribute
+public sealed class RequireAdminPermissionsAttribute : PreconditionAttribute
 {
     public override Task<PreconditionResult> CheckRequirementsAsync(
         IInteractionContext context,

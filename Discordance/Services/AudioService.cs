@@ -9,36 +9,38 @@ using Discordance.Extensions;
 using Discordance.Modules.Music;
 using Google.Apis.YouTube.v3;
 using Lavalink4NET;
+using Lavalink4NET.Artwork;
 using Lavalink4NET.Events;
 using Lavalink4NET.Integrations.SponsorBlock;
 using Lavalink4NET.Integrations.SponsorBlock.Event;
-using Lavalink4NET.Logging;
 using Lavalink4NET.Player;
 using Lavalink4NET.Rest;
 using Lavalink4NET.Tracking;
 using Microsoft.Extensions.Caching.Memory;
-using Serilog;
-using ILogger = Lavalink4NET.Logging.ILogger;
 
 namespace Discordance.Services;
 
 public class AudioService
 {
-    private readonly LavalinkNode _lavalinkNode;
+    private readonly ArtworkService _artworkService;
     private readonly IMemoryCache _cache;
-    private readonly SearchResource.ListRequest? _searchRequest;
+    private readonly LavalinkNode _lavalinkNode;
     private readonly Random _random;
+    private readonly SearchResource.ListRequest? _searchRequest;
+    private readonly YouTubeService _youTubeService;
 
     public AudioService(
         IAudioService lavalinkNode,
         YouTubeService youtubeService,
         DiscordShardedClient client,
         IMemoryCache cache,
-        InactivityTrackingService trackingService, ILogger logger)
+        InactivityTrackingService trackingService, ArtworkService artworkService)
     {
-        _lavalinkNode = (LavalinkNode)lavalinkNode;
+        _lavalinkNode = (LavalinkNode) lavalinkNode;
         _lavalinkNode.TrackEnd += OnTrackEnd;
         _cache = cache;
+        _artworkService = artworkService;
+        _youTubeService = youtubeService;
         _searchRequest = youtubeService.Search.List("snippet");
         _searchRequest.MaxResults = 5;
         _searchRequest.Type = "video";
@@ -46,14 +48,21 @@ public class AudioService
         client.MessageReceived += ListenForSongRequests;
         _lavalinkNode.UseSponsorBlock();
         lavalinkNode.Integrations.Get<ISponsorBlockIntegration>()!.SegmentsLoaded += OnSegmentsLoaded;
-        var log = logger as EventLogger;
-        log!.LogMessage += (_, args) => Log.Logger.Information(args.Message);
         trackingService.BeginTracking();
+        trackingService.InactivePlayer += OnInactivePlayer;
+    }
+
+    private static async Task OnInactivePlayer(object sender, InactivePlayerEventArgs eventargs)
+    {
+        if (!eventargs.ShouldStop || eventargs.Player is not DiscordancePlayer player) return;
+        var msg = await player.TextChannel.GetMessageAsync(player.MessageId ?? 0);
+        if (msg is not null)
+            await msg.DeleteAsync();
     }
 
     private Task OnSegmentsLoaded(object _, SegmentsLoadedEventArgs eventargs)
     {
-        var player = (DiscordancePlayer)eventargs.Player!;
+        var player = (DiscordancePlayer) eventargs.Player!;
 
         var segments = eventargs.Segments.ToList();
         var totalDurationMs = segments.Sum(s => (s.EndOffset - s.StartOffset).TotalMilliseconds);
@@ -106,7 +115,7 @@ public class AudioService
         var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
 
-        if (player.Queue.Count == 0 && player.IsAutoPlay)
+        if (player.IsAutoPlay && player.Queue.Count == 0)
         {
             var next = await GetRelatedTrack(player.CurrentTrack!.TrackIdentifier, user).ConfigureAwait(false);
             next!.Context = user;
@@ -114,7 +123,7 @@ public class AudioService
             await UpdateMessageAsync(player).ConfigureAwait(false);
             return;
         }
-        
+
         if (player.RequestedBy.Id != user.Id)
         {
             var result = await player.VoteAsync(user.Id).ConfigureAwait(false);
@@ -126,7 +135,7 @@ public class AudioService
                 player.AppendAction(
                     _cache
                         .GetMessage(lang, "player_voteskip")
-                        .FormatWithTimestamp(user.Mention, player.VoteSkipRequired)
+                        .FormatWithTimestamp(user.Mention, (player.VoteSkipRequired - player.VoteSkipCount).ToString())
                 );
                 await UpdateMessageAsync(player).ConfigureAwait(false);
                 return;
@@ -165,7 +174,7 @@ public class AudioService
         await UpdateMessageAsync(player);
     }
 
-    public async Task PauseOrResumeAsync(ulong guildId, IUser user)
+    public async Task<bool> PauseOrResumeAsync(ulong guildId, IUser user)
     {
         var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
@@ -192,6 +201,8 @@ public class AudioService
                 break;
             }
         }
+
+        return player.State == PlayerState.Paused;
     }
 
     public async Task SetFilterAsync(ulong guildId, IUser user, FilterType filterType)
@@ -223,7 +234,8 @@ public class AudioService
         player.AppendAction(
             _cache
                 .GetMessage(lang, "player_volume")
-                .FormatWithTimestamp(user.Mention, (int) (volume * 100))
+                // ReSharper disable once SpecifyACultureInStringConversionExplicitly
+                .FormatWithTimestamp(user.Mention, Math.Round(volume * 100).ToString())
         );
         await UpdateMessageAsync(player).ConfigureAwait(false);
         return (int) (volume * 100);
@@ -241,7 +253,7 @@ public class AudioService
         return cleared;
     }
 
-    public Task ToggleLoopAsync(ulong guildId, IUser user)
+    public async Task<bool> ToggleLoopAsync(ulong guildId, IUser user)
     {
         var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
@@ -251,10 +263,11 @@ public class AudioService
                 .GetMessage(lang, player.IsLooping ? "player_loop_enabled" : "player_loop_disabled")
                 .FormatWithTimestamp(user.Mention)
         );
-        return UpdateMessageAsync(player);
+        await UpdateMessageAsync(player);
+        return player.IsLooping;
     }
 
-    public Task ToggleAutoPlayAsync(ulong guildId, IUser user)
+    public async Task<bool> ToggleAutoPlayAsync(ulong guildId, IUser user)
     {
         var player = GetPlayer(guildId)!;
         var lang = _cache.GetLangKey(guildId);
@@ -267,7 +280,8 @@ public class AudioService
                 )
                 .FormatWithTimestamp(user.Mention)
         );
-        return UpdateMessageAsync(player);
+        await UpdateMessageAsync(player);
+        return player.IsAutoPlay;
     }
 
     private async Task UpdateMessageAsync(DiscordancePlayer player)
@@ -317,7 +331,9 @@ public class AudioService
             .AddField(_cache.GetMessage(lang, "channel"), player.VoiceChannel.Mention, true)
             .AddField(
                 _cache.GetMessage(lang, "length"),
-                $"`{track.Duration.ToTimeString()}" + (player.LengthWithSponsorBlock is not null ? $" ({player.LengthWithSponsorBlock.Value.ToTimeString()})`" : "`"),
+                $"`{track.Duration.ToTimeString()}" + (player.LengthWithSponsorBlock is not null
+                    ? $" ({player.LengthWithSponsorBlock.Value.ToTimeString()})`"
+                    : "`"),
                 true
             )
             .AddField(
@@ -525,7 +541,8 @@ public class AudioService
         if (isNew)
         {
             await PlayAsync(player.GuildId, user, track).ConfigureAwait(false);
-            var msg = await channel.SendMessageAsync(embed: GetEmbed(player), components: GetComponents(player)).ConfigureAwait(false);
+            var msg = await channel.SendMessageAsync(embed: GetEmbed(player), components: GetComponents(player))
+                .ConfigureAwait(false);
             player.SetMessage(msg);
             return;
         }
@@ -535,7 +552,7 @@ public class AudioService
             await PlayAsync(player.GuildId, user, tracks).ConfigureAwait(false);
             return;
         }
-        
+
         await PlayAsync(player.GuildId, user, track).ConfigureAwait(false);
     }
 
@@ -561,7 +578,8 @@ public class AudioService
 
         if (player.IsAutoPlay)
         {
-            var track = await GetRelatedTrack(previous.TrackIdentifier, (IUser)previous.Context!).ConfigureAwait(false);
+            var track = await GetRelatedTrack(previous.TrackIdentifier, (IUser) previous.Context!)
+                .ConfigureAwait(false);
             if (track is not null)
             {
                 await player.PlayAsync(track, false).ConfigureAwait(false);
@@ -605,7 +623,7 @@ public class AudioService
         var config = _cache.GetGuildConfig(guildId);
         if (GetPlayer(guildId) is { } player)
             return (player, false);
-        
+
         player = await _lavalinkNode
             .JoinAsync(
                 () => new DiscordancePlayer(voiceChannel, textChannel),
@@ -635,13 +653,13 @@ public class AudioService
             track.Context = user;
         return track;
     }
-    
+
     private async Task<string> GetRelatedVideoId(string videoId)
     {
         _searchRequest!.RelatedToVideoId = videoId;
         var result = await _searchRequest.ExecuteAsync().ConfigureAwait(false);
         var availableVideos = result.Items.Where(x => x.Snippet is not null).ToArray();
-        return availableVideos[_random.Next(0, availableVideos.Length - 1)].Id.VideoId;
+        return availableVideos[_random.Next(0, availableVideos.Length)].Id.VideoId;
     }
 
     public async Task<LavalinkTrack[]?> SearchAsync(string query, IUser user, int limit = 1)
@@ -657,5 +675,21 @@ public class AudioService
             track.Context = user;
 
         return results.PlaylistInfo?.Name is not null ? tracks : tracks.Take(limit).ToArray();
+    }
+
+    public async Task<LavalinkTrack?> GetTrackAsync(string url, IUser user)
+    {
+        var track = await _lavalinkNode.GetTrackAsync(url).ConfigureAwait(false);
+        if (track is null)
+            return null;
+        track.Context = user;
+        return track;
+    }
+
+    public async Task<TrackLoadResponsePayload> SearchAsync(string query)
+    {
+        return Uri.IsWellFormedUriString(query, UriKind.Absolute)
+            ? await _lavalinkNode.LoadTracksAsync(query).ConfigureAwait(false)
+            : await _lavalinkNode.LoadTracksAsync(query, SearchMode.YouTube).ConfigureAwait(false);
     }
 }

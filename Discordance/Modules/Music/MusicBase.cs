@@ -5,7 +5,6 @@ using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Services;
 using Lavalink4NET.Player;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Discordance.Modules.Music;
 
@@ -26,6 +25,11 @@ public class MusicBase : ModuleBase
     protected Task<LavalinkTrack[]?> SearchAsync(string query, int limit = 1)
     {
         return AudioService.SearchAsync(query, Context.User, limit);
+    }
+
+    protected Task<LavalinkTrack?> GetTrackAsync(string query)
+    {
+        return AudioService.GetTrackAsync(query, Context.User);
     }
 
     protected Task<(DiscordancePlayer, bool)> GetOrCreatePlayerAsync()
@@ -57,17 +61,17 @@ public class MusicBase : ModuleBase
         return AudioService.RewindAsync(Context.Guild.Id, Context.User);
     }
 
-    protected Task PauseOrResumeAsync()
+    protected Task<bool> PauseOrResumeAsync()
     {
         return AudioService.PauseOrResumeAsync(Context.Guild.Id, Context.User);
     }
 
-    protected Task ToggleLoopAsync()
+    protected Task<bool> ToggleLoopAsync()
     {
         return AudioService.ToggleLoopAsync(Context.Guild.Id, Context.User);
     }
 
-    protected Task ToggleAutoPlayAsync()
+    protected Task<bool> ToggleAutoPlayAsync()
     {
         return AudioService.ToggleAutoPlayAsync(Context.Guild.Id, Context.User);
     }

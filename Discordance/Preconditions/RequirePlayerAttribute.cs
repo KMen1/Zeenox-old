@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
 
-public class RequirePlayerAttribute : PreconditionAttribute
+public sealed class RequirePlayerAttribute : PreconditionAttribute
 {
     public override Task<PreconditionResult> CheckRequirementsAsync(
         IInteractionContext context,
@@ -19,7 +19,7 @@ public class RequirePlayerAttribute : PreconditionAttribute
     {
         var service = services.GetRequiredService<IAudioService>();
         var cache = services.GetRequiredService<IMemoryCache>();
-        
+
         return Task.FromResult(
             !service.HasPlayer(context.Guild.Id)
                 ? PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "no_player"))

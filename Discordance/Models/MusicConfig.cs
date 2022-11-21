@@ -16,7 +16,7 @@ public class MusicConfig
         AllowedVoiceChannels = new List<ulong>();
         DefaultVolume = 100;
         PlaylistAllowed = true;
-        IsAnonymous = true;
+        IsAnonymous = false;
         LengthLimit = TimeSpan.Zero;
     }
 
@@ -28,7 +28,8 @@ public class MusicConfig
     public List<ulong> AllowedVoiceChannels { get; set; }
     public int DefaultVolume { get; set; }
     public bool PlaylistAllowed { get; set; }
-    [BsonElement("ShowRequester")]
-    public bool IsAnonymous { get; set; }
+
+    [BsonElement("ShowRequester")] public bool IsAnonymous { get; set; }
+
     public TimeSpan LengthLimit { get; set; }
 }

@@ -22,13 +22,13 @@ public abstract class ModuleBase : InteractionModuleBase<ShardedInteractionConte
     protected Embed GetLocalizedEmbed(string key, Color color)
     {
         return GetLocalized(key).ToEmbed(color);
-    }    
-    
+    }
+
     protected Embed GetLocalizedEmbed(string key, Color color, object? object1 = null)
     {
         return GetLocalized(key).Format(object1).ToEmbed(color);
-    }    
-    
+    }
+
     protected Embed GetLocalizedEmbed(string key, Color color, object? object1 = null, object? object2 = null)
     {
         return GetLocalized(key).Format(object1, object2).ToEmbed(color);

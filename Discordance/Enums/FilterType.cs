@@ -22,9 +22,9 @@ public enum FilterType
 
     [Description("Vaporwave")] Vaporwave = 64,
 
-    [Description("Speed Up")] Doubletime = 128,
+    [Description("Speed Up")] SpeedUp = 128,
 
-    [Description("Speed Down")] Slowmotion = 256,
+    [Description("Speed Down")] SpeedDown = 256,
 
     [Description("Chipmunk")] Chipmunk = 512,
 
@@ -48,8 +48,8 @@ public enum FilterType
         | Nightcore
         | Eightd
         | Vaporwave
-        | Doubletime
-        | Slowmotion
+        | SpeedUp
+        | SpeedDown
         | Chipmunk
         | Darthvader
         | Dance

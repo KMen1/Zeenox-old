@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Discord.WebSocket;
 using Discordance.Extensions;
 using Discordance.Models;
 using Hangfire;
@@ -28,14 +25,14 @@ public class MongoService
 
         Task.Run(CacheConfigsAsync);
         RecurringJob.AddOrUpdate("cache_guild_configs", () => CacheConfigsAsync(), "*/10 * * * *");
-        RecurringJob.AddOrUpdate(
-            "cache_notification_channels",
-            () => CacheNotificationChannelsAsync(),
-            "0 */12 * * *"
-        );
+        //RecurringJob.AddOrUpdate(
+        //    "cache_notification_channels",
+        //    () => CacheNotificationChannelsAsync(),
+        //    "0 */12 * * *"
+        //);
     }
 
-    public async Task CacheNotificationChannelsAsync()
+    /*public async Task CacheNotificationChannelsAsync()
     {
         var shrineCursor = await _configs
             .FindAsync(x => x.Notifications.WeeklyShrine)
@@ -51,7 +48,7 @@ public class MongoService
         var epic = epicCursor.ToList().Select(x => (x.GuildId, x.Notifications.FreeGameChannelId));
 
         _cache.SetNotificationChannels(shrine, epic);
-    }
+    }*/
 
     public async Task CacheConfigsAsync()
     {
@@ -65,6 +62,9 @@ public class MongoService
 
     public async Task<GuildConfig> AddGuildConfigAsync(ulong guildId)
     {
+        var cursor = await _configs.FindAsync(x => x.GuildId == guildId).ConfigureAwait(false);
+        if (await cursor.AnyAsync())
+            return _cache.GetGuildConfig(guildId);
         var config = new GuildConfig(guildId);
         await _configs.InsertOneAsync(config).ConfigureAwait(false);
         _cache.SetGuildConfig(config);
@@ -76,6 +76,7 @@ public class MongoService
         var config = _cache.GetGuildConfig(guildId);
         action(config);
         await _configs.ReplaceOneAsync(x => x.GuildId == guildId, config).ConfigureAwait(false);
+        _cache.SetGuildConfig(config);
         return config;
     }
 

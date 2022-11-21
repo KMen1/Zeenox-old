@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
 
-public class RequireActiveGameAttribute : PreconditionAttribute
+public sealed class RequireActiveGameAttribute : PreconditionAttribute
 {
     public override Task<PreconditionResult> CheckRequirementsAsync(
         IInteractionContext context,
@@ -19,7 +19,7 @@ public class RequireActiveGameAttribute : PreconditionAttribute
     {
         var gameService = services.GetRequiredService<GameService>();
         var cache = services.GetRequiredService<IMemoryCache>();
-        
+
         var result = gameService.TryGetGame(context.User.Id, out var game);
         return result
             ? game?.UserId == context.User.Id

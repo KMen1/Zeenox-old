@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
 
-public class RequireSongRequesterAttribute : PreconditionAttribute
+public sealed class RequireSongRequesterAttribute : PreconditionAttribute
 {
     public override Task<PreconditionResult> CheckRequirementsAsync(
         IInteractionContext context,
@@ -28,6 +28,7 @@ public class RequireSongRequesterAttribute : PreconditionAttribute
 
         return context.User.Id == player!.RequestedBy.Id
             ? Task.FromResult(PreconditionResult.FromSuccess())
-            : Task.FromResult(PreconditionResult.FromError(cache.GetMessage(config.Language, "require_song_requester")));
+            : Task.FromResult(
+                PreconditionResult.FromError(cache.GetMessage(config.Language, "require_song_requester")));
     }
 }

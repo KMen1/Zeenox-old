@@ -257,4 +257,16 @@ public static class GenericExtensions
             .WithColor(color)
             .Build();
     }
+
+    public static int GetConnectedUserCount(this IVoiceChannel channel)
+    {
+        if (channel.Guild is not SocketGuild guild)
+            return 0;
+        return guild.GetVoiceChannel(channel.Id) is not { } voiceChannel ? 0 : voiceChannel.ConnectedUsers.Count;
+    }
+
+    public static string TrimTo(this string str, int length)
+    {
+        return str.Length <= length ? str : str[..length];
+    }
 }

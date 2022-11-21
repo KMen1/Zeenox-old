@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
 
-public class RequireVoiceAttribute : PreconditionAttribute
+public sealed class RequireVoiceAttribute : PreconditionAttribute
 {
     public override Task<PreconditionResult> CheckRequirementsAsync(
         IInteractionContext context,
@@ -24,12 +24,13 @@ public class RequireVoiceAttribute : PreconditionAttribute
         var userVoiceChannel = ((IVoiceState) context.User).VoiceChannel;
 
         if (userVoiceChannel is null)
-            return Task.FromResult(PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "require_voice_channel")));
+            return Task.FromResult(
+                PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "require_voice_channel")));
         if (player is null)
             return Task.FromResult(PreconditionResult.FromSuccess());
-        
+
         return Task.FromResult(userVoiceChannel.Id != player.VoiceChannelId
-            ? PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "require_same_voice_channel")) 
+            ? PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "require_same_voice_channel"))
             : PreconditionResult.FromSuccess());
     }
 }

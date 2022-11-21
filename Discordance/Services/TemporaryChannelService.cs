@@ -1,33 +1,29 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Discordance.Extensions;
+using Discordance.Models;
 using Microsoft.Extensions.Caching.Memory;
-using StackExchange.Redis;
 
 namespace Discordance.Services;
 
 public class TemporaryChannelService
 {
     private readonly IMemoryCache _cache;
-    private readonly Dictionary<ulong, int> _channelCounts = new();
+    private readonly ConcurrentDictionary<ulong, int> _channelCounts = new();
+    private readonly ConcurrentDictionary<ulong, ulong> _channels = new();
     private readonly DiscordShardedClient _client;
-    private readonly MongoService _mongo;
-    private readonly IConnectionMultiplexer _redis;
 
     public TemporaryChannelService(
         DiscordShardedClient client,
-        MongoService mongo,
-        IConnectionMultiplexer redis,
         IMemoryCache cache
     )
     {
         _client = client;
-        _mongo = mongo;
-        _redis = redis;
         _cache = cache;
         client.UserVoiceStateUpdated += CheckForCreationOrDeletionAsync;
     }
@@ -45,22 +41,17 @@ public class TemporaryChannelService
             return;
 
         var guild = user.Guild;
-
-        var hubs = _cache.GetGuildConfig(guild.Id).TcHubs;
-
-        if (
-            after.VoiceChannel is not null && hubs.Exists(x => x.ChannelId == after.VoiceChannel.Id)
-        )
+        if (JoinedCreateChannel(after, user, out var hub))
         {
-            var hub = hubs.First(x => x.ChannelId == after.VoiceChannel.Id);
-            if (_channelCounts.ContainsKey(guild.Id))
-                _channelCounts[guild.Id]++;
-            else
-                _channelCounts.Add(guild.Id, 1);
+            if (HasTempChannel(user.Id))
+                return;
+            if (hub is null)
+                return;
 
+            var value = _channelCounts.AddOrUpdate(guild.Id, 0, (_, amount) => amount + 1);
             var voiceChannel = await guild
                 .CreateVoiceChannelAsync(
-                    ParseChannelName(hub.ChannelName, user, _channelCounts[guild.Id]),
+                    ParseChannelName(hub.ChannelName, user, value),
                     x =>
                     {
                         x.UserLimit = hub.UserLimit;
@@ -72,7 +63,7 @@ public class TemporaryChannelService
                                 new Overwrite(
                                     user.Id,
                                     PermissionTarget.User,
-                                    new OverwritePermissions(connect: PermValue.Allow)
+                                    new OverwritePermissions(connect: PermValue.Allow, moveMembers: PermValue.Allow)
                                 ),
                                 new Overwrite(
                                     guild.EveryoneRole.Id,
@@ -95,38 +86,182 @@ public class TemporaryChannelService
                 )
                 .ConfigureAwait(false);
             await user.ModifyAsync(x => x.Channel = voiceChannel).ConfigureAwait(false);
-            await _redis
-                .GetDatabase()
-                .StringSetAsync($"temp_channel_{user.Id.ToString()}", voiceChannel.Id)
-                .ConfigureAwait(false);
+            _channels.TryAdd(user.Id, voiceChannel.Id);
         }
 
-        if (
-            before.VoiceChannel is not null
-            && hubs.Exists(x => x.CategoryId == before.VoiceChannel.CategoryId)
-            && before.VoiceChannel.ConnectedUsers.Count == 0
-        )
+        if (LeftTempChannel(before, after, user, out var channel))
         {
-            await before.VoiceChannel.DeleteAsync().ConfigureAwait(false);
-            _channelCounts[guild.Id]--;
-            await _redis
-                .GetDatabase()
-                .KeyDeleteAsync($"temp_channel_{user.Id.ToString()}")
-                .ConfigureAwait(false);
+            if (channel is not null)
+                await channel.DeleteAsync().ConfigureAwait(false);
+            _channelCounts.AddOrUpdate(guild.Id, 0, (_, amount) => amount - 1);
+            _channels.TryRemove(user.Id, out _);
         }
+    }
+
+    public async Task<bool> LockChannelAsync(ulong userId)
+    {
+        if (!GetTempChannel(userId, out var channelId))
+            return false;
+
+        if (_client.GetChannel(channelId) is not IVoiceChannel channel)
+            return false;
+
+        await channel.AddPermissionOverwriteAsync(channel.Guild.EveryoneRole,
+            new OverwritePermissions(connect: PermValue.Deny)).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task<bool> UnlockChannelAsync(ulong userId)
+    {
+        if (!GetTempChannel(userId, out var channelId))
+            return false;
+
+        if (_client.GetChannel(channelId) is not IVoiceChannel channel)
+            return false;
+
+        await channel.AddPermissionOverwriteAsync(channel.Guild.EveryoneRole,
+            new OverwritePermissions(connect: PermValue.Allow)).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task<bool> LimitChannelAsync(ulong userId, int limit)
+    {
+        if (!GetTempChannel(userId, out var channelId))
+            return false;
+
+        if (_client.GetChannel(channelId) is not IVoiceChannel channel)
+            return false;
+
+        await channel.ModifyAsync(x => x.UserLimit = limit).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task<bool> RenameChannelAsync(ulong userId, string name)
+    {
+        if (!GetTempChannel(userId, out var channelId))
+            return false;
+
+        if (_client.GetChannel(channelId) is not IVoiceChannel channel)
+            return false;
+
+        await channel.ModifyAsync(x => x.Name = name).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task<bool> KickUsersAsync(ulong userId, IEnumerable<ulong> users)
+    {
+        if (!GetTempChannel(userId, out var channelId))
+            return false;
+
+        if (_client.GetChannel(channelId) is not IVoiceChannel channel)
+            return false;
+
+        foreach (var user in users)
+        {
+            var member = await channel.Guild.GetUserAsync(user);
+            if (member is null)
+                continue;
+            await member.ModifyAsync(x => x.Channel = null).ConfigureAwait(false);
+        }
+
+        return true;
+    }
+
+    public async Task<bool> BanUsersAsync(ulong userId, IEnumerable<ulong> users)
+    {
+        if (!GetTempChannel(userId, out var channelId))
+            return false;
+
+        if (_client.GetChannel(channelId) is not IVoiceChannel channel)
+            return false;
+
+        foreach (var user in users)
+        {
+            var member = await channel.Guild.GetUserAsync(user);
+            if (member is null)
+                continue;
+            await member.ModifyAsync(x => x.Channel = null).ConfigureAwait(false);
+            await channel.AddPermissionOverwriteAsync(member,
+                new OverwritePermissions(connect: PermValue.Deny)).ConfigureAwait(false);
+        }
+
+        return true;
+    }
+
+    public IEnumerable<IUser> GetBannedUsers(ulong userId)
+    {
+        if (!GetTempChannel(userId, out var channelId))
+            return Enumerable.Empty<IUser>();
+
+        if (_client.GetChannel(channelId) is not IVoiceChannel channel)
+            return Enumerable.Empty<IUser>();
+
+        return channel.PermissionOverwrites
+            .Where(x => x.TargetType == PermissionTarget.User)
+            .Where(x => x.Permissions.Connect == PermValue.Deny)
+            .Select(x => _client.GetUser(x.TargetId));
+    }
+
+    public async Task<bool> UnbanUsersAsync(ulong userId, IEnumerable<ulong> users)
+    {
+        if (!GetTempChannel(userId, out var channelId))
+            return false;
+
+        if (_client.GetChannel(channelId) is not IVoiceChannel channel)
+            return false;
+
+        foreach (var user in users)
+        {
+            var member = await channel.Guild.GetUserAsync(user);
+            if (member is null)
+                continue;
+            await channel.AddPermissionOverwriteAsync(member,
+                new OverwritePermissions(connect: PermValue.Allow)).ConfigureAwait(false);
+        }
+
+        return true;
+    }
+
+    private bool LeftTempChannel(SocketVoiceState before, SocketVoiceState after, IUser user,
+        out IVoiceChannel? channel)
+    {
+        channel = null;
+        if (before.VoiceChannel is not { } voiceChannel)
+            return false;
+        if (after.VoiceChannel is not null || after.VoiceChannel?.Id == voiceChannel.Id)
+            return false;
+        var categoryId = voiceChannel.CategoryId;
+        channel = _client.GetChannel(voiceChannel.Id) as IVoiceChannel;
+        return categoryId is not null && _channels.ContainsKey(user.Id);
+    }
+
+    private bool JoinedCreateChannel(SocketVoiceState after, IUser user, out Hub? hub)
+    {
+        hub = null;
+        if (after.VoiceChannel is not { } voiceChannel)
+            return false;
+
+        var categoryId = voiceChannel.CategoryId;
+        if (categoryId is null)
+            return false;
+
+        var hubs = _cache.GetGuildConfig(voiceChannel.Guild.Id).Hubs;
+        if (!hubs.Exists(x => x.CategoryId == categoryId))
+            return false;
+
+        hub = hubs.First(x => x.CategoryId == categoryId);
+
+        return voiceChannel.Id == hub.ChannelId;
+    }
+
+    public bool HasTempChannel(ulong userId)
+    {
+        return _channels.ContainsKey(userId);
     }
 
     public bool GetTempChannel(ulong userId, out ulong channelId)
     {
-        var result = _redis.GetDatabase().StringGet($"temp_channel_{userId}");
-        if (result.HasValue)
-        {
-            channelId = ulong.Parse(result.ToString());
-            return true;
-        }
-
-        channelId = 0;
-        return false;
+        return _channels.TryGetValue(userId, out channelId);
     }
 
     private static string ParseChannelName(string channelName, IUser user, int index)

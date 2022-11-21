@@ -5,7 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Discordance.Extensions;
 
-public static class IMemoryCacheExtensions
+public static class MemoryCacheExtensions
 {
     public static void SetGuildConfig(this IMemoryCache cache, GuildConfig config)
     {
@@ -14,7 +14,7 @@ public static class IMemoryCacheExtensions
 
     public static GuildConfig GetGuildConfig(this IMemoryCache cache, ulong guildId)
     {
-        return cache.Get<GuildConfig>($"{guildId}:config");
+        return cache.Get<GuildConfig>($"{guildId}:config") ?? new GuildConfig(guildId);
     }
 
     public static string GetLangKey(this IMemoryCache cache, ulong guildId)
@@ -34,14 +34,14 @@ public static class IMemoryCacheExtensions
 
     public static IEnumerable<(ulong, ulong)> GetShrineNotificationChannels(this IMemoryCache cache)
     {
-        return cache.Get<IEnumerable<(ulong, ulong)>>("shrine");
+        return cache.Get<IEnumerable<(ulong, ulong)>>("shrine") ?? Array.Empty<(ulong, ulong)>();
     }
 
     public static IEnumerable<(ulong, ulong)> GetGameNotificationChannels(this IMemoryCache cache)
     {
-        return cache.Get<IEnumerable<(ulong, ulong)>>("game");
+        return cache.Get<IEnumerable<(ulong, ulong)>>("game") ?? Array.Empty<(ulong, ulong)>();
     }
-    
+
     public static string GetMessage(this IMemoryCache cache, string language, string key)
     {
         var localization = cache.Get<Dictionary<string, string>>(key);

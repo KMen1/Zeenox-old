@@ -31,7 +31,7 @@ public class Commands : MusicBase
         await UpdateUserAsync(x => x.FavoriteTracks.Add(track.Identifier)).ConfigureAwait(false);
         await FollowupAsync("Added to favorites").ConfigureAwait(false);
     }
-    
+
     [RequirePlayer]
     [RequireVoice]
     [SlashCommand("play-favorites", "Plays your favorite songs")]
@@ -49,7 +49,7 @@ public class Commands : MusicBase
         await PlayAsync(tracks).ConfigureAwait(false);
         await FollowupAsync("Playing favorites").ConfigureAwait(false);
     }
-    
+
 
     [RequireVoice]
     [RequireAllowedChannel]
@@ -58,16 +58,31 @@ public class Commands : MusicBase
     public async Task PlayAsync(
         [Summary(
             "query",
-            "Name or the url of the song (accepts Youtube, SoundCloud, Spotify links)"
+            "Title of the song (must be more than 3 characters) or a link to a song or playlist"
         )]
-        string query
+        [Autocomplete(typeof(SearchAutocompleteHandler))]
+        string videoId
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var tracks = await SearchAsync(query).ConfigureAwait(false);
+
+        var source = videoId[..2];
+        var id = videoId[2..];
+        var tracks = await SearchAsync(source switch
+            {
+                "yt" => $"https://www.youtube.com/watch?v={id}",
+                "yp" => $"https://www.youtube.com/playlist?list={id}",
+                "sa" => $"https://open.spotify.com/album/{id}",
+                "sp" => $"https://open.spotify.com/playlist/{id}",
+                "st" => $"https://open.spotify.com/track/{id}",
+                _ => id
+            }
+        ).ConfigureAwait(false);
+
         if (tracks is null)
         {
-            await FollowupAsync(embed: GetLocalizedEmbed("no_matches", Color.Red), ephemeral: true).ConfigureAwait(false);
+            await FollowupAsync(embed: GetLocalizedEmbed("no_matches", Color.Red), ephemeral: true)
+                .ConfigureAwait(false);
             return;
         }
 
@@ -122,74 +137,10 @@ public class Commands : MusicBase
         await player.DisconnectAsync().ConfigureAwait(false);
 
         await RespondAsync(
-            embed: GetLocalizedEmbed("left_channel", Color.Green, player.VoiceChannel.Mention),
+                embed: GetLocalizedEmbed("left_channel", Color.Green, player.VoiceChannel.Mention),
                 ephemeral: true
             )
             .ConfigureAwait(false);
-    }
-
-    [RequireVoice]
-    [RequireAllowedChannel]
-    [RequireDjRole]
-    [SlashCommand("search", "Searches for a song on Youtube")]
-    public async Task SearchSongAsync([Summary("query", "Title of the song (does not accept urls)")] string query)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var tracks = await SearchAsync(query, 10).ConfigureAwait(false);
-        if (tracks is null)
-        {
-            await FollowupAsync(embed: GetLocalizedEmbed("no_matches", Color.Red), ephemeral: true)
-                .ConfigureAwait(false);
-            return;
-        }
-
-        var comp = new ComponentBuilder();
-        var menu = new SelectMenuBuilder().WithCustomId("search").WithMinValues(1).WithMaxValues(1);
-        var counter = 0;
-        foreach (var track in tracks)
-        {
-            var emoji = counter switch
-            {
-                0 => new Emoji("1️⃣"),
-                1 => new Emoji("2️⃣"),
-                2 => new Emoji("3️⃣"),
-                3 => new Emoji("4️⃣"),
-                4 => new Emoji("5️⃣"),
-                5 => new Emoji("6️⃣"),
-                6 => new Emoji("7️⃣"),
-                7 => new Emoji("8️⃣"),
-                8 => new Emoji("9️⃣"),
-                9 => new Emoji("🔟"),
-                _ => new Emoji("❓")
-            };
-            menu.AddOption($"{track.Title}", $"{track.TrackIdentifier}", emote: emoji);
-            counter++;
-        }
-
-        comp.WithSelectMenu(menu);
-
-        await FollowupAsync(embed: GetLocalizedEmbed("select_song", Color.Green), components: comp.Build()).ConfigureAwait(false);
-    }
-
-    [RequireVoice]
-    [RequireDjRole]
-    [ComponentInteraction("search")]
-    public async Task PlaySearchAsync(params string[] trackIdentifiers)
-    {
-        await DeferAsync(true).ConfigureAwait(false);
-        var identifier = trackIdentifiers[0];
-        var track = await SearchAsync($"https://www.youtube.com/watch?v={identifier}").ConfigureAwait(false);
-
-        var (player, isNew) = await GetOrCreatePlayerAsync().ConfigureAwait(false);
-        if (isNew)
-        {
-            var (embed, components) = await PlayAsync(track![0]).ConfigureAwait(false);
-            var msg = await ReplyAsync(embed: embed, components: components).ConfigureAwait(false);
-            player.SetMessage(msg);
-            return;
-        }
-
-        await PlayAsync(track![0]).ConfigureAwait(false);
     }
 
     [RequirePlayer]
@@ -260,7 +211,8 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: GetLocalizedEmbed(config.Music.ExclusiveControl ? "exclusive_enabled" : "exclusive_disabled", Color.Green),
+                embed: GetLocalizedEmbed(config.Music.ExclusiveControl ? "exclusive_enabled" : "exclusive_disabled",
+                    Color.Green),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -353,7 +305,8 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: GetLocalizedEmbed(config.Music.UseSponsorBlock ? "sponsorblock_enabled" : "sponsorblock_disabled", Color.Green),
+                embed: GetLocalizedEmbed(
+                    config.Music.UseSponsorBlock ? "sponsorblock_enabled" : "sponsorblock_disabled", Color.Green),
                 ephemeral: true
             )
             .ConfigureAwait(false);
@@ -405,7 +358,8 @@ public class Commands : MusicBase
             .ConfigureAwait(false);
 
         await FollowupAsync(
-                embed: GetLocalizedEmbed("allowed_channel_removed", Color.Green, Context.Guild.GetVoiceChannel(channelId)?.Mention!),
+                embed: GetLocalizedEmbed("allowed_channel_removed", Color.Green,
+                    Context.Guild.GetVoiceChannel(channelId)?.Mention!),
                 ephemeral: true
             )
             .ConfigureAwait(false);

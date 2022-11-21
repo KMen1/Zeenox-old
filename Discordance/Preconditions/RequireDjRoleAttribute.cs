@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
 
-public class RequireDjRoleAttribute : PreconditionAttribute
+public sealed class RequireDjRoleAttribute : PreconditionAttribute
 {
     public override Task<PreconditionResult> CheckRequirementsAsync(
         IInteractionContext context,
@@ -28,6 +28,7 @@ public class RequireDjRoleAttribute : PreconditionAttribute
             .Intersect(((SocketGuildUser) context.User).Roles.Select(r => r.Id))
             .Any()
             ? Task.FromResult(PreconditionResult.FromSuccess())
-            : Task.FromResult(PreconditionResult.FromError(cache.GetMessage(config.Language, "action_requires_dj_role")));
+            : Task.FromResult(
+                PreconditionResult.FromError(cache.GetMessage(config.Language, "action_requires_dj_role")));
     }
 }

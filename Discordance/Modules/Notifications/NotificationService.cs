@@ -9,7 +9,6 @@ using Discordance.Enums;
 using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Services;
-using Hangfire;
 using Microsoft.Extensions.Caching.Memory;
 using Game = Discordance.Models.Game;
 
@@ -46,16 +45,16 @@ public class NotificationService
         client.UserBanned += CallBanFunctions;
         client.UserUnbanned += CallUnbanFunctions;
 
-        RecurringJob.AddOrUpdate(
-            "epic",
-            () => RefreshAndNotifyAsync(NotificationSource.Epic),
-            "5 17 * * THU"
-        );
-        RecurringJob.AddOrUpdate(
-            "dbd",
-            () => RefreshAndNotifyAsync(NotificationSource.Dbd),
-            "0 0 * * WED"
-        );
+        //RecurringJob.AddOrUpdate(
+        //    "epic",
+        //    () => RefreshAndNotifyAsync(NotificationSource.Epic),
+        //    "5 17 * * THU"
+        //);
+        //RecurringJob.AddOrUpdate(
+        //    "dbd",
+        //    () => RefreshAndNotifyAsync(NotificationSource.Dbd),
+        //    "0 0 * * WED"
+        //);
     }
 
     private IEnumerable<Game> CachedGames { get; set; } = null!;
