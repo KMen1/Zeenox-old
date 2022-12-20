@@ -11,8 +11,9 @@ namespace Discordance.Modules.Music;
 public class MusicBase : ModuleBase
 {
     public AudioService AudioService { get; set; } = null!;
+    public SearchService SearchService { get; set; } = null!;
 
-    protected DiscordancePlayer GetPlayer()
+    protected MusicPlayer GetPlayer()
     {
         return AudioService.GetPlayer(Context.Guild.Id)!;
     }
@@ -22,31 +23,26 @@ public class MusicBase : ModuleBase
         return Cache.GetGuildConfig(Context.Guild.Id).Music;
     }
 
-    protected Task<LavalinkTrack[]?> SearchAsync(string query, int limit = 1)
+    protected Task<LavalinkTrack[]> SearchAsync(string query, AudioService.SearchMode searchMode, int limit = 1)
     {
-        return AudioService.SearchAsync(query, Context.User, limit);
+        return SearchService.SearchAsync(query, Context.User, searchMode, limit);
     }
 
-    protected Task<LavalinkTrack?> GetTrackAsync(string query)
+    protected Task<MusicPlayer> CreatePlayerAsync()
     {
-        return AudioService.GetTrackAsync(query, Context.User);
-    }
-
-    protected Task<(DiscordancePlayer, bool)> GetOrCreatePlayerAsync()
-    {
-        return AudioService.GetOrCreatePlayerAsync(
+        return AudioService.CreatePlayerAsync(
             Context.Guild.Id,
             ((IVoiceState) Context.User).VoiceChannel,
             (ITextChannel) Context.Channel
         );
     }
 
-    protected Task<(Embed?, MessageComponent?)> PlayAsync(LavalinkTrack track)
+    protected Task PlayAsync(LavalinkTrack track)
     {
         return AudioService.PlayAsync(Context.Guild.Id, Context.User, track);
     }
 
-    protected Task<(Embed?, MessageComponent?)> PlayAsync(LavalinkTrack[] tracks)
+    protected Task PlayAsync(LavalinkTrack[] tracks)
     {
         return AudioService.PlayAsync(Context.Guild.Id, Context.User, tracks);
     }
@@ -66,7 +62,7 @@ public class MusicBase : ModuleBase
         return AudioService.PauseOrResumeAsync(Context.Guild.Id, Context.User);
     }
 
-    protected Task<bool> ToggleLoopAsync()
+    protected Task<PlayerLoopMode> ToggleLoopAsync()
     {
         return AudioService.ToggleLoopAsync(Context.Guild.Id, Context.User);
     }

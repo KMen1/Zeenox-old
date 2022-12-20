@@ -7,7 +7,6 @@ using Discord.WebSocket;
 using Discordance.Enums;
 using Discordance.Extensions;
 using Discordance.Modules.Gambling.Games;
-using Discordance.Modules.Gambling.Tower.Game;
 using Discordance.Preconditions;
 using Humanizer;
 
@@ -29,7 +28,7 @@ public class Commands : GambleBase
         var result = dbUser.CanStartGame(bet, out var eb);
         if (!result)
         {
-            await RespondAsync(embed: eb, ephemeral: true).ConfigureAwait(false);
+            await RespondAsync(ephemeral: true, embed: eb).ConfigureAwait(false);
             return;
         }
 
@@ -38,7 +37,7 @@ public class Commands : GambleBase
             .WithDescription("**Starting Game...**")
             .Build();
         await RespondAsync(embed: sEb).ConfigureAwait(false);
-        var msg = await GetOriginalResponseAsync().ConfigureAwait(true);
+        var msg = await GetOriginalResponseAsync().ConfigureAwait(false);
         if (
             !GameService.TryStartGame(
                 Context.User.Id,
@@ -52,12 +51,11 @@ public class Commands : GambleBase
         )
         {
             await FollowupAsync(
+                    ephemeral: true,
                     embed: new EmbedBuilder()
                         .WithColor(Color.Red)
                         .WithDescription("**You are already in a game!**")
-                        .Build(),
-                    ephemeral: true
-                )
+                        .Build())
                 .ConfigureAwait(false);
             await msg.DeleteAsync().ConfigureAwait(false);
             return;
@@ -74,12 +72,11 @@ public class Commands : GambleBase
 
         if (game is not Mines or Towers)
             await RespondAsync(
+                    ephemeral: true,
                     embed: new EmbedBuilder()
                         .WithColor(Color.Red)
                         .WithDescription("**You can only stop `mines` or `towers` games!**")
-                        .Build(),
-                    ephemeral: true
-                )
+                        .Build())
                 .ConfigureAwait(false);
 
         switch (game)

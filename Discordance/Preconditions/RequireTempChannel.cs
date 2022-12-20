@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Discordance.Preconditions;
 
-public class RequireTempChannel : PreconditionAttribute
+public class RequireTempChannelAttribute : PreconditionAttribute
 {
     public override Task<PreconditionResult> CheckRequirementsAsync(IInteractionContext context,
         ICommandInfo commandInfo, IServiceProvider services)

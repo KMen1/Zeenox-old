@@ -10,7 +10,6 @@ using Discordance.Models;
 using Discordance.Models.Games;
 using Lavalink4NET.Player;
 using SkiaSharp;
-using Game = Discordance.Models.Game;
 
 namespace Discordance.Extensions;
 
@@ -50,43 +49,6 @@ public static class GenericExtensions
             .GroupBy(x => x.Index / chunkSize)
             .Select(x => x.Select(v => v.Value).ToList())
             .ToList();
-    }
-
-    public static Embed ToEmbed(this IEnumerable<Perk> perks)
-    {
-        var eb = new EmbedBuilder()
-            .WithTitle("Shrine of Secrets")
-            .WithColor(Color.DarkOrange)
-            .WithDescription(
-                $"🏁 <t:{DateTimeOffset.Now.GetNextWeekday(DayOfWeek.Thursday).ToUnixTimeSeconds()}:R>"
-            );
-        //foreach (var perk in perks)
-        //eb.AddField(perk.Name, $"from {perk.CharacterName}", true);
-        return eb.Build();
-    }
-
-    public static Embed[] ToEmbedArray(this IEnumerable<Game> games)
-    {
-        var date = ((DateTimeOffset) DateTime.Today)
-            .GetNextWeekday(DayOfWeek.Thursday)
-            .AddHours(17)
-            .ToUnixTimeSeconds();
-        return games
-            .Select(
-                game =>
-                    new EmbedBuilder()
-                        .WithTitle(game.Title)
-                        .WithDescription(
-                            $"`{game.Description}`\n\n"
-                            + $"💰 **{game.Price.TotalPrice.FmtPrice.OriginalPrice} -> Free** \n\n"
-                            + $"🏁 <t:{date}:R>\n\n"
-                            + $"[Open in browser]({game.EpicUrl})"
-                        )
-                        .WithImageUrl(game.KeyImages[0].Url.ToString())
-                        .WithColor(Color.Gold)
-                        .Build()
-            )
-            .ToArray();
     }
 
     public static bool CanStartGame(this User user, int bet, out Embed? embed)
@@ -133,6 +95,7 @@ public static class GenericExtensions
         using var canvas = new SKCanvas(roundedImage);
         canvas.Clear(SKColors.Transparent);
         using var path = new SKPath();
+        // ReSharper disable PossibleLossOfFraction
         path.AddCircle(image.Width / 2, image.Height / 2, image.Width / 2 - 1f);
         canvas.ClipPath(path, SKClipOperation.Intersect, true);
         canvas.DrawBitmap(image, new SKPoint(0, 0));
@@ -197,7 +160,7 @@ public static class GenericExtensions
         return sb.ToString();
     }
 
-    public static string ToRelativeDiscordTimeStamp(this DateTimeOffset dateTimeOffset)
+    private static string ToRelativeDiscordTimeStamp(this DateTimeOffset dateTimeOffset)
     {
         return $"<t:{dateTimeOffset.ToUnixTimeSeconds()}:R>";
     }

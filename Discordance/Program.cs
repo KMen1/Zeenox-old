@@ -8,6 +8,7 @@ using Discord;
 using Discord.Addons.Hosting;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Discordance;
 using Discordance.Services;
 using DotNetEnv;
 using Google.Apis.Services;
@@ -17,21 +18,18 @@ using Hangfire.Mongo;
 using Hangfire.Mongo.Migration.Strategies;
 using Hangfire.Mongo.Migration.Strategies.Backup;
 using Lavalink4NET;
-using Lavalink4NET.Artwork;
 using Lavalink4NET.DiscordNet;
 using Lavalink4NET.Logging;
 using Lavalink4NET.Tracking;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
 using Newtonsoft.Json;
-using OsuSharp;
-using OsuSharp.Extensions;
 using Serilog;
 using Serilog.Events;
 using SpotifyAPI.Web;
-using StackExchange.Redis;
 using ILogger = Lavalink4NET.Logging.ILogger;
 
 Env.Load();
@@ -49,7 +47,6 @@ Log.Logger = new LoggerConfiguration().Enrich
             x.Dsn = Environment.GetEnvironmentVariable("SENTRY_DSN");
             x.Debug = false;
             x.AttachStacktrace = true;
-            x.SendDefaultPii = true;
             x.TracesSampleRate = 1.0;
             x.Release = FileVersionInfo
                 .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
@@ -60,6 +57,7 @@ Log.Logger = new LoggerConfiguration().Enrich
 
 var host = Host.CreateDefaultBuilder()
     .UseSerilog()
+    .ConfigureWebHostDefaults(x => x.UseStartup<Startup>())
     .ConfigureDiscordShardedHost(
         (_, config) =>
         {
@@ -72,7 +70,8 @@ var host = Host.CreateDefaultBuilder()
                 LogGatewayIntentWarnings = false,
                 DefaultRetryMode = RetryMode.AlwaysFail
             };
-            config.Token = Environment.GetEnvironmentVariable("DISCORD_TOKEN")!;
+            config.Token = Environment.GetEnvironmentVariable("DISCORD_TOKEN") ??
+                           throw new ArgumentException("No token provided");
         }
     )
     .UseInteractionService(
@@ -82,16 +81,6 @@ var host = Host.CreateDefaultBuilder()
             config.LogLevel = LogSeverity.Verbose;
             config.UseCompiledLambda = true;
             config.LocalizationManager = new JsonLocalizationManager("Resources", "DCLocalization");
-        }
-    )
-    .ConfigureOsuSharp(
-        (_, options) =>
-        {
-            options.Configuration = new OsuClientConfiguration
-            {
-                ClientId = int.Parse(Environment.GetEnvironmentVariable("OSU_APP_ID")!),
-                ClientSecret = Environment.GetEnvironmentVariable("OSU_APP_SECRET")!
-            };
         }
     )
     .ConfigureServices(
@@ -140,18 +129,8 @@ var host = Host.CreateDefaultBuilder()
                 }
             );
             services.AddSingleton<YouTubeService>();
-            services.AddSingleton<IConnectionMultiplexer>(
-                ConnectionMultiplexer.Connect(
-                    new ConfigurationOptions
-                    {
-                        EndPoints = {Environment.GetEnvironmentVariable("REDIS_ENDPOINT")!},
-                        Password = Environment.GetEnvironmentVariable("REDIS_PASSWORD"),
-                        AsyncTimeout = 15000
-                    }
-                )
-            );
+            services.AddSingleton<SearchService>();
             services.AddSingleton<AudioService>();
-            services.AddSingleton<ArtworkService>();
             services.AddSingleton<MongoService>();
             services.AddSingleton<TemporaryChannelService>();
             services.AddSingleton<GameService>();
@@ -159,7 +138,7 @@ var host = Host.CreateDefaultBuilder()
                 x =>
                     x.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore
             );
-            services.AddSingleton<ImageService>();
+            //services.AddSingleton<ImageService>();
             services.AddHangfire(
                 x =>
                 {
@@ -208,7 +187,7 @@ var localization = JsonConvert.DeserializeObject<
                        Dictionary<string, Dictionary<string, string>>>(localizationData) ??
                    throw new JsonException("Localization.json is not valid JSON");
 
-foreach (var message in localization) cache.Set(message.Key, message.Value);
+foreach (var item in localization) cache.Set(item.Key, item.Value);
 
 var client = host.Services.GetRequiredService<DiscordShardedClient>();
 
@@ -218,7 +197,7 @@ client.ShardReady += async _ =>
 {
     if (needToConnect)
     {
-        await audioService.InitializeAsync();
+        await audioService.InitializeAsync().ConfigureAwait(false);
         needToConnect = false;
     }
 };
@@ -226,7 +205,7 @@ client.ShardReady += async _ =>
 client.ShardReady += async shard =>
 {
     var mongo = host.Services.GetRequiredService<MongoService>();
-    foreach (var guild in shard.Guilds) await mongo.AddGuildConfigAsync(guild.Id);
+    foreach (var guild in shard.Guilds) await mongo.AddGuildConfigAsync(guild.Id).ConfigureAwait(false);
 };
 
 var audioLogger = (EventLogger) ((LavalinkNode) audioService).Logger!;

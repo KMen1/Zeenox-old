@@ -1,6 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discordance.Models;
+using Discordance.Services;
 
 namespace Discordance.Modules.Gambling.Games;
 
@@ -8,5 +8,5 @@ public interface IGame
 {
     ulong UserId { get; }
     Task StartAsync();
-    event EventHandler<GameEndEventArgs> GameEnded;
+    event AsyncEventHandler<GameEndEventArgs> GameEnded;
 }

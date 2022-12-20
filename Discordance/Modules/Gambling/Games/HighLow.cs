@@ -9,6 +9,7 @@ using Discordance.Enums;
 using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Models.Games;
+using Discordance.Services;
 using SkiaSharp;
 
 namespace Discordance.Modules.Gambling.Games;
@@ -40,7 +41,7 @@ public sealed class HighLow : IGame
     private Cloudinary CloudinaryClient { get; }
 
     public ulong UserId { get; }
-    public event EventHandler<GameEndEventArgs>? GameEnded;
+    public event AsyncEventHandler<GameEndEventArgs> GameEnded = null!;
 
     public Task StartAsync()
     {
@@ -86,7 +87,7 @@ public sealed class HighLow : IGame
         Hidden = false;
         await UpdateMessageAsync($"**Result:** You lost **{Bet:N0}** credits!")
             .ConfigureAwait(false);
-        OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose));
+        await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose)).ConfigureAwait(false);
     }
 
     public async Task LowerAsync()
@@ -102,14 +103,14 @@ public sealed class HighLow : IGame
         Hidden = false;
         await UpdateMessageAsync($"**Result:** You lost **{Bet:N0}** credits!")
             .ConfigureAwait(false);
-        OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose));
+        await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose)).ConfigureAwait(false);
     }
 
     public async Task FinishAsync()
     {
         Hidden = false;
-        await UpdateMessageAsync($"**Result:** You win **{Stake:N0}** credits!");
-        OnGameEnded(new GameEndEventArgs(UserId, Bet, Stake, GameResult.Win));
+        await UpdateMessageAsync($"**Result:** You win **{Stake:N0}** credits!").ConfigureAwait(false);
+        await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, Stake, GameResult.Win)).ConfigureAwait(false);
     }
 
     private Task UpdateMessageAsync(string? desc = null)
@@ -182,8 +183,8 @@ public sealed class HighLow : IGame
         return surface.Snapshot().Encode(SKEncodedImageFormat.Png, 100).AsStream();
     }
 
-    private void OnGameEnded(GameEndEventArgs e)
+    private Task OnGameEndedAsync(GameEndEventArgs e)
     {
-        GameEnded?.Invoke(this, e);
+        return GameEnded.Invoke(this, e);
     }
 }

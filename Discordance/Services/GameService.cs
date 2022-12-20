@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using CloudinaryDotNet;
 using Discord;
 using Discordance.Enums;
 using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Modules.Gambling.Games;
-using Discordance.Modules.Gambling.Tower.Game;
 
 namespace Discordance.Services;
+
+public delegate Task AsyncEventHandler<in TEventArgs>(object sender, TEventArgs eventArgs);
 
 public class GameService
 {
@@ -36,7 +38,7 @@ public class GameService
         return _games[userId];
     }
 
-    public bool IsPlaying(ulong userId)
+    private bool IsPlaying(ulong userId)
     {
         return _games.ContainsKey(userId);
     }
@@ -77,51 +79,32 @@ public class GameService
         }
 
         game.GameEnded += OnGameEndedAsync;
-        _games.TryAdd(userId, game);
-        return true;
+        return _games.TryAdd(userId, game);
     }
 
-    private async void OnGameEndedAsync(object? sender, GameEndEventArgs e)
+    private Task OnGameEndedAsync(object? sender, GameEndEventArgs e)
     {
         var game = (IGame) sender!;
         game.GameEnded -= OnGameEndedAsync;
         _games.TryRemove(game.UserId, out _);
 
-        switch (e.Result)
+        return e.Result switch
         {
-            case GameResult.Win:
+            GameResult.Win => _databaseService.UpdateUserAsync(e.UserId, x =>
             {
-                await _databaseService
-                    .UpdateUserAsync(
-                        e.UserId,
-                        x =>
-                        {
-                            x.Balance += e.Prize;
-                            x.Wins++;
-                            x.MoneyWon += e.Prize;
-                        }
-                    )
-                    .ConfigureAwait(false);
-                break;
-            }
-            case GameResult.Lose:
+                x.Balance += e.Prize;
+                x.Wins++;
+                x.MoneyWon += e.Prize;
+            }),
+            GameResult.Lose => _databaseService.UpdateUserAsync(e.UserId, x =>
             {
-                await _databaseService
-                    .UpdateUserAsync(
-                        e.UserId,
-                        x =>
-                        {
-                            x.Balance -= e.Bet;
-                            x.Losses++;
-                            x.MoneyLost += e.Bet;
-                        }
-                    )
-                    .ConfigureAwait(false);
-                break;
-            }
-            case GameResult.Tie:
-                break;
-        }
+                x.Balance -= e.Bet;
+                x.Losses++;
+                x.MoneyLost += e.Bet;
+            }),
+            GameResult.Tie => Task.CompletedTask,
+            _ => Task.CompletedTask
+        };
     }
 
     private double GenerateCrashPoint()

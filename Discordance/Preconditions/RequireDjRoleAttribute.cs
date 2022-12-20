@@ -29,6 +29,6 @@ public sealed class RequireDjRoleAttribute : PreconditionAttribute
             .Any()
             ? Task.FromResult(PreconditionResult.FromSuccess())
             : Task.FromResult(
-                PreconditionResult.FromError(cache.GetMessage(config.Language, "action_requires_dj_role")));
+                PreconditionResult.FromError(cache.GetMessage(config.Language, "ActionRequiresDjRole")));
     }
 }

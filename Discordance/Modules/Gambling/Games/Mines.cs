@@ -6,6 +6,7 @@ using Discord;
 using Discordance.Enums;
 using Discordance.Models;
 using Discordance.Models.Games;
+using Discordance.Services;
 
 namespace Discordance.Modules.Gambling.Games;
 
@@ -45,7 +46,7 @@ public sealed class Mines : IGame
 
     public ulong UserId { get; }
 
-    public event EventHandler<GameEndEventArgs>? GameEnded;
+    public event AsyncEventHandler<GameEndEventArgs> GameEnded = null!;
 
     public Task StartAsync()
     {
@@ -115,7 +116,7 @@ public sealed class Mines : IGame
         if (field.IsMine)
         {
             await StopAsync(true).ConfigureAwait(false);
-            OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose));
+            await OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose)).ConfigureAwait(false);
             return;
         }
 
@@ -125,7 +126,8 @@ public sealed class Mines : IGame
         if (Clicked == 25 - MineAmount)
         {
             await StopAsync(false).ConfigureAwait(false);
-            OnGameEnded(new GameEndEventArgs(UserId, Bet, (int) (Bet * Multiplier), GameResult.Win));
+            await OnGameEnded(new GameEndEventArgs(UserId, Bet, (int) (Bet * Multiplier), GameResult.Win))
+                .ConfigureAwait(false);
             return;
         }
 
@@ -205,13 +207,13 @@ public sealed class Mines : IGame
                 }
             )
             .ConfigureAwait(false);
-        OnGameEnded(
+        await OnGameEnded(
             new GameEndEventArgs(UserId, Bet, prize, lost ? GameResult.Lose : GameResult.Win)
-        );
+        ).ConfigureAwait(false);
     }
 
-    private void OnGameEnded(GameEndEventArgs e)
+    private Task OnGameEnded(GameEndEventArgs e)
     {
-        GameEnded?.Invoke(this, e);
+        return GameEnded.Invoke(this, e);
     }
 }

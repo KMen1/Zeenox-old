@@ -25,12 +25,12 @@ public sealed class RequireVoiceAttribute : PreconditionAttribute
 
         if (userVoiceChannel is null)
             return Task.FromResult(
-                PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "require_voice_channel")));
+                PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "RequireVoiceChannel")));
         if (player is null)
             return Task.FromResult(PreconditionResult.FromSuccess());
 
         return Task.FromResult(userVoiceChannel.Id != player.VoiceChannelId
-            ? PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "require_same_voice_channel"))
+            ? PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "RequireSameVoiceChannel"))
             : PreconditionResult.FromSuccess());
     }
 }

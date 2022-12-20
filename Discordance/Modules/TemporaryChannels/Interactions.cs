@@ -31,11 +31,12 @@ public class Interactions : TempBase
     [ComponentInteraction("ban")]
     public async Task BanUserAsync()
     {
-        await DeferAsync(true);
+        await DeferAsync(true).ConfigureAwait(false);
         var channel = ((SocketGuildUser) Context.User).VoiceChannel;
         var selectMenu = new SelectMenuBuilder("banselect",
             channel.ConnectedUsers.Select(x => new SelectMenuOptionBuilder(x.Username, x.Id.ToString())).ToList());
-        await FollowupAsync(components: new ComponentBuilder().WithSelectMenu(selectMenu).Build(), ephemeral: true);
+        await FollowupAsync(components: new ComponentBuilder().WithSelectMenu(selectMenu).Build(), ephemeral: true)
+            .ConfigureAwait(false);
     }
 
     [ComponentInteraction("banselect")]
@@ -52,7 +53,8 @@ public class Interactions : TempBase
         await DeferAsync(true).ConfigureAwait(false);
         var selectMenu = new SelectMenuBuilder("unbanselect",
             GetBannedUsers().Select(x => new SelectMenuOptionBuilder(x.Username, x.Id.ToString())).ToList());
-        await FollowupAsync(components: new ComponentBuilder().WithSelectMenu(selectMenu).Build(), ephemeral: true);
+        await FollowupAsync(components: new ComponentBuilder().WithSelectMenu(selectMenu).Build(), ephemeral: true)
+            .ConfigureAwait(false);
     }
 
     [ComponentInteraction("unbanselect")]
@@ -71,7 +73,7 @@ public class Interactions : TempBase
         var selectMenu = new SelectMenuBuilder("kickselect",
             channel.ConnectedUsers.Select(x => new SelectMenuOptionBuilder(x.Username, x.Id.ToString())).ToList());
         await FollowupAsync("select", components: new ComponentBuilder().WithSelectMenu(selectMenu).Build(),
-            ephemeral: true);
+            ephemeral: true).ConfigureAwait(false);
     }
 
     [ComponentInteraction("kickselect")]
@@ -86,7 +88,7 @@ public class Interactions : TempBase
     public async Task LimitChannelInteractionAsync(int limit)
     {
         await DeferAsync(true).ConfigureAwait(false);
-        await LimitChannelAsync(limit);
+        await LimitChannelAsync(limit).ConfigureAwait(false);
         await UpdateMessageAsync().ConfigureAwait(false);
         await FollowupAsync($"Channel limit set to {limit}.", ephemeral: true).ConfigureAwait(false);
     }
@@ -100,21 +102,21 @@ public class Interactions : TempBase
             .AddTextInput("What should the new name be?", "newname", TextInputStyle.Short, "My super channel", 1, 25,
                 true)
             .Build();
-        await RespondWithModalAsync(modal);
+        await RespondWithModalAsync(modal).ConfigureAwait(false);
     }
 
     [ModalInteraction("renamemodal")]
     public async Task RenameChannelInteractionAsync(RenameModal modal)
     {
-        await DeferAsync(true);
-        await RenameChannelAsync(modal.NewName);
+        await DeferAsync(true).ConfigureAwait(false);
+        await RenameChannelAsync(modal.NewName).ConfigureAwait(false);
         await UpdateMessageAsync().ConfigureAwait(false);
         await FollowupAsync("Channel renamed.", ephemeral: true).ConfigureAwait(false);
     }
 
     public class RenameModal : IModal
     {
-        [ModalTextInput("newname")] public string NewName { get; set; }
+        [ModalTextInput("newname")] public string NewName { get; set; } = null!;
         public string Title => string.Empty;
     }
 }

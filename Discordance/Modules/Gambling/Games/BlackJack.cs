@@ -10,6 +10,7 @@ using Discordance.Enums;
 using Discordance.Extensions;
 using Discordance.Models;
 using Discordance.Models.Games;
+using Discordance.Services;
 using SkiaSharp;
 
 namespace Discordance.Modules.Gambling.Games;
@@ -41,7 +42,7 @@ public sealed class BlackJack : IGame
     private Cloudinary Cloudinary { get; }
 
     public ulong UserId { get; }
-    public event EventHandler<GameEndEventArgs>? GameEnded;
+    public event AsyncEventHandler<GameEndEventArgs> GameEnded = null!;
 
     public Task StartAsync()
     {
@@ -58,7 +59,7 @@ public sealed class BlackJack : IGame
                 Hidden = false;
                 await UpdateMessageAsync($"**Result:** You lose **{Bet:N0}** credits!")
                     .ConfigureAwait(false);
-                OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose));
+                await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose)).ConfigureAwait(false);
                 return;
             }
             case 21:
@@ -67,7 +68,7 @@ public sealed class BlackJack : IGame
                 var reward = (int) (Bet * 2.5) - Bet;
                 await UpdateMessageAsync($"**Result:** You win **{reward:N0}** credits!")
                     .ConfigureAwait(false);
-                OnGameEnded(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win));
+                await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win)).ConfigureAwait(false);
                 return;
             }
         }
@@ -87,13 +88,13 @@ public sealed class BlackJack : IGame
                 var reward = Bet * 2 - Bet;
                 await UpdateMessageAsync($"**Result:** You win **{reward:N0}** credits!")
                     .ConfigureAwait(false);
-                OnGameEnded(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win));
+                await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win)).ConfigureAwait(false);
                 return;
             }
             case 21:
             {
-                await UpdateMessageAsync($"**Result:** You lose **{Bet:N0}** credits!");
-                OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose));
+                await UpdateMessageAsync($"**Result:** You lose **{Bet:N0}** credits!").ConfigureAwait(false);
+                await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose)).ConfigureAwait(false);
                 return;
             }
         }
@@ -103,7 +104,7 @@ public sealed class BlackJack : IGame
             var reward = (int) (Bet * 2.5) - Bet;
             await UpdateMessageAsync($"**Result:** You win **{reward:N0}** credits!")
                 .ConfigureAwait(false);
-            OnGameEnded(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win));
+            await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win)).ConfigureAwait(false);
             return;
         }
 
@@ -112,7 +113,7 @@ public sealed class BlackJack : IGame
             var reward = Bet * 2 - Bet;
             await UpdateMessageAsync($"**Result:** You win **{reward:N0}** credits!")
                 .ConfigureAwait(false);
-            OnGameEnded(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win));
+            await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, reward, GameResult.Win)).ConfigureAwait(false);
             return;
         }
 
@@ -120,12 +121,12 @@ public sealed class BlackJack : IGame
         {
             await UpdateMessageAsync($"**Result:** You lose **{Bet:N0}** credits!")
                 .ConfigureAwait(false);
-            OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose));
+            await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose)).ConfigureAwait(false);
             return;
         }
 
         await UpdateMessageAsync("**Result:** Tie - You get your bet back!").ConfigureAwait(false);
-        OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Tie));
+        await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, 0, GameResult.Tie)).ConfigureAwait(false);
     }
 
     private Task UpdateMessageAsync(string? desc = null)
@@ -202,8 +203,8 @@ public sealed class BlackJack : IGame
         return surface.Snapshot().Encode(SKEncodedImageFormat.Png, 100).AsStream();
     }
 
-    private void OnGameEnded(GameEndEventArgs e)
+    private Task OnGameEndedAsync(GameEndEventArgs e)
     {
-        GameEnded?.Invoke(this, e);
+        return GameEnded.Invoke(this, e);
     }
 }

@@ -25,7 +25,7 @@ public sealed class RequireAllowedChannelAttribute : PreconditionAttribute
         return config.Music.AllowedVoiceChannels.Contains(((IVoiceState) context.User).VoiceChannel.Id)
             ? Task.FromResult(PreconditionResult.FromSuccess())
             : Task.FromResult(
-                PreconditionResult.FromError(cache.GetMessage(config.Language, "channel_not_allowed"))
+                PreconditionResult.FromError(cache.GetMessage(config.Language, "ChannelNotAllowed"))
             );
     }
 }

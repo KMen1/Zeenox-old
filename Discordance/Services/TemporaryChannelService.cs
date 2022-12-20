@@ -41,7 +41,7 @@ public class TemporaryChannelService
             return;
 
         var guild = user.Guild;
-        if (JoinedCreateChannel(after, user, out var hub))
+        if (JoinedCreateChannel(after, out var hub))
         {
             if (HasTempChannel(user.Id))
                 return;
@@ -158,7 +158,7 @@ public class TemporaryChannelService
 
         foreach (var user in users)
         {
-            var member = await channel.Guild.GetUserAsync(user);
+            var member = await channel.Guild.GetUserAsync(user).ConfigureAwait(false);
             if (member is null)
                 continue;
             await member.ModifyAsync(x => x.Channel = null).ConfigureAwait(false);
@@ -177,7 +177,7 @@ public class TemporaryChannelService
 
         foreach (var user in users)
         {
-            var member = await channel.Guild.GetUserAsync(user);
+            var member = await channel.Guild.GetUserAsync(user).ConfigureAwait(false);
             if (member is null)
                 continue;
             await member.ModifyAsync(x => x.Channel = null).ConfigureAwait(false);
@@ -212,7 +212,7 @@ public class TemporaryChannelService
 
         foreach (var user in users)
         {
-            var member = await channel.Guild.GetUserAsync(user);
+            var member = await channel.Guild.GetUserAsync(user).ConfigureAwait(false);
             if (member is null)
                 continue;
             await channel.AddPermissionOverwriteAsync(member,
@@ -235,7 +235,7 @@ public class TemporaryChannelService
         return categoryId is not null && _channels.ContainsKey(user.Id);
     }
 
-    private bool JoinedCreateChannel(SocketVoiceState after, IUser user, out Hub? hub)
+    private bool JoinedCreateChannel(SocketVoiceState after, out Hub? hub)
     {
         hub = null;
         if (after.VoiceChannel is not { } voiceChannel)

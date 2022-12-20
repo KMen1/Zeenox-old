@@ -22,7 +22,7 @@ public sealed class RequirePlayerAttribute : PreconditionAttribute
 
         return Task.FromResult(
             !service.HasPlayer(context.Guild.Id)
-                ? PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "no_player"))
+                ? PreconditionResult.FromError(cache.GetMessage(context.Guild.Id, "NotPlaying"))
                 : PreconditionResult.FromSuccess()
         );
     }

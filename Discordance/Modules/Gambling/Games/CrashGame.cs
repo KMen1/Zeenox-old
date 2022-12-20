@@ -1,10 +1,10 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discordance.Enums;
 using Discordance.Models;
+using Discordance.Services;
 
 namespace Discordance.Modules.Gambling.Games;
 
@@ -29,7 +29,7 @@ public sealed class Crash : IGame
     private CancellationToken StoppingToken { get; }
 
     public ulong UserId { get; }
-    public event EventHandler<GameEndEventArgs>? GameEnded;
+    public event AsyncEventHandler<GameEndEventArgs> GameEnded = null!;
 
     public async Task StartAsync()
     {
@@ -69,7 +69,7 @@ public sealed class Crash : IGame
                         }
                     )
                     .ConfigureAwait(false);
-                OnGameEnded(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose));
+                await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, 0, GameResult.Lose)).ConfigureAwait(false);
                 break;
             }
 
@@ -95,11 +95,11 @@ public sealed class Crash : IGame
                 }
             )
             .ConfigureAwait(false);
-        OnGameEnded(new GameEndEventArgs(UserId, Bet, Profit, GameResult.Win));
+        await OnGameEndedAsync(new GameEndEventArgs(UserId, Bet, Profit, GameResult.Win)).ConfigureAwait(false);
     }
 
-    private void OnGameEnded(GameEndEventArgs e)
+    private Task OnGameEndedAsync(GameEndEventArgs e)
     {
-        GameEnded?.Invoke(this, e);
+        return GameEnded.Invoke(this, e);
     }
 }

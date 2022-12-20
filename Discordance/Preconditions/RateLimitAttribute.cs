@@ -36,7 +36,7 @@ public class RateLimitAttribute : PreconditionAttribute
         if (DateTime.UtcNow > _removeExpiredCommandsTime)
             _ = Task.Run(async () =>
             {
-                await ClearExpiredCommands();
+                await ClearExpiredCommands().ConfigureAwait(false);
                 _removeExpiredCommandsTime = DateTime.UtcNow.AddMinutes(30);
             });
 
@@ -68,17 +68,17 @@ public class RateLimitAttribute : PreconditionAttribute
 
     private static Task ClearExpiredCommands()
     {
-        foreach (var item in Items)
+        foreach (var item in Items.Select(x => x.Value))
         {
             var utcTime = DateTime.UtcNow;
-            foreach (var command in item.Value.Where(a => utcTime > a.ExpireAt).ToList())
-                item.Value.Remove(command);
+            foreach (var command in item.Where(a => utcTime > a.ExpireAt).ToList())
+                item.Remove(command);
         }
 
         return Task.CompletedTask;
     }
 
-    private class RateLimitItem
+    private sealed class RateLimitItem
     {
         public RateLimitItem(string id, DateTime expireAt)
         {

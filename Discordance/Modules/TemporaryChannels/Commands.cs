@@ -25,7 +25,8 @@ public class Commands : ModuleBase
         [MinValue(8)] [MaxValue(96)] int bitrate
     )
     {
-        var category = await Context.Guild.CreateCategoryChannelAsync("Rename me (Temp category)");
+        var category = await Context.Guild.CreateCategoryChannelAsync("Rename me (Temp category)")
+            .ConfigureAwait(false);
         var createChannel = await Context.Guild.CreateVoiceChannelAsync("Rename me (Create channel)", x =>
         {
             x.CategoryId = category.Id;
@@ -46,7 +47,7 @@ public class Commands : ModuleBase
                             moveMembers: PermValue.Deny, sendMessages: PermValue.Deny)
                     )
                 });
-        });
+        }).ConfigureAwait(false);
 
         await UpdateGuildConfigAsync(
                 x =>

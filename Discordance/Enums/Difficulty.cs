@@ -1,4 +1,4 @@
-﻿namespace Discordance.Modules.Gambling.Tower.Game;
+﻿namespace Discordance.Enums;
 
 public enum Difficulty
 {

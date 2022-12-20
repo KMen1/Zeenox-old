@@ -4,7 +4,7 @@ using Discord;
 using Discordance.Enums;
 using Discordance.Models;
 using Discordance.Models.Games;
-using Discordance.Modules.Gambling.Tower.Game;
+using Discordance.Services;
 
 namespace Discordance.Modules.Gambling.Games;
 
@@ -33,8 +33,8 @@ public sealed class Towers : IGame
     }
 
     private IUserMessage Message { get; }
-    public int Bet { get; }
-    public Difficulty Difficulty { get; }
+    private int Bet { get; }
+    private Difficulty Difficulty { get; }
     private int Columns { get; }
     private int Mines { get; }
     private double Multiplier { get; }
@@ -42,7 +42,7 @@ public sealed class Towers : IGame
     private int Prize { get; set; }
 
     public ulong UserId { get; }
-    public event EventHandler<GameEndEventArgs>? GameEnded;
+    public event AsyncEventHandler<GameEndEventArgs> GameEnded = null!;
 
     public Task StartAsync()
     {
@@ -126,7 +126,7 @@ public sealed class Towers : IGame
         {
             await UpdateMessageAsync($"**Result:** You won **{Prize:N0}** credits!", reveal: true)
                 .ConfigureAwait(false);
-            OnGameEnded(new GameEndEventArgs(UserId, Bet, Prize, GameResult.Win));
+            await OnGameEnded(new GameEndEventArgs(UserId, Bet, Prize, GameResult.Win)).ConfigureAwait(false);
         }
 
         var firstFieldInRow = _fields[x, 0];
@@ -144,11 +144,11 @@ public sealed class Towers : IGame
                 reveal: true
             )
             .ConfigureAwait(false);
-        OnGameEnded(
+        await OnGameEnded(
             Lost
                 ? new GameEndEventArgs(UserId, Bet, prize, GameResult.Lose)
                 : new GameEndEventArgs(UserId, Bet, prize, GameResult.Win)
-        );
+        ).ConfigureAwait(false);
     }
 
     private Task UpdateMessageAsync(
@@ -194,8 +194,8 @@ public sealed class Towers : IGame
         );
     }
 
-    private void OnGameEnded(GameEndEventArgs e)
+    private Task OnGameEnded(GameEndEventArgs e)
     {
-        GameEnded?.Invoke(this, e);
+        return GameEnded.Invoke(this, e);
     }
 }

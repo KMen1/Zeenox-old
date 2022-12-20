@@ -29,6 +29,6 @@ public sealed class RequireSongRequesterAttribute : PreconditionAttribute
         return context.User.Id == player!.RequestedBy.Id
             ? Task.FromResult(PreconditionResult.FromSuccess())
             : Task.FromResult(
-                PreconditionResult.FromError(cache.GetMessage(config.Language, "require_song_requester")));
+                PreconditionResult.FromError(cache.GetMessage(config.Language, "RequireSongRequester")));
     }
 }
