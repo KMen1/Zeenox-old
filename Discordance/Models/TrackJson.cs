@@ -2,7 +2,8 @@
 
 namespace Discordance.Models;
 
-public record TrackJson(string? Title, string? Author, string? Uri, string? Thumbnail, int? Duration, string? Requester,
+public record TrackJson(string? Title, string? Author, string? Uri, string? ThumbnailUrl, int? Duration,
+    string? Requester,
     int? Position)
 {
     public static TrackJson FromLavalinkTrack(LavalinkTrack? track, int? position = null)

@@ -60,7 +60,7 @@ public sealed class SearchService
             {
                 var request = _youTubeService.Search.List("snippet");
                 request.Q = query;
-                request.MaxResults = 25;
+                request.MaxResults = 24;
                 request.Type = "video";
                 var response = await request.ExecuteAsync().ConfigureAwait(false);
                 var tracks = response.Items.Select(x =>

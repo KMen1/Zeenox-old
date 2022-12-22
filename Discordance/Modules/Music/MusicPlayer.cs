@@ -40,7 +40,7 @@ public class MusicPlayer : VoteLavalinkPlayer
     public int VoteSkipCount { get; private set; }
     public int VoteSkipRequired { get; private set; }
     public TimeSpan? SponsorBlockSkipTime { get; set; }
-    private TimeSpan? LengthWithSponsorBlock => CurrentTrack?.Duration - SponsorBlockSkipTime;
+    public TimeSpan? LengthWithSponsorBlock => CurrentTrack?.Duration - SponsorBlockSkipTime;
 
     private Embed Embed
     {
@@ -67,9 +67,7 @@ public class MusicPlayer : VoteLavalinkPlayer
                 .AddField(Localized.Channel, VoiceChannel.Mention, true)
                 .AddField(
                     Localized.Length,
-                    $"`{CurrentTrack.Duration.ToTimeString()}" + (LengthWithSponsorBlock is not null
-                        ? $" ({LengthWithSponsorBlock.Value.ToTimeString()})`"
-                        : "`"),
+                    $"`{(LengthWithSponsorBlock is not null ? LengthWithSponsorBlock?.ToTimeString() : CurrentTrack.Duration.ToTimeString())}`",
                     true
                 )
                 .AddField(

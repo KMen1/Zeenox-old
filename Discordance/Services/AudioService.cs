@@ -6,6 +6,7 @@ using Discord.WebSocket;
 using Discordance.Enums;
 using Discordance.Extensions;
 using Discordance.Models;
+using Discordance.Models.Socket.Server;
 using Discordance.Modules.Music;
 using Google.Apis.YouTube.v3;
 using Lavalink4NET;
@@ -386,7 +387,7 @@ public sealed class AudioService
             await player.SkipAsync().ConfigureAwait(false);
             await SocketHelper.SendMessageAsync(player.GuildId,
                     ServerMessageType.UpdateCurrentTrack | ServerMessageType.UpdateQueue,
-                    player)
+                    player, UpdateQueueMessageType.Remove)
                 .ConfigureAwait(false);
             return;
         }

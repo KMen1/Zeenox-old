@@ -1,4 +1,5 @@
-﻿using Lavalink4NET.Player;
+﻿using System;
+using Lavalink4NET.Player;
 
 namespace Discordance.Models.Socket.Server;
 
@@ -11,7 +12,7 @@ public struct UpdateCurrentTrackMessage : IServerMessage
     public int? Duration { get; init; }
     public string? Requester { get; init; }
 
-    public static UpdateCurrentTrackMessage FromLavalinkTrack(LavalinkTrack? track)
+    public static UpdateCurrentTrackMessage FromLavalinkTrack(LavalinkTrack? track, TimeSpan? sponsorBlockTime = null)
     {
         var context = track?.Context as TrackContext?;
         return new UpdateCurrentTrackMessage
@@ -20,7 +21,7 @@ public struct UpdateCurrentTrackMessage : IServerMessage
             Author = track?.Author,
             Url = track?.Uri?.ToString() ?? "",
             ThumbnailUrl = context?.CoverUrl,
-            Duration = (int?) track?.Duration.TotalSeconds,
+            Duration = (int?) sponsorBlockTime?.TotalSeconds ?? (int?) track?.Duration.TotalSeconds,
             Requester = $"{context?.Requester.Username}#{context?.Requester.Discriminator}"
         };
     }

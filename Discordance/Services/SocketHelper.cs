@@ -20,7 +20,7 @@ public sealed class SocketHelper
     private readonly AudioService _audioService;
     private readonly DiscordShardedClient _client;
     private readonly SearchService _searchService;
-    private readonly ConcurrentDictionary<ulong, List<WebSocket>> _sockets = new();
+    private readonly ConcurrentDictionary<ulong, List<(ulong userId, WebSocket socket)>> _sockets = new();
 
     public SocketHelper(AudioService audioService, SearchService searchService, DiscordShardedClient client)
     {
@@ -97,8 +97,17 @@ public sealed class SocketHelper
             case ClientMessageType.SetController:
             {
                 if (!_sockets.ContainsKey(message.GuildId))
-                    _sockets.TryAdd(message.GuildId, new List<WebSocket>());
-                _sockets[message.GuildId].Add(socket);
+                    _sockets.TryAdd(message.GuildId, new List<(ulong, WebSocket)>());
+                if (_sockets[message.GuildId].Exists(x => x.userId == message.UserId))
+                {
+                    _sockets[message.GuildId].RemoveAll(x => x.userId == message.UserId);
+                    _sockets[message.GuildId].Add((message.UserId, socket));
+                }
+                else
+                {
+                    _sockets[message.GuildId].Add((message.UserId, socket));
+                }
+
                 await SendMessageAsync(message.GuildId, ServerMessageType.UpdateAll,
                     _audioService.GetPlayer(message.GuildId)!).ConfigureAwait(false);
                 Task.Run(() => SendPositionLoopAsync(message.GuildId, token));
@@ -120,15 +129,23 @@ public sealed class SocketHelper
         }
     }
 
-    public async Task SendMessageAsync(ulong guildId, ServerMessageType type, MusicPlayer player)
+    public async Task SendMessageAsync(ulong guildId, ServerMessageType type, MusicPlayer player,
+        UpdateQueueMessageType queueMessageType = UpdateQueueMessageType.Replace)
     {
         if (!_sockets.ContainsKey(guildId))
             return;
         if (_sockets[guildId].Count == 0)
             return;
-        _sockets[guildId].RemoveAll(s => s.State != WebSocketState.Open);
+        _sockets[guildId].RemoveAll(s => s.socket.State != WebSocketState.Open);
         var sockets = _sockets[guildId].ToList();
-        foreach (var socket in sockets)
+        var messages = CreateMessages(player, type, queueMessageType);
+        var messagesJson = JsonSerializer.SerializeToUtf8Bytes(messages);
+
+        foreach (var (_, socket) in sockets)
+            await socket.SendAsync(messagesJson, WebSocketMessageType.Text, true, CancellationToken.None)
+                .ConfigureAwait(false);
+
+        /*foreach (var (_, socket) in sockets)
         {
             if (type.HasFlag(ServerMessageType.UpdateAll))
             {
@@ -145,7 +162,7 @@ public sealed class SocketHelper
                 await socket.SendAsync(JsonSerializer.SerializeToUtf8Bytes(new BaseServerMessage
                     {
                         Type = ServerMessageType.UpdateQueue,
-                        Payload = UpdateQueueMessage.FromQueue(player.Queue)
+                        Payload = UpdateQueueMessage.FromQueue(player.Queue, queueMessageType)
                     }), WebSocketMessageType.Text, true,
                     CancellationToken.None).ConfigureAwait(false);
 
@@ -172,6 +189,46 @@ public sealed class SocketHelper
                         Payload = UpdateCurrentTrackMessage.FromLavalinkTrack(player.CurrentTrack)
                     }), WebSocketMessageType.Text, true,
                     CancellationToken.None).ConfigureAwait(false);
-        }
+        }*/
+    }
+
+    private static IEnumerable<BaseServerMessage> CreateMessages(MusicPlayer player, ServerMessageType type,
+        UpdateQueueMessageType queueMessageType)
+    {
+        if (type.HasFlag(ServerMessageType.UpdateAll))
+            yield return new BaseServerMessage
+            {
+                Type = ServerMessageType.UpdateAll,
+                Payload = UpdateAllMessage.FromMusicPlayer(player)
+            };
+
+        if (type.HasFlag(ServerMessageType.UpdateQueue))
+            yield return new BaseServerMessage
+            {
+                Type = ServerMessageType.UpdateQueue,
+                Payload = UpdateQueueMessage.FromQueue(player.Queue, queueMessageType)
+            };
+
+        if (type.HasFlag(ServerMessageType.UpdatePosition))
+            yield return new BaseServerMessage
+            {
+                Type = ServerMessageType.UpdatePosition,
+                Payload = new UpdatePositionMessage {Position = (int) player.Position.Position.TotalSeconds}
+            };
+
+        if (type.HasFlag(ServerMessageType.UpdatePlayerStatus))
+            yield return new BaseServerMessage
+            {
+                Type = ServerMessageType.UpdatePlayerStatus,
+                Payload = UpdatePlayerStatusMessage.FromPlayer(player)
+            };
+
+        if (type.HasFlag(ServerMessageType.UpdateCurrentTrack))
+            yield return new BaseServerMessage
+            {
+                Type = ServerMessageType.UpdateCurrentTrack,
+                Payload = UpdateCurrentTrackMessage.FromLavalinkTrack(player.CurrentTrack,
+                    player.LengthWithSponsorBlock)
+            };
     }
 }
