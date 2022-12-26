@@ -34,6 +34,9 @@ public class StringClientMessageTypeJsonConverter : JsonConverter<IClientMessage
             ClientMessageType.PlayQueueIndex => JsonSerializer.Deserialize<PlayQueueIndexMessage>(text, options),
             ClientMessageType.SeekPosition => JsonSerializer.Deserialize<SeekPositionMessage>(text, options),
             ClientMessageType.SetVolume => JsonSerializer.Deserialize<SetVolumeMessage>(text, options),
+            ClientMessageType.FavoriteTrack => JsonSerializer.Deserialize<FavoriteTrackMessage>(text, options),
+            ClientMessageType.RemoveTrackFromQueue => JsonSerializer.Deserialize<RemoveTrackFromQueueMessage>(text,
+                options),
             _ => null
         };
     }

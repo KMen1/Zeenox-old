@@ -15,7 +15,7 @@ public struct UpdateAllMessage : IServerMessage
         {
             CurrentTrack = UpdateCurrentTrackMessage.FromLavalinkTrack(player.CurrentTrack),
             PlayerStatus = UpdatePlayerStatusMessage.FromPlayer(player),
-            Position = new UpdatePositionMessage {Position = (int) player.Position.Position.TotalSeconds},
+            Position = UpdatePositionMessage.FromSeconds(player.Position.Position),
             Queue = UpdateQueueMessage.FromQueue(player.Queue, UpdateQueueMessageType.Replace)
         };
     }

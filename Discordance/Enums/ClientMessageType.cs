@@ -10,5 +10,7 @@ public enum ClientMessageType
     Back,
     SeekPosition,
     SetVolume,
-    SetController
+    SetController,
+    FavoriteTrack,
+    RemoveTrackFromQueue
 }

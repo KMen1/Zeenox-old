@@ -147,9 +147,9 @@ public static class GenericExtensions
 
     public static string ToTimeString(this TimeSpan timeSpan)
     {
-        var sb = new StringBuilder();
         if (timeSpan.TotalSeconds < 60)
             return $"00:{timeSpan.Seconds:00}";
+        var sb = new StringBuilder();
         if (timeSpan.Days > 0)
             sb.Append($"{timeSpan.Days}:");
         if (timeSpan.Hours > 0)

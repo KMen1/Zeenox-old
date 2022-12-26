@@ -94,6 +94,25 @@ public sealed class SocketHelper
                     .ConfigureAwait(false);
                 break;
             }
+            case ClientMessageType.FavoriteTrack:
+            {
+                await _audioService.FavoriteTrackAsync(user, ((FavoriteTrackMessage) message.Payload).Id)
+                    .ConfigureAwait(false);
+                await SendMessageAsync(ServerMessageType.UpdateFavorites, _audioService.GetPlayer(message.GuildId)!)
+                    .ConfigureAwait(false);
+                break;
+            }
+            case ClientMessageType.RemoveTrackFromQueue:
+            {
+                var player = _audioService.GetPlayer(message.GuildId);
+                if (player is null)
+                    return;
+
+                var index = ((RemoveTrackFromQueueMessage) message.Payload).Index;
+                await player.RemoveFromQueue(index).ConfigureAwait(false);
+                await SendMessageAsync(ServerMessageType.UpdateQueue, player).ConfigureAwait(false);
+                break;
+            }
             case ClientMessageType.SetController:
             {
                 if (!_sockets.ContainsKey(message.GuildId))
@@ -108,7 +127,7 @@ public sealed class SocketHelper
                     _sockets[message.GuildId].Add((message.UserId, socket));
                 }
 
-                await SendMessageAsync(message.GuildId, ServerMessageType.UpdateAll,
+                await SendMessageAsync(ServerMessageType.UpdateAll,
                     _audioService.GetPlayer(message.GuildId)!).ConfigureAwait(false);
                 Task.Run(() => SendPositionLoopAsync(message.GuildId, token));
                 break;
@@ -121,17 +140,18 @@ public sealed class SocketHelper
         while (!token.IsCancellationRequested)
         {
             var player = _audioService.GetPlayer(guildId);
-            if (player?.State is not PlayerState.Playing)
+            if (player?.State is not PlayerState.Playing || player.CurrentTrack is null)
                 continue;
-            await SendMessageAsync(guildId, ServerMessageType.UpdatePosition, player)
+            await SendMessageAsync(ServerMessageType.UpdatePosition, player)
                 .ConfigureAwait(false);
             await Task.Delay(1000, token).ConfigureAwait(false);
         }
     }
 
-    public async Task SendMessageAsync(ulong guildId, ServerMessageType type, MusicPlayer player,
+    public async Task SendMessageAsync(ServerMessageType type, MusicPlayer player,
         UpdateQueueMessageType queueMessageType = UpdateQueueMessageType.Replace)
     {
+        var guildId = player.GuildId;
         if (!_sockets.ContainsKey(guildId))
             return;
         if (_sockets[guildId].Count == 0)
@@ -144,52 +164,6 @@ public sealed class SocketHelper
         foreach (var (_, socket) in sockets)
             await socket.SendAsync(messagesJson, WebSocketMessageType.Text, true, CancellationToken.None)
                 .ConfigureAwait(false);
-
-        /*foreach (var (_, socket) in sockets)
-        {
-            if (type.HasFlag(ServerMessageType.UpdateAll))
-            {
-                await socket.SendAsync(JsonSerializer.SerializeToUtf8Bytes(new BaseServerMessage
-                    {
-                        Type = ServerMessageType.UpdateAll,
-                        Payload = UpdateAllMessage.FromMusicPlayer(player)
-                    }), WebSocketMessageType.Text, true,
-                    CancellationToken.None).ConfigureAwait(false);
-                continue;
-            }
-
-            if (type.HasFlag(ServerMessageType.UpdateQueue))
-                await socket.SendAsync(JsonSerializer.SerializeToUtf8Bytes(new BaseServerMessage
-                    {
-                        Type = ServerMessageType.UpdateQueue,
-                        Payload = UpdateQueueMessage.FromQueue(player.Queue, queueMessageType)
-                    }), WebSocketMessageType.Text, true,
-                    CancellationToken.None).ConfigureAwait(false);
-
-            if (type.HasFlag(ServerMessageType.UpdatePosition))
-                await socket.SendAsync(JsonSerializer.SerializeToUtf8Bytes(new BaseServerMessage
-                    {
-                        Type = ServerMessageType.UpdatePosition,
-                        Payload = new UpdatePositionMessage {Position = (int) player.Position.Position.TotalSeconds}
-                    }), WebSocketMessageType.Text, true,
-                    CancellationToken.None).ConfigureAwait(false);
-
-            if (type.HasFlag(ServerMessageType.UpdatePlayerStatus))
-                await socket.SendAsync(JsonSerializer.SerializeToUtf8Bytes(new BaseServerMessage
-                    {
-                        Type = ServerMessageType.UpdatePlayerStatus,
-                        Payload = UpdatePlayerStatusMessage.FromPlayer(player)
-                    }), WebSocketMessageType.Text, true,
-                    CancellationToken.None).ConfigureAwait(false);
-
-            if (type.HasFlag(ServerMessageType.UpdateCurrentTrack))
-                await socket.SendAsync(JsonSerializer.SerializeToUtf8Bytes(new BaseServerMessage
-                    {
-                        Type = ServerMessageType.UpdateCurrentTrack,
-                        Payload = UpdateCurrentTrackMessage.FromLavalinkTrack(player.CurrentTrack)
-                    }), WebSocketMessageType.Text, true,
-                    CancellationToken.None).ConfigureAwait(false);
-        }*/
     }
 
     private static IEnumerable<BaseServerMessage> CreateMessages(MusicPlayer player, ServerMessageType type,
@@ -202,6 +176,12 @@ public sealed class SocketHelper
                 Payload = UpdateAllMessage.FromMusicPlayer(player)
             };
 
+        if (type.HasFlag(ServerMessageType.UpdateFavorites))
+            yield return new BaseServerMessage
+            {
+                Type = ServerMessageType.UpdateFavorites
+            };
+        
         if (type.HasFlag(ServerMessageType.UpdateQueue))
             yield return new BaseServerMessage
             {
@@ -213,7 +193,7 @@ public sealed class SocketHelper
             yield return new BaseServerMessage
             {
                 Type = ServerMessageType.UpdatePosition,
-                Payload = new UpdatePositionMessage {Position = (int) player.Position.Position.TotalSeconds}
+                Payload = UpdatePositionMessage.FromSeconds(player.Position.Position)
             };
 
         if (type.HasFlag(ServerMessageType.UpdatePlayerStatus))

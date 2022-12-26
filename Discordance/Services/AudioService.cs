@@ -33,6 +33,7 @@ public sealed class AudioService
     private readonly Random _random = new();
     private readonly SearchService _searchService;
     private readonly YouTubeService _youTubeService;
+    private readonly MongoService _mongoService;
     public readonly SocketHelper SocketHelper;
 
     public AudioService(
@@ -40,12 +41,13 @@ public sealed class AudioService
         YouTubeService youtubeService,
         DiscordShardedClient client,
         IMemoryCache cache,
-        InactivityTrackingService trackingService, SearchService searchService)
+        InactivityTrackingService trackingService, SearchService searchService, MongoService mongoService)
     {
         _lavalinkNode = (LavalinkNode) lavalinkNode;
         _lavalinkNode.TrackEnd += OnTrackEnd;
         _cache = cache;
         _searchService = searchService;
+        _mongoService = mongoService;
         SocketHelper = new SocketHelper(this, searchService, client);
         _youTubeService = youtubeService;
         client.MessageReceived += ListenForSongRequests;
@@ -95,7 +97,7 @@ public sealed class AudioService
         if (force)
         {
             await player.PlayAsync(track, false).ConfigureAwait(false);
-            await SocketHelper.SendMessageAsync(guildId,
+            await SocketHelper.SendMessageAsync(
                     ServerMessageType.UpdateCurrentTrack | ServerMessageType.UpdateQueue,
                     player)
                 .ConfigureAwait(false);
@@ -110,10 +112,10 @@ public sealed class AudioService
         var position = await player.PlayAsync(track).ConfigureAwait(false);
         if (position != 0)
             await SocketHelper
-                .SendMessageAsync(guildId, ServerMessageType.UpdateQueue, player)
+                .SendMessageAsync(ServerMessageType.UpdateQueue, player)
                 .ConfigureAwait(false);
         await SocketHelper
-            .SendMessageAsync(guildId, ServerMessageType.UpdateCurrentTrack, player)
+            .SendMessageAsync(ServerMessageType.UpdateCurrentTrack, player)
             .ConfigureAwait(false);
     }
 
@@ -131,7 +133,7 @@ public sealed class AudioService
         );
         tracks = await _searchService.AddCoverUrls(tracks).ConfigureAwait(false);
         await player.PlayAsync(tracks).ConfigureAwait(false);
-        await SocketHelper.SendMessageAsync(guildId,
+        await SocketHelper.SendMessageAsync(
                 ServerMessageType.UpdateQueue | ServerMessageType.UpdateCurrentTrack, player)
             .ConfigureAwait(false);
     }
@@ -139,7 +141,6 @@ public sealed class AudioService
     public async Task SkipAsync(ulong guildId, IUser user)
     {
         var player = GetPlayer(guildId)!;
-
         /*if (player.IsAutoPlay)
         {
             var track = await GetRelatedTrackAsync(player).ConfigureAwait(false);
@@ -172,7 +173,7 @@ public sealed class AudioService
                     .FormatWithTimestamp(player.CurrentTrack!.ToHyperLink())
             );
             //await player.UpdateMessageAsync().ConfigureAwait(false);
-            await SocketHelper.SendMessageAsync(guildId, ServerMessageType.UpdateCurrentTrack, player)
+            await SocketHelper.SendMessageAsync(ServerMessageType.UpdateCurrentTrack, player)
                 .ConfigureAwait(false);
             return;
         }
@@ -188,7 +189,7 @@ public sealed class AudioService
                 .FormatWithTimestamp(user.Mention, player.CurrentTrack!.ToHyperLink())
         );
         //await player.UpdateMessageAsync().ConfigureAwait(false);
-        await SocketHelper.SendMessageAsync(guildId,
+        await SocketHelper.SendMessageAsync(
                 ServerMessageType.UpdateCurrentTrack | ServerMessageType.UpdateQueue, player)
             .ConfigureAwait(false);
     }
@@ -201,7 +202,7 @@ public sealed class AudioService
         );
         await player.RewindAsync().ConfigureAwait(false);
         await SocketHelper
-            .SendMessageAsync(guildId, ServerMessageType.UpdateCurrentTrack, player)
+            .SendMessageAsync(ServerMessageType.UpdateCurrentTrack, player)
             .ConfigureAwait(false);
     }
 
@@ -231,7 +232,7 @@ public sealed class AudioService
         }
 
         await SocketHelper
-            .SendMessageAsync(guildId, ServerMessageType.UpdatePlayerStatus, player)
+            .SendMessageAsync(ServerMessageType.UpdatePlayerStatus, player)
             .ConfigureAwait(false);
         return player.State == PlayerState.Paused;
     }
@@ -261,7 +262,7 @@ public sealed class AudioService
         );
         await player.SetVolumeAsync(volume).ConfigureAwait(false);
         await SocketHelper
-            .SendMessageAsync(guildId, ServerMessageType.UpdatePlayerStatus, player)
+            .SendMessageAsync(ServerMessageType.UpdatePlayerStatus, player)
             .ConfigureAwait(false);
         return (int) (volume * 100);
     }
@@ -273,7 +274,7 @@ public sealed class AudioService
             _cache.GetMessage(player.Language, "QueueClearedAction").FormatWithTimestamp(user.Mention)
         );
         var count = await player.ClearQueueAsync().ConfigureAwait(false);
-        await SocketHelper.SendMessageAsync(guildId, ServerMessageType.UpdateQueue, player)
+        await SocketHelper.SendMessageAsync(ServerMessageType.UpdateQueue, player)
             .ConfigureAwait(false);
         return count;
     }
@@ -289,7 +290,7 @@ public sealed class AudioService
         var shouldDisable = !Enum.IsDefined(typeof(PlayerLoopMode), player.LoopMode + 1);
         await player.ToggleLoopAsync(shouldDisable ? 0 : player.LoopMode + 1).ConfigureAwait(false);
         await SocketHelper
-            .SendMessageAsync(guildId, ServerMessageType.UpdatePlayerStatus, player)
+            .SendMessageAsync(ServerMessageType.UpdatePlayerStatus, player)
             .ConfigureAwait(false);
         return player.LoopMode;
     }
@@ -307,7 +308,7 @@ public sealed class AudioService
         );
         await player.ToggleAutoPlayAsync().ConfigureAwait(false);
         await SocketHelper
-            .SendMessageAsync(guildId, ServerMessageType.UpdatePlayerStatus, player)
+            .SendMessageAsync(ServerMessageType.UpdatePlayerStatus, player)
             .ConfigureAwait(false);
         return player.IsAutoPlay;
     }
@@ -385,7 +386,7 @@ public sealed class AudioService
                 CoverUrl = await _searchService.GetCoverUrl(player.Queue[0]).ConfigureAwait(false)
             };
             await player.SkipAsync().ConfigureAwait(false);
-            await SocketHelper.SendMessageAsync(player.GuildId,
+            await SocketHelper.SendMessageAsync(
                     ServerMessageType.UpdateCurrentTrack | ServerMessageType.UpdateQueue,
                     player, UpdateQueueMessageType.Remove)
                 .ConfigureAwait(false);
@@ -417,14 +418,16 @@ public sealed class AudioService
                 }
             )
             .ConfigureAwait(false);
+        await SocketHelper.SendMessageAsync(ServerMessageType.UpdateAll, player).ConfigureAwait(false);
     }
 
-    private static async Task OnInactivePlayer(object sender, InactivePlayerEventArgs eventargs)
+    private async Task OnInactivePlayer(object sender, InactivePlayerEventArgs eventargs)
     {
         if (!eventargs.ShouldStop) return;
         var player = (MusicPlayer) eventargs.Player;
         var msg = await player.GetMessage().ConfigureAwait(false);
         await msg.DeleteAsync().ConfigureAwait(false);
+        await SocketHelper.SendMessageAsync(ServerMessageType.UpdateAll, player).ConfigureAwait(false);
     }
 
     private static Task OnSegmentsLoaded(object _, SegmentsLoadedEventArgs eventargs)
@@ -434,5 +437,15 @@ public sealed class AudioService
         var totalDurationMs = segments.Sum(s => (s.EndOffset - s.StartOffset).TotalMilliseconds);
         player.SponsorBlockSkipTime = TimeSpan.FromMilliseconds(totalDurationMs);
         return Task.CompletedTask;
+    }
+
+    public async Task FavoriteTrackAsync(SocketUser user, string id)
+    {
+        var dbUser = await _mongoService.GetUserAsync(user.Id).ConfigureAwait(false);
+        var favorites = dbUser.Playlists[0].Songs;
+        if (favorites.Contains(id))
+            await _mongoService.UpdateUserAsync(user.Id, x => x.Playlists[0].Songs.Remove(id)).ConfigureAwait(false);
+        else
+            await _mongoService.UpdateUserAsync(user.Id, x => x.Playlists[0].Songs.Add(id)).ConfigureAwait(false);
     }
 }

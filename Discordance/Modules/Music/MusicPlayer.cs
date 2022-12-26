@@ -193,6 +193,12 @@ public class MusicPlayer : VoteLavalinkPlayer
         return (IUserMessage) message;
     }
 
+    public Task RemoveFromQueue(int index)
+    {
+        Queue.RemoveAt(index);
+        return UpdateMessageAsync();
+    }
+
     public void AppendAction(string action)
     {
         Actions.Insert(0, action);
