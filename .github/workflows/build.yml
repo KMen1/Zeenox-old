@@ -12,6 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: 'Qodana Scan'
+      uses: JetBrains/qodana-action@main
+      env:
+        QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
@@ -19,7 +23,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 7.0.x
     
     - name: Restore dependencies
       run: dotnet restore
