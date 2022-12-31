@@ -6,7 +6,7 @@ using CloudinaryDotNet;
 using Discord;
 using Zeenox.Enums;
 using Zeenox.Extensions;
-using Zeenox.Models;
+using Zeenox.Models.Games;
 using Zeenox.Modules.Gambling.Games;
 
 namespace Zeenox.Services;
@@ -62,9 +62,6 @@ public class GameService
             case GameType.Blackjack:
                 game = new BlackJack(userId, message, bet, _cloudinary);
                 break;
-            case GameType.Crash:
-                game = new Crash(userId, message, bet, GenerateCrashPoint());
-                break;
             case GameType.Highlow:
                 game = new HighLow(userId, message, bet, _cloudinary);
                 break;
@@ -102,7 +99,6 @@ public class GameService
                 x.Losses++;
                 x.MoneyLost += e.Bet;
             }),
-            GameResult.Tie => Task.CompletedTask,
             _ => Task.CompletedTask
         };
     }

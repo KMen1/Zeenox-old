@@ -37,12 +37,12 @@ public static partial class AudioHelper
             : (string.Empty, SearchResultType.Unknown);
     }
 
-    public static string ApplySearchMode(string query, AudioService.SearchMode mode)
+    public static string ApplySearchMode(string query, SearchMode mode)
     {
         return mode switch
         {
-            AudioService.SearchMode.YouTube => $"ytsearch:{query}",
-            AudioService.SearchMode.Spotify => $"spsearch:{query}",
+            SearchMode.YouTube => $"ytsearch:{query}",
+            SearchMode.Spotify => $"spsearch:{query}",
             _ => query
         };
     }

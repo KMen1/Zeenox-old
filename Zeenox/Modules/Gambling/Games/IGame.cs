@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Zeenox.Models;
+using Zeenox.Models.Games;
 using Zeenox.Services;
 
 namespace Zeenox.Modules.Gambling.Games;

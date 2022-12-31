@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,8 +7,6 @@ using CloudinaryDotNet.Actions;
 using Discord;
 using SkiaSharp;
 using Zeenox.Enums;
-using Zeenox.Extensions;
-using Zeenox.Models;
 using Zeenox.Models.Games;
 using Zeenox.Services;
 
@@ -26,18 +23,16 @@ public sealed class BlackJack : IGame
         Id = Guid.NewGuid().ToString();
         Deck = new Deck();
         Hidden = true;
-        DealerCards = Deck.DealHand();
-        PlayerCards = Deck.DealHand();
+        DealerCards = new Hand(Deck.DealHand());
+        PlayerCards = new Hand(Deck.DealHand());
     }
 
     private string Id { get; }
     private IUserMessage Message { get; }
     private int Bet { get; }
     private Deck Deck { get; }
-    private List<Card> DealerCards { get; }
-    private int DealerScore => DealerCards.GetValue();
-    private List<Card> PlayerCards { get; }
-    private int PlayerScore => PlayerCards.GetValue();
+    private Hand DealerCards { get; }
+    private Hand PlayerCards { get; }
     private bool Hidden { get; set; }
     private Cloudinary Cloudinary { get; }
 
@@ -51,8 +46,8 @@ public sealed class BlackJack : IGame
 
     public async Task HitAsync()
     {
-        PlayerCards.Add(Deck.Draw());
-        switch (PlayerScore)
+        PlayerCards.AddCard(Deck.Draw());
+        switch (PlayerCards.Value)
         {
             case > 21:
             {
@@ -79,9 +74,9 @@ public sealed class BlackJack : IGame
     public async Task StandAsync()
     {
         Hidden = false;
-        while (DealerScore < 17)
-            DealerCards.Add(Deck.Draw());
-        switch (DealerScore)
+        while (DealerCards.Value < 17)
+            DealerCards.AddCard(Deck.Draw());
+        switch (DealerCards.Value)
         {
             case > 21:
             {
@@ -99,7 +94,7 @@ public sealed class BlackJack : IGame
             }
         }
 
-        if (PlayerScore == 21)
+        if (PlayerCards.Value == 21)
         {
             var reward = (int) (Bet * 2.5) - Bet;
             await UpdateMessageAsync($"**Result:** You win **{reward:N0}** credits!")
@@ -108,7 +103,7 @@ public sealed class BlackJack : IGame
             return;
         }
 
-        if (PlayerScore > DealerScore)
+        if (PlayerCards.Value > DealerCards.Value)
         {
             var reward = Bet * 2 - Bet;
             await UpdateMessageAsync($"**Result:** You win **{reward:N0}** credits!")
@@ -117,7 +112,7 @@ public sealed class BlackJack : IGame
             return;
         }
 
-        if (PlayerScore < DealerScore)
+        if (PlayerCards.Value < DealerCards.Value)
         {
             await UpdateMessageAsync($"**Result:** You lose **{Bet:N0}** credits!")
                 .ConfigureAwait(false);
@@ -136,8 +131,8 @@ public sealed class BlackJack : IGame
             .WithColor(Color.Gold)
             .WithDescription($"**Bet:** {Bet:N0} credits" + (desc is null ? "" : $"\n{desc}"))
             .WithImageUrl(GetImageUrl())
-            .AddField($"Player - {PlayerScore.ToString()}", "\u200b", true)
-            .AddField($"Dealer - {(Hidden ? "?" : DealerScore.ToString())}", "\u200b", true);
+            .AddField($"Player - {PlayerCards.Value.ToString()}", "\u200b", true)
+            .AddField($"Dealer - {(Hidden ? "?" : DealerCards.Value.ToString())}", "\u200b", true);
 
         if (desc is null)
             return Message.ModifyAsync(
@@ -172,16 +167,16 @@ public sealed class BlackJack : IGame
 
     private Stream CreateImage()
     {
-        var playerImages = PlayerCards.ConvertAll(card => card.GetImage());
+        var playerImages = PlayerCards.GetBitmaps();
         var dealerImages = Hidden
-            ? new List<SKBitmap>
+            ? new[]
             {
-                DealerCards[0].GetImage(),
+                DealerCards.GetBitmap(0),
                 SKBitmap.Decode(
                     File.Open("Resources/gambling/empty.png", FileMode.Open, FileAccess.Read)
                 )
             }
-            : DealerCards.ConvertAll(card => card.GetImage());
+            : DealerCards.GetBitmaps();
         var height = playerImages.Max(x => x.Height);
 
         using var surface = SKSurface.Create(new SKImageInfo(400, height));

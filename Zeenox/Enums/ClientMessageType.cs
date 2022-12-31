@@ -12,5 +12,7 @@ public enum ClientMessageType
     SetVolume,
     SetController,
     FavoriteTrack,
-    RemoveTrackFromQueue
+    RemoveTrackFromQueue,
+    GetPlaylists,
+    GetVoiceState
 }

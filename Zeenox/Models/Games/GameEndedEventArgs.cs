@@ -1,7 +1,7 @@
 ﻿using System;
 using Zeenox.Enums;
 
-namespace Zeenox.Models;
+namespace Zeenox.Models.Games;
 
 public class GameEndEventArgs : EventArgs
 {

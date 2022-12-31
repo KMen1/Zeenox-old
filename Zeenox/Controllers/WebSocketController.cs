@@ -12,11 +12,11 @@ namespace Zeenox.Controllers;
 
 public class WebSocketController : ControllerBase
 {
-    private readonly SocketHelper _socketHelper;
+    private readonly SocketService _socketService;
 
-    public WebSocketController(AudioService audioService)
+    public WebSocketController(SocketService socketService)
     {
-        _socketHelper = audioService.SocketHelper;
+        _socketService = socketService;
     }
 
     [Route("/ws")]
@@ -46,7 +46,7 @@ public class WebSocketController : ControllerBase
         {
             var rawData = Encoding.UTF8.GetString(new ArraySegment<byte>(buffer, 0, receiveResult.Count));
             var message = JsonSerializer.Deserialize<BaseClientMessage>(rawData);
-            await _socketHelper.HandleClientMessage(message, socket, cancellationToken).ConfigureAwait(false);
+            await _socketService.HandleClientMessage(message, socket, cancellationToken).ConfigureAwait(false);
             receiveResult = await socket.ReceiveAsync(
                 new ArraySegment<byte>(buffer), CancellationToken.None).ConfigureAwait(false);
         }

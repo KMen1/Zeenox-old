@@ -63,12 +63,4 @@ public class Interactions : GambleBase
         var game = (Towers) GetGame();
         await game.ClickFieldAsync(x, y).ConfigureAwait(false);
     }
-
-    [ComponentInteraction("crash")]
-    public async Task StopCrashGameAsync()
-    {
-        await DeferAsync().ConfigureAwait(false);
-        var game = (Crash) GetGame();
-        await game.StopAsync().ConfigureAwait(false);
-    }
 }

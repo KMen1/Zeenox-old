@@ -39,7 +39,7 @@ public abstract class ModuleBase : InteractionModuleBase<ShardedInteractionConte
         return DatabaseService.GetUserAsync(id ?? Context.User.Id);
     }
 
-    protected Task UpdateUserAsync(Action<User> action, ulong? id = null)
+    protected Task<User> UpdateUserAsync(Action<User> action, ulong? id = null)
     {
         return DatabaseService.UpdateUserAsync(id ?? Context.User.Id, action);
     }

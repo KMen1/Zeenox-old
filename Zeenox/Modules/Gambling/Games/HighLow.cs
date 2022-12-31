@@ -8,7 +8,6 @@ using Discord;
 using SkiaSharp;
 using Zeenox.Enums;
 using Zeenox.Extensions;
-using Zeenox.Models;
 using Zeenox.Models.Games;
 using Zeenox.Services;
 

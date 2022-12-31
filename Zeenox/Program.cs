@@ -134,6 +134,7 @@ var host = Host.CreateDefaultBuilder()
             services.AddSingleton<MongoService>();
             services.AddSingleton<TemporaryChannelService>();
             services.AddSingleton<GameService>();
+            services.AddSingleton<SocketService>();
             services.Configure<HostOptions>(
                 x =>
                     x.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore

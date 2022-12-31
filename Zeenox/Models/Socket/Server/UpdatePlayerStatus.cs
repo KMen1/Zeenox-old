@@ -1,15 +1,18 @@
-﻿using Lavalink4NET.Player;
+﻿using System;
+using Lavalink4NET.Player;
 using Zeenox.Modules.Music;
 
 namespace Zeenox.Models.Socket.Server;
 
-public struct UpdatePlayerStatusMessage : IServerMessage
+public readonly struct UpdatePlayerStatusMessage : IServerMessage
 {
     public bool IsConnected { get; init; }
     public bool IsPlaying { get; init; }
     public bool IsPaused { get; init; }
     public bool IsAutoplay { get; init; }
     public PlayerLoopMode LoopMode { get; init; }
+    public int Volume { get; init; }
+    public string Filter { get; init; }
 
     public static UpdatePlayerStatusMessage FromPlayer(MusicPlayer player)
     {
@@ -19,7 +22,9 @@ public struct UpdatePlayerStatusMessage : IServerMessage
             IsPlaying = player.State is PlayerState.Playing,
             IsPaused = player.State is PlayerState.Paused,
             IsAutoplay = player.IsAutoPlay,
-            LoopMode = player.LoopMode
+            LoopMode = player.LoopMode,
+            Volume = (int) Math.Round(player.Volume * 100),
+            Filter = player.CurrentFilter
         };
     }
 }

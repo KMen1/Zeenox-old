@@ -29,8 +29,15 @@ public class Interactions : MusicBase
             return;
         }
 
-        await UpdateUserAsync(x => x.Playlists[0].Songs.Add(track.Identifier)).ConfigureAwait(false);
-        await FollowupAsync("✅", ephemeral: true).ConfigureAwait(false);
+        var newUser = await UpdateUserAsync(x =>
+        {
+            if (x.Playlists[0].Songs.Contains(track.Identifier))
+                x.Playlists[0].Songs.Remove(track.Identifier);
+            else
+                x.Playlists[0].Songs.Add(track.Identifier);
+        }).ConfigureAwait(false);
+        await FollowupAsync(newUser.Playlists[0].Songs.Contains(track.Identifier) ? "➕" : "➖", ephemeral: true)
+            .ConfigureAwait(false);
     }
 
     [ComponentInteraction("filter")]

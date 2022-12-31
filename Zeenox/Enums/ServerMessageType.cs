@@ -11,5 +11,9 @@ public enum ServerMessageType
     UpdateCurrentTrack = 4,
     UpdateQueue = 8,
     UpdateFavorites = 16,
-    UpdateAll = UpdatePlayerStatus | UpdatePosition | UpdateCurrentTrack | UpdateQueue | UpdateFavorites
+    UpdatePlaylists = 32,
+    UpdateVoiceState = 64,
+
+    UpdateAll = UpdatePlayerStatus | UpdatePosition | UpdateCurrentTrack | UpdateQueue | UpdateFavorites |
+                UpdatePlaylists | UpdateVoiceState
 }

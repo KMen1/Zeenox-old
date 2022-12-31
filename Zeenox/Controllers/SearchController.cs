@@ -5,11 +5,11 @@ using Zeenox.Services;
 
 namespace Zeenox.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/[controller]/[action]")]
 public class SearchController : ControllerBase
 {
-    private readonly SearchService _searchService;
     private readonly MongoService _mongoService;
+    private readonly SearchService _searchService;
 
     public SearchController(SearchService searchService, MongoService mongoService)
     {
@@ -18,7 +18,7 @@ public class SearchController : ControllerBase
     }
 
     [HttpGet]
-    [Route("[action]")]
+    [Route("")]
     public async Task<IActionResult> Search([FromQuery] string query)
     {
         var searchResults = await _searchService.SearchAsync(query).ConfigureAwait(false);
@@ -26,7 +26,7 @@ public class SearchController : ControllerBase
     }
 
     [HttpGet]
-    [Route("[action]")]
+    [Route("")]
     public async Task<IActionResult> Favorite(ulong userId)
     {
         var user = await _mongoService.GetUserAsync(userId).ConfigureAwait(false);

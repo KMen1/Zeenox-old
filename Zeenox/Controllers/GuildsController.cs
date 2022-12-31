@@ -27,24 +27,5 @@ public class GuildsController : ControllerBase
             .Select(x => new Channel(x.Id, x.Name));
     }
 
-    [HttpGet]
-    [Route("")]
-    public bool IsConnected(ulong guildId)
-    {
-        var guild = _client.GetGuild(guildId);
-
-        return guild?.CurrentUser.VoiceChannel != null;
-    }
-
-    [HttpGet]
-    [Route("")]
-    public bool IsUserConnected(ulong guildId, ulong userId)
-    {
-        var guild = _client.GetGuild(guildId);
-        var user = guild?.GetUser(userId);
-
-        return user?.VoiceChannel != null;
-    }
-
     public record Channel(ulong Id, string Name);
 }

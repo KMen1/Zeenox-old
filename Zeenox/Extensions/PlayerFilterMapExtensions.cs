@@ -29,21 +29,9 @@ public static class PlayerFilterMapExtensions
             {FilterType.Tremolo, x => x.Tremolo()}
         };
 
-    public static void Clear(this PlayerFilterMap map)
-    {
-        map.Distortion = null;
-        map.Equalizer = null;
-        map.Karaoke = null;
-        map.Rotation = null;
-        map.Timescale = null;
-        map.Tremolo = null;
-        map.Vibrato = null;
-        map.ChannelMix = null;
-        map.LowPass = null;
-    }
-
     public static void ApplyFilter(this PlayerFilterMap map, FilterType filterType)
     {
+        map.Clear();
         FilterActions[filterType](map);
     }
 

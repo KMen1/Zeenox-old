@@ -6,7 +6,6 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Humanizer;
 using Zeenox.Enums;
-using Zeenox.Extensions;
 using Zeenox.Modules.Gambling.Games;
 using Zeenox.Preconditions;
 
@@ -25,10 +24,13 @@ public class Commands : GambleBase
     )
     {
         var dbUser = await GetUserAsync().ConfigureAwait(false);
-        var result = dbUser.CanStartGame(bet, out var eb);
+        var result = dbUser.CanStartGame(bet);
         if (!result)
         {
-            await RespondAsync(ephemeral: true, embed: eb).ConfigureAwait(false);
+            await RespondAsync(ephemeral: true,
+                    embed: new EmbedBuilder().WithDescription("Insufficient balance or bet lower than minimum bet")
+                        .Build())
+                .ConfigureAwait(false);
             return;
         }
 

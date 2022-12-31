@@ -4,7 +4,6 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Discord;
 using Zeenox.Enums;
-using Zeenox.Models;
 using Zeenox.Models.Games;
 using Zeenox.Services;
 

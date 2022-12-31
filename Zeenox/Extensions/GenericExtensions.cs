@@ -1,28 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Lavalink4NET.Player;
 using SkiaSharp;
-using Zeenox.Models;
-using Zeenox.Models.Games;
+using Zeenox.Services;
 
 namespace Zeenox.Extensions;
 
 public static class GenericExtensions
 {
-    public static DateTimeOffset GetNextWeekday(this DateTimeOffset date, DayOfWeek day)
-    {
-        var result = date.Date.AddDays(1);
-        while (result.DayOfWeek != day)
-            result = result.AddDays(1);
-        return result;
-    }
-
     public static double NextDouble(
         this RandomNumberGenerator generator,
         double minimumValue,
@@ -40,53 +30,6 @@ public static class GenericExtensions
     public static string ToShortId(this Guid id)
     {
         return id.ToString().Split("-")[0];
-    }
-
-    public static IEnumerable<IEnumerable<T>> ChunkBy<T>(this IEnumerable<T> source, int chunkSize)
-    {
-        return source
-            .Select((x, i) => new {Index = i, Value = x})
-            .GroupBy(x => x.Index / chunkSize)
-            .Select(x => x.Select(v => v.Value).ToList())
-            .ToList();
-    }
-
-    public static bool CanStartGame(this User user, int bet, out Embed? embed)
-    {
-        if (user.Balance < bet)
-        {
-            embed = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**Insufficient balance!**")
-                .AddField(
-                    "Balance",
-                    $"{user.Balance.ToString("N0", CultureInfo.InvariantCulture)}",
-                    true
-                )
-                .AddField("Bet", $"{bet.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .Build();
-            return false;
-        }
-
-        var minimumBet = user.GetMinimumBet();
-
-        if (bet < minimumBet)
-        {
-            embed = new EmbedBuilder()
-                .WithColor(Color.Red)
-                .WithDescription("**You must bet at least your minimum bet!**")
-                .AddField(
-                    "Minimum bet",
-                    $"{minimumBet.ToString("N0", CultureInfo.InvariantCulture)}",
-                    true
-                )
-                .AddField("Bet", $"{bet.ToString("N0", CultureInfo.InvariantCulture)}", true)
-                .Build();
-            return false;
-        }
-
-        embed = null;
-        return true;
     }
 
     public static SKBitmap MakeImageRound(this SKBitmap image)
@@ -184,11 +127,6 @@ public static class GenericExtensions
         return string.Format(format, DateTimeOffset.UtcNow.ToRelativeDiscordTimeStamp(), object1, object2);
     }
 
-    public static string Format(this string format, params object[] args)
-    {
-        return string.Format(format, args);
-    }
-
     public static string Format(this string format, object? object1, object? object2)
     {
         return string.Format(format, object1, object2);
@@ -197,20 +135,6 @@ public static class GenericExtensions
     public static string Format(this string format, object? object1)
     {
         return string.Format(format, object1);
-    }
-
-    public static int GetValue(this IReadOnlyCollection<Card> cards)
-    {
-        var aces = cards.Count(x => x.Face is Face.Ace);
-        var value = cards.Sum(card => card.Value);
-
-        for (var i = 0; i < aces; i++)
-            if (value + 11 <= 21)
-                value += 11;
-            else
-                value++;
-
-        return value;
     }
 
     public static Embed ToEmbed(this string message, Color color = default)
@@ -231,5 +155,13 @@ public static class GenericExtensions
     public static string TrimTo(this string str, int length)
     {
         return str.Length <= length ? str : str[..length];
+    }
+
+    public static Task InvokeAsync<TEventArgs>(
+        this AsyncEventHandler<TEventArgs>? eventHandler,
+        object sender,
+        TEventArgs eventArgs)
+    {
+        return eventHandler?.Invoke(sender, eventArgs) ?? Task.CompletedTask;
     }
 }

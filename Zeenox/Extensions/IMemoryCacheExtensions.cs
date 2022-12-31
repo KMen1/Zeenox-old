@@ -22,26 +22,6 @@ public static class MemoryCacheExtensions
         return cache.GetGuildConfig(guildId).Language;
     }
 
-    public static void SetNotificationChannels(
-        this IMemoryCache cache,
-        IEnumerable<(ulong, ulong)> shrine,
-        IEnumerable<(ulong, ulong)> game
-    )
-    {
-        cache.Set("shrine", shrine);
-        cache.Set("game", game);
-    }
-
-    public static IEnumerable<(ulong, ulong)> GetShrineNotificationChannels(this IMemoryCache cache)
-    {
-        return cache.Get<IEnumerable<(ulong, ulong)>>("shrine") ?? Array.Empty<(ulong, ulong)>();
-    }
-
-    public static IEnumerable<(ulong, ulong)> GetGameNotificationChannels(this IMemoryCache cache)
-    {
-        return cache.Get<IEnumerable<(ulong, ulong)>>("game") ?? Array.Empty<(ulong, ulong)>();
-    }
-
     public static string GetMessage(this IMemoryCache cache, string language, string key)
     {
         var localization = cache.Get<Dictionary<string, string>>(key);

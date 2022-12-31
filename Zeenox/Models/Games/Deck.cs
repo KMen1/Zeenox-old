@@ -38,9 +38,9 @@ public class Deck
         return card;
     }
 
-    public List<Card> DealHand()
+    public IEnumerable<Card> DealHand()
     {
-        var hand = new List<Card> {Cards[0], Cards[1]};
+        var hand = new[] {Cards[0], Cards[1]};
         Cards.RemoveRange(0, 2);
         return hand;
     }

@@ -71,10 +71,11 @@ public class MongoService
         return user;
     }
 
-    public async Task UpdateUserAsync(ulong id, Action<User> action)
+    public async Task<User> UpdateUserAsync(ulong id, Action<User> action)
     {
         var user = await GetUserAsync(id).ConfigureAwait(false);
         action(user);
         await _users.ReplaceOneAsync(x => x.Id == id, user).ConfigureAwait(false);
+        return user;
     }
 }

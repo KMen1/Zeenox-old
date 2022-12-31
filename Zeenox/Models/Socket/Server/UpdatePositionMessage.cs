@@ -3,7 +3,7 @@ using Zeenox.Extensions;
 
 namespace Zeenox.Models.Socket.Server;
 
-public struct UpdatePositionMessage : IServerMessage
+public readonly struct UpdatePositionMessage : IServerMessage
 {
     public int Position { get; init; }
     public string PositionString { get; init; }

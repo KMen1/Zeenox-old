@@ -28,10 +28,14 @@ public class User
     public List<Playlist> Playlists { get; set; }
 
     [BsonIgnore] public int GamesPlayed => Wins + Losses;
-
     [BsonIgnore] public int GambleLevel => GamesPlayed / 10;
+    [BsonIgnore] public double WinRate => Math.Round(Wins / (double) GamesPlayed * 100, 2);
+    [BsonIgnore] public int MinimumBet => (int) Math.Round(Math.Pow(GambleLevel, 2.99996) + 185);
 
-    [BsonIgnore] public int GambleLevelRequired => 10 - GamesPlayed % 10;
+    public bool CanStartGame(int bet)
+    {
+        return bet >= MinimumBet && bet <= Balance;
+    }
 }
 
 public class Playlist

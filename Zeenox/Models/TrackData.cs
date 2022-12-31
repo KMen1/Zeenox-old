@@ -5,7 +5,7 @@ namespace Zeenox.Models;
 
 public struct TrackData
 {
-    public string? Id { get; set; }
+    public string? Id { get; init; }
     public string? Title { get; init; }
     public string? Author { get; init; }
     public string? Url { get; init; }
@@ -14,6 +14,7 @@ public struct TrackData
     public string? DurationString { get; init; }
     public string? Requester { get; init; }
     public int? QueuePosition { get; init; }
+    public bool IsFavorite { get; init; }
 
     public static TrackData FromLavalinkTrack(LavalinkTrack? track, int? queuePosition = null)
     {

@@ -10,6 +10,7 @@ using Lavalink4NET.Rest;
 using SpotifyAPI.Web;
 using Zeenox.Enums;
 using Zeenox.Models;
+using SearchMode = Zeenox.Enums.SearchMode;
 
 namespace Zeenox.Services;
 
@@ -26,7 +27,7 @@ public sealed class SearchService
         _lavalinkNode = (LavalinkNode) lavalinkNode;
     }
 
-    public async Task<LavalinkTrack[]> SearchAsync(string query, IUser user, AudioService.SearchMode searchMode,
+    public async Task<LavalinkTrack[]> SearchAsync(string query, IUser user, SearchMode searchMode,
         int limit = 1)
     {
         query = AudioHelper.ApplySearchMode(query, searchMode);
@@ -41,6 +42,33 @@ public sealed class SearchService
         tracks[0].Context = new TrackContext
             {Requester = user, CoverUrl = await GetCoverUrl(tracks[0]).ConfigureAwait(false)};
         return results.LoadType is TrackLoadType.PlaylistLoaded ? tracks : tracks.Take(limit).ToArray();
+    }
+
+    public async Task<string> GetRelatedTrack(LavalinkQueue queue)
+    {
+        var tracks = queue.Tracks;
+        var ytCount = tracks.Count(x => x.SourceName == "youtube");
+        var spCount = tracks.Count(x => x.SourceName == "spotify");
+
+        if (spCount > ytCount)
+        {
+            var ids = tracks.Where(x => x.SourceName == "spotify").Select(x => x.TrackIdentifier).Take(5).ToArray();
+            var req = await _spotifyClient.Browse.GetRecommendations(new RecommendationsRequest
+            {
+                SeedTracks = {ids[0], ids[1], ids[2], ids[3], ids[4]}
+            }).ConfigureAwait(false);
+            return req.Tracks[0].Uri;
+        }
+
+        var rnd = new Random();
+        var ytReq = _youTubeService.Search.List("snippet");
+        ytReq.MaxResults = 5;
+        ytReq.RelatedToVideoId = tracks.First(x => x.SourceName == "youtube").TrackIdentifier;
+        ytReq.Type = "video";
+        var result = await ytReq.ExecuteAsync().ConfigureAwait(false);
+        var availableVideos = result.Items.Where(x => x.Snippet is not null).ToArray();
+        var id = availableVideos[rnd.Next(0, availableVideos.Length)].Id.VideoId;
+        return $"https://www.youtube.com/watch?v={id}";
     }
 
     public async Task<(string Title, string Url, string CoverUrl)[]> SearchAsync(string query)
@@ -58,7 +86,15 @@ public sealed class SearchService
             }
             default:
             {
-                var request = _youTubeService.Search.List("snippet");
+                var req = await _spotifyClient.Search
+                    .Item(new SearchRequest(
+                        SearchRequest.Types.Track | SearchRequest.Types.Playlist | SearchRequest.Types.Album, query))
+                    .ConfigureAwait(false);
+
+                var tracks = req.Tracks.Items?.Select(x =>
+                    ($"{x.Artists[0].Name} - {x.Name}", x.ExternalUrls["spotify"], x.Album.Images[0].Url)).ToArray();
+
+                /*var request = _youTubeService.Search.List("snippet");
                 request.Q = query;
                 request.MaxResults = 24;
                 request.Type = "video";
@@ -66,8 +102,8 @@ public sealed class SearchService
                 var tracks = response.Items.Select(x =>
                         (x.Snippet.Title, $"https://www.youtube.com/watch?v={x.Id.VideoId}",
                             x.Snippet.Thumbnails.High.Url))
-                    .ToArray();
-                return tracks;
+                    .ToArray();*/
+                return tracks ?? Array.Empty<(string, string, string)>();
             }
         }
     }
@@ -95,7 +131,7 @@ public sealed class SearchService
                 {
                     ($"{string.Join(", ", album.Artists.Select(x => x.Name))} - {album.Name}",
                         $"https://open.spotify.com/album/{album.Id}",
-                        album.Images?.FirstOrDefault()?.Url ?? string.Empty)
+                        album.Images.FirstOrDefault()?.Url ?? string.Empty)
                 };
             }
             case SearchResultType.Track:

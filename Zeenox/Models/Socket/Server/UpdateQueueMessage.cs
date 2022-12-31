@@ -6,7 +6,7 @@ using Zeenox.Extensions;
 
 namespace Zeenox.Models.Socket.Server;
 
-public struct UpdateQueueMessage : IServerMessage
+public readonly struct UpdateQueueMessage : IServerMessage
 {
     public UpdateQueueMessageType Type { get; init; }
     public int Count { get; init; }

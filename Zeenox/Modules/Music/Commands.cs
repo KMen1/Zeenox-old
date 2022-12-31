@@ -3,12 +3,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using Discord.WebSocket;
 using Lavalink4NET.Decoding;
 using Zeenox.Autocompletes;
+using Zeenox.Enums;
 using Zeenox.Models;
 using Zeenox.Preconditions;
-using Zeenox.Services;
 
 namespace Zeenox.Modules.Music;
 
@@ -34,6 +33,28 @@ public class Commands : MusicBase
 
 
     [RequireVoice]
+    [RequirePlayer]
+    [RequireDjRole]
+    [SlashCommand("shuffle", "Shuffles the queue")]
+    public async Task Shuffle()
+    {
+        await DeferAsync(true).ConfigureAwait(false);
+        await ShuffleAsync().ConfigureAwait(false);
+        await FollowupAsync("Shuffled the queue").ConfigureAwait(false);
+    }
+
+    [RequireVoice]
+    [RequirePlayer]
+    [RequireDjRole]
+    [SlashCommand("removedupes", "Removes duplicate tracks from the queue")]
+    public async Task RemoveDupes()
+    {
+        await DeferAsync(true).ConfigureAwait(false);
+        await RemoveDupesAsync().ConfigureAwait(false);
+        await FollowupAsync("Removed duplicate tracks from the queue").ConfigureAwait(false);
+    }
+
+    [RequireVoice]
     [RequireAllowedChannel]
     [RequireDjRole]
     [SlashCommand("play", "Plays a song")]
@@ -47,7 +68,7 @@ public class Commands : MusicBase
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
-        var tracks = await SearchAsync(query, AudioService.SearchMode.None).ConfigureAwait(false);
+        var tracks = await SearchAsync(query, SearchMode.None).ConfigureAwait(false);
         if (tracks.Length == 0)
         {
             await FollowupAsync(ephemeral: true, embed: GetLocalizedEmbed("NoMatches", Color.Red))
@@ -209,7 +230,7 @@ public class Commands : MusicBase
     [SlashCommand("set-request-channel", "Sets the channel to receive song requests")]
     public async Task SetRequestChannelAsync(
         [Summary("channel", "This is the channel that will accept song requests")]
-        SocketTextChannel channel
+        ITextChannel channel
     )
     {
         await DeferAsync(true).ConfigureAwait(false);
